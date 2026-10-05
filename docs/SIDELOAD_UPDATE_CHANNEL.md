@@ -53,3 +53,8 @@ The sideload private key:
 - must be configured in CI secrets for future automatic releases.
 
 Losing the key breaks same-package sideload updates.
+
+
+## Bootstrap status
+
+The stable sideload signing identity is bootstrapped exactly once from the designated v0.1.4 release-candidate commit. The resulting private handoff artifact is temporary and must be moved into GitHub Actions secrets plus a secure offline backup before merging v0.1.4 to main.

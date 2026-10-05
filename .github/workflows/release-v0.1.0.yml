@@ -1,0 +1,66 @@
+name: Build and publish v0.1.0
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  foundation-release:
+    if: github.repository == 'realmichelduarte/LouderMe'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Check whether v0.1.0 already exists
+        id: existing
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view v0.1.0 >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Java 17
+        if: steps.existing.outputs.exists != 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        if: steps.existing.outputs.exists != 'true'
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android 36 platform
+        if: steps.existing.outputs.exists != 'true'
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Set up Gradle
+        if: steps.existing.outputs.exists != 'true'
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Build debug APK
+        if: steps.existing.outputs.exists != 'true'
+        run: gradle :app:assembleDebug --stacktrace
+
+      - name: Prepare release APK
+        if: steps.existing.outputs.exists != 'true'
+        run: cp app/build/outputs/apk/debug/app-debug.apk LouderMe-v0.1.0-debug.apk
+
+      - name: Publish GitHub release
+        if: steps.existing.outputs.exists != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create v0.1.0             LouderMe-v0.1.0-debug.apk             --target "$GITHUB_SHA"             --title "LouderMe v0.1.0 — Foundation"             --notes-file docs/RELEASE_NOTES_v0.1.0.md

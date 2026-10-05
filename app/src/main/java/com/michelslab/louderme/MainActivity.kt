@@ -32,7 +32,7 @@ class MainActivity : ComponentActivity() {
     private val audioState = mutableStateOf(AudioEngineUiState())
     private val equalizerState = mutableStateOf(EqualizerUiState())
 
-    private lateinit var updateController: UpdateCoordinator
+    private lateinit var updateCoordinator: UpdateCoordinator
     private var pendingBoostPercent: Int? = null
     private var audioReceiverRegistered = false
 
@@ -66,13 +66,13 @@ class MainActivity : ComponentActivity() {
         audioState.value = AudioBoostStateStore.read(this)
         equalizerState.value = EqualizerStateStore.read(this)
 
-        updateController = UpdateCoordinator(
+        updateCoordinator = UpdateCoordinator(
             activity = this,
             updateLauncher = updateLauncher,
             onStatusChanged = { updateStatus.value = it },
         )
 
-        updateController.checkForUpdates(allowAutomaticPrompt = true)
+        updateCoordinator.checkForUpdates(automatic = true)
 
         setContent {
             LouderMeApp(
@@ -200,7 +200,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         if (::updateCoordinator.isInitialized) {
-            updateController.resumeInterruptedUpdate()
+            updateCoordinator.onResume()
         }
     }
 

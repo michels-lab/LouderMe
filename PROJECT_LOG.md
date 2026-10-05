@@ -53,3 +53,20 @@ The first two automated release attempts failed during Android SDK environment s
 
 ### Current status
 CI workflow corrected and queued for another validation run. No release will be published unless the APK build succeeds.
+
+
+## 2026-10-05 — AndroidX build fix
+
+### Change / finding
+The release workflow reached the actual Android build successfully, but Gradle stopped at `:app:checkDebugAarMetadata` because the project uses AndroidX dependencies while AndroidX support was not enabled in Gradle properties.
+
+### Evidence
+GitHub Actions reported: `android.useAndroidX` was not enabled while the runtime classpath contained AndroidX Compose, Activity, Lifecycle, and related dependencies.
+
+### Action completed
+- Added root `gradle.properties`.
+- Enabled `android.useAndroidX=true`.
+- Triggered a fresh `v0.1.0` validation build.
+
+### Current status
+Awaiting the new CI build. Release publication remains gated behind a successful APK build.

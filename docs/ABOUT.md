@@ -10,10 +10,13 @@
 - Display name: **Michel Duarte**
 - Formal/legal name: **Michel Armando Duarte Flores**
 - Role: **Developer · Michel's Lab**
-- Canonical portrait: shared Michel's Lab developer portrait.
+- Canonical Michel's Lab developer portrait.
 - Official links: Instagram, LinkedIn, GitHub, email.
 
-## Required About content
+## Visual family
+About follows the same Michel's Lab dark/cyan/gold product-family language as the LouderMe Audio Workspace and current IG Cleaner Pro design, while retaining the canonical Michel's Lab identity hierarchy.
+
+## Required content
 - build-derived version and versionCode;
 - package ID;
 - software-update state;
@@ -23,12 +26,14 @@
 - copyright/license.
 
 ## Update behavior
-Play-installed builds query Google Play for newer versions. Direct/debug APKs must state that the Play update channel is unavailable instead of pretending the app is current.
+Play-installed builds query Google Play automatically. Update state is visible on both Home and About.
+
+Direct/debug APKs state that the Play update channel is unavailable rather than pretending to be current.
 
 ## Privacy summary
-LouderMe does not record, capture, store, or upload audio content. The first engine stores only local effect state/settings.
+LouderMe does not record, capture, store or upload audio content. Boost and EQ configuration remain local.
 
 ## Rules
 - Never hard-code a production version separately from `BuildConfig`.
-- Keep Smart Boost labeled Beta while experimental.
-- Never claim global amplification solely because the session-0 engine attached.
+- Keep Smart Boost labeled Beta until validated.
+- Never claim universal compatibility solely because a session-0 effect attached.

@@ -398,3 +398,24 @@ v0.1.4 / versionCode 5.
 
 ### Status
 Implementation prepared on `release/v0.1.4`. Pending CI validation and stable signing bootstrap.
+
+
+## 2026-10-05 — v0.1.4 release-Lint failure and Fragment fix
+
+### Failure
+GitHub Actions run `37388581098` failed during the real dual-flavor release build.
+
+The failure was not hidden or bypassed. Android Lint reported `InvalidFragmentVersionForActivityResult` for the two `registerForActivityResult` calls in `MainActivity` while assembling the release target.
+
+### Root cause
+The release configuration did not have a sufficiently modern explicit AndroidX Fragment runtime available for ActivityResult's release-Lint contract.
+
+### Fix
+Added the current stable AndroidX Fragment KTX dependency:
+
+`androidx.fragment:fragment-ktx:1.9.1`
+
+No lint baseline, suppression, or fatal-check disabling was introduced.
+
+### Status
+A fresh v0.1.4 branch validation is required. The stable sideload signing bootstrap remains blocked until the full build succeeds.

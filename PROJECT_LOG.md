@@ -159,3 +159,37 @@ Install v0.1.1 on the target Samsung phone, play the same Spotify/YouTube passag
 Added `docs/INFRASTRUCTURE_AUDIT.md`.
 
 LouderMe's core audio path remains fully local. No Supabase/Google backend is required for v0.1.1. The important infrastructure gates are physical audio validation, Play production delivery/update validation and later persistence of mixer/EQ presets. Cloud sync becomes relevant only if account-based preset/profile features are deliberately added.
+
+
+## 2026-10-05 — Target-device validation and 250% range
+
+### Device validation
+Michel reported that LouderMe v0.1.1 audibly increases general/external-app audio on the target Samsung device using the session-0 compatibility engine.
+
+This validates the current path for the intended device, not universally across Android hardware.
+
+### Product decision
+Extend manual boost from 200% to **250%**.
+
+New quick levels:
+- 225% = +7.04 dB target signal gain.
+- 250% = +7.96 dB target signal gain.
+
+### Technical clarification
+The displayed dB value is **digital target signal gain**, derived from the amplitude ratio:
+
+`G_dB = 20 log10(A2/A1)`
+
+It is not a measurement or prediction of loudspeaker sound-pressure level (dB SPL). Acoustic output depends on the output device, amplifier/headroom, vendor DSP, limiter/compression behavior, source material, frequency response, and listening geometry.
+
+### Implementation
+- All internal boost clamps raised to 250%.
+- Slider extended to 250%.
+- 225% and 250% quick controls added.
+- Quick controls reflowed into two rows.
+- UI wording changed to "target signal gain".
+- Unit tests extended through 250%.
+- Version bumped to v0.1.2 / versionCode 3.
+
+### Status
+Pending CI validation and release publication.

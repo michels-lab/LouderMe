@@ -31,20 +31,18 @@ jobs:
 
       - name: Set up Java 17
         if: steps.existing.outputs.exists != 'true'
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Android SDK
+      - name: Prepare Android SDK 36
         if: steps.existing.outputs.exists != 'true'
-        uses: android-actions/setup-android@v3
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-36" "build-tools;36.0.0"
 
-      - name: Install Android 36 platform
-        if: steps.existing.outputs.exists != 'true'
-        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
-
-      - name: Set up Gradle
+      - name: Set up Gradle 8.13
         if: steps.existing.outputs.exists != 'true'
         uses: gradle/actions/setup-gradle@v4
         with:
@@ -63,4 +61,4 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create v0.1.0             LouderMe-v0.1.0-debug.apk             --target "$GITHUB_SHA"             --title "LouderMe v0.1.0 — Foundation"             --notes-file docs/RELEASE_NOTES_v0.1.0.md
+          gh release create v0.1.0 LouderMe-v0.1.0-debug.apk --target "$GITHUB_SHA" --title "LouderMe v0.1.0 — Foundation" --notes-file docs/RELEASE_NOTES_v0.1.0.md

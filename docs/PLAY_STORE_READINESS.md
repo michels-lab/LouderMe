@@ -6,8 +6,8 @@ Last reviewed: 2026-10-05
 - App: LouderMe
 - Developer/studio: Michel's Lab
 - Package: `com.michelslab.louderme`
-- versionName: `0.1.1`
-- versionCode: `2`
+- versionName: `0.1.2`
+- versionCode: `3`
 - compileSdk / targetSdk: `36`
 - minSdk: `29`
 
@@ -38,12 +38,17 @@ Production upload keystore and passwords are not yet configured in this reposito
 
 ## Validated test release\n- GitHub test release: `v0.1.1`.\n- Main CI run: `37299949758` — success.\n- APK package verified as `com.michelslab.louderme`.\n\n## Remaining production gates
 - [x] Current CI build green with real compile/tests.
-- [ ] Physical Samsung device test.
-- [ ] Confirm session-0 effect actually changes external-app output.
-- [ ] Decide behavior if Samsung rejects/ignores session 0.
+- [x] Physical Samsung device test.
+- [x] Confirm session-0 effect actually changes external-app output (user-reported audible validation).
+- [x] Target Samsung accepts the current session-0 path; unsupported/degraded handling remains for other devices.
 - [ ] Generate signed AAB.
 - [ ] Configure Play App Signing/upload key.
 - [ ] Publish final privacy-policy URL.
 - [ ] Complete Play foreground-service declaration.
 - [ ] Internal testing install from Google Play.
 - [ ] Confirm in-app update behavior using Play test track.
+
+
+## Audio terminology
+
+Store/listing copy must describe 150–250% values as **digital signal gain / boost levels**. Do not claim a fixed dB SPL increase or literal multiplication of perceived loudness.

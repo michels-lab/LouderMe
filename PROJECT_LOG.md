@@ -97,3 +97,33 @@ After enabling AndroidX, the next validation build reached Kotlin compilation an
 
 ### Current status
 The LouderMe foundation now builds successfully and has an installable debug APK release. The global/system-wide amplification engine remains intentionally unimplemented and unvalidated; implementing and testing that engine is the next product milestone.
+
+
+## 2026-10-05 — v0.1.1 infrastructure and real audio-engine candidate
+
+### Audit finding
+A cross-app audit found that updater work had left LouderMe internally inconsistent: build metadata was already 0.1.1, MainActivity expected updater-aware UI, but the Compose UI was still the 0.1.0 signature. The existing workflow also reported green after v0.1.0 existed because it skipped the actual Android build.
+
+### Decisions
+- Michel's Lab is now the umbrella product identity.
+- Android package migrated before Play publication to `com.michelslab.louderme`.
+- Current-commit build validation and release publication are separate CI gates.
+- Google Play is the production automatic-update channel.
+- Global audio uses session 0 only as an experimental compatibility path because Android deprecates global insert effects on session 0.
+
+### Implementation prepared
+- Michel's Lab native About with canonical portrait and official links.
+- Google Play update status/actions.
+- User-started special-use foreground service.
+- LoudnessEnhancer session-0 engine with DynamicsProcessing fallback.
+- 100–200% quick levels and fine slider connected to engine requests.
+- Engine/output-route diagnostics.
+- Unit tests for gain mapping.
+- Privacy and Play-readiness documentation.
+- New CI that always builds/tests HEAD and publishes only after validation.
+
+### Validation boundary
+No claim of reliable system-wide boost is permitted until a physical target-device A/B test confirms external-app audio changes.
+
+### Next
+Run branch CI, fix compilation/test issues until green, merge to main, publish v0.1.1, then perform S26 Ultra audio validation.

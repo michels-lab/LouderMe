@@ -1,6 +1,5 @@
-package com.realmichelduarte.louderme.update
+package com.michelslab.louderme.update
 
-import android.app.Activity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.IntentSenderRequest
 import com.google.android.play.core.appupdate.AppUpdateInfo
@@ -10,7 +9,6 @@ import com.google.android.play.core.install.model.AppUpdateType
 import com.google.android.play.core.install.model.UpdateAvailability
 
 class PlayUpdateController(
-    private val activity: Activity,
     private val appUpdateManager: AppUpdateManager,
     private val updateLauncher: ActivityResultLauncher<IntentSenderRequest>,
     private val onStatusChanged: (UpdateStatus) -> Unit,
@@ -50,11 +48,8 @@ class PlayUpdateController(
             }
             .addOnFailureListener { error ->
                 pendingUpdateInfo = null
-
-                // A sideloaded/debug build is not owned by Google Play, so the
-                // Play update API cannot service it. This is expected and is
-                // distinct from a real app failure.
                 val message = error.message.orEmpty()
+
                 if (
                     message.contains("not owned", ignoreCase = true) ||
                     message.contains("install", ignoreCase = true)

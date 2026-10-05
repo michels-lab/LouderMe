@@ -8,7 +8,7 @@ LouderMe exists to increase general phone audio output from apps such as Spotify
 ### UI
 Jetpack Compose.
 - master boost toggle;
-- 100 / 125 / 150 / 175 / 200% quick controls;
+- 100 / 125 / 150 / 175 / 200 / 225 / 250% quick controls;
 - fine slider;
 - output route;
 - engine diagnostics;
@@ -31,12 +31,12 @@ Both use audio session 0 only as an experimental compatibility path.
 Android's public AudioEffect documentation says attaching insert effects to the global output mix with session 0 is deprecated. Therefore:
 - ATTACHED means the effect object was enabled and LouderMe has control;
 - it does **not** mean cross-app gain has been proven;
-- Samsung/target-hardware A/B validation is mandatory.
+- The target Samsung device has been audibly validated with external-app playback. Other Android devices can still behave differently because session-0 global insert effects are deprecated.
 
 ### Gain semantics
-UI percentage is amplitude ratio:
+UI percentage is a digital amplitude ratio. The resulting dB value is **target signal gain**, not acoustic dB SPL:
 
-`gainDb = 20 * log10(percent / 100)`
+`signalGainDb = 20 * log10(percent / 100)`
 
 Examples:
 - 100% = 0.00 dB
@@ -44,6 +44,8 @@ Examples:
 - 150% ≈ +3.52 dB
 - 175% ≈ +4.86 dB
 - 200% ≈ +6.02 dB
+- 225% ≈ +7.04 dB
+- 250% ≈ +7.96 dB
 
 LoudnessEnhancer uses millibels: 100 mB = 1 dB.
 
@@ -63,3 +65,8 @@ Direct/debug GitHub APKs remain a test channel and cannot use Play ownership-bas
 - limiter/compression strategy;
 - device-specific profiles;
 - Smart Boost Beta.
+
+
+### Signal gain vs acoustic level
+
+LouderMe does not infer speaker loudness in dB SPL from the requested digital gain. A +7.96 dB target signal gain at 250% does not guarantee +7.96 dB SPL at the listener. Hardware sensitivity, amplifier headroom, Android/vendor DSP, source crest factor, limiting, frequency response, output route, and listening distance all affect the acoustic result.

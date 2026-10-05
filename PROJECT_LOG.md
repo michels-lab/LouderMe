@@ -308,3 +308,41 @@ The equalizer is a real connected effect, but must still pass compile/tests and 
 
 ### Current status
 Release candidate implementation prepared. Pending CI.
+
+
+## 2026-10-05 — LouderMe v0.1.3 validated and published
+
+### Validation
+- Release-candidate commit: `1451fdbc1fa995b25f419e27cd0f85d5499784bd`.
+- Branch CI run `37384205448`: **success**.
+- Branch validation executed unit tests, Android compilation, package verification, APK/checksum generation and artifact upload.
+- Squash merge to main: `987d4ab3193c67df3c216c13af244ce4f84c48e2`.
+- Main CI/release run `37384489316`: **success**.
+- Main validation again compiled/tested current HEAD before publication.
+
+### Release evidence
+- Tag: `v0.1.3`.
+- Release: **LouderMe v0.1.3**.
+- APK: `LouderMe-v0.1.3-debug.apk`.
+- APK size: 29,112,349 bytes.
+- APK SHA-256: `d34028c20423245b26626c6f2383cddbefc690063ba8c76a4b3deb36170fad90`.
+- Checksum file published alongside the APK.
+
+### Delivered
+- IG Cleaner-inspired native Audio Workspace.
+- Home-visible updater status/actions.
+- Real session-0 Equalizer integrated with the foreground audio service.
+- Seven LouderMe target EQ bands with device-native mapping.
+- Flat, Bass, Deep Bass, Dialogue, Treble, Speaker and Headphones presets.
+- Custom EQ mode.
+- Local EQ persistence.
+- EQ diagnostics.
+- 100–250% boost preserved.
+
+### Validation boundary
+Boost remains audibly validated on the target Samsung device.
+
+The new EQ compiled and is genuinely connected to Android's Equalizer API, but its audible system-wide behavior on the target Samsung device is still pending direct device validation.
+
+### Next
+Install v0.1.3 on the target Samsung, enable Global Boost, switch between Flat / Bass / Dialogue / Treble, confirm audible tonal changes, and inspect EQ Diagnostics for ATTACHED/DEGRADED/UNSUPPORTED plus the native band mapping.

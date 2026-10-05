@@ -204,3 +204,35 @@ Added the repository-level Michel's Lab governance declaration:
 - Reusable/cross-app decisions are promoted to the master standards repository.
 - The master repository polls child status centrally; this repository receives no credential that can write to the master.
 - Secret values remain prohibited from both repositories.
+
+
+## 2026-10-05 — LouderMe v0.1.2 published
+
+### Validation
+- Release-candidate branch CI: `37304511063` — **success**.
+- Main CI/release run: `37304856564` — **success**.
+- Current-HEAD unit tests: passed.
+- Android build: passed.
+- Packaged application ID: `com.michelslab.louderme`.
+- Release publication: passed.
+
+### Release evidence
+- Tag: `v0.1.2`.
+- Release: **LouderMe v0.1.2**.
+- APK: `LouderMe-v0.1.2-debug.apk`.
+- APK size: 28,948,461 bytes.
+- APK SHA-256: `5516c990541bf865189d8ae5be8f718d2edb278fca1bbaed277f559ca6c3e39a`.
+- Checksum file published alongside the APK.
+
+### Product state
+The manual boost range now spans 100–250%.
+
+The displayed dB figure is explicitly **target digital signal gain**, not a measurement of speaker/headphone sound-pressure level (dB SPL).
+
+Target Samsung device evidence from v0.1.1 remains positive: Michel reported audible general/external-app amplification using the current session-0 engine path.
+
+### Next
+- evaluate high-gain quality at 225% and 250%;
+- implement Mixer / EQ;
+- add limiter/compression strategy for high-gain presets;
+- continue Play Store production readiness.

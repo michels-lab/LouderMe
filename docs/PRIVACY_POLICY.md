@@ -6,15 +6,22 @@
 **Draft date:** 2026-10-05
 
 ## Overview
-LouderMe is an Android audio-control application. Its current audio-processing implementation uses Android audio-effect APIs on the device.
+LouderMe is an Android audio-control application. Its current boost and equalizer implementation uses Android audio-effect APIs locally on the device.
 
 ## Audio
-LouderMe does not record microphone audio, capture media audio, upload audio, or store the content being played.
+LouderMe does not record microphone audio, capture media audio, upload audio, or store the audio content being played.
 
 The app does not request microphone permission.
 
 ## Local app data
-LouderMe may store local settings such as the selected boost percentage and last audio-engine status so the interface can preserve user choices.
+LouderMe stores local configuration such as:
+- selected boost percentage;
+- selected equalizer preset;
+- equalizer enabled state;
+- seven requested equalizer band levels;
+- audio-engine state required for the local UI.
+
+This configuration stays on the device.
 
 ## Network / third-party services
 Google Play-installed builds use Google Play's in-app update service to check for and install official app updates.

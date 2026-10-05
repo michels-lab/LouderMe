@@ -236,3 +236,75 @@ Target Samsung device evidence from v0.1.1 remains positive: Michel reported aud
 - implement Mixer / EQ;
 - add limiter/compression strategy for high-gain presets;
 - continue Play Store production readiness.
+
+
+## 2026-10-05 — v0.1.3 IG Cleaner visual family + real equalizer
+
+### Request
+LouderMe should visually resemble the latest IG Cleaner Pro and should already include the equalizer, updater and surrounding production infrastructure rather than being only a visual reskin.
+
+### Source UI audit
+The current IG Cleaner Pro visual system uses:
+- near-black workspace background `#060910`;
+- canvas/surfaces `#090E17`, `#0D1521`, `#111C2B`, `#162335`;
+- cyan `#71D7FF`, blue `#5D9CFF`, gold `#EFBD62`;
+- thin translucent borders;
+- ~20 px rounded surfaces;
+- compact monospace operational labels;
+- command-bar / workspace / dashboard-card hierarchy.
+
+### Visual implementation
+LouderMe now translates that language into native Jetpack Compose:
+- Audio Workspace command bar;
+- Boost Center workspace header;
+- large live-engine hero;
+- quick boost cards;
+- fine-tune panel;
+- metric dashboard;
+- integrated equalizer panel;
+- engine diagnostics;
+- Audio Lab next-module deck;
+- matching About surface.
+
+No WebView or copied HTML is used.
+
+### Equalizer implementation
+Added a real Android session-0 Equalizer path.
+
+LouderMe exposes seven stable target bands:
+60 / 150 / 400 / 1000 / 2500 / 6000 / 12000 Hz.
+
+Because device Equalizer implementations can expose a different band count:
+- each target frequency is mapped using Android's native band lookup;
+- targets resolving to the same native band are grouped;
+- requested gain is averaged for that native band;
+- requests are clamped to the device-reported supported level range;
+- native center-frequency mapping is surfaced in Diagnostics.
+
+User-facing target EQ range: -10 to +10 dB.
+
+Presets:
+Flat, Bass, Deep Bass, Dialogue, Treble, Speaker, Headphones.
+
+Manual adjustment creates Custom.
+
+EQ settings persist locally and apply immediately while Global Boost is active or on the next service start.
+
+### Updater
+The existing Google Play updater remains intact and is now visible directly on Home:
+- automatic availability checks;
+- current status;
+- Check action;
+- Install action when available;
+- About retains the same controls.
+
+### Version
+Bumped to v0.1.3 / versionCode 4.
+
+### Validation boundary
+The boost path is already audibly validated on the target Samsung device.
+
+The equalizer is a real connected effect, but must still pass compile/tests and then audible target-device validation before its Samsung behavior is considered proven.
+
+### Current status
+Release candidate implementation prepared. Pending CI.

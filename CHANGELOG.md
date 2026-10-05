@@ -1,5 +1,28 @@
 # Changelog
 
+## v0.1.3 — 2026-10-05
+
+### Added
+- Native IG Cleaner-inspired Audio Workspace visual system.
+- Real 7-band equalizer controls: 60 Hz, 150 Hz, 400 Hz, 1 kHz, 2.5 kHz, 6 kHz, 12 kHz.
+- EQ presets: Flat, Bass, Deep Bass, Dialogue, Treble, Speaker, Headphones.
+- Custom mode after manual band edits.
+- Persistent local EQ state and presets.
+- Device-band mapping through Android Equalizer session 0.
+- EQ attached/degraded/unsupported diagnostics.
+- Home-screen software update status and Check/Install actions.
+- Unit tests for EQ preset structure and range sanitization.
+
+### Changed
+- LouderMe now uses the current Michel's Lab / IG Cleaner family palette and dashboard hierarchy.
+- About was restyled to the same product family.
+- Output, engine, signal and EQ state are visible as compact dashboard metrics.
+- Mixer/EQ is now functional instead of a disabled placeholder.
+- Privacy documentation now includes locally stored EQ configuration.
+
+### Validation boundary
+Boost is already audibly validated on the target Samsung device. The new EQ implementation still requires an audible target-device test after this build passes CI.
+
 ## v0.1.2 — 2026-10-05
 
 ### Added

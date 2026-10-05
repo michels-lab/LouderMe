@@ -15,12 +15,15 @@ import com.michelslab.louderme.MainActivity
 
 class AudioBoostService : Service() {
     private var engine: AudioEngine? = null
+    private var equalizer: SessionZeroEqualizer? = null
     private var lastState = AudioEngineUiState()
+    private var equalizerState = EqualizerUiState()
 
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
         lastState = AudioBoostStateStore.read(this)
+        equalizerState = EqualizerStateStore.read(this)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -45,6 +48,29 @@ class AudioBoostService : Service() {
                 activate(percent)
             }
 
+            AudioBoostContract.ACTION_SET_EQ -> {
+                equalizerState = EqualizerStateStore.read(this)
+                if (lastState.isRunning) {
+                    applyEqualizer()
+                } else {
+                    publishEqualizerState(
+                        equalizerState.copy(
+                            status = if (equalizerState.enabled) {
+                                EqualizerStatus.READY
+                            } else {
+                                EqualizerStatus.DISABLED
+                            },
+                            implementation = "Waiting for audio engine",
+                            message = if (equalizerState.enabled) {
+                                "EQ will apply when Global Boost is active."
+                            } else {
+                                "EQ is disabled."
+                            },
+                        )
+                    )
+                }
+            }
+
             AudioBoostContract.ACTION_DISABLE -> deactivate()
         }
 
@@ -53,7 +79,9 @@ class AudioBoostService : Service() {
 
     override fun onDestroy() {
         engine?.release()
+        equalizer?.release()
         engine = null
+        equalizer = null
         super.onDestroy()
     }
 
@@ -100,18 +128,46 @@ class AudioBoostService : Service() {
         publishState(state)
 
         if (state.isRunning) {
+            applyEqualizer()
             updateNotification(state)
         } else {
+            equalizer?.release()
+            equalizer = null
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
         }
+    }
+
+    private fun applyEqualizer() {
+        val applying = equalizerState.copy(
+            status = EqualizerStatus.APPLYING,
+            implementation = "Session 0 EQ probe",
+            message = "Applying equalizer…",
+        )
+        publishEqualizerState(applying)
+
+        val activeEqualizer = equalizer ?: SessionZeroEqualizer().also {
+            equalizer = it
+        }
+
+        val result = activeEqualizer.apply(equalizerState)
+
+        publishEqualizerState(
+            equalizerState.copy(
+                status = result.status,
+                implementation = result.implementation,
+                message = result.message,
+            )
+        )
     }
 
     private fun deactivate() {
         val rememberedPercent = lastState.percent.coerceIn(100, 250)
         runCatching { engine?.disable() }
         engine?.release()
+        equalizer?.release()
         engine = null
+        equalizer = null
 
         val off = AudioEngineUiState(
             status = AudioEngineStatus.OFF,
@@ -123,6 +179,20 @@ class AudioBoostService : Service() {
         )
 
         publishState(off)
+        publishEqualizerState(
+            EqualizerStateStore.read(this).let { saved ->
+                saved.copy(
+                    status = if (saved.enabled) EqualizerStatus.READY else EqualizerStatus.DISABLED,
+                    implementation = "Waiting for audio engine",
+                    message = if (saved.enabled) {
+                        "EQ will apply when Global Boost is active."
+                    } else {
+                        "EQ is disabled."
+                    },
+                )
+            }
+        )
+
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
@@ -140,6 +210,27 @@ class AudioBoostService : Service() {
                 .putExtra(AudioBoostContract.EXTRA_ROUTE, state.outputRoute)
                 .putExtra(AudioBoostContract.EXTRA_IMPLEMENTATION, state.implementation)
                 .putExtra(AudioBoostContract.EXTRA_MESSAGE, state.message)
+        )
+    }
+
+    private fun publishEqualizerState(state: EqualizerUiState) {
+        equalizerState = state
+
+        sendBroadcast(
+            Intent(AudioBoostContract.ACTION_EQ_STATE)
+                .setPackage(packageName)
+                .putExtra(AudioBoostContract.EXTRA_EQ_ENABLED, state.enabled)
+                .putExtra(AudioBoostContract.EXTRA_EQ_PRESET, state.preset.name)
+                .putExtra(
+                    AudioBoostContract.EXTRA_EQ_GAINS,
+                    state.gainsDb.toFloatArray()
+                )
+                .putExtra(AudioBoostContract.EXTRA_EQ_STATUS, state.status.name)
+                .putExtra(
+                    AudioBoostContract.EXTRA_EQ_IMPLEMENTATION,
+                    state.implementation
+                )
+                .putExtra(AudioBoostContract.EXTRA_EQ_MESSAGE, state.message)
         )
     }
 
@@ -171,13 +262,21 @@ class AudioBoostService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
+        val eqLabel = if (equalizerState.enabled) {
+            " · EQ " + equalizerState.preset.displayName
+        } else {
+            ""
+        }
+
         return Notification.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_lock_silent_mode_off)
-            .setContentTitle("LouderMe · ${state.percent}%")
+            .setContentTitle("LouderMe · " + state.percent + "%")
             .setContentText(
                 when (state.status) {
-                    AudioEngineStatus.ATTACHED -> "Audio engine attached · ${state.outputRoute}"
-                    AudioEngineStatus.DEGRADED -> "Audio engine running with limited control"
+                    AudioEngineStatus.ATTACHED ->
+                        "Audio engine attached · " + state.outputRoute + eqLabel
+                    AudioEngineStatus.DEGRADED ->
+                        "Audio engine running with limited control" + eqLabel
                     AudioEngineStatus.STARTING -> "Starting audio engine…"
                     else -> state.message
                 }

@@ -2,51 +2,72 @@
 
 **Make everything louder.**
 
-LouderMe is an Android audio booster by **Michel's Lab** focused on increasing low-volume media output with one-tap gain levels, diagnostics, future mixer/EQ controls, and an experimental Smart Boost path.
+LouderMe is an Android audio utility by **Michel's Lab** for increasing quiet media output, shaping sound with a real equalizer, and exposing the state of the Android audio engine instead of hiding it behind fake controls.
 
-## Current product priorities
+## Current release line
 
-1. Real phone-wide audio boost is the primary goal.
-2. One-tap boost levels: 100%, 125%, 150%, 175%, 200%, 225%, 250%.
-3. Fine gain adjustment.
-4. Clear engine status — the UI must not fake global processing.
-5. Mixer / EQ and saved presets.
-6. Smart Boost remains Beta and secondary to reliable manual boost.
+**v0.1.3 — Audio Workspace + 7-band EQ**
+
+### Global Boost
+- 100%, 125%, 150%, 175%, 200%, 225%, 250%.
+- Fine 100–250% slider.
+- Target signal-gain readout.
+- Output-route and engine diagnostics.
+
+### Equalizer
+Seven LouderMe target bands:
+- 60 Hz
+- 150 Hz
+- 400 Hz
+- 1 kHz
+- 2.5 kHz
+- 6 kHz
+- 12 kHz
+
+Presets:
+- Flat
+- Bass
+- Deep Bass
+- Dialogue
+- Treble
+- Speaker
+- Headphones
+- Custom when a band is edited manually
+
+Android devices can expose a different number of native EQ bands. LouderMe maps each target frequency to the nearest band reported by Android and reports the mapping in Diagnostics.
+
+### Updates
+Google Play builds check automatically for a newer version and expose update state directly on Home and in About. Direct/debug GitHub APKs remain a test channel and are not owned by Google Play.
+
+## Visual system
+
+v0.1.3 adopts the same Michel's Lab product-family language used by the current IG Cleaner Pro UI:
+- near-black workspace;
+- blue-black layered surfaces;
+- cyan/blue operational accents;
+- gold for highlighted/special actions;
+- compact monospace status labels;
+- rounded dashboard cards;
+- visible engine/update status.
+
+This is a native Compose implementation, not an embedded copy of IG Cleaner.
 
 ## Identity
 
 - Product: `LouderMe`
 - Studio: **Michel's Lab**
 - Android package: `com.michelslab.louderme`
-- Current development version: `0.1.2`
+- Current version: `0.1.3`
 - Developer: Michel Duarte / Michel Armando Duarte Flores
 - License: Proprietary — All Rights Reserved
 
-## Current audio engine
+## Audio-engine boundary
 
-The first real audio-engine implementation uses an **experimental audio-session-0 compatibility path**. Android documents global insert effects on session 0 as deprecated, so a successful engine attachment is not treated as proof that every external app is being amplified.
-
-The app reports:
-- engine attachment state;
-- requested gain in percent and dB;
-- output route;
-- underlying effect implementation;
-- unsupported/error state.
-
-The session-0 path has been audibly validated on the target Samsung device. Compatibility on other Android devices can still vary.
-
-## Updates
-
-Google Play builds use Play In-App Updates and check automatically for newer versions. Direct/debug GitHub APKs are test builds and are not owned by Google Play, so they cannot use the Play production update channel.
-
-## Project standards
-
-Shared engineering, About, update, branding, release and audit standards live in the private `Michel-Software-Standards` repository. This repository keeps LouderMe's app-specific Project Audit Log.
-
+Boost and EQ use Android audio-effect APIs on the session-0 compatibility path. The boost path was audibly validated on the target Samsung device. Android deprecates global insert effects on session 0, so compatibility on other Android devices can differ.
 
 ## Signal-gain terminology
 
-Percent values are defined as digital amplitude multipliers, not as acoustic sound-pressure levels.
+Percent values are digital amplitude multipliers, not acoustic sound-pressure levels.
 
 Examples:
 - 150% = +3.52 dB target signal gain
@@ -54,4 +75,4 @@ Examples:
 - 225% = +7.04 dB target signal gain
 - 250% = +7.96 dB target signal gain
 
-These dB values do **not** mean the loudspeaker produces the same increase in dB SPL. Actual acoustic output depends on the phone/speaker/headphones, DSP, limiters, source content, frequency response, distance, and other hardware factors.
+Those values do **not** predict dB SPL from a speaker or headphones.

@@ -1,24 +1,20 @@
-# Standard App Project Protocol
+# LouderMe Project Protocol
 
-This project follows the user's standard initialization protocol for every new software app.
+LouderMe follows the shared **Michel Software Standards**.
 
-## Required from day one
-1. Git repository with a `main` branch.
-2. Permanent chronological project log / audit log.
-3. License file.
-4. In-app About section.
+## App-specific requirements
+- permanent `PROJECT_LOG.md`;
+- About from day one;
+- proprietary license;
+- real build-derived version;
+- CI that validates current HEAD;
+- release publication only after successful validation;
+- automatic update awareness on supported production channels;
+- Michel's Lab canonical identity/assets;
+- honest engine state — never display a fake working boost.
 
-## Continuous logging requirements
-The project log must be updated for every important change and include, when applicable:
-- Date.
-- Change, finding, or decision.
-- Pending item or action completed.
-- Test / validation evidence.
-- Current status.
-- Regressions or known limitations.
+## Audio-specific release rule
+A build may say **Engine attached** when Android reports the effect enabled and under LouderMe control. It may not say **system-wide boost validated** until a real-device A/B test with external app audio passes.
 
-## Release discipline
-- Do not claim a feature works unless it has been validated.
-- Version information shown in About must match the actual build version.
-- Major product/architecture decisions belong in the log.
-- Release notes and the project log must be updated before a release is considered complete.
+## Platform-specific rule
+The foreground audio service is a Google Play `specialUse` case and must be declared honestly in Play Console.

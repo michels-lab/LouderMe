@@ -1,25 +1,34 @@
-# About screen specification
+# LouderMe About specification
 
-## Visible app name
-LouderMe
+## Product
+- App: **LouderMe**
+- Studio: **Michel's Lab**
+- Tagline: **Make everything louder.**
+- Package: `com.michelslab.louderme`
 
-## Tagline
-Make everything louder.
+## Developer identity
+- Display name: **Michel Duarte**
+- Formal/legal name: **Michel Armando Duarte Flores**
+- Role: **Developer · Michel's Lab**
+- Canonical portrait: shared Michel's Lab developer portrait.
+- Official links: Instagram, LinkedIn, GitHub, email.
 
-## Purpose
-LouderMe is an Android audio booster designed to make low-volume media easier to hear. Its primary goal is manual system-wide boosting, supported by an EQ/mixer and reusable presets.
+## Required About content
+- build-derived version and versionCode;
+- package ID;
+- software-update state;
+- Check for updates / Install update action;
+- developer identity and portrait;
+- privacy statement;
+- copyright/license.
 
-## About screen content
-- App name: LouderMe
-- Short description: Boost low-volume audio with fast controls, mixer presets, and optional experimental smart processing.
-- Version: read from BuildConfig/version metadata; never hard-code the displayed production version.
-- Developer: Michel Armando Duarte Flores
-- Copyright: © 2026 Michel Armando Duarte Flores
-- License: Proprietary — All Rights Reserved
-- Reserved rows: Project information, Privacy Policy, Open-source notices, Changelog.
+## Update behavior
+Play-installed builds query Google Play for newer versions. Direct/debug APKs must state that the Play update channel is unavailable instead of pretending the app is current.
+
+## Privacy summary
+LouderMe does not record, capture, store, or upload audio content. The first engine stores only local effect state/settings.
 
 ## Rules
-- About must exist in every production build.
-- Version shown in About must match the actual build version.
-- License information must remain accessible offline.
-- Smart Boost must be labeled Beta/Experimental while it remains experimental.
+- Never hard-code a production version separately from `BuildConfig`.
+- Keep Smart Boost labeled Beta while experimental.
+- Never claim global amplification solely because the session-0 engine attached.

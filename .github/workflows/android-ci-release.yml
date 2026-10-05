@@ -1,0 +1,135 @@
+name: LouderMe Android CI & Release
+
+on:
+  push:
+    branches:
+      - main
+      - 'release/**'
+      - 'development/**'
+      - 'fix/**'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    name: Build and validate current HEAD
+    runs-on: ubuntu-latest
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - name: Check out exact commit
+        uses: actions/checkout@v5
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Prepare Android SDK 36
+        run: |
+          SDKMANAGER="${ANDROID_HOME:-/usr/local/lib/android/sdk}/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKMANAGER" ]; then
+            SDKMANAGER="/usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager"
+          fi
+          "$SDKMANAGER" "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Set up Gradle 8.13
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Resolve version
+        id: version
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os, pathlib, re
+          source = pathlib.Path("app/build.gradle.kts").read_text(encoding="utf-8")
+          m = re.search(r'versionName\s*=\s*"([^"]+)"', source)
+          if not m:
+              raise SystemExit("versionName not found")
+          version = m.group(1)
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
+              out.write(f"version={version}\n")
+          print("Version:", version)
+          PY
+
+      - name: Validate Michel's Lab package identity
+        shell: bash
+        run: |
+          grep -q 'namespace = "com.michelslab.louderme"' app/build.gradle.kts
+          grep -q 'applicationId = "com.michelslab.louderme"' app/build.gradle.kts
+
+      - name: Run unit tests and build debug APK
+        run: gradle :app:testDebugUnitTest :app:assembleDebug --stacktrace
+
+      - name: Verify packaged application ID
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          AAPT="${ANDROID_HOME:-/usr/local/lib/android/sdk}/build-tools/36.0.0/aapt"
+          "$AAPT" dump badging app/build/outputs/apk/debug/app-debug.apk | tee artifacts/apk-badging.txt
+          grep -q "package: name='com.michelslab.louderme'" artifacts/apk-badging.txt
+
+      - name: Prepare versioned APK and checksum
+        shell: bash
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          cp app/build/outputs/apk/debug/app-debug.apk "artifacts/LouderMe-v$VERSION-debug.apk"
+          sha256sum "artifacts/LouderMe-v$VERSION-debug.apk" > "artifacts/LouderMe-v$VERSION-debug.apk.sha256"
+
+      - name: Upload validated Android artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: LouderMe-Android-v${{ steps.version.outputs.version }}
+          path: |
+            artifacts/LouderMe-v${{ steps.version.outputs.version }}-debug.apk
+            artifacts/LouderMe-v${{ steps.version.outputs.version }}-debug.apk.sha256
+            artifacts/apk-badging.txt
+
+  publish:
+    name: Publish validated main build
+    needs: validate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out release notes
+        uses: actions/checkout@v5
+
+      - name: Download validated APK
+        uses: actions/download-artifact@v4
+        with:
+          name: LouderMe-Android-v${{ needs.validate.outputs.version }}
+          path: dist
+
+      - name: Publish release if this version is new
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          VERSION="${{ needs.validate.outputs.version }}"
+          TAG="v$VERSION"
+          APK="dist/LouderMe-v$VERSION-debug.apk"
+          CHECKSUM="dist/LouderMe-v$VERSION-debug.apk.sha256"
+          NOTES="docs/RELEASE_NOTES_v$VERSION.md"
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "$TAG already exists. Current HEAD was still fully built and validated; publication is skipped only."
+            exit 0
+          fi
+
+          if [ ! -f "$NOTES" ]; then
+            echo "Missing release notes: $NOTES"
+            exit 1
+          fi
+
+          gh release create "$TAG"             "$APK"             "$CHECKSUM"             --target "$GITHUB_SHA"             --title "LouderMe $TAG"             --notes-file "$NOTES"

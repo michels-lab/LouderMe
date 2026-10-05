@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.realmichelduarte.louderme"
+    namespace = "com.michelslab.louderme"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.realmichelduarte.louderme"
+        applicationId = "com.michelslab.louderme"
         minSdk = 29
         targetSdk = 36
         versionCode = 2
@@ -41,5 +41,6 @@ dependencies {
     implementation("com.google.android.play:app-update:2.1.0")
     implementation("com.google.android.play:app-update-ktx:2.1.0")
 
+    testImplementation("junit:junit:4.13.2")
     debugImplementation("androidx.compose.ui:ui-tooling")
 }

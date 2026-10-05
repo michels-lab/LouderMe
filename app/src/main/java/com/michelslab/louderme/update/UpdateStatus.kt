@@ -1,4 +1,4 @@
-package com.realmichelduarte.louderme.update
+package com.michelslab.louderme.update
 
 sealed interface UpdateStatus {
     data object Checking : UpdateStatus

@@ -1,0 +1,35 @@
+version: 1
+studio: "Michel's Lab"
+project: "LouderMe"
+repository: "realmichelduarte/LouderMe"
+role: "application"
+
+governance:
+  standards_repository: "realmichelduarte/Michel-Software-Standards"
+  reporting_mode: "polled_by_master"
+  source_of_truth:
+    shared_rules: "realmichelduarte/Michel-Software-Standards"
+    project_implementation: "realmichelduarte/LouderMe"
+
+reporting:
+  project_logs:
+    - "PROJECT_LOG.md"
+    - "docs/INFRASTRUCTURE_AUDIT.md"
+  escalate_to_master:
+    - "release_or_version_policy_change"
+    - "cross_app_architecture_decision"
+    - "new_external_service"
+    - "cloud_or_sync_change"
+    - "authentication_or_authorization_change"
+    - "new_secret_requirement"
+    - "security_or_privacy_change"
+    - "distribution_or_update_change"
+    - "shared_brand_or_about_change"
+    - "shared_ci_or_release_pattern"
+    - "resolved_or_new_cross_app_gap"
+
+rules:
+  - "Keep app-specific implementation evidence in this repository."
+  - "Promote reusable decisions and standards to the master standards repository."
+  - "Never store secret values in either repository."
+  - "Do not treat the master repository as a copy of this project's full technical log."

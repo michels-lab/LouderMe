@@ -63,7 +63,7 @@ class DirectUpdateController(
                         versionName =
                             manifest.versionName,
                         channel =
-                            UpdateChannel.DIRECT,
+                            "Michel's Lab Direct",
                     )
                 )
 
@@ -203,6 +203,10 @@ class DirectUpdateController(
                 )
             }
         }
+    }
+
+    fun shutdown() {
+        executor.shutdownNow()
     }
 
     private fun fetchManifest():

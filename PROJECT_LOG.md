@@ -35,3 +35,21 @@ The primary goal is to increase the phone's general audio output so low-volume m
 
 ### Current status
 Foundation release `v0.1.0` prepared. UI shell and project protocol are established; the core global audio engine remains unimplemented and unvalidated.
+
+## 2026-10-05 — Initial release CI setup
+
+### Change / finding
+The first two automated release attempts failed during Android SDK environment setup before the app build started.
+
+### Evidence
+- Run 1 failed because `android-actions/setup-android@v3` attempted to install the obsolete SDK package `tools`.
+- Run 2 failed because the runner's preinstalled `sdkmanager` executable was not exposed on `PATH`.
+
+### Action completed
+- Removed the failing `setup-android` dependency.
+- Updated the workflow to call the runner's Android SDK manager through its explicit SDK path.
+- Updated checkout and Java setup actions to current major versions where applicable.
+- Kept release publication gated behind a successful APK build.
+
+### Current status
+CI workflow corrected and queued for another validation run. No release will be published unless the APK build succeeds.

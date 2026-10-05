@@ -72,3 +72,17 @@ near-black workspace, layered blue-black surfaces, cyan/blue operational accents
 - Current version: `0.1.4`
 - Developer: Michel Duarte / Michel Armando Duarte Flores
 - License: Proprietary — All Rights Reserved
+
+
+## Direct auto-updates
+
+LouderMe now has two update channels:
+
+- **Google Play** builds use Play In-App Updates.
+- **Michel's Lab Direct** builds use a public manifest and stable signed APKs while keeping source private.
+
+Direct updates verify SHA-256, package identity, version and signing identity before Android receives the package.
+
+v0.1.4 is the stable-signing migration baseline. Older CI-debug APKs require one uninstall/reinstall because Android will not accept a new signing identity as an in-place update. After the stable v0.1.4 baseline is installed, later direct releases can update in place.
+
+Android still shows the required system installation confirmation.

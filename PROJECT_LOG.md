@@ -127,3 +127,29 @@ No claim of reliable system-wide boost is permitted until a physical target-devi
 
 ### Next
 Run branch CI, fix compilation/test issues until green, merge to main, publish v0.1.1, then perform S26 Ultra audio validation.
+
+
+## 2026-10-05 — LouderMe v0.1.1 validated and published
+
+### Validation
+- Release-candidate branch commit: `119b3a4982c411f3304c60e3163129d233cb0dd9`.
+- Branch CI run `37299633996`: **success**.
+- Branch validation actually executed unit tests, Android compilation, APK package-ID verification, checksum preparation, and artifact upload.
+- Squash merge to main: `aec0f7c38923c237f12429c16e8b994622565dd1`.
+- Main CI/release run `37299949758`: **success**.
+- Main build again executed the full current-HEAD validation before publication.
+
+### Release evidence
+- Tag: `v0.1.1`.
+- Release: **LouderMe v0.1.1**.
+- APK: `LouderMe-v0.1.1-debug.apk`.
+- APK size: 28,932,073 bytes.
+- APK SHA-256: `e57e9589dc2cae76efaa1c4f697ec3da5a7a917563f2b3edbedebaaddad3102a`.
+- Checksum file published alongside the APK.
+- Package verified by CI: `com.michelslab.louderme`.
+
+### Current status
+The app now has a compiled experimental global-audio compatibility engine and production-oriented update infrastructure. **System-wide amplification is not yet considered validated** because Android deprecates global insert effects on session 0 and the target Samsung device still needs an external-app A/B test.
+
+### Next device test
+Install v0.1.1 on the target Samsung phone, play the same Spotify/YouTube passage at a fixed system volume, compare 100% vs 150% vs 200%, and report the in-app engine status/diagnostic implementation. That evidence determines whether session 0 is genuinely useful on the device or a different architecture is required.

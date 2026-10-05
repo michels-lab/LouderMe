@@ -36,8 +36,8 @@ Current design:
 ## Signing
 Production upload keystore and passwords are not yet configured in this repository and must never be committed.
 
-## Remaining production gates
-- [ ] Current CI build green with real compile/tests.
+## Validated test release\n- GitHub test release: `v0.1.1`.\n- Main CI run: `37299949758` — success.\n- APK package verified as `com.michelslab.louderme`.\n\n## Remaining production gates
+- [x] Current CI build green with real compile/tests.
 - [ ] Physical Samsung device test.
 - [ ] Confirm session-0 effect actually changes external-app output.
 - [ ] Decide behavior if Samsung rejects/ignores session 0.

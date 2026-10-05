@@ -63,7 +63,7 @@ private fun HomeScreen(
     onBoostToggle: (Boolean) -> Unit,
     onBoostLevelSelected: (Int) -> Unit,
 ) {
-    val levels = listOf(100, 125, 150, 175, 200)
+    val levels = listOf(100, 125, 150, 175, 200, 225, 250)
     var sliderValue by remember(audioState.percent) {
         mutableFloatStateOf(audioState.percent.toFloat())
     }
@@ -138,30 +138,39 @@ private fun HomeScreen(
                     Text(
                         String.format(
                             Locale.US,
-                            "%+.2f dB target gain",
+                            "%+.2f dB target signal gain",
                             audioState.gainDb,
                         ),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(5.dp),
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
-                        levels.forEach { level ->
-                            FilterChip(
-                                modifier = Modifier.weight(1f),
-                                selected = audioState.percent == level,
-                                onClick = { onBoostLevelSelected(level) },
-                                label = {
-                                    Text(
-                                        "$level%",
-                                        maxLines = 1,
-                                        style = MaterialTheme.typography.labelSmall,
+                        levels.chunked(4).forEach { rowLevels ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(5.dp),
+                            ) {
+                                rowLevels.forEach { level ->
+                                    FilterChip(
+                                        modifier = Modifier.weight(1f),
+                                        selected = audioState.percent == level,
+                                        onClick = { onBoostLevelSelected(level) },
+                                        label = {
+                                            Text(
+                                                "$level%",
+                                                maxLines = 1,
+                                                style = MaterialTheme.typography.labelSmall,
+                                            )
+                                        },
                                     )
-                                },
-                            )
+                                }
+                                repeat(4 - rowLevels.size) {
+                                    Spacer(modifier = Modifier.weight(1f))
+                                }
+                            }
                         }
                     }
 
@@ -171,8 +180,8 @@ private fun HomeScreen(
                         onValueChangeFinished = {
                             onBoostLevelSelected(sliderValue.roundToInt())
                         },
-                        valueRange = 100f..200f,
-                        steps = 99,
+                        valueRange = 100f..250f,
+                        steps = 149,
                     )
 
                     Row(
@@ -188,7 +197,7 @@ private fun HomeScreen(
                             style = MaterialTheme.typography.labelMedium,
                         )
                         Text(
-                            "200%",
+                            "250%",
                             style = MaterialTheme.typography.labelSmall,
                         )
                     }
@@ -221,7 +230,7 @@ private fun HomeScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Text(
-                            "Compatibility mode uses Android audio session 0. Android deprecates global insert effects on session 0, so an attached engine still needs a real-device A/B test with external apps.",
+                            "Compatibility mode uses Android audio session 0. It was audibly validated on the target Samsung device, but Android deprecates global insert effects on session 0 and compatibility can still vary by phone.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -251,7 +260,7 @@ private fun HomeScreen(
             }
 
             Text(
-                "Quick levels use amplitude gain: 150% ≈ ${String.format(Locale.US, "%.2f", BoostMath.percentToDb(150))} dB and 200% ≈ ${String.format(Locale.US, "%.2f", BoostMath.percentToDb(200))} dB. This does not mean perceived loudness doubles.",
+                "Target signal gain: 150% ≈ ${String.format(Locale.US, "%.2f", BoostMath.percentToDb(150))} dB, 200% ≈ ${String.format(Locale.US, "%.2f", BoostMath.percentToDb(200))} dB, and 250% ≈ ${String.format(Locale.US, "%.2f", BoostMath.percentToDb(250))} dB. These are digital signal-gain values, not acoustic dB SPL. Actual loudspeaker output depends on the device, DSP, source, distance, and output hardware.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -455,7 +464,7 @@ private fun engineStatusText(state: AudioEngineUiState): String =
     when (state.status) {
         AudioEngineStatus.OFF -> "Boost off"
         AudioEngineStatus.STARTING -> "Starting engine…"
-        AudioEngineStatus.ATTACHED -> "Engine attached · device validation required"
+        AudioEngineStatus.ATTACHED -> "Engine attached"
         AudioEngineStatus.DEGRADED -> "Engine attached with limited control"
         AudioEngineStatus.UNSUPPORTED -> "Session-0 boost unsupported on this device"
         AudioEngineStatus.ERROR -> "Audio engine error"

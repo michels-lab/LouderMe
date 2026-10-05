@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.1.2 — 2026-10-05
+
+### Added
+- 225% quick boost level (~+7.04 dB target signal gain).
+- 250% quick boost level (~+7.96 dB target signal gain).
+- Fine boost slider extended through 250%.
+- Gain-conversion tests for 225% and 250%.
+
+### Changed
+- All boost clamps now support 100–250%.
+- Quick controls wrap into two rows for better mobile spacing.
+- UI terminology now says **target signal gain** to distinguish digital gain from acoustic dB SPL.
+- Engine messaging now records that the target Samsung device audibly responded to the session-0 path.
+
+### Technical note
+The reported dB values are digital amplitude-gain values. They are not measurements of loudspeaker SPL, and higher gain may trigger device/source-dependent limiting, compression, or distortion.
+
 ## v0.1.1 — 2026-10-05
 
 ### Added

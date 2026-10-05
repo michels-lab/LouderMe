@@ -18,7 +18,7 @@ class SessionZeroAudioEngine : AudioEngine {
     private var dynamicsProcessing: DynamicsProcessing? = null
 
     override fun enable(percent: Int): AudioEngineResult {
-        val safePercent = percent.coerceIn(100, 200)
+        val safePercent = percent.coerceIn(100, 250)
         val gainDb = BoostMath.percentToDb(safePercent)
 
         val loudnessResult = runCatching {
@@ -46,7 +46,7 @@ class SessionZeroAudioEngine : AudioEngine {
                 gainDb = gainDb,
                 implementation = "Session 0 · ${descriptor.name} · ${descriptor.implementor}",
                 message = if (enabled && hasControl) {
-                    "Engine attached. Test Spotify/YouTube to confirm this device applies it globally."
+                    "Engine attached. This path was audibly validated on the target Samsung device."
                 } else {
                     "Effect exists, but LouderMe does not have full control of the engine."
                 },
@@ -84,7 +84,7 @@ class SessionZeroAudioEngine : AudioEngine {
                 gainDb = gainDb,
                 implementation = "Session 0 fallback · ${descriptor.name} · ${descriptor.implementor}",
                 message = if (enabled && hasControl) {
-                    "Dynamics engine attached. External-app amplification still requires device validation."
+                    "Dynamics engine attached. Compatibility can still vary by device."
                 } else {
                     "Dynamics effect opened, but LouderMe does not have full control."
                 },

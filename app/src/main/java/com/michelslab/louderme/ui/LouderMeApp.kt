@@ -343,12 +343,35 @@ private fun UpdateStrip(
         }
 
         when (status) {
-            UpdateStatus.UpdateAvailable,
+            is UpdateStatus.UpdateAvailable,
+            is UpdateStatus.ReadyToInstall,
+            is UpdateStatus.InstallPermissionRequired,
             UpdateStatus.UpdateCancelled -> {
                 TextButton(onClick = onInstallUpdate) {
                     Text("Update", color = LouderMeColors.Gold)
                 }
             }
+
+            is UpdateStatus.Downloading -> {
+                Text(
+                    status.progressPercent.toString() + "%",
+                    color = LouderMeColors.Cyan,
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+
+            is UpdateStatus.Installing -> {
+                Text(
+                    "INSTALLING",
+                    color = LouderMeColors.Gold,
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+
             UpdateStatus.Checking -> {
                 Text(
                     "CHECKING",
@@ -358,6 +381,7 @@ private fun UpdateStrip(
                     fontWeight = FontWeight.Bold,
                 )
             }
+
             else -> {
                 TextButton(onClick = onCheckForUpdates) {
                     Text("Check", color = LouderMeColors.Cyan)
@@ -1281,11 +1305,21 @@ private fun AboutScreen(
                     BuildConfig.VERSION_NAME + " · code " + BuildConfig.VERSION_CODE,
                 )
                 InfoRow("Package", BuildConfig.APPLICATION_ID)
+                InfoRow(
+                    "Channel",
+                    if (BuildConfig.UPDATE_CHANNEL == "play") {
+                        "Google Play"
+                    } else {
+                        "Michel's Lab direct"
+                    },
+                )
                 InfoRow("Update", updateStatusText(updateStatus))
                 Spacer(Modifier.height(12.dp))
 
                 if (
-                    updateStatus == UpdateStatus.UpdateAvailable ||
+                    updateStatus is UpdateStatus.UpdateAvailable ||
+                    updateStatus is UpdateStatus.ReadyToInstall ||
+                    updateStatus is UpdateStatus.InstallPermissionRequired ||
                     updateStatus == UpdateStatus.UpdateCancelled
                 ) {
                     Button(
@@ -1300,7 +1334,10 @@ private fun AboutScreen(
                     }
                 } else {
                     OutlinedButton(
-                        enabled = updateStatus != UpdateStatus.Checking,
+                        enabled =
+                            updateStatus != UpdateStatus.Checking &&
+                            updateStatus !is UpdateStatus.Downloading &&
+                            updateStatus !is UpdateStatus.Installing,
                         onClick = onCheckForUpdates,
                         border = BorderStroke(1.dp, LouderMeColors.LineStrong),
                         shape = RoundedCornerShape(12.dp),
@@ -1311,7 +1348,7 @@ private fun AboutScreen(
 
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "Google Play builds check through Play. Direct/debug APKs are a test channel and are not owned by Google Play.",
+                    "Google Play builds update through Play. Michel's Lab direct builds check the public release feed automatically, download and verify the APK, then hand installation to Android for the required system confirmation.",
                     color = LouderMeColors.Muted,
                     style = MaterialTheme.typography.bodySmall,
                 )
@@ -1433,7 +1470,11 @@ private fun updateStatusColor(status: UpdateStatus): Color =
     when (status) {
         UpdateStatus.Checking -> LouderMeColors.Cyan
         UpdateStatus.UpToDate -> LouderMeColors.Green
-        UpdateStatus.UpdateAvailable -> LouderMeColors.Gold
+        is UpdateStatus.UpdateAvailable -> LouderMeColors.Gold
+        is UpdateStatus.Downloading -> LouderMeColors.Cyan
+        is UpdateStatus.ReadyToInstall -> LouderMeColors.Gold
+        is UpdateStatus.InstallPermissionRequired -> LouderMeColors.Gold
+        is UpdateStatus.Installing -> LouderMeColors.Gold
         UpdateStatus.PlayStoreUnavailable -> LouderMeColors.Muted
         UpdateStatus.UpdateCancelled -> LouderMeColors.Gold
         is UpdateStatus.Error -> LouderMeColors.Red
@@ -1461,10 +1502,37 @@ private fun engineMetricText(status: AudioEngineStatus): String =
 
 private fun updateStatusText(status: UpdateStatus): String =
     when (status) {
-        UpdateStatus.Checking -> "Checking for updates…"
-        UpdateStatus.UpToDate -> "Up to date"
-        UpdateStatus.UpdateAvailable -> "Update available"
-        UpdateStatus.PlayStoreUnavailable -> "Play updater unavailable in this test build"
-        UpdateStatus.UpdateCancelled -> "Update available · installation postponed"
-        is UpdateStatus.Error -> "Unable to check for updates"
+        UpdateStatus.Checking ->
+            "Checking for updates…"
+
+        UpdateStatus.UpToDate ->
+            "Up to date"
+
+        is UpdateStatus.UpdateAvailable ->
+            status.versionName?.let {
+                "Version " + it + " available"
+            } ?: "Update available"
+
+        is UpdateStatus.Downloading ->
+            "Downloading " + status.versionName +
+                " · " + status.progressPercent + "%"
+
+        is UpdateStatus.ReadyToInstall ->
+            "Version " + status.versionName +
+                " verified · ready to install"
+
+        is UpdateStatus.InstallPermissionRequired ->
+            "Allow LouderMe to install this verified update"
+
+        is UpdateStatus.Installing ->
+            "Installing version " + status.versionName + "…"
+
+        UpdateStatus.PlayStoreUnavailable ->
+            "Google Play update channel unavailable"
+
+        UpdateStatus.UpdateCancelled ->
+            "Update available · installation postponed"
+
+        is UpdateStatus.Error ->
+            status.message ?: "Unable to check for updates"
     }

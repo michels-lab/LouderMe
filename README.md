@@ -6,7 +6,7 @@ LouderMe is an Android audio utility by **Michel's Lab** for increasing quiet me
 
 ## Current release line
 
-**v0.1.3 — Audio Workspace + 7-band EQ**
+**v0.1.4 — Dual-channel automatic updates**
 
 ### Global Boost
 - 100%, 125%, 150%, 175%, 200%, 225%, 250%.
@@ -16,63 +16,59 @@ LouderMe is an Android audio utility by **Michel's Lab** for increasing quiet me
 
 ### Equalizer
 Seven LouderMe target bands:
-- 60 Hz
-- 150 Hz
-- 400 Hz
-- 1 kHz
-- 2.5 kHz
-- 6 kHz
-- 12 kHz
+60 Hz, 150 Hz, 400 Hz, 1 kHz, 2.5 kHz, 6 kHz, 12 kHz.
 
 Presets:
-- Flat
-- Bass
-- Deep Bass
-- Dialogue
-- Treble
-- Speaker
-- Headphones
-- Custom when a band is edited manually
+Flat, Bass, Deep Bass, Dialogue, Treble, Speaker, Headphones, plus Custom.
 
-Android devices can expose a different number of native EQ bands. LouderMe maps each target frequency to the nearest band reported by Android and reports the mapping in Diagnostics.
+## Updates
 
-### Updates
-Google Play builds check automatically for a newer version and expose update state directly on Home and in About. Direct/debug GitHub APKs remain a test channel and are not owned by Google Play.
+LouderMe now has two explicit distribution flavors.
+
+### Google Play
+The `play` flavor:
+- uses Google Play In-App Updates;
+- checks automatically;
+- exposes Check/Install actions;
+- does **not** request `REQUEST_INSTALL_PACKAGES`.
+
+### Michel's Lab direct / sideload
+The `sideload` flavor:
+- checks a public Michel's Lab update manifest automatically;
+- downloads a newer APK automatically;
+- validates SHA-256;
+- validates package ID and versionCode;
+- validates that the APK is signed by the same LouderMe sideload release key;
+- then hands installation to Android.
+
+Android still requires system/user confirmation for APK installation.
+
+Public feed:
+`realmichelduarte/michel-s-life-releases/louderme/latest.json`
+
+The LouderMe source repository remains private.
+
+## One-time signing transition
+
+Versions through v0.1.3 were GitHub CI debug APKs. Hosted CI debug certificates are not a durable update identity.
+
+v0.1.4 establishes the first **stable Michel's Lab sideload signing key**. Because Android only allows in-place updates signed by an accepted signing identity, an existing v0.1.3 debug installation cannot be silently converted to the new stable key.
+
+The one-time migration is:
+1. install/save any desired settings manually;
+2. uninstall the old debug-signed LouderMe;
+3. install the stable-signed v0.1.4 sideload APK;
+4. from then on, the direct updater can perform future same-key updates.
 
 ## Visual system
 
-v0.1.3 adopts the same Michel's Lab product-family language used by the current IG Cleaner Pro UI:
-- near-black workspace;
-- blue-black layered surfaces;
-- cyan/blue operational accents;
-- gold for highlighted/special actions;
-- compact monospace status labels;
-- rounded dashboard cards;
-- visible engine/update status.
-
-This is a native Compose implementation, not an embedded copy of IG Cleaner.
+LouderMe follows the current IG Cleaner Pro family language:
+near-black workspace, layered blue-black surfaces, cyan/blue operational accents, gold highlights, compact status badges and dashboard cards.
 
 ## Identity
-
 - Product: `LouderMe`
 - Studio: **Michel's Lab**
 - Android package: `com.michelslab.louderme`
-- Current version: `0.1.3`
+- Current version: `0.1.4`
 - Developer: Michel Duarte / Michel Armando Duarte Flores
 - License: Proprietary — All Rights Reserved
-
-## Audio-engine boundary
-
-Boost and EQ use Android audio-effect APIs on the session-0 compatibility path. The boost path was audibly validated on the target Samsung device. Android deprecates global insert effects on session 0, so compatibility on other Android devices can differ.
-
-## Signal-gain terminology
-
-Percent values are digital amplitude multipliers, not acoustic sound-pressure levels.
-
-Examples:
-- 150% = +3.52 dB target signal gain
-- 200% = +6.02 dB target signal gain
-- 225% = +7.04 dB target signal gain
-- 250% = +7.96 dB target signal gain
-
-Those values do **not** predict dB SPL from a speaker or headphones.

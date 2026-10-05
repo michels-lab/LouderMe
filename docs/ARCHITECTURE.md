@@ -1,85 +1,67 @@
 # LouderMe Architecture
 
 ## Core success criterion
+LouderMe increases general phone audio output from apps such as Spotify, YouTube, Instagram and browsers, then lets the user shape that signal transparently.
 
-LouderMe exists to increase general phone audio output from apps such as Spotify, YouTube, Instagram and browsers, then let the user shape that signal transparently.
+## Distribution flavors
 
-## UI
+### `play`
+BuildConfig update channel: `play`.
 
-Native Jetpack Compose.
+Uses Google Play In-App Updates. The manifest intentionally does not request `REQUEST_INSTALL_PACKAGES`.
 
-v0.1.3 adopts the current IG Cleaner Pro product-family visual language:
-- background `#060910`;
-- canvas/surfaces `#090E17`, `#0D1521`, `#111C2B`;
-- cyan `#71D7FF`, blue `#5D9CFF`, gold `#EFBD62`;
-- compact status badges and monospace operational labels;
-- dashboard/workspace cards.
+### `sideload`
+BuildConfig update channel: `direct`.
 
-The layouts are Android-native rather than copied web markup.
+Uses the Michel's Lab public update manifest while keeping source code private.
+
+Manifest:
+`https://raw.githubusercontent.com/realmichelduarte/michel-s-life-releases/main/louderme/latest.json`
+
+Only the sideload manifest adds `REQUEST_INSTALL_PACKAGES`.
+
+## Direct updater pipeline
+
+1. App checks `latest.json` over HTTPS.
+2. If `versionCode` is newer, it downloads the APK.
+3. It verifies the manifest SHA-256.
+4. It inspects the downloaded APK with Android PackageManager.
+5. Package name must equal `com.michelslab.louderme`.
+6. APK versionCode must match the manifest and be newer than the running build.
+7. Candidate signing-certificate SHA-256 must intersect the installed app's signing history/current signers.
+8. If the app is not yet allowed to install packages, Android's per-source settings screen is opened.
+9. PackageInstaller streams the already-verified APK into an install session.
+10. Android presents any required user confirmation.
+
+The updater does not contain a GitHub token.
+
+## Signing identity
+
+A stable private sideload key is required for in-place APK updates.
+
+GitHub-hosted debug keystores are unsuitable because a fresh hosted runner can generate a different debug key.
+
+v0.1.4 therefore bootstraps one stable sideload signing key in a private CI artifact. The private key must then be transferred into GitHub Actions secrets or another proper secret manager and never committed to Git.
 
 ## Audio foreground service
-
-`AudioBoostService` is a user-started foreground service using Android's `specialUse` foreground-service type so audio effects can remain active while another app is foregrounded.
+`AudioBoostService` is a user-started foreground service using Android's `specialUse` foreground-service type.
 
 ## Boost engine
-
-`AudioEngine` currently tries:
-
 1. `LoudnessEnhancer(0)`
-2. fallback: `DynamicsProcessing(0)`
+2. fallback `DynamicsProcessing(0)`
 
-The target Samsung device has been audibly validated with external-app playback.
+Target Samsung external-app boost is audibly validated.
 
 ## Equalizer engine
-
 `SessionZeroEqualizer` uses `Equalizer(0, 0)`.
 
-The UI exposes seven stable target bands:
-`60, 150, 400, 1000, 2500, 6000, 12000 Hz`.
+Product target bands:
+60, 150, 400, 1000, 2500, 6000, 12000 Hz.
 
-Android Equalizer implementations expose a device-specific band count and center frequencies. LouderMe therefore:
-
-1. asks Android which native band contains each target frequency;
-2. groups LouderMe target bands that resolve to the same native band;
-3. averages their requested gain;
-4. clamps the request to the device-reported band-level range;
-5. applies the native level;
-6. exposes the resulting mapping in Diagnostics.
-
-The user-facing EQ range is -10 to +10 dB target band gain.
-
-## EQ persistence
-
-`EqualizerStateStore` persists:
-- enabled state;
-- selected preset;
-- seven requested band gains.
-
-Preset changes and custom bands apply immediately while Global Boost is running. If boost is off, the configuration is saved and applies the next time the audio service starts.
-
-## Gain semantics
-
-Boost percentage is a digital amplitude ratio:
-
-`signalGainDb = 20 * log10(percent / 100)`
-
-The displayed dB value is target signal gain, not acoustic dB SPL.
-
-## Updates
-
-Google Play In-App Updates:
-- automatic check on launch/resume;
-- visible status on the Home workspace;
-- manual Check action;
-- Install update action when available;
-- update controls also remain in About;
-- interrupted immediate updates resume on foreground.
-
-Direct/debug GitHub APKs cannot use Play ownership-based in-app updates.
+Target bands are mapped to Android-reported native EQ bands and clamped to the device range.
 
 ## Remaining audio milestones
-
-- validate the EQ audibly on the target Samsung device;
+- validate EQ audibly on target Samsung;
 - limiter/compressor for high boost;
 - output-device profiles;
 - Smart Boost Beta;

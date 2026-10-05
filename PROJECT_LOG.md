@@ -346,3 +346,55 @@ The new EQ compiled and is genuinely connected to Android's Equalizer API, but i
 
 ### Next
 Install v0.1.3 on the target Samsung, enable Global Boost, switch between Flat / Bass / Dialogue / Treble, confirm audible tonal changes, and inspect EQ Diagnostics for ATTACHED/DEGRADED/UNSUPPORTED plus the native band mapping.
+
+
+## 2026-10-05 — v0.1.4 direct/sideload automatic updater
+
+### Problem
+The v0.1.3 updater only used Google Play In-App Updates. The APK currently installed directly from GitHub is not owned by Google Play, so it cannot use that production Play channel.
+
+The private LouderMe source repository also cannot be queried anonymously from a shipped APK without embedding a private credential, which is prohibited.
+
+### Architecture decision
+Create two distribution flavors:
+- `play` — Google Play updater; no APK-install permission.
+- `sideload` — Michel's Lab direct updater.
+
+The direct updater reads a public manifest from the existing public release infrastructure while the application source stays private.
+
+### Direct updater implementation
+The sideload channel now:
+1. checks the public manifest automatically;
+2. compares versionCode;
+3. downloads a newer APK;
+4. verifies SHA-256;
+5. verifies package ID;
+6. verifies candidate versionCode;
+7. verifies that candidate and installed LouderMe share an accepted signing certificate;
+8. requests Android's per-source install permission when necessary;
+9. streams the verified APK through PackageInstaller;
+10. lets Android present mandatory user confirmation.
+
+### Play policy separation
+`REQUEST_INSTALL_PACKAGES` exists only in `src/sideload/AndroidManifest.xml`.
+
+The Play flavor does not request it.
+
+### Signing finding
+The v0.1.3 and earlier GitHub APKs were hosted-CI debug builds. A runner debug key is not an acceptable long-term update identity.
+
+v0.1.4 therefore creates a one-time stable sideload signing key in a private CI bootstrap artifact. The key must be transferred into secure CI secrets and never committed.
+
+Because the currently installed v0.1.3 has a different signing identity, migration to stable v0.1.4 requires one uninstall/reinstall. Future stable sideload builds can update in place.
+
+### Public feed
+Bootstrap feed created:
+`realmichelduarte/michel-s-life-releases/louderme/latest.json`
+
+No LouderMe source code or private token is exposed by this feed.
+
+### Version
+v0.1.4 / versionCode 5.
+
+### Status
+Implementation prepared on `release/v0.1.4`. Pending CI validation and stable signing bootstrap.

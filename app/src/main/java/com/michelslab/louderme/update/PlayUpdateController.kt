@@ -25,14 +25,22 @@ class PlayUpdateController(
                     info.updateAvailability() ==
                         UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS -> {
                         pendingUpdateInfo = info
-                        onStatusChanged(UpdateStatus.UpdateAvailable)
+                        onStatusChanged(
+                            UpdateStatus.UpdateAvailable(
+                                channel = UpdateChannel.PLAY,
+                            )
+                        )
                         startImmediateUpdate(info)
                     }
 
                     info.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE &&
                         info.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE) -> {
                         pendingUpdateInfo = info
-                        onStatusChanged(UpdateStatus.UpdateAvailable)
+                        onStatusChanged(
+                            UpdateStatus.UpdateAvailable(
+                                channel = UpdateChannel.PLAY,
+                            )
+                        )
 
                         if (allowAutomaticPrompt && !autoPromptedThisProcess) {
                             autoPromptedThisProcess = true
@@ -79,7 +87,11 @@ class PlayUpdateController(
                     UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS
                 ) {
                     pendingUpdateInfo = info
-                    onStatusChanged(UpdateStatus.UpdateAvailable)
+                    onStatusChanged(
+                            UpdateStatus.UpdateAvailable(
+                                channel = UpdateChannel.PLAY,
+                            )
+                        )
                     startImmediateUpdate(info)
                 } else {
                     checkForUpdates(allowAutomaticPrompt = !autoPromptedThisProcess)

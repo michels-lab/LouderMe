@@ -60,7 +60,7 @@ class AudioBoostService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun activate(requestedPercent: Int) {
-        val percent = requestedPercent.coerceIn(100, 200)
+        val percent = requestedPercent.coerceIn(100, 250)
         val starting = AudioEngineUiState(
             status = AudioEngineStatus.STARTING,
             percent = percent,
@@ -108,7 +108,7 @@ class AudioBoostService : Service() {
     }
 
     private fun deactivate() {
-        val rememberedPercent = lastState.percent.coerceIn(100, 200)
+        val rememberedPercent = lastState.percent.coerceIn(100, 250)
         runCatching { engine?.disable() }
         engine?.release()
         engine = null

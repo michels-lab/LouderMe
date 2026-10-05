@@ -4,14 +4,15 @@ import android.app.Activity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.IntentSenderRequest
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
+import com.michelslab.louderme.BuildConfig
 
 class UpdateCoordinator(
-    private val activity: Activity,
+    activity: Activity,
     updateLauncher: ActivityResultLauncher<IntentSenderRequest>,
-    private val onStatusChanged: (UpdateStatus) -> Unit,
+    onStatusChanged: (UpdateStatus) -> Unit,
 ) {
-    private val playInstall =
-        UpdateChannelDetector.isPlayInstall(activity)
+    private val isPlayChannel =
+        BuildConfig.UPDATE_CHANNEL == "play"
 
     private val playController = PlayUpdateController(
         appUpdateManager = AppUpdateManagerFactory.create(activity),
@@ -19,54 +20,51 @@ class UpdateCoordinator(
         onStatusChanged = onStatusChanged,
     )
 
-    private val sideloadController = SideloadUpdateController(
+    private val directController = DirectUpdateController(
         activity = activity,
         onStatusChanged = onStatusChanged,
     )
 
     fun checkForUpdates(automatic: Boolean) {
-        if (playInstall) {
+        if (isPlayChannel) {
             playController.checkForUpdates(
                 allowAutomaticPrompt = automatic
             )
         } else {
-            sideloadController.checkForUpdates(
-                automatic = automatic
+            directController.checkForUpdates(
+                allowAutomaticPrompt = automatic
             )
         }
     }
 
     fun installAvailableUpdate() {
-        if (playInstall) {
+        if (isPlayChannel) {
             playController.installAvailableUpdate()
         } else {
-            sideloadController.installAvailableUpdate()
+            directController.installAvailableUpdate()
         }
     }
 
     fun onResume() {
-        if (playInstall) {
+        if (isPlayChannel) {
             playController.resumeInterruptedUpdate()
         } else {
-            sideloadController.resumePendingInstall()
-            sideloadController.checkForUpdates(
-                automatic = true
-            )
+            directController.resumeInterruptedUpdate()
         }
     }
 
     fun markPlayUpdateCancelled() {
-        if (playInstall) {
+        if (isPlayChannel) {
             playController.markUpdateCancelled()
         }
     }
 
     fun shutdown() {
-        sideloadController.shutdown()
+        directController.shutdown()
     }
 
     fun channelLabel(): String =
-        if (playInstall) {
+        if (isPlayChannel) {
             "Google Play"
         } else {
             "Michel's Lab Direct"

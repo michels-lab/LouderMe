@@ -372,6 +372,16 @@ private fun UpdateStrip(
                 )
             }
 
+            is UpdateStatus.SignatureMismatch -> {
+                Text(
+                    "REINSTALL",
+                    color = LouderMeColors.Red,
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 8.sp,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
+
             UpdateStatus.Checking -> {
                 Text(
                     "CHECKING",
@@ -1307,11 +1317,7 @@ private fun AboutScreen(
                 InfoRow("Package", BuildConfig.APPLICATION_ID)
                 InfoRow(
                     "Channel",
-                    if (BuildConfig.UPDATE_CHANNEL == "play") {
-                        "Google Play"
-                    } else {
-                        "Michel's Lab direct"
-                    },
+                    "Automatic · Play / Michel's Lab Direct",
                 )
                 InfoRow("Update", updateStatusText(updateStatus))
                 Spacer(Modifier.height(12.dp))
@@ -1475,6 +1481,7 @@ private fun updateStatusColor(status: UpdateStatus): Color =
         is UpdateStatus.ReadyToInstall -> LouderMeColors.Gold
         is UpdateStatus.InstallPermissionRequired -> LouderMeColors.Gold
         is UpdateStatus.Installing -> LouderMeColors.Gold
+        is UpdateStatus.SignatureMismatch -> LouderMeColors.Red
         UpdateStatus.PlayStoreUnavailable -> LouderMeColors.Muted
         UpdateStatus.UpdateCancelled -> LouderMeColors.Gold
         is UpdateStatus.Error -> LouderMeColors.Red
@@ -1525,7 +1532,10 @@ private fun updateStatusText(status: UpdateStatus): String =
             "Allow LouderMe to install this verified update"
 
         is UpdateStatus.Installing ->
-            "Installing version " + status.versionName + "…"
+            "Android installer opened for " + status.versionName
+
+        is UpdateStatus.SignatureMismatch ->
+            "Stable signer migration required for " + status.versionName
 
         UpdateStatus.PlayStoreUnavailable ->
             "Google Play update channel unavailable"

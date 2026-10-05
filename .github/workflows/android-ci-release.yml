@@ -1,4 +1,4 @@
-name: LouderMe Android CI
+name: LouderMe Android CI & Release
 
 on:
   push:
@@ -22,6 +22,7 @@ jobs:
 
     outputs:
       version: ${{ steps.version.outputs.version }}
+      version_code: ${{ steps.version.outputs.version_code }}
 
     steps:
       - name: Check out exact commit
@@ -53,13 +54,18 @@ jobs:
           python3 - <<'PY'
           import os, pathlib, re
           source = pathlib.Path("app/build.gradle.kts").read_text(encoding="utf-8")
-          m = re.search(r'versionName\s*=\s*"([^"]+)"', source)
-          if not m:
-              raise SystemExit("versionName not found")
-          version = m.group(1)
+
+          name = re.search(r'versionName\s*=\s*"([^"]+)"', source)
+          code = re.search(r'versionCode\s*=\s*(\d+)', source)
+
+          if not name or not code:
+              raise SystemExit("versionName/versionCode not found")
+
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
-              out.write(f"version={version}\n")
-          print("Version:", version)
+              out.write(f"version={name.group(1)}\n")
+              out.write(f"version_code={code.group(1)}\n")
+
+          print("Version:", name.group(1), "code", code.group(1))
           PY
 
       - name: Validate Michel's Lab package identity
@@ -119,7 +125,10 @@ jobs:
   bootstrap_sideload_signing:
     name: Bootstrap stable sideload signing key
     needs: validate
-    if: github.event_name == 'push' && github.ref == 'refs/heads/release/v0.1.4'
+    if: >
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/release/v0.1.4' &&
+      contains(github.event.head_commit.message, '[bootstrap-signing]')
     runs-on: ubuntu-latest
 
     steps:
@@ -144,7 +153,6 @@ jobs:
           path: validated
 
       - name: Generate one-time stable sideload signing material
-        id: bootstrap
         shell: bash
         run: |
           set -euo pipefail
@@ -169,32 +177,31 @@ jobs:
           "$BUILD_TOOLS/apksigner" verify             --verbose             --print-certs             "$FINAL"             > signed/signature-verification.txt
 
           sha256sum "$FINAL" > "$FINAL.sha256"
+          base64 -w 0 signing/louderme-sideload.jks > signing/keystore.base64.txt
 
-          BASE64_KEYSTORE="$(base64 -w 0 signing/louderme-sideload.jks)"
-
-          {
-            echo "LOUDERME_SIDELOAD_KEYSTORE_BASE64=$BASE64_KEYSTORE"
-            echo "LOUDERME_SIDELOAD_STORE_PASSWORD=$STORE_PASS"
-            echo "LOUDERME_SIDELOAD_KEY_ALIAS=$ALIAS"
-            echo "LOUDERME_SIDELOAD_KEY_PASSWORD=$KEY_PASS"
-          } > signing/github-actions-secrets.txt
+          cat > signing/github-secret-names.txt <<TXT
+          LOUDERME_SIDELOAD_KEYSTORE_BASE64=<contents of keystore.base64.txt>
+          LOUDERME_SIDELOAD_STORE_PASSWORD=$STORE_PASS
+          LOUDERME_SIDELOAD_KEY_ALIAS=$ALIAS
+          LOUDERME_SIDELOAD_KEY_PASSWORD=$KEY_PASS
+          TXT
 
           cat > signing/README-PRIVATE.txt <<'TXT'
-          LouderMe sideload signing material
+          LouderMe stable sideload signing handoff
 
           KEEP THIS PRIVATE.
 
-          This key signs the Michel's Lab direct/sideload channel.
-          Losing it breaks in-place updates for sideload installations.
+          Download this artifact once, back up louderme-sideload.jks securely,
+          and add the four values in github-secret-names.txt as repository
+          Actions secrets in realmichelduarte/LouderMe.
+
+          Losing the key breaks future in-place sideload updates.
           Exposing it allows another party to impersonate LouderMe updates.
 
-          Add the four values from github-actions-secrets.txt as
-          GitHub Actions repository secrets in realmichelduarte/LouderMe.
-
-          Never commit this folder or its contents to Git.
+          This bootstrap artifact is retained for only 7 days.
           TXT
 
-      - name: Upload signed v0.1.4 bootstrap APK
+      - name: Upload signed bootstrap APK
         uses: actions/upload-artifact@v4
         with:
           name: LouderMe-v${{ needs.validate.outputs.version }}-stable-sideload
@@ -209,3 +216,150 @@ jobs:
           name: LouderMe-sideload-signing-material-PRIVATE
           retention-days: 7
           path: signing/
+
+  publish:
+    name: Sign and publish validated release
+    needs: validate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out release notes
+        uses: actions/checkout@v5
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Prepare Android build tools
+        run: |
+          SDKMANAGER="${ANDROID_HOME:-/usr/local/lib/android/sdk}/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKMANAGER" ]; then
+            SDKMANAGER="/usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager"
+          fi
+          "$SDKMANAGER" "build-tools;36.0.0"
+
+      - name: Download validated unsigned APK
+        uses: actions/download-artifact@v4
+        with:
+          name: LouderMe-Android-v${{ needs.validate.outputs.version }}
+          path: validated
+
+      - name: Require stable signing and public-feed secrets
+        env:
+          KEYSTORE_B64: ${{ secrets.LOUDERME_SIDELOAD_KEYSTORE_BASE64 }}
+          STORE_PASS: ${{ secrets.LOUDERME_SIDELOAD_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.LOUDERME_SIDELOAD_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.LOUDERME_SIDELOAD_KEY_PASSWORD }}
+          RELEASES_TOKEN: ${{ secrets.MICHELSLAB_RELEASES_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$KEYSTORE_B64" || { echo "Missing LOUDERME_SIDELOAD_KEYSTORE_BASE64"; exit 1; }
+          test -n "$STORE_PASS" || { echo "Missing LOUDERME_SIDELOAD_STORE_PASSWORD"; exit 1; }
+          test -n "$KEY_ALIAS" || { echo "Missing LOUDERME_SIDELOAD_KEY_ALIAS"; exit 1; }
+          test -n "$KEY_PASS" || { echo "Missing LOUDERME_SIDELOAD_KEY_PASSWORD"; exit 1; }
+          test -n "$RELEASES_TOKEN" || { echo "Missing MICHELSLAB_RELEASES_TOKEN"; exit 1; }
+
+      - name: Sign stable sideload APK
+        env:
+          KEYSTORE_B64: ${{ secrets.LOUDERME_SIDELOAD_KEYSTORE_BASE64 }}
+          STORE_PASS: ${{ secrets.LOUDERME_SIDELOAD_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.LOUDERME_SIDELOAD_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.LOUDERME_SIDELOAD_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p signed
+          echo "$KEYSTORE_B64" | base64 -d > signed/louderme-sideload.jks
+
+          VERSION="${{ needs.validate.outputs.version }}"
+          BUILD_TOOLS="${ANDROID_HOME:-/usr/local/lib/android/sdk}/build-tools/36.0.0"
+          UNSIGNED="validated/LouderMe-v$VERSION-sideload-release-unsigned.apk"
+          ALIGNED="signed/LouderMe-v$VERSION-sideload-aligned.apk"
+          FINAL="signed/LouderMe-v$VERSION-sideload.apk"
+
+          "$BUILD_TOOLS/zipalign" -p -f 4 "$UNSIGNED" "$ALIGNED"
+
+          "$BUILD_TOOLS/apksigner" sign             --ks signed/louderme-sideload.jks             --ks-key-alias "$KEY_ALIAS"             --ks-pass "pass:$STORE_PASS"             --key-pass "pass:$KEY_PASS"             --out "$FINAL"             "$ALIGNED"
+
+          "$BUILD_TOOLS/apksigner" verify             --verbose             --print-certs             "$FINAL"             | tee signed/signature-verification.txt
+
+          sha256sum "$FINAL" | tee "$FINAL.sha256"
+
+      - name: Publish private source release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="${{ needs.validate.outputs.version }}"
+          TAG="v$VERSION"
+          APK="signed/LouderMe-v$VERSION-sideload.apk"
+          SHA="signed/LouderMe-v$VERSION-sideload.apk.sha256"
+          NOTES="docs/RELEASE_NOTES_v$VERSION.md"
+
+          test -f "$NOTES"
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$APK" "$SHA" --clobber
+          else
+            gh release create "$TAG" "$APK" "$SHA"               --target "$GITHUB_SHA"               --title "LouderMe $TAG"               --notes-file "$NOTES"
+          fi
+
+      - name: Publish public Michel's Lab direct channel
+        env:
+          GH_TOKEN: ${{ secrets.MICHELSLAB_RELEASES_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PUBLIC_REPO="realmichelduarte/michel-s-life-releases"
+          VERSION="${{ needs.validate.outputs.version }}"
+          VERSION_CODE="${{ needs.validate.outputs.version_code }}"
+          TAG="louderme-v$VERSION"
+          APK="signed/LouderMe-v$VERSION-sideload.apk"
+          SHA_FILE="signed/LouderMe-v$VERSION-sideload.apk.sha256"
+          SHA256="$(cut -d' ' -f1 "$SHA_FILE")"
+          NOTES="docs/RELEASE_NOTES_v$VERSION.md"
+
+          if gh release view "$TAG" --repo "$PUBLIC_REPO" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$APK" "$SHA_FILE"               --repo "$PUBLIC_REPO"               --clobber
+          else
+            gh release create "$TAG" "$APK" "$SHA_FILE"               --repo "$PUBLIC_REPO"               --title "LouderMe v$VERSION"               --notes-file "$NOTES"
+          fi
+
+          APK_URL="https://github.com/$PUBLIC_REPO/releases/download/$TAG/LouderMe-v$VERSION-sideload.apk"
+          NOTES_URL="https://github.com/$PUBLIC_REPO/releases/tag/$TAG"
+
+          python3 - <<PY
+          import json
+          manifest = {
+              "versionCode": int("$VERSION_CODE"),
+              "versionName": "$VERSION",
+              "apkUrl": "$APK_URL",
+              "sha256": "$SHA256",
+              "releaseNotes": "$NOTES_URL",
+          }
+          with open("latest.json", "w", encoding="utf-8") as f:
+              json.dump(manifest, f, indent=2)
+              f.write("\n")
+          PY
+
+          CONTENT="$(base64 -w 0 latest.json)"
+          EXISTING_SHA="$(
+            gh api "repos/$PUBLIC_REPO/contents/louderme/latest.json"               --jq '.sha' 2>/dev/null || true
+          )"
+
+          if [ -n "$EXISTING_SHA" ]; then
+            gh api               --method PUT               "repos/$PUBLIC_REPO/contents/louderme/latest.json"               -f message="release: point LouderMe feed to v$VERSION"               -f content="$CONTENT"               -f sha="$EXISTING_SHA"               -f branch="main" >/dev/null
+          else
+            gh api               --method PUT               "repos/$PUBLIC_REPO/contents/louderme/latest.json"               -f message="release: initialize LouderMe direct update feed"               -f content="$CONTENT"               -f branch="main" >/dev/null
+          fi
+
+      - name: Remove decoded keystore
+        if: always()
+        run: rm -f signed/louderme-sideload.jks

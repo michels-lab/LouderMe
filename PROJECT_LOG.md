@@ -193,3 +193,14 @@ It is not a measurement or prediction of loudspeaker sound-pressure level (dB SP
 
 ### Status
 Pending CI validation and release publication.
+
+## 2026-10-05 — Michel's Lab parent/child governance contract
+
+Added the repository-level Michel's Lab governance declaration:
+
+- `.michelslab/project.yml` identifies `realmichelduarte/Michel-Software-Standards` as the shared standards authority.
+- `MICHELS_LAB_PROJECT.md` documents the human-readable reporting contract.
+- App-specific implementation evidence remains in this repository.
+- Reusable/cross-app decisions are promoted to the master standards repository.
+- The master repository polls child status centrally; this repository receives no credential that can write to the master.
+- Secret values remain prohibited from both repositories.

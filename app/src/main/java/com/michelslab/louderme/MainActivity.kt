@@ -38,8 +38,8 @@ class MainActivity : ComponentActivity() {
 
     private val updateLauncher =
         registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
-            if (result.resultCode != Activity.RESULT_OK && ::updateController.isInitialized) {
-                updateController.markUpdateCancelled()
+            if (result.resultCode != Activity.RESULT_OK && ::updateCoordinator.isInitialized) {
+                updateCoordinator.markPlayUpdateCancelled()
             }
         }
 
@@ -80,10 +80,10 @@ class MainActivity : ComponentActivity() {
                 audioState = audioState.value,
                 equalizerState = equalizerState.value,
                 onCheckForUpdates = {
-                    updateController.checkForUpdates(allowAutomaticPrompt = false)
+                    updateCoordinator.checkForUpdates(automatic = false)
                 },
                 onInstallUpdate = {
-                    updateController.installAvailableUpdate()
+                    updateCoordinator.installAvailableUpdate()
                 },
                 onBoostToggle = { enabled ->
                     if (enabled) {
@@ -199,9 +199,16 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (::updateController.isInitialized) {
+        if (::updateCoordinator.isInitialized) {
             updateController.resumeInterruptedUpdate()
         }
+    }
+
+    override fun onDestroy() {
+        if (::updateCoordinator.isInitialized) {
+            updateCoordinator.shutdown()
+        }
+        super.onDestroy()
     }
 
     private fun receiveAudioState(intent: Intent) {

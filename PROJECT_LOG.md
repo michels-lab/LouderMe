@@ -153,3 +153,9 @@ The app now has a compiled experimental global-audio compatibility engine and pr
 
 ### Next device test
 Install v0.1.1 on the target Samsung phone, play the same Spotify/YouTube passage at a fixed system volume, compare 100% vs 150% vs 200%, and report the in-app engine status/diagnostic implementation. That evidence determines whether session 0 is genuinely useful on the device or a different architecture is required.
+
+## 2026-10-05 — Infrastructure / cloud audit
+
+Added `docs/INFRASTRUCTURE_AUDIT.md`.
+
+LouderMe's core audio path remains fully local. No Supabase/Google backend is required for v0.1.1. The important infrastructure gates are physical audio validation, Play production delivery/update validation and later persistence of mixer/EQ presets. Cloud sync becomes relevant only if account-based preset/profile features are deliberately added.

@@ -70,3 +70,30 @@ GitHub Actions reported: `android.useAndroidX` was not enabled while the runtime
 
 ### Current status
 Awaiting the new CI build. Release publication remains gated behind a successful APK build.
+
+
+## 2026-10-05 — Foundation release v0.1.0 published
+
+### Change / finding
+After enabling AndroidX, the next validation build reached Kotlin compilation and reported inconsistent JVM targets: Java was targeting 1.8 while Kotlin was targeting 17.
+
+### Action completed
+- Added Java 17 source/target compatibility to the Android module.
+- Added Kotlin JVM toolchain 17.
+- Re-ran the complete GitHub Actions build.
+- Android debug APK compiled successfully.
+- Release asset was prepared and uploaded.
+- GitHub release `v0.1.0` was published successfully.
+
+### Validation / evidence
+- GitHub Actions run: `37291824472`.
+- `:app:assembleDebug`: successful.
+- Release tag: `v0.1.0`.
+- Release title: **LouderMe v0.1.0 — Foundation**.
+- APK asset: `LouderMe-v0.1.0-debug.apk`.
+- APK size: 28,042,227 bytes.
+- APK SHA-256: `42b5e15ca3e7c5e4b0b7b7e7ed7b6ac13eb166b6bc6b224564269dae1ae1600a`.
+- Release page: https://github.com/realmichelduarte/LouderMe/releases/tag/v0.1.0
+
+### Current status
+The LouderMe foundation now builds successfully and has an installable debug APK release. The global/system-wide amplification engine remains intentionally unimplemented and unvalidated; implementing and testing that engine is the next product milestone.

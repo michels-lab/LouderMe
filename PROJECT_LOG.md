@@ -419,3 +419,56 @@ No lint baseline, suppression, or fatal-check disabling was introduced.
 
 ### Status
 A fresh v0.1.4 branch validation is required. The stable sideload signing bootstrap remains blocked until the full build succeeds.
+
+
+## 2026-10-05 — v0.1.4 direct auto-update architecture
+
+### Problem
+The existing updater worked only for Google Play-owned installations. LouderMe is currently being tested through direct GitHub APK installation, so the user expected the APK build itself to discover and install newer versions.
+
+The private LouderMe repository cannot be queried anonymously from a shipped APK without embedding a private GitHub credential, which is prohibited.
+
+Older GitHub releases were also CI debug-signed. Hosted debug signing is not a permanent release identity, so Android cannot guarantee in-place updates across future runners.
+
+### Architecture
+LouderMe now has two explicit distribution flavors:
+
+- `play` — Google Play In-App Updates; no `REQUEST_INSTALL_PACKAGES`.
+- `sideload` — Michel's Lab Direct updater; includes `REQUEST_INSTALL_PACKAGES`.
+
+The direct channel:
+- reads a public update manifest from the Michel's Lab release hub;
+- auto-downloads newer versions;
+- verifies SHA-256;
+- verifies package ID;
+- verifies manifest/APK versionCode;
+- verifies signing-certificate continuity;
+- installs through Android PackageInstaller;
+- handles the Android unknown-sources permission flow;
+- records PackageInstaller results.
+
+### Public/private boundary
+Source remains private.
+
+The public update feed and signed APKs live in `realmichelduarte/michel-s-life-releases` under the LouderMe channel.
+
+No private repository token is shipped in LouderMe.
+
+### Signing migration
+v0.1.4 establishes a dedicated stable sideload signing key.
+
+Because v0.1.3 and earlier were debug builds, the installed old build must be uninstalled once before installing the stable v0.1.4 baseline.
+
+After that one-time migration, same-key direct releases can update in place.
+
+### CI safety
+- validation builds both Play and sideload flavors;
+- CI explicitly asserts Play does not request `REQUEST_INSTALL_PACKAGES`;
+- CI explicitly asserts sideload does;
+- one-time signing-key bootstrap is gated behind an explicit `[bootstrap-signing]` commit;
+- normal main releases require stable key secrets;
+- public-feed publication requires a dedicated cross-repo token;
+- the signing key is never committed to source.
+
+### Current status
+Code and CI architecture prepared. Pending final branch validation, one-time signing bootstrap, secret installation and public v0.1.4 baseline publication.

@@ -1,17 +1,12 @@
 package com.michelslab.louderme.update
 
-enum class UpdateChannel {
-    PLAY,
-    DIRECT,
-}
-
 sealed interface UpdateStatus {
     data object Checking : UpdateStatus
     data object UpToDate : UpdateStatus
 
     data class UpdateAvailable(
         val versionName: String? = null,
-        val channel: UpdateChannel,
+        val channel: String? = null,
     ) : UpdateStatus
 
     data class Downloading(
@@ -24,6 +19,10 @@ sealed interface UpdateStatus {
     ) : UpdateStatus
 
     data class InstallPermissionRequired(
+        val versionName: String,
+    ) : UpdateStatus
+
+    data class SignatureMismatch(
         val versionName: String,
     ) : UpdateStatus
 

@@ -4,90 +4,71 @@ import android.app.Activity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.IntentSenderRequest
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
-import com.michelslab.louderme.BuildConfig
 
 class UpdateCoordinator(
-    activity: Activity,
-    updateLauncher:
-        ActivityResultLauncher<IntentSenderRequest>,
-    onStatusChanged: (UpdateStatus) -> Unit,
+    private val activity: Activity,
+    updateLauncher: ActivityResultLauncher<IntentSenderRequest>,
+    private val onStatusChanged: (UpdateStatus) -> Unit,
 ) {
-    private val channel =
-        if (
-            BuildConfig.UPDATE_CHANNEL ==
-            "play"
-        ) {
-            UpdateChannel.PLAY
+    private val playInstall =
+        UpdateChannelDetector.isPlayInstall(activity)
+
+    private val playController = PlayUpdateController(
+        appUpdateManager = AppUpdateManagerFactory.create(activity),
+        updateLauncher = updateLauncher,
+        onStatusChanged = onStatusChanged,
+    )
+
+    private val sideloadController = SideloadUpdateController(
+        activity = activity,
+        onStatusChanged = onStatusChanged,
+    )
+
+    fun checkForUpdates(automatic: Boolean) {
+        if (playInstall) {
+            playController.checkForUpdates(
+                allowAutomaticPrompt = automatic
+            )
         } else {
-            UpdateChannel.DIRECT
-        }
-
-    private val playController =
-        PlayUpdateController(
-            appUpdateManager =
-                AppUpdateManagerFactory
-                    .create(activity),
-            updateLauncher = updateLauncher,
-            onStatusChanged =
-                onStatusChanged,
-        )
-
-    private val directController =
-        DirectUpdateController(
-            activity = activity,
-            onStatusChanged =
-                onStatusChanged,
-        )
-
-    fun checkForUpdates(
-        allowAutomaticPrompt: Boolean,
-    ) {
-        when (channel) {
-            UpdateChannel.PLAY ->
-                playController
-                    .checkForUpdates(
-                        allowAutomaticPrompt
-                    )
-
-            UpdateChannel.DIRECT ->
-                directController
-                    .checkForUpdates(
-                        allowAutomaticPrompt
-                    )
+            sideloadController.checkForUpdates(
+                automatic = automatic
+            )
         }
     }
 
     fun installAvailableUpdate() {
-        when (channel) {
-            UpdateChannel.PLAY ->
-                playController
-                    .installAvailableUpdate()
-
-            UpdateChannel.DIRECT ->
-                directController
-                    .installAvailableUpdate()
+        if (playInstall) {
+            playController.installAvailableUpdate()
+        } else {
+            sideloadController.installAvailableUpdate()
         }
     }
 
-    fun resumeInterruptedUpdate() {
-        when (channel) {
-            UpdateChannel.PLAY ->
-                playController
-                    .resumeInterruptedUpdate()
-
-            UpdateChannel.DIRECT ->
-                directController
-                    .resumeInterruptedUpdate()
+    fun onResume() {
+        if (playInstall) {
+            playController.resumeInterruptedUpdate()
+        } else {
+            sideloadController.resumePendingInstall()
+            sideloadController.checkForUpdates(
+                automatic = true
+            )
         }
     }
 
-    fun markUpdateCancelled() {
-        if (
-            channel ==
-            UpdateChannel.PLAY
-        ) {
-            playController
-                .markUpdateCancelled()
+    fun markPlayUpdateCancelled() {
+        if (playInstall) {
+            playController.markUpdateCancelled()
         }
     }
+
+    fun shutdown() {
+        sideloadController.shutdown()
+    }
+
+    fun channelLabel(): String =
+        if (playInstall) {
+            "Google Play"
+        } else {
+            "Michel's Lab Direct"
+        }
 }

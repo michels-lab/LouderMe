@@ -14,7 +14,7 @@ object AudioBoostStateStore {
             )
         }.getOrDefault(AudioEngineStatus.OFF)
 
-        val percent = prefs.getInt("percent", 150).coerceIn(100, 200)
+        val percent = prefs.getInt("percent", 150).coerceIn(100, 250)
 
         return AudioEngineUiState(
             status = status,

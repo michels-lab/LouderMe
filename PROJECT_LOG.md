@@ -638,3 +638,12 @@ The app intentionally renders edge-to-edge on modern Android, but its custom Com
 
 ### Current status
 Implementation is on `main` in commit `ed524ce1fb5ba97499fe53229781a1f5cb2a0fb1`. Pending CI result and on-device screenshot confirmation.
+
+## 2026-10-06 — GitHub Copilot agent delegation
+
+Added repository-level Copilot instructions and custom App Maintainer, QA Regression and Release Manager agents. The contracts preserve Play/sideload separation, stable direct-update signing, SHA/package/version/signing checks, correct gain-vs-dB-SPL semantics, EQ mapping transparency, Android safe-area rules and explicit target-device validation gates.
+
+Purpose: delegate bounded implementation, regression checks and release preparation to repository agents so cross-project ChatGPT work can focus on product decisions and coordination.
+
+No audio behavior, version, signing material or release artifact changed in this infrastructure-only update.
+

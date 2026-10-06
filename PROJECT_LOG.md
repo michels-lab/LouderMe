@@ -1024,3 +1024,128 @@ Repository instructions now explicitly route logo, launcher, splash/startup and 
 
 The required interpretation is structural integration rather than sticker placement: replace active legacy identity, adapt canonical geometry to the existing product design language, preserve unrelated behavior, validate the build, and keep release publication separate unless explicitly authorized.
 
+
+
+## 2026-10-06 — Complete cross-platform LouderMe brand integration
+
+### Audit trigger
+Michel requested a direct audit of what still remained to implement in the real LouderMe product, especially branding.
+
+The audit found that initial official-logo adoption was real but the newer Michel's Lab integrated-branding contract was not yet fully satisfied.
+
+### Key findings
+Android already had:
+- official launcher/adaptive icon;
+- official branded splash;
+- official LouderMe command-bar mark;
+- official LouderMe About hero.
+
+But Android still had:
+- a legacy Michel Duarte portrait instead of the current canonical portrait;
+- text-only social rows plus arrow;
+- no Facebook row from the canonical developer profile;
+- Michel's Lab referenced only as text rather than its official parent-brand mark/lockup;
+- mixed tagline language;
+- mostly generic Boost/EQ visual feedback rather than waveform-derived product language.
+
+Windows Desktop still had:
+- official executable icon but a text-only in-app header;
+- no branded startup/splash surface;
+- a plain MessageBox About;
+- no canonical portrait / Michel's Lab parent-brand asset in About;
+- no canonical social hierarchy;
+- no in-app stable updater despite the public Desktop feed already existing;
+- little waveform-derived visual language inside Boost/EQ.
+
+### Canonical asset reconciliation
+Vendored the current master assets from `realmichelduarte/Michel-Software-Standards`:
+- canonical Michel Duarte portrait blob: `be4d18572bec28d53783cd4db05cb6cd289a7916`;
+- Michel's Lab mark blob: `f205c15c3b6bd7fe676ced83fd1ea2ae24c25586`;
+- Michel's Lab lockup blob: `7819ef5c7d1a5c338c67c9bbd517e5448724a5cf`.
+
+The Android portrait previously in use was legacy blob `1594e609850dd1632ede85306bc9d7fc719a3bff` and was replaced.
+
+### Android implementation
+- Added local canonical developer-profile constants sourced from the master profile.
+- About now uses the canonical Michel Duarte portrait.
+- Added official Michel's Lab lockup to the author/studio block.
+- Social order is now Instagram → Facebook → LinkedIn → GitHub → Email.
+- Social entries use native recognizable glyphs plus visible network names.
+- Reconciled About tagline to the official `SOUND THAT LIFTS YOU` identity.
+- Product version is visible in the product hero.
+- Added canonical-waveform visual feedback to Global Boost.
+- Added waveform-derived EQ curve visualization.
+- Preserved existing audio/update/startup behavior.
+
+### Windows Desktop implementation
+- Added exact canonical-waveform geometry as a native GDI+ control.
+- Replaced the text-only top identity with LouderMe waveform + product name + official tagline.
+- Added waveform-derived live boost visualization.
+- Added EQ curve visualization derived from the same audio/waveform language.
+- Added a native branded startup splash.
+- Added a dedicated native About experience replacing the MessageBox.
+- Desktop About now includes:
+  - product-first LouderMe identity;
+  - build-derived Desktop version;
+  - canonical Michel Duarte portrait;
+  - official Michel's Lab lockup;
+  - About the Author section;
+  - Instagram / Facebook / LinkedIn / GitHub / Email rows with native recognizable glyphs + visible names;
+  - privacy/legal copy;
+  - Equalizer APO third-party notice;
+  - explicit Authenticode/SmartScreen state.
+- Embedded the canonical portrait and Michel's Lab brand assets inside the Windows executable.
+- Aligned Inno Setup publisher/support/update metadata with Michel's Lab.
+
+### Desktop stable updater
+Connected the already-established public Windows stable feed:
+`louderme-desktop/latest.json`.
+
+Updater behavior:
+1. compare running product version with the public stable manifest;
+2. expose installation only for a newer version;
+3. download the public installer;
+4. verify the manifest SHA-256;
+5. only then ask Windows to launch the verified installer.
+
+No silent update execution was added.
+
+### Authenticode boundary
+This branding/product pass does **not** claim Authenticode signing.
+No Windows publisher certificate currently exists in the repository release path.
+The UI/About explicitly preserves the accurate state: SHA-256 integrity is supported; SmartScreen can still warn.
+
+### CI hardening
+Android CI now checks:
+- canonical portrait Git blob;
+- canonical Michel's Lab mark/lockup Git blobs;
+- Facebook presence;
+- parent-brand lockup presence;
+- official tagline;
+- waveform Boost/EQ components.
+
+Desktop CI now checks:
+- canonical author/studio asset blobs;
+- dedicated About surface;
+- full social hierarchy;
+- branded splash;
+- waveform UI control;
+- stable updater feed and SHA-256 verification contract.
+
+The Desktop release workflow is also protected by the same branding/updater contract.
+
+### Intermediate Desktop CI failures
+Several branch pushes failed while the new native Windows surfaces were being assembled. These were not treated as release evidence.
+Observed/fixed issues included:
+- About color field colliding with `Form.Text`;
+- invalid null-coalescing `Process.Start` statement;
+- WinForms designer-serialization diagnostics on runtime-only custom-control properties;
+- embedded-image lifetime handling.
+
+A final green current-HEAD run is required before merge.
+
+### Release discipline
+- Android remains v0.1.6 / versionCode 7.
+- Desktop remains v0.1.0 in source.
+- No new release/version bump is authorized by this branding implementation.
+- A future release must bump to a new product version and cannot overwrite the already-published Desktop v0.1.0 release.

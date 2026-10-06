@@ -1,9 +1,11 @@
 # LouderMe — Infrastructure & External Services Audit
 
-Last reviewed: **2026-10-05**
+Last reviewed: **2026-10-06**
 
 ## Current architecture
 - Android-native application.
+- Native Windows desktop application (.NET 10 WinForms).
+- Windows system-wide boost above 100% and desktop EQ use a local Windows APO effects backend through Equalizer APO 1.4.2.
 - Core audio processing is local/on-device.
 - Production update path: Google Play In-App Updates.
 - GitHub is used for source, CI and test/direct APK releases.
@@ -37,3 +39,14 @@ If preset sync is introduced, store only the minimum preset/profile data and pro
 
 ## Secret rule
 Play signing secrets, API credentials and any future backend secret keys must stay outside source. Client apps may contain only credentials explicitly designed to be public clients/publishable keys.
+
+
+## Windows desktop APO integration — 2026-10-06
+
+LouderMe Desktop keeps Windows endpoint volume (0–100%) separate from digital Global Boost (100–250%).
+
+Actual boost above 100% is implemented through the Windows system-effects/APO path using Equalizer APO 1.4.2. LouderMe does not redistribute the third-party installer; it links users to the official project and manages only its own `LouderMe.txt` include after installation.
+
+Audio processing remains local. No account, telemetry, cloud database, audio capture upload, or new application secret is introduced.
+
+Compatibility note: applications using ASIO or WASAPI exclusive mode can bypass Windows system effects. Endpoint attachment and audible behavior therefore remain physical-Windows validation items.

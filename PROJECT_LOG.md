@@ -844,3 +844,59 @@ The current Desktop milestone does **not** claim system-wide gain above the norm
 - Earlier desktop branch run `37512672065`: **success**, artifact `LouderMe-Desktop-v0.1.0`.
 - Merge commit intentionally includes `[skip ci]` so this feature merge does not mutate or republish the already released Android v0.1.6 artifacts.
 - No Desktop release has been published yet.
+
+
+## 2026-10-06 — Windows Desktop real 100–250% system-wide boost
+
+### Goal
+Replace the Desktop placeholder boundary with a real Windows processing path for gain above the normal 0–100 endpoint volume range.
+
+### Architecture decision
+Windows endpoint master volume remains a separate 0–100 control through Core Audio.
+
+LouderMe **Global Boost** now targets the Windows system-effects/APO path through Equalizer APO 1.4.2:
+- 100–250% is converted with `20 * log10(percent / 100)`;
+- 100% = 0.00 dB;
+- 150% = +3.52 dB;
+- 200% = +6.02 dB;
+- 250% = +7.96 dB.
+
+This is real post-mix digital gain, not a relabeled Windows volume slider and not an acoustic dB SPL claim.
+
+### Equalizer
+Desktop now exposes the same seven stable product-facing bands as Android:
+- 60 Hz;
+- 150 Hz;
+- 400 Hz;
+- 1 kHz;
+- 2.5 kHz;
+- 6 kHz;
+- 12 kHz.
+
+Presets: Flat, Bass, Deep Bass, Dialogue, Treble, Speaker, Headphones and Custom.
+
+### Configuration safety
+- LouderMe writes only `LouderMe.txt`.
+- It adds one `Include: LouderMe.txt` entry to Equalizer APO's main config.
+- It creates `config.txt.louderme.bak` before the first main-config modification.
+- The managed file explicitly resets `Device: all`, `Stage: post-mix` and `Channel: all` so inherited configuration state does not accidentally scope LouderMe to an unrelated device/channel.
+- Existing user Equalizer APO filters are preserved.
+
+### Third-party engine
+- Supported engine: Equalizer APO 1.4.2 x64.
+- LouderMe does not redistribute the installer.
+- The UI opens the official SourceForge download page.
+- Official x64 SHA-256 recorded in UI/docs: `7403be7427bbe1936a40dded082829b6e217fc4f5990fee5cba501f0ae055afa`.
+- The user selects/attaches the intended playback endpoint in Equalizer APO Configurator.
+
+### Compatibility / audio-quality boundary
+- ASIO and WASAPI exclusive-mode streams can bypass Windows APO effects.
+- Positive preamp consumes digital headroom; high gain can cause downstream Windows limiting/compression on loud material.
+- Repository CI cannot prove endpoint attachment or audible quality.
+- Physical Windows validation is still required at 100/150/200/250% and with each important output route.
+
+### Privacy
+Processing remains local. No account, telemetry, cloud service, audio upload or new secret was added.
+
+### Version / release
+Desktop remains v0.1.0 during this implementation. No Desktop release is published by this change unless separately authorized.

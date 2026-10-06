@@ -1,0 +1,76 @@
+name: ChatGPT-ready task
+description: Structured implementation task that can be resumed without rebuilding project context.
+title: "[ChatGPT] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for a bounded bug fix, feature, audit finding, or repository task. Keep one primary outcome per issue.
+
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired outcome
+      description: What should be true when this task is complete?
+      placeholder: Describe the concrete end result.
+    validations:
+      required: true
+
+  - type: textarea
+    id: current
+    attributes:
+      label: Current behavior / evidence
+      description: What is happening now? Include screenshots, workflow failures, logs, file names, or reproduction details when available.
+    validations:
+      required: true
+
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: What areas are in scope? Mention important exclusions if a redesign/refactor is not intended.
+      placeholder: |
+        In scope:
+        Out of scope:
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: List the observable conditions that must be satisfied.
+      placeholder: |
+        - [ ] Requested behavior works
+        - [ ] Adjacent behavior remains intact
+        - [ ] Relevant tests/builds pass
+        - [ ] Project log is updated
+    validations:
+      required: true
+
+  - type: textarea
+    id: validation
+    attributes:
+      label: Validation required
+      description: Note automated tests, builds, device checks, provider checks, or manual validation that matter.
+      placeholder: Describe what must actually be tested; do not treat unavailable device/store validation as complete.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: release
+    attributes:
+      label: Release permission
+      description: This controls whether implementation may proceed into publication.
+      options:
+        - Implementation only — do not release
+        - Prepare release candidate — do not publish
+        - Release is authorized after required validation
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Extra context
+      description: Optional links, prior decisions, constraints, or user preferences specific to this task.

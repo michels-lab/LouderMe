@@ -244,3 +244,145 @@ internal sealed class EqCurveControl : Control
         }
     }
 }
+
+
+internal enum SocialNetwork
+{
+    Instagram,
+    Facebook,
+    LinkedIn,
+    GitHub,
+    Email,
+}
+
+internal sealed class SocialGlyphControl : Control
+{
+    [Browsable(false)]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public SocialNetwork Network { get; set; }
+
+    public SocialGlyphControl()
+    {
+        DoubleBuffered = true;
+        BackColor = Color.Transparent;
+        Size = new Size(34, 34);
+        MinimumSize = new Size(34, 34);
+        MaximumSize = new Size(34, 34);
+    }
+
+    protected override void OnPaint(PaintEventArgs e)
+    {
+        base.OnPaint(e);
+        e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+
+        using var border = new Pen(BrandColors.Line, 1f);
+        using var background = new SolidBrush(BrandColors.Surface2);
+        using var white = new SolidBrush(BrandColors.Text);
+        using var whitePen = new Pen(BrandColors.Text, 2f)
+        {
+            StartCap = LineCap.Round,
+            EndCap = LineCap.Round,
+        };
+
+        e.Graphics.FillRoundedRectangle(background, new RectangleF(0.5f, 0.5f, Width - 1f, Height - 1f), 8f);
+        e.Graphics.DrawRoundedRectangle(border, new RectangleF(0.5f, 0.5f, Width - 1f, Height - 1f), 8f);
+
+        switch (Network)
+        {
+            case SocialNetwork.Instagram:
+            {
+                var rect = new RectangleF(8f, 8f, 18f, 18f);
+                e.Graphics.DrawRoundedRectangle(whitePen, rect, 5f);
+                e.Graphics.DrawEllipse(whitePen, 12.5f, 12.5f, 9f, 9f);
+                e.Graphics.FillEllipse(white, 22f, 10f, 2.7f, 2.7f);
+                break;
+            }
+
+            case SocialNetwork.Facebook:
+                DrawCenteredText(e.Graphics, "f", 20f);
+                break;
+
+            case SocialNetwork.LinkedIn:
+                DrawCenteredText(e.Graphics, "in", 12f);
+                break;
+
+            case SocialNetwork.GitHub:
+            {
+                e.Graphics.FillEllipse(white, 9f, 9f, 16f, 16f);
+                using var ears = new GraphicsPath();
+                ears.AddPolygon(
+                [
+                    new PointF(10f, 12f),
+                    new PointF(11f, 6f),
+                    new PointF(15f, 10f),
+                ]);
+                ears.AddPolygon(
+                [
+                    new PointF(24f, 12f),
+                    new PointF(23f, 6f),
+                    new PointF(19f, 10f),
+                ]);
+                e.Graphics.FillPath(white, ears);
+                e.Graphics.FillRoundedRectangle(white, new RectangleF(13f, 22f, 8f, 7f), 3f);
+                break;
+            }
+
+            case SocialNetwork.Email:
+            {
+                var rect = new RectangleF(7f, 10f, 20f, 14f);
+                e.Graphics.DrawRoundedRectangle(whitePen, rect, 3f);
+                e.Graphics.DrawLine(whitePen, 8f, 11f, 17f, 18f);
+                e.Graphics.DrawLine(whitePen, 26f, 11f, 17f, 18f);
+                break;
+            }
+        }
+    }
+
+    private void DrawCenteredText(Graphics graphics, string text, float size)
+    {
+        using var font = new Font("Segoe UI Semibold", size, FontStyle.Bold, GraphicsUnit.Pixel);
+        using var brush = new SolidBrush(BrandColors.Text);
+        var measured = graphics.MeasureString(text, font);
+        graphics.DrawString(
+            text,
+            font,
+            brush,
+            (Width - measured.Width) / 2f,
+            (Height - measured.Height) / 2f - 1f);
+    }
+}
+
+internal static class GraphicsExtensions
+{
+    public static void FillRoundedRectangle(
+        this Graphics graphics,
+        Brush brush,
+        RectangleF bounds,
+        float radius)
+    {
+        using var path = Rounded(bounds, radius);
+        graphics.FillPath(brush, path);
+    }
+
+    public static void DrawRoundedRectangle(
+        this Graphics graphics,
+        Pen pen,
+        RectangleF bounds,
+        float radius)
+    {
+        using var path = Rounded(bounds, radius);
+        graphics.DrawPath(pen, path);
+    }
+
+    private static GraphicsPath Rounded(RectangleF bounds, float radius)
+    {
+        var diameter = radius * 2f;
+        var path = new GraphicsPath();
+        path.AddArc(bounds.Left, bounds.Top, diameter, diameter, 180, 90);
+        path.AddArc(bounds.Right - diameter, bounds.Top, diameter, diameter, 270, 90);
+        path.AddArc(bounds.Right - diameter, bounds.Bottom - diameter, diameter, diameter, 0, 90);
+        path.AddArc(bounds.Left, bounds.Bottom - diameter, diameter, diameter, 90, 90);
+        path.CloseFigure();
+        return path;
+    }
+}

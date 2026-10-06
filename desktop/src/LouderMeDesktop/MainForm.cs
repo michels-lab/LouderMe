@@ -253,9 +253,30 @@ internal sealed class MainForm : Form
                 UseShellExecute = true,
             });
         };
+        var configure = Button("Open Configurator", Cyan);
+        configure.Click += (_, _) =>
+        {
+            var path = Path.Combine(_apo.InstallDirectory, "Configurator.exe");
+            if (!File.Exists(path))
+            {
+                MessageBox.Show(
+                    "Equalizer APO is not installed in its standard location yet.",
+                    "LouderMe audio engine",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                return;
+            }
+
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = path,
+                UseShellExecute = true,
+            });
+        };
         var refresh = Button("Refresh engine", Cyan);
         refresh.Click += (_, _) => RefreshEngineStatus();
         actions.Controls.Add(getEngine);
+        actions.Controls.Add(configure);
         actions.Controls.Add(refresh);
         layout.SetColumnSpan(actions, 2);
         layout.Controls.Add(actions, 0, 5);
@@ -269,6 +290,7 @@ internal sealed class MainForm : Form
             Text =
                 "100–250% is mapped to real post-mix digital gain: 20·log10(percent/100). " +
                 "250% = +7.96 dB. The engine must be attached to the active playback device in Equalizer APO's Configurator. " +
+                "High positive gain can trigger Windows' final output limiting/compression on loud material. " +
                 "ASIO and WASAPI exclusive streams can bypass Windows APO effects.",
         };
         layout.SetColumnSpan(note, 2);
@@ -302,6 +324,12 @@ internal sealed class MainForm : Form
         {
             if (_loading || _preset.SelectedItem is not string name) return;
             _settings.Preset = name;
+            if (name.Equals("Custom", StringComparison.OrdinalIgnoreCase))
+            {
+                ApplyProcessing();
+                return;
+            }
+
             var gains = EqualizerPresets.For(name);
             _loading = true;
             try
@@ -360,6 +388,9 @@ internal sealed class MainForm : Form
                 if (_loading) return;
 
                 _settings.Preset = "Custom";
+                _loading = true;
+                try { _preset.SelectedItem = "Custom"; }
+                finally { _loading = false; }
                 _settings.EqualizerGainsDb[index] = (float)value.Value;
                 ApplyProcessing();
             };

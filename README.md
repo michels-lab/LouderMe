@@ -2,11 +2,11 @@
 
 **Make everything louder.**
 
-LouderMe is an Android audio utility by **Michel's Lab** for increasing quiet media output, shaping sound with a real equalizer, and exposing the state of the Android audio engine instead of hiding it behind fake controls.
+LouderMe is a cross-platform audio utility by **Michel's Lab** for increasing quiet media output, shaping sound with a real equalizer, and exposing the state of the Android audio engine instead of hiding it behind fake controls.
 
 ## Current release line
 
-**v0.1.4 — Dual-channel automatic updates**
+**Android v0.1.6 — official LouderMe branding**
 
 ### Global Boost
 - 100%, 125%, 150%, 175%, 200%, 225%, 250%.
@@ -69,7 +69,8 @@ near-black workspace, layered blue-black surfaces, cyan/blue operational accents
 - Product: `LouderMe`
 - Studio: **Michel's Lab**
 - Android package: `com.michelslab.louderme`
-- Current version: `0.1.4`
+- Current Android version: `0.1.6`
+- Current Desktop foundation version: `0.1.0`
 - Developer: Michel Duarte / Michel Armando Duarte Flores
 - License: Proprietary — All Rights Reserved
 
@@ -86,3 +87,22 @@ Direct updates verify SHA-256, package identity, version and signing identity be
 v0.1.4 is the stable-signing migration baseline. Older CI-debug APKs require one uninstall/reinstall because Android will not accept a new signing identity as an in-place update. After the stable v0.1.4 baseline is installed, later direct releases can update in place.
 
 Android still shows the required system installation confirmation.
+
+
+## Windows Desktop
+
+LouderMe now includes a **native Windows Desktop foundation** under `desktop/`.
+
+- .NET 10 WinForms; no WebView and no HTML UI.
+- Self-contained portable `.exe`.
+- Inno Setup installer, matching the Michel's Lab Windows installation pattern used by FoamLens and Michel's Life.
+- Official LouderMe flowing-waveform identity for the Windows executable/installer.
+- Real Windows default-output volume and mute control.
+- Opt-in **Start with Windows** using the current-user startup entry; startup launches minimized to the system tray.
+- Android also has an opt-in **Start with phone** control that restores the saved boost level after boot.
+
+### Desktop boost boundary
+
+Windows Core Audio endpoint volume stops at the endpoint's actual maximum. LouderMe Desktop therefore does not fake 125–250% by relabeling 100%.
+
+The Desktop UI can retain a requested 100–250% target, but system-wide gain above the Windows endpoint maximum remains gated on a real native DSP/APO module and physical validation.

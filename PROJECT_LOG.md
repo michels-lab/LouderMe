@@ -1024,3 +1024,27 @@ Repository instructions now explicitly route logo, launcher, splash/startup and 
 
 The required interpretation is structural integration rather than sticker placement: replace active legacy identity, adapt canonical geometry to the existing product design language, preserve unrelated behavior, validate the build, and keep release publication separate unless explicitly authorized.
 
+
+
+## 2026-10-06 — LouderMe agent contracts synchronized for Android + Windows
+
+### Audit finding
+The repository agent system itself was healthy at the Michel's Lab master level, but LouderMe's child-agent prompts were stale after the Windows Desktop launch:
+- `AGENTS.md` still introduced LouderMe as Android-only;
+- App Maintainer only referenced Compose/Gradle;
+- QA Regression only covered Android audio/distribution risks;
+- Release Manager only covered Play and Android Direct.
+
+### Correction
+Updated the local agent contract and all three LouderMe specialist profiles to treat the product as dual-platform:
+- Android Play + Michel's Lab Direct;
+- native Windows Desktop;
+- Windows endpoint volume 0–100 versus APO-backed Global Boost 100–250;
+- Equalizer APO managed-config safety and bypass limits;
+- Desktop EXE/Inno Setup/checksum/public-feed validation;
+- Desktop source/public tag naming;
+- Authenticode/SmartScreen evidence discipline;
+- physical Windows APO/audio validation boundaries.
+
+### Scope
+No product code, version metadata, audio engine, release artifact or distribution binary was changed by this agent-contract reconciliation.

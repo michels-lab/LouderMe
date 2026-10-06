@@ -17,6 +17,21 @@ internal static class Program
         }
 
         ApplicationConfiguration.Initialize();
-        Application.Run(new MainForm());
+
+        using var splash = new SplashForm();
+        splash.Show();
+        Application.DoEvents();
+
+        using var main = new MainForm();
+
+        var start = Environment.TickCount64;
+        while (Environment.TickCount64 - start < 520)
+        {
+            Application.DoEvents();
+            Thread.Sleep(16);
+        }
+
+        splash.Close();
+        Application.Run(main);
     }
 }

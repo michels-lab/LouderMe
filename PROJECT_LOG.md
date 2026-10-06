@@ -850,3 +850,9 @@ Implementation prepared on `feature/desktop-and-autostart`. Pending Android + Wi
 
 ### Final gate
 Both Android and Windows PR validation must pass again on the final branch head before merge.
+
+
+### Installer validation finding
+- After the portable EXE smoke test passed, Inno Setup 6.7.1 rejected the `[UninstallRun]` startup-cleanup command because its quoted registry path used C-style escaping.
+- Corrected the installer to use Inno Setup's doubled-quote syntax around the HKCU Run registry path.
+- Final Windows validation still requires installer compile + silent install + installed-EXE launch + uninstall to pass on the corrected head.

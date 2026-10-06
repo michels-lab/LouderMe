@@ -840,3 +840,13 @@ Android CI now also asserts the boot permission, receiver and startup control wi
 
 ### Current status
 Implementation prepared on `feature/desktop-and-autostart`. Pending Android + Windows CI. No Desktop production release has been published.
+
+
+### CI findings while validating Desktop
+- First Windows PR validation reached a successful source build but failed self-contained publish with `NETSDK1047` because the restore graph did not include `win-x64`. Added `RuntimeIdentifiers=win-x64` and moved DPI configuration into the WinForms project.
+- The next run compiled and published the self-contained EXE successfully, then the portable smoke test exposed a startup crash. Local crash diagnostics were added so future CI failures surface the actual exception.
+- The crash was traced to `BrandMarkControl` assigning a transparent background to a WinForms control that did not opt into transparent backgrounds. The official mark now uses the command bar's actual `#090E17` canvas background instead.
+- Android release CI was also hardened: an already-existing version tag is now left untouched rather than uploading/clobbering published assets. This prevents an unrelated merge from silently mutating a stable Android release when no new release was authorized.
+
+### Final gate
+Both Android and Windows PR validation must pass again on the final branch head before merge.

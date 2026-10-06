@@ -72,3 +72,16 @@ When the user asks to update/adopt the app logo, icon, splash, startup or About:
 - do not publish a release unless the user explicitly authorizes it.
 
 A change that merely pastes the SVG/PNG into an arbitrary card or header is not a completed branding migration.
+
+## Cross-chat claim guard
+
+Michel's Lab uses the master `.michelslab/task-claims.json` / generated queue metadata to prevent multiple chats or agents from editing the same tracked task concurrently.
+
+Before starting a delegated tracked task:
+- inspect the claim metadata included in the handoff/current master queue when available;
+- if a different owner has an active non-stale claim, **stop and report the collision instead of editing**;
+- stale claims require a freshness check before work resumes;
+- do not treat a claim as validation or release permission;
+- return branch/commit/validation status in the handoff so the master owner can heartbeat, complete or release the claim.
+
+

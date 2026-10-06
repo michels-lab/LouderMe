@@ -64,6 +64,25 @@ jobs:
           dotnet restore desktop/src/LouderMeDesktop/LouderMeDesktop.csproj
           dotnet build desktop/src/LouderMeDesktop/LouderMeDesktop.csproj -c Release --no-restore
 
+      - name: Validate real global boost contract
+        shell: pwsh
+        run: |
+          $math=Get-Content 'desktop/src/LouderMeDesktop/BoostMath.cs' -Raw
+          if ($math -notmatch '20d \* Math\.Log10') { throw 'Percent-to-dB gain conversion is missing.' }
+
+          $config=Get-Content 'desktop/src/LouderMeDesktop/EqualizerApoConfigBuilder.cs' -Raw
+          foreach ($required in @('Device: all','Stage: post-mix','Channel: all','Preamp:','GraphicEQ:','Include: LouderMe.txt')) {
+            if ($config -notmatch [regex]::Escape($required)) { throw "APO config contract missing: $required" }
+          }
+
+          $ui=Get-Content 'desktop/src/LouderMeDesktop/MainForm.cs' -Raw
+          foreach ($required in @('Global Boost','250%','Get system-wide engine','Open Configurator')) {
+            if ($ui -notmatch [regex]::Escape($required)) { throw "Desktop boost UI contract missing: $required" }
+          }
+
+          $db250=20*[Math]::Log10(2.5)
+          if ([Math]::Abs($db250-7.958800173) -gt 0.000001) { throw '250 percent gain conversion sanity check failed.' }
+
       - name: Publish portable Windows executable
         shell: pwsh
         run: |

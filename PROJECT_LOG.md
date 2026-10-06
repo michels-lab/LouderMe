@@ -508,3 +508,86 @@ One-time migration:
 1. uninstall the old direct/debug LouderMe;
 2. install the stable signed v0.1.4 sideload baseline;
 3. from v0.1.5 onward, same-signer direct updates can install in place after Android confirmation.
+
+
+## 2026-10-06 — v0.1.4 final direct-update channel validated and released
+
+### Final validation
+
+The permanent Michel's Lab Direct update path is now operational.
+
+- Final release-candidate build/sign run: `37424013605` — **success**.
+- Squash merge to `main`: `ad1f3284ea8e39552ae0711a48f995ea7976f2c3`.
+- Final `main` build/sign/private-release run: `37424364775` — **success**.
+- Public binary publisher run: `37423737829` — **success**.
+- Play and sideload unit/build validation: passed.
+- Play permission audit: passed — no `REQUEST_INSTALL_PACKAGES`.
+- Sideload permission audit: passed — install permission present.
+- Stable sideload signing: passed.
+- Private signing vault refresh: passed.
+- Private v0.1.4 release publication: passed.
+- Public v0.1.4 binary release publication: passed.
+- Public `latest.json` update: passed.
+
+### Authoritative stable signer
+
+The final canonical Michel's Lab Direct signing identity is:
+
+- DN: `CN=Michel's Lab, OU=Software, O=Michel's Lab, L=Saltillo, ST=Coahuila, C=MX`.
+- certificate SHA-256: `e0d497f4872c116632f040e51e08b7beb410f0a3df4d2b959d22fbd7bde48479`.
+- RSA: 4096-bit.
+- APK signature scheme: v3.
+
+**Supersession note:** earlier v0.1.4 development/bootstrap entries that recorded certificate SHA `4a5bb9d9456a656821c3c1105854bda17e24273fd0d09e9495edd5b01e783aa3` and bootstrap APK SHA `7eee11c065330d0064378172840cdb5aa067c17463332db8a6c6626e674f9d83` are provisional historical evidence and are **not** the final release identity. The `e0d497...` certificate above is authoritative.
+
+### Release evidence
+
+Private source-repo release:
+- tag: `v0.1.4`;
+- APK: `LouderMe-v0.1.4-sideload.apk`;
+- size: 22,100,564 bytes;
+- APK SHA-256: `b2687abd2242265abe7322426a22ba7069e58aecfe228b2206d79151f89331df`.
+
+Public Michel's Lab Direct release:
+- tag: `louderme-v0.1.4`;
+- APK: `LouderMe-v0.1.4-sideload.apk`;
+- size: 22,100,564 bytes;
+- APK SHA-256: `7c4231e718fba60a74df0717a68f0f5ff0b9273b79194de501ffc41b4386958a`.
+
+The two whole-file hashes differ because they were independent builds. Both APKs were verified against the same final canonical signing certificate, which is the property Android requires for update continuity.
+
+### Public feed
+
+`realmichelduarte/michel-s-life-releases/louderme/latest.json` now advertises:
+
+- package: `com.michelslab.louderme`;
+- versionName: `0.1.4`;
+- versionCode: `5`;
+- public APK URL;
+- SHA-256 `7c4231e718fba60a74df0717a68f0f5ff0b9273b79194de501ffc41b4386958a`.
+
+The LouderMe APK does not contain a private GitHub token.
+
+### Signing continuity
+
+Normal CI now preserves one stable signing identity.
+
+The workflow prefers valid GitHub Actions signing Secrets but can recover from missing/stale Secrets through a private Actions signing-vault artifact. The vault is refreshed after successful signing and by a scheduled monthly run.
+
+The stable signer is not regenerated during normal releases.
+
+### Migration requirement
+
+v0.1.3 and older direct builds are debug-signed and cannot update in place to the permanent signer.
+
+Exactly one migration reinstall is required:
+
+1. uninstall the old debug-signed LouderMe;
+2. install the stable v0.1.4 Michel's Lab Direct APK;
+3. from v0.1.5 onward, LouderMe can automatically discover/download/verify newer direct releases and Android can accept them as same-signer updates after the required system confirmation.
+
+### Status
+
+**v0.1.4 is released and the Michel's Lab Direct update channel is operational.**
+
+No additional manual GitHub browsing should be necessary for normal same-signer sideload updates after the one-time v0.1.4 migration.

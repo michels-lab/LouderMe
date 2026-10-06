@@ -26,7 +26,7 @@ internal sealed class AboutForm : Form
         MinimumSize = new Size(760, 720);
         Size = new Size(860, 860);
         BackColor = Bg;
-        ForeColor = Text;
+        ForeColor = TextPrimary;
         Font = new Font("Segoe UI", 10f);
         AutoScaleMode = AutoScaleMode.Dpi;
         ShowIcon = true;

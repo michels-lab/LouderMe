@@ -97,3 +97,10 @@ The updater never treats an unverified download as installable.
 The updater verifies published SHA-256 integrity, but **Authenticode publisher signing is still a separate release capability**.
 
 Do not describe a Desktop build as signed unless the actual release artifact carries a valid Windows publisher signature. Unsigned/new-reputation builds can still trigger SmartScreen.
+
+
+## Release trigger discipline
+
+Desktop feature, branding, CI or workflow maintenance changes do not publish a stable release by themselves.
+
+The stable publisher runs from an explicit versioned release note under `desktop/releases/vX.Y.Z.md` or a deliberate manual workflow dispatch. Editing the release workflow alone must not overwrite an already-published Desktop version.

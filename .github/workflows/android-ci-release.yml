@@ -81,10 +81,10 @@ jobs:
           grep -q 'UPDATE_CHANNEL' app/build.gradle.kts
 
           test "$(git hash-object app/src/main/res/drawable/michel_duarte_avatar.jpg)" = "be4d18572bec28d53783cd4db05cb6cd289a7916"
-          test "$(git hash-object app/src/main/res/drawable/michels_lab_mark.png)" = "f205c15c3b6bd7fe676ced83fd1ea2ae24c25586"
-          test "$(git hash-object app/src/main/res/drawable/michels_lab_lockup.png)" = "7819ef5c7d1a5c338c67c9bbd517e5448724a5cf"
+          test "$(git hash-object app/src/main/assets/branding/michels-lab/official-mark.png)" = "f205c15c3b6bd7fe676ced83fd1ea2ae24c25586"
+          test "$(git hash-object app/src/main/assets/branding/michels-lab/official-lockup.png)" = "7819ef5c7d1a5c338c67c9bbd517e5448724a5cf"
           grep -q 'SocialNetwork.FACEBOOK' app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt
-          grep -q 'michels_lab_lockup' app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt
+          grep -q 'branding/michels-lab/official-lockup.png' app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt
           grep -q 'SOUND THAT LIFTS YOU' app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt
           grep -q 'CanonicalWaveform' app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt
           grep -q 'EqWavePreview' app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt

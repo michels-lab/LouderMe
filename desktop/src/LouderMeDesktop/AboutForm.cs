@@ -192,11 +192,11 @@ internal sealed class AboutForm : Form
             WrapContents = false,
             Margin = new Padding(0, 12, 0, 0),
         };
-        socials.Controls.Add(SocialRow("IG", "Instagram", DeveloperProfile.Instagram));
-        socials.Controls.Add(SocialRow("f", "Facebook", DeveloperProfile.Facebook));
-        socials.Controls.Add(SocialRow("in", "LinkedIn", DeveloperProfile.LinkedIn));
-        socials.Controls.Add(SocialRow("GH", "GitHub", DeveloperProfile.GitHub));
-        socials.Controls.Add(SocialRow("✉", "Email", $"mailto:{DeveloperProfile.Email}"));
+        socials.Controls.Add(SocialRow(SocialNetwork.Instagram, "Instagram", DeveloperProfile.Instagram));
+        socials.Controls.Add(SocialRow(SocialNetwork.Facebook, "Facebook", DeveloperProfile.Facebook));
+        socials.Controls.Add(SocialRow(SocialNetwork.LinkedIn, "LinkedIn", DeveloperProfile.LinkedIn));
+        socials.Controls.Add(SocialRow(SocialNetwork.GitHub, "GitHub", DeveloperProfile.GitHub));
+        socials.Controls.Add(SocialRow(SocialNetwork.Email, "Email", $"mailto:{DeveloperProfile.Email}"));
         layout.SetColumnSpan(socials, 2);
         layout.Controls.Add(socials, 0, 2);
 
@@ -335,41 +335,42 @@ internal sealed class AboutForm : Form
         }
     }
 
-    private static Panel SocialRow(string icon, string name, string url)
+    private static Panel SocialRow(SocialNetwork network, string name, string url)
     {
         var row = new Panel
         {
             Width = 720,
-            Height = 42,
+            Height = 46,
             BackColor = Surface2,
             Margin = new Padding(0, 4, 0, 0),
             Cursor = Cursors.Hand,
         };
 
-        var badge = new Label
+        var badge = new SocialGlyphControl
         {
-            Text = icon,
-            Width = 38,
-            Dock = DockStyle.Left,
-            TextAlign = ContentAlignment.MiddleCenter,
-            ForeColor = TextPrimary,
-            Font = new Font("Segoe UI Semibold", icon == "in" ? 9f : 11f, FontStyle.Bold),
+            Network = network,
+            Location = new Point(6, 6),
+            Cursor = Cursors.Hand,
         };
         var label = new Label
         {
             Text = name,
-            Dock = DockStyle.Fill,
+            Location = new Point(50, 0),
+            Width = 600,
+            Height = 46,
             TextAlign = ContentAlignment.MiddleLeft,
             ForeColor = TextPrimary,
             Font = new Font("Segoe UI Semibold", 10f, FontStyle.Bold),
+            Cursor = Cursors.Hand,
         };
         var arrow = new Label
         {
             Text = "↗",
-            Width = 36,
             Dock = DockStyle.Right,
+            Width = 36,
             TextAlign = ContentAlignment.MiddleCenter,
             ForeColor = Cyan,
+            Cursor = Cursors.Hand,
         };
 
         void Open(object? _, EventArgs __) => OpenUrl(url);
@@ -378,9 +379,9 @@ internal sealed class AboutForm : Form
         label.Click += Open;
         arrow.Click += Open;
 
+        row.Controls.Add(badge);
         row.Controls.Add(label);
         row.Controls.Add(arrow);
-        row.Controls.Add(badge);
         return row;
     }
 

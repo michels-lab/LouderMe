@@ -653,3 +653,30 @@ Added `.github/ISSUE_TEMPLATE/chatgpt-task.yml` so new implementation/audit task
 
 Purpose: reduce repeated context reconstruction in future ChatGPT sessions and make repository work resumable from a bounded GitHub Issue without changing product behavior.
 \n
+
+## 2026-10-06 — Official LouderMe product identity integration
+
+### Source of truth
+Consumed the official LouderMe branding from `realmichelduarte/Michel-Software-Standards`:
+- approved concept: **Option 4 — flowing waveform**;
+- `shared-assets/product-logos/louderme/official-app-icon.svg`;
+- `shared-assets/product-logos/louderme/official-mark.svg`;
+- `shared-assets/product-logos/louderme/official-lockup.svg`.
+
+The canonical SVGs are copied into `app/src/main/assets/branding/louderme/` for provenance. Android runtime assets are local platform derivatives; the app does not hotlink the private standards repository.
+
+### Implementation
+- Added official launcher and round-launcher identity.
+- Added adaptive Android launcher foreground/background assets.
+- Added official branded launch/splash treatment.
+- Replaced the temporary `LM` command-bar placeholder with the official waveform mark.
+- Added the official waveform/wordmark/tagline treatment to the About hero.
+- Preserved the existing IG Cleaner-family LouderMe layout and colors outside the requested branding surfaces.
+- No audio, updater, permission, signing, distribution or cloud behavior was changed.
+- No version bump or release publication was performed as part of this branding-only implementation.
+
+### Validation
+Pending pull-request CI for Android resource compilation, both distribution flavors, package IDs and permissions.
+
+### Current status
+Official LouderMe identity is implemented on the branding branch and awaiting CI validation before merge.

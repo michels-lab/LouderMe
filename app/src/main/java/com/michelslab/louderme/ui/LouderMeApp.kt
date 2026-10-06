@@ -638,8 +638,8 @@ private fun CommandBar(
                     .background(
                         Brush.linearGradient(
                             listOf(
-                                Color(0xFF234879),
-                                LouderMeColors.Surface2,
+                                Color(0xFF071A30),
+                                Color(0xFF07355B),
                             )
                         )
                     )
@@ -647,15 +647,15 @@ private fun CommandBar(
                         1.dp,
                         LouderMeColors.LineStrong,
                         RoundedCornerShape(12.dp),
-                    ),
+                    )
+                    .padding(5.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    "LM",
-                    color = LouderMeColors.Cyan,
-                    fontWeight = FontWeight.Black,
-                    fontFamily = FontFamily.Monospace,
-                    fontSize = 12.sp,
+                Image(
+                    painter = painterResource(R.drawable.louderme_mark),
+                    contentDescription = "LouderMe",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Fit,
                 )
             }
 
@@ -680,6 +680,58 @@ private fun CommandBar(
                 Text("About", fontSize = 10.sp, fontWeight = FontWeight.Bold)
             }
         }
+    }
+}
+
+@Composable
+private fun LouderMeBrandLockup(
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Column(
+            modifier = Modifier.weight(1.15f),
+            horizontalAlignment = Alignment.Start,
+        ) {
+            Image(
+                painter = painterResource(R.drawable.louderme_mark),
+                contentDescription = "LouderMe official waveform",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(62.dp),
+                contentScale = ContentScale.Fit,
+            )
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(
+                    "Louder",
+                    color = Color.White,
+                    fontSize = 25.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = (-0.5).sp,
+                )
+                Text(
+                    "Me",
+                    color = Color(0xFF168FF0),
+                    fontSize = 25.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = (-0.5).sp,
+                )
+            }
+        }
+
+        Text(
+            "SOUND THAT\nLIFTS YOU",
+            modifier = Modifier.weight(0.85f),
+            color = Color(0xFF7C9AB5),
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.Bold,
+            fontSize = 9.sp,
+            lineHeight = 15.sp,
+            letterSpacing = 1.7.sp,
+        )
     }
 }
 
@@ -1243,8 +1295,10 @@ private fun AboutScreen(
                     .padding(18.dp),
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Eyebrow("LOUDERME", LouderMeColors.Cyan)
-                    Spacer(Modifier.height(7.dp))
+                    LouderMeBrandLockup(
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Spacer(Modifier.height(14.dp))
                     Text(
                         "Make everything louder.",
                         color = Color.White,

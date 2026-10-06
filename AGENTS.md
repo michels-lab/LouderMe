@@ -16,6 +16,26 @@ Shared Michel's Lab rules live in `realmichelduarte/Michel-Software-Standards`.
 - High-gain and EQ audible quality require real target-device validation; repository tests cannot prove acoustic behavior.
 - Never commit signing keys/passwords, Play credentials or privileged service secrets.
 
+## Official product identity — mandatory
+
+LouderMe uses the approved Michel's Lab canonical flowing-waveform logo geometry from `realmichelduarte/Michel-Software-Standards`.
+
+**Do not implement branding by simply pasting the source SVG into screens.** The logo is a design language, not a sticker.
+
+Protected identity:
+- preserve the defining waveform silhouette, proportions and spatial relationships;
+- do not stretch, skew, redraw into another symbol, or alter the geometry until it stops reading as the approved LouderMe mark.
+
+Adaptive expression is expected:
+- color may adapt to theme/context;
+- monochrome, inverted, glow, glass, outline, translucent and animated treatments are allowed;
+- mark-only and mark + product-name compositions are allowed where appropriate;
+- the flowing-waveform visual DNA should inform relevant volume/EQ visualization, activity states, separators, loaders and motion.
+
+A screen can be correctly branded without displaying the full logo. Prefer integrated audio visual language over repeated logo placement.
+
+Follow `standards/PRODUCT_IDENTITY_STANDARD.md` in the master standards repository as the authority.
+
 ## Validation
 
 Inspect the current workflows and run the strongest relevant Gradle/build/test path for the changed flavor/surface. Validate manifest/permission separation when updater/distribution code changes.

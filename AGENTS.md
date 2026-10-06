@@ -84,4 +84,20 @@ Before starting a delegated tracked task:
 - do not treat a claim as validation or release permission;
 - return branch/commit/validation status in the handoff so the master owner can heartbeat, complete or release the claim.
 
+## Structured handoff requirement
+
+For any tracked Michel's Lab task, return enough machine-readable continuation context for the master handoff registry:
+
+- task ID and repository;
+- owner/role and branch;
+- outcome;
+- commits and areas changed;
+- validations that **actually ran** and their real result;
+- evidence status: `verified`, `inferred`, or `blocked`;
+- remaining work;
+- blockers/manual evidence still required;
+- suggested next owner/role when useful.
+
+Do not list planned tests/builds/device checks as completed validation. If required validation was not performed, the task must be released/handed back with that work pending rather than described as complete.
+
 

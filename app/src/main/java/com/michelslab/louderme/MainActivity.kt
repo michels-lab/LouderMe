@@ -13,7 +13,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.mutableStateOf
-import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.michelslab.louderme.audio.AudioBoostContract
 import com.michelslab.louderme.audio.AudioBoostService
 import com.michelslab.louderme.audio.AudioBoostStateStore
@@ -25,7 +24,7 @@ import com.michelslab.louderme.audio.EqualizerStateStore
 import com.michelslab.louderme.audio.EqualizerStatus
 import com.michelslab.louderme.audio.EqualizerUiState
 import com.michelslab.louderme.ui.LouderMeApp
-import com.michelslab.louderme.update.PlayUpdateController
+import com.michelslab.louderme.update.UpdateCoordinator
 import com.michelslab.louderme.update.UpdateStatus
 
 class MainActivity : ComponentActivity() {
@@ -33,14 +32,14 @@ class MainActivity : ComponentActivity() {
     private val audioState = mutableStateOf(AudioEngineUiState())
     private val equalizerState = mutableStateOf(EqualizerUiState())
 
-    private lateinit var updateController: PlayUpdateController
+    private lateinit var updateCoordinator: UpdateCoordinator
     private var pendingBoostPercent: Int? = null
     private var audioReceiverRegistered = false
 
     private val updateLauncher =
         registerForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
-            if (result.resultCode != Activity.RESULT_OK && ::updateController.isInitialized) {
-                updateController.markUpdateCancelled()
+            if (result.resultCode != Activity.RESULT_OK && ::updateCoordinator.isInitialized) {
+                updateCoordinator.markPlayUpdateCancelled()
             }
         }
 
@@ -67,13 +66,13 @@ class MainActivity : ComponentActivity() {
         audioState.value = AudioBoostStateStore.read(this)
         equalizerState.value = EqualizerStateStore.read(this)
 
-        updateController = PlayUpdateController(
-            appUpdateManager = AppUpdateManagerFactory.create(this),
+        updateCoordinator = UpdateCoordinator(
+            activity = this,
             updateLauncher = updateLauncher,
             onStatusChanged = { updateStatus.value = it },
         )
 
-        updateController.checkForUpdates(allowAutomaticPrompt = true)
+        updateCoordinator.checkForUpdates(automatic = true)
 
         setContent {
             LouderMeApp(
@@ -81,10 +80,10 @@ class MainActivity : ComponentActivity() {
                 audioState = audioState.value,
                 equalizerState = equalizerState.value,
                 onCheckForUpdates = {
-                    updateController.checkForUpdates(allowAutomaticPrompt = false)
+                    updateCoordinator.checkForUpdates(automatic = false)
                 },
                 onInstallUpdate = {
-                    updateController.installAvailableUpdate()
+                    updateCoordinator.installAvailableUpdate()
                 },
                 onBoostToggle = { enabled ->
                     if (enabled) {
@@ -200,9 +199,16 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (::updateController.isInitialized) {
-            updateController.resumeInterruptedUpdate()
+        if (::updateCoordinator.isInitialized) {
+            updateCoordinator.onResume()
         }
+    }
+
+    override fun onDestroy() {
+        if (::updateCoordinator.isInitialized) {
+            updateCoordinator.shutdown()
+        }
+        super.onDestroy()
     }
 
     private fun receiveAudioState(intent: Intent) {

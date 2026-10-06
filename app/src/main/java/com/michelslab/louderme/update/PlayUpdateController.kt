@@ -25,16 +25,30 @@ class PlayUpdateController(
                     info.updateAvailability() ==
                         UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS -> {
                         pendingUpdateInfo = info
-                        onStatusChanged(UpdateStatus.UpdateAvailable)
+                        onStatusChanged(
+                            UpdateStatus.UpdateAvailable(
+                                channel = "Google Play"
+                            )
+                        )
                         startImmediateUpdate(info)
                     }
 
-                    info.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE &&
-                        info.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE) -> {
+                    info.updateAvailability() ==
+                        UpdateAvailability.UPDATE_AVAILABLE &&
+                        info.isUpdateTypeAllowed(
+                            AppUpdateType.IMMEDIATE
+                        ) -> {
                         pendingUpdateInfo = info
-                        onStatusChanged(UpdateStatus.UpdateAvailable)
+                        onStatusChanged(
+                            UpdateStatus.UpdateAvailable(
+                                channel = "Google Play"
+                            )
+                        )
 
-                        if (allowAutomaticPrompt && !autoPromptedThisProcess) {
+                        if (
+                            allowAutomaticPrompt &&
+                            !autoPromptedThisProcess
+                        ) {
                             autoPromptedThisProcess = true
                             startImmediateUpdate(info)
                         }
@@ -51,12 +65,22 @@ class PlayUpdateController(
                 val message = error.message.orEmpty()
 
                 if (
-                    message.contains("not owned", ignoreCase = true) ||
-                    message.contains("install", ignoreCase = true)
+                    message.contains(
+                        "not owned",
+                        ignoreCase = true
+                    ) ||
+                    message.contains(
+                        "install",
+                        ignoreCase = true
+                    )
                 ) {
-                    onStatusChanged(UpdateStatus.PlayStoreUnavailable)
+                    onStatusChanged(
+                        UpdateStatus.PlayStoreUnavailable
+                    )
                 } else {
-                    onStatusChanged(UpdateStatus.Error(error.message))
+                    onStatusChanged(
+                        UpdateStatus.Error(error.message)
+                    )
                 }
             }
     }
@@ -79,14 +103,23 @@ class PlayUpdateController(
                     UpdateAvailability.DEVELOPER_TRIGGERED_UPDATE_IN_PROGRESS
                 ) {
                     pendingUpdateInfo = info
-                    onStatusChanged(UpdateStatus.UpdateAvailable)
+                    onStatusChanged(
+                        UpdateStatus.UpdateAvailable(
+                            channel = "Google Play"
+                        )
+                    )
                     startImmediateUpdate(info)
                 } else {
-                    checkForUpdates(allowAutomaticPrompt = !autoPromptedThisProcess)
+                    checkForUpdates(
+                        allowAutomaticPrompt =
+                            !autoPromptedThisProcess
+                    )
                 }
             }
             .addOnFailureListener {
-                onStatusChanged(UpdateStatus.PlayStoreUnavailable)
+                onStatusChanged(
+                    UpdateStatus.PlayStoreUnavailable
+                )
             }
     }
 
@@ -95,10 +128,14 @@ class PlayUpdateController(
             appUpdateManager.startUpdateFlowForResult(
                 info,
                 updateLauncher,
-                AppUpdateOptions.newBuilder(AppUpdateType.IMMEDIATE).build(),
+                AppUpdateOptions
+                    .newBuilder(AppUpdateType.IMMEDIATE)
+                    .build(),
             )
         }.onFailure { error ->
-            onStatusChanged(UpdateStatus.Error(error.message))
+            onStatusChanged(
+                UpdateStatus.Error(error.message)
+            )
         }
     }
 

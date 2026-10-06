@@ -6,7 +6,7 @@
 **Draft date:** 2026-10-05
 
 ## Overview
-LouderMe is an Android audio-control application. Its current boost and equalizer implementation uses Android audio-effect APIs locally on the device.
+LouderMe is an Android audio-control application. Its boost and equalizer implementation uses Android audio-effect APIs locally on the device.
 
 ## Audio
 LouderMe does not record microphone audio, capture media audio, upload audio, or store the audio content being played.
@@ -16,27 +16,43 @@ The app does not request microphone permission.
 ## Local app data
 LouderMe stores local configuration such as:
 - selected boost percentage;
-- selected equalizer preset;
+- equalizer preset;
 - equalizer enabled state;
-- seven requested equalizer band levels;
-- audio-engine state required for the local UI.
+- requested equalizer band levels;
+- audio/update state required for the local UI;
+- a temporarily downloaded APK when a sideload update is pending.
 
-This configuration stays on the device.
+## Network
 
-## Network / third-party services
-Google Play-installed builds use Google Play's in-app update service to check for and install official app updates.
+### Google Play flavor
+Uses Google Play's in-app update service.
 
-The current LouderMe build does not contain advertising or analytics SDKs.
+### Michel's Lab direct flavor
+Makes HTTPS requests to a public Michel's Lab/GitHub-hosted update manifest and APK URL to:
+- check the current release version;
+- download an official update.
+
+No private GitHub token is shipped in the app.
+
+The updater validates the APK checksum, package identity, version and signing identity before handing it to Android.
 
 ## Permissions
-Current permissions include:
+Common permissions:
+- Internet;
 - modify audio settings;
 - foreground service;
-- foreground service special-use declaration;
-- notification permission so the foreground audio service can remain visible to the user.
+- foreground service special-use;
+- notifications.
 
-## Sale / advertising
-LouderMe does not sell user data. The current build does not include advertising.
+The sideload flavor additionally declares `REQUEST_INSTALL_PACKAGES` so Android can allow the user to approve installation of a verified downloaded update.
+
+The Google Play flavor does not declare that sideload permission.
+
+## Analytics / advertising
+The current build contains no advertising or analytics SDKs.
+
+## Sale of data
+LouderMe does not sell user data.
 
 ## Changes
-This draft must be reviewed again before production if analytics, ads, cloud accounts, audio capture, crash reporting, or additional network services are added.
+Re-audit before production if analytics, ads, cloud accounts, audio capture, crash reporting or additional network services are added.

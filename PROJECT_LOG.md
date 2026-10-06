@@ -346,3 +346,165 @@ The new EQ compiled and is genuinely connected to Android's Equalizer API, but i
 
 ### Next
 Install v0.1.3 on the target Samsung, enable Global Boost, switch between Flat / Bass / Dialogue / Treble, confirm audible tonal changes, and inspect EQ Diagnostics for ATTACHED/DEGRADED/UNSUPPORTED plus the native band mapping.
+
+
+## 2026-10-05 — v0.1.4 direct/sideload automatic updater
+
+### Problem
+The v0.1.3 updater only used Google Play In-App Updates. The APK currently installed directly from GitHub is not owned by Google Play, so it cannot use that production Play channel.
+
+The private LouderMe source repository also cannot be queried anonymously from a shipped APK without embedding a private credential, which is prohibited.
+
+### Architecture decision
+Create two distribution flavors:
+- `play` — Google Play updater; no APK-install permission.
+- `sideload` — Michel's Lab direct updater.
+
+The direct updater reads a public manifest from the existing public release infrastructure while the application source stays private.
+
+### Direct updater implementation
+The sideload channel now:
+1. checks the public manifest automatically;
+2. compares versionCode;
+3. downloads a newer APK;
+4. verifies SHA-256;
+5. verifies package ID;
+6. verifies candidate versionCode;
+7. verifies that candidate and installed LouderMe share an accepted signing certificate;
+8. requests Android's per-source install permission when necessary;
+9. streams the verified APK through PackageInstaller;
+10. lets Android present mandatory user confirmation.
+
+### Play policy separation
+`REQUEST_INSTALL_PACKAGES` exists only in `src/sideload/AndroidManifest.xml`.
+
+The Play flavor does not request it.
+
+### Signing finding
+The v0.1.3 and earlier GitHub APKs were hosted-CI debug builds. A runner debug key is not an acceptable long-term update identity.
+
+v0.1.4 therefore creates a one-time stable sideload signing key in a private CI bootstrap artifact. The key must be transferred into secure CI secrets and never committed.
+
+Because the currently installed v0.1.3 has a different signing identity, migration to stable v0.1.4 requires one uninstall/reinstall. Future stable sideload builds can update in place.
+
+### Public feed
+Bootstrap feed created:
+`realmichelduarte/michel-s-life-releases/louderme/latest.json`
+
+No LouderMe source code or private token is exposed by this feed.
+
+### Version
+v0.1.4 / versionCode 5.
+
+### Status
+Implementation prepared on `release/v0.1.4`. Pending CI validation and stable signing bootstrap.
+
+
+## 2026-10-05 — v0.1.4 release-Lint failure and Fragment fix
+
+### Failure
+GitHub Actions run `37388581098` failed during the real dual-flavor release build.
+
+The failure was not hidden or bypassed. Android Lint reported `InvalidFragmentVersionForActivityResult` for the two `registerForActivityResult` calls in `MainActivity` while assembling the release target.
+
+### Root cause
+The release configuration did not have a sufficiently modern explicit AndroidX Fragment runtime available for ActivityResult's release-Lint contract.
+
+### Fix
+Added the current stable AndroidX Fragment KTX dependency:
+
+`androidx.fragment:fragment-ktx:1.9.1`
+
+No lint baseline, suppression, or fatal-check disabling was introduced.
+
+### Status
+A fresh v0.1.4 branch validation is required. The stable sideload signing bootstrap remains blocked until the full build succeeds.
+
+
+## 2026-10-05 — v0.1.4 direct auto-update architecture
+
+### Problem
+The existing updater worked only for Google Play-owned installations. LouderMe is currently being tested through direct GitHub APK installation, so the user expected the APK build itself to discover and install newer versions.
+
+The private LouderMe repository cannot be queried anonymously from a shipped APK without embedding a private GitHub credential, which is prohibited.
+
+Older GitHub releases were also CI debug-signed. Hosted debug signing is not a permanent release identity, so Android cannot guarantee in-place updates across future runners.
+
+### Architecture
+LouderMe now has two explicit distribution flavors:
+
+- `play` — Google Play In-App Updates; no `REQUEST_INSTALL_PACKAGES`.
+- `sideload` — Michel's Lab Direct updater; includes `REQUEST_INSTALL_PACKAGES`.
+
+The direct channel:
+- reads a public update manifest from the Michel's Lab release hub;
+- auto-downloads newer versions;
+- verifies SHA-256;
+- verifies package ID;
+- verifies manifest/APK versionCode;
+- verifies signing-certificate continuity;
+- installs through Android PackageInstaller;
+- handles the Android unknown-sources permission flow;
+- records PackageInstaller results.
+
+### Public/private boundary
+Source remains private.
+
+The public update feed and signed APKs live in `realmichelduarte/michel-s-life-releases` under the LouderMe channel.
+
+No private repository token is shipped in LouderMe.
+
+### Signing migration
+v0.1.4 establishes a dedicated stable sideload signing key.
+
+Because v0.1.3 and earlier were debug builds, the installed old build must be uninstalled once before installing the stable v0.1.4 baseline.
+
+After that one-time migration, same-key direct releases can update in place.
+
+### CI safety
+- validation builds both Play and sideload flavors;
+- CI explicitly asserts Play does not request `REQUEST_INSTALL_PACKAGES`;
+- CI explicitly asserts sideload does;
+- one-time signing-key bootstrap is gated behind an explicit `[bootstrap-signing]` commit;
+- normal main releases require stable key secrets;
+- public-feed publication requires a dedicated cross-repo token;
+- the signing key is never committed to source.
+
+### Current status
+Code and CI architecture prepared. Pending final branch validation, one-time signing bootstrap, secret installation and public v0.1.4 baseline publication.
+
+
+## 2026-10-06 — Stable sideload signer bootstrap validated
+
+### Validation
+- Bootstrap workflow run: `37392415939`.
+- Current-HEAD Android validation: **success**.
+- Play + sideload flavor builds/tests: **success**.
+- Play permission audit: **success** — no `REQUEST_INSTALL_PACKAGES`.
+- Sideload permission audit: **success** — `REQUEST_INSTALL_PACKAGES` present.
+- Stable sideload signing bootstrap: **success**.
+- Signed bootstrap artifact: `LouderMe-v0.1.4-stable-sideload`.
+- Private signing handoff artifact: `LouderMe-sideload-signing-material-PRIVATE`.
+- Private handoff expires 2026-10-13 and must be transferred to GitHub Actions secrets plus a secure offline backup.
+
+### Stable signing identity
+- Certificate DN: `CN=Michel's Lab, OU=Software, O=Michel's Lab, L=Saltillo, ST=Coahuila, C=MX`.
+- Certificate SHA-256: `4a5bb9d9456a656821c3c1105854bda17e24273fd0d09e9495edd5b01e783aa3`.
+- RSA key size: 4096 bits.
+- APK signature scheme verified: v3.
+- Signed v0.1.4 sideload APK size: 22,100,564 bytes.
+- Signed APK SHA-256: `7eee11c065330d0064378172840cdb5aa067c17463332db8a6c6626e674f9d83`.
+
+### Security boundary
+The private key/password material is not committed to Git and must never be copied into app source, documentation, logs, chat, or the public update feed.
+
+### Remaining infrastructure gate
+The GitHub connector cannot write Actions Secrets. Before merging v0.1.4 to `main`, the private handoff values must be added to the LouderMe repository as Actions secrets, and a fine-grained cross-repository token must be added for publishing the public Michel's Lab release feed.
+
+### Migration
+v0.1.3 and older direct APKs were CI-debug signed. Android cannot update those in-place to the new stable signer.
+
+One-time migration:
+1. uninstall the old direct/debug LouderMe;
+2. install the stable signed v0.1.4 sideload baseline;
+3. from v0.1.5 onward, same-signer direct updates can install in place after Android confirmation.

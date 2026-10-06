@@ -1,4 +1,4 @@
-name: LouderMe Android CI & Release
+name: LouderMe Android CI & Direct Release
 
 on:
   push:
@@ -11,9 +11,16 @@ on:
     branches:
       - main
   workflow_dispatch:
+  schedule:
+    - cron: '17 3 1 * *'
 
 permissions:
   contents: write
+  actions: read
+
+concurrency:
+  group: louderme-android-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   validate:
@@ -22,6 +29,7 @@ jobs:
 
     outputs:
       version: ${{ steps.version.outputs.version }}
+      version_code: ${{ steps.version.outputs.version_code }}
 
     steps:
       - name: Check out exact commit
@@ -53,83 +61,325 @@ jobs:
           python3 - <<'PY'
           import os, pathlib, re
           source = pathlib.Path("app/build.gradle.kts").read_text(encoding="utf-8")
-          m = re.search(r'versionName\s*=\s*"([^"]+)"', source)
-          if not m:
-              raise SystemExit("versionName not found")
-          version = m.group(1)
+          name = re.search(r'versionName\s*=\s*"([^"]+)"', source)
+          code = re.search(r'versionCode\s*=\s*(\d+)', source)
+          if not name or not code:
+              raise SystemExit("versionName/versionCode not found")
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
-              out.write(f"version={version}\n")
-          print("Version:", version)
+              out.write(f"version={name.group(1)}\n")
+              out.write(f"version_code={code.group(1)}\n")
+          print("Version:", name.group(1), "code:", code.group(1))
           PY
 
-      - name: Validate Michel's Lab package identity
+      - name: Validate Michel's Lab identity and updater split
         shell: bash
         run: |
           grep -q 'namespace = "com.michelslab.louderme"' app/build.gradle.kts
           grep -q 'applicationId = "com.michelslab.louderme"' app/build.gradle.kts
+          grep -q 'create("play")' app/build.gradle.kts
+          grep -q 'create("sideload")' app/build.gradle.kts
+          grep -q 'UPDATE_CHANNEL' app/build.gradle.kts
 
-      - name: Run unit tests and build debug APK
-        run: gradle :app:testDebugUnitTest :app:assembleDebug --stacktrace
+      - name: Run tests and build distribution flavors
+        run: |
+          gradle \
+            :app:testPlayDebugUnitTest \
+            :app:testSideloadDebugUnitTest \
+            :app:assemblePlayDebug \
+            :app:assembleSideloadDebug \
+            :app:assembleSideloadRelease \
+            --stacktrace
 
-      - name: Verify packaged application ID
+      - name: Verify package IDs and flavor permissions
         shell: bash
         run: |
           mkdir -p artifacts
           AAPT="${ANDROID_HOME:-/usr/local/lib/android/sdk}/build-tools/36.0.0/aapt"
-          "$AAPT" dump badging app/build/outputs/apk/debug/app-debug.apk | tee artifacts/apk-badging.txt
-          grep -q "package: name='com.michelslab.louderme'" artifacts/apk-badging.txt
 
-      - name: Prepare versioned APK and checksum
+          PLAY_APK="app/build/outputs/apk/play/debug/app-play-debug.apk"
+          SIDELOAD_APK="app/build/outputs/apk/sideload/debug/app-sideload-debug.apk"
+
+          "$AAPT" dump badging "$PLAY_APK" | tee artifacts/play-apk-badging.txt
+          "$AAPT" dump badging "$SIDELOAD_APK" | tee artifacts/sideload-apk-badging.txt
+
+          grep -q "package: name='com.michelslab.louderme'" artifacts/play-apk-badging.txt
+          grep -q "package: name='com.michelslab.louderme'" artifacts/sideload-apk-badging.txt
+
+          "$AAPT" dump permissions "$PLAY_APK" | tee artifacts/play-permissions.txt
+          "$AAPT" dump permissions "$SIDELOAD_APK" | tee artifacts/sideload-permissions.txt
+
+          if grep -q 'android.permission.REQUEST_INSTALL_PACKAGES' artifacts/play-permissions.txt; then
+            echo "Play flavor must not request REQUEST_INSTALL_PACKAGES"
+            exit 1
+          fi
+
+          grep -q 'android.permission.REQUEST_INSTALL_PACKAGES' artifacts/sideload-permissions.txt
+
+      - name: Prepare validation artifacts
         shell: bash
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          cp app/build/outputs/apk/debug/app-debug.apk "artifacts/LouderMe-v$VERSION-debug.apk"
-          sha256sum "artifacts/LouderMe-v$VERSION-debug.apk" > "artifacts/LouderMe-v$VERSION-debug.apk.sha256"
 
-      - name: Upload validated Android artifact
+          cp app/build/outputs/apk/play/debug/app-play-debug.apk \
+            "artifacts/LouderMe-v$VERSION-play-debug.apk"
+
+          cp app/build/outputs/apk/sideload/debug/app-sideload-debug.apk \
+            "artifacts/LouderMe-v$VERSION-sideload-debug.apk"
+
+          cp app/build/outputs/apk/sideload/release/app-sideload-release-unsigned.apk \
+            "artifacts/LouderMe-v$VERSION-sideload-release-unsigned.apk"
+
+          sha256sum artifacts/*.apk > artifacts/validation.sha256
+
+      - name: Upload validated Android artifacts
         uses: actions/upload-artifact@v4
         with:
           name: LouderMe-Android-v${{ steps.version.outputs.version }}
-          path: |
-            artifacts/LouderMe-v${{ steps.version.outputs.version }}-debug.apk
-            artifacts/LouderMe-v${{ steps.version.outputs.version }}-debug.apk.sha256
-            artifacts/apk-badging.txt
+          path: artifacts/
 
-  publish:
-    name: Publish validated main build
+  sign_sideload:
+    name: Sign stable Michel's Lab Direct APK
     needs: validate
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+
+    outputs:
+      signed_ready: ${{ steps.sign.outputs.signed_ready || 'false' }}
+
+    steps:
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Prepare Android build tools
+        run: |
+          SDKMANAGER="${ANDROID_HOME:-/usr/local/lib/android/sdk}/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKMANAGER" ]; then
+            SDKMANAGER="/usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager"
+          fi
+          "$SDKMANAGER" "build-tools;36.0.0"
+
+      - name: Download validated unsigned APK
+        uses: actions/download-artifact@v4
+        with:
+          name: LouderMe-Android-v${{ needs.validate.outputs.version }}
+          path: validated
+
+      - name: Prepare stable sideload signing identity
+        id: key_config
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SECRET_KEYSTORE_BASE64: ${{ secrets.LOUDERME_SIDELOAD_KEYSTORE_BASE64 }}
+          SECRET_STORE_PASS: ${{ secrets.LOUDERME_SIDELOAD_STORE_PASSWORD }}
+          SECRET_KEY_ALIAS: ${{ secrets.LOUDERME_SIDELOAD_KEY_ALIAS }}
+          SECRET_KEY_PASS: ${{ secrets.LOUDERME_SIDELOAD_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p signing
+          READY=false
+
+          if [ -n "$SECRET_KEYSTORE_BASE64" ] && \
+             [ -n "$SECRET_STORE_PASS" ] && \
+             [ -n "$SECRET_KEY_ALIAS" ] && \
+             [ -n "$SECRET_KEY_PASS" ]; then
+            printf '%s' "$SECRET_KEYSTORE_BASE64" | base64 --decode \
+              > signing/louderme-sideload.jks
+
+            if keytool -list \
+              -keystore signing/louderme-sideload.jks \
+              -storepass "$SECRET_STORE_PASS" \
+              -alias "$SECRET_KEY_ALIAS" >/dev/null 2>&1; then
+              STORE_PASS="$SECRET_STORE_PASS"
+              KEY_ALIAS="$SECRET_KEY_ALIAS"
+              KEY_PASS="$SECRET_KEY_PASS"
+              READY=true
+              echo "Using validated GitHub Secrets signing identity."
+            else
+              echo "::warning::Configured signing Secrets are invalid; falling back to the private signing vault."
+              rm -f signing/louderme-sideload.jks
+            fi
+          fi
+
+          if [ "$READY" != "true" ]; then
+            API="https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts?name=LouderMe-sideload-signing-material-PRIVATE&per_page=100"
+            RESPONSE="$(curl --fail --silent --show-error \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "$API")"
+
+            ARTIFACT_ID="$(printf '%s' "$RESPONSE" | jq -r '
+              [.artifacts[] | select(.expired == false)]
+              | sort_by(.created_at)
+              | reverse
+              | .[0].id // empty
+            ')"
+
+            if [ -z "$ARTIFACT_ID" ]; then
+              echo "::error::No valid stable sideload signing identity is available."
+              echo "ready=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+
+            curl --fail --location --silent --show-error \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID/zip" \
+              --output signing-vault.zip
+
+            mkdir -p signing-vault
+            unzip -q signing-vault.zip -d signing-vault
+
+            KEYSTORE_FILE="$(find signing-vault -type f -name 'louderme-sideload.jks' | head -n 1)"
+            HANDOFF_FILE="$(find signing-vault -type f -name 'github-actions-secrets.txt' | head -n 1)"
+
+            test -f "$KEYSTORE_FILE"
+            test -f "$HANDOFF_FILE"
+
+            cp "$KEYSTORE_FILE" signing/louderme-sideload.jks
+
+            STORE_PASS="$(grep '^LOUDERME_SIDELOAD_STORE_PASSWORD=' "$HANDOFF_FILE" | cut -d= -f2-)"
+            KEY_ALIAS="$(grep '^LOUDERME_SIDELOAD_KEY_ALIAS=' "$HANDOFF_FILE" | cut -d= -f2-)"
+            KEY_PASS="$(grep '^LOUDERME_SIDELOAD_KEY_PASSWORD=' "$HANDOFF_FILE" | cut -d= -f2-)"
+
+            test -n "$STORE_PASS"
+            test -n "$KEY_ALIAS"
+            test -n "$KEY_PASS"
+
+            keytool -list \
+              -keystore signing/louderme-sideload.jks \
+              -storepass "$STORE_PASS" \
+              -alias "$KEY_ALIAS" >/dev/null
+
+            READY=true
+            echo "Using private Actions signing vault."
+          fi
+
+          echo "::add-mask::$STORE_PASS"
+          echo "::add-mask::$KEY_ALIAS"
+          echo "::add-mask::$KEY_PASS"
+
+          {
+            echo "STORE_PASS=$STORE_PASS"
+            echo "KEY_ALIAS=$KEY_ALIAS"
+            echo "KEY_PASS=$KEY_PASS"
+          } >> "$GITHUB_ENV"
+
+          BASE64_KEYSTORE="$(base64 -w 0 signing/louderme-sideload.jks)"
+          {
+            echo "LOUDERME_SIDELOAD_KEYSTORE_BASE64=$BASE64_KEYSTORE"
+            echo "LOUDERME_SIDELOAD_STORE_PASSWORD=$STORE_PASS"
+            echo "LOUDERME_SIDELOAD_KEY_ALIAS=$KEY_ALIAS"
+            echo "LOUDERME_SIDELOAD_KEY_PASSWORD=$KEY_PASS"
+          } > signing/github-actions-secrets.txt
+
+          cat > signing/README-PRIVATE.txt <<'TXT'
+          LouderMe stable sideload signing identity.
+
+          KEEP THIS PRIVATE.
+
+          Preferred long-term storage is GitHub Actions Secrets.
+          The private Actions artifact is an automated fallback/vault
+          so a stale or missing Secret does not rotate the Android signer.
+          TXT
+
+          echo "ready=$READY" >> "$GITHUB_OUTPUT"
+
+      - name: Sign and verify sideload APK
+        if: steps.key_config.outputs.ready == 'true'
+        id: sign
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          VERSION="${{ needs.validate.outputs.version }}"
+          BUILD_TOOLS="${ANDROID_HOME:-/usr/local/lib/android/sdk}/build-tools/36.0.0"
+          UNSIGNED="validated/LouderMe-v$VERSION-sideload-release-unsigned.apk"
+          ALIGNED="validated/LouderMe-v$VERSION-sideload-aligned.apk"
+          FINAL="validated/LouderMe-v$VERSION-sideload.apk"
+
+          "$BUILD_TOOLS/zipalign" -p -f 4 "$UNSIGNED" "$ALIGNED"
+
+          "$BUILD_TOOLS/apksigner" sign \
+            --ks signing/louderme-sideload.jks \
+            --ks-key-alias "$KEY_ALIAS" \
+            --ks-pass "pass:$STORE_PASS" \
+            --key-pass "pass:$KEY_PASS" \
+            --out "$FINAL" \
+            "$ALIGNED"
+
+          "$BUILD_TOOLS/apksigner" verify \
+            --verbose \
+            --print-certs \
+            "$FINAL" | tee validated/sideload-signature.txt
+
+          sha256sum "$FINAL" | tee "$FINAL.sha256"
+
+          echo "signed_ready=true" >> "$GITHUB_OUTPUT"
+
+      - name: Upload stable signed sideload APK
+        if: steps.key_config.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: LouderMe-v${{ needs.validate.outputs.version }}-stable-sideload
+          path: |
+            validated/LouderMe-v${{ needs.validate.outputs.version }}-sideload.apk
+            validated/LouderMe-v${{ needs.validate.outputs.version }}-sideload.apk.sha256
+            validated/sideload-signature.txt
+
+      - name: Refresh private signing vault
+        if: steps.key_config.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: LouderMe-sideload-signing-material-PRIVATE
+          retention-days: 90
+          path: |
+            signing/louderme-sideload.jks
+            signing/github-actions-secrets.txt
+            signing/README-PRIVATE.txt
+
+  publish_private_release:
+    name: Publish validated private release
+    needs:
+      - validate
+      - sign_sideload
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.sign_sideload.outputs.signed_ready == 'true'
     runs-on: ubuntu-latest
 
     steps:
       - name: Check out release notes
         uses: actions/checkout@v5
 
-      - name: Download validated APK
+      - name: Download signed APK
         uses: actions/download-artifact@v4
         with:
-          name: LouderMe-Android-v${{ needs.validate.outputs.version }}
+          name: LouderMe-v${{ needs.validate.outputs.version }}-stable-sideload
           path: dist
 
-      - name: Publish release if this version is new
+      - name: Publish private source-repo release if version is new
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
+          set -euo pipefail
+
           VERSION="${{ needs.validate.outputs.version }}"
           TAG="v$VERSION"
-          APK="dist/LouderMe-v$VERSION-debug.apk"
-          CHECKSUM="dist/LouderMe-v$VERSION-debug.apk.sha256"
+          APK="dist/LouderMe-v$VERSION-sideload.apk"
+          CHECKSUM="dist/LouderMe-v$VERSION-sideload.apk.sha256"
           NOTES="docs/RELEASE_NOTES_v$VERSION.md"
 
+          test -f "$NOTES"
+
           if gh release view "$TAG" >/dev/null 2>&1; then
-            echo "$TAG already exists. Current HEAD was still fully built and validated; publication is skipped only."
-            exit 0
+            gh release upload "$TAG" "$APK" "$CHECKSUM" --clobber
+          else
+            gh release create "$TAG" \
+              "$APK" \
+              "$CHECKSUM" \
+              --target "$GITHUB_SHA" \
+              --title "LouderMe $TAG" \
+              --notes-file "$NOTES"
           fi
-
-          if [ ! -f "$NOTES" ]; then
-            echo "Missing release notes: $NOTES"
-            exit 1
-          fi
-
-          gh release create "$TAG"             "$APK"             "$CHECKSUM"             --target "$GITHUB_SHA"             --title "LouderMe $TAG"             --notes-file "$NOTES"

@@ -12,8 +12,30 @@ android {
         applicationId = "com.michelslab.louderme"
         minSdk = 29
         targetSdk = 36
-        versionCode = 4
-        versionName = "0.1.3"
+        versionCode = 5
+        versionName = "0.1.4"
+    }
+
+    flavorDimensions += "distribution"
+
+    productFlavors {
+        create("play") {
+            dimension = "distribution"
+            buildConfigField(
+                "String",
+                "UPDATE_CHANNEL",
+                "\"play\"",
+            )
+        }
+
+        create("sideload") {
+            dimension = "distribution"
+            buildConfigField(
+                "String",
+                "UPDATE_CHANNEL",
+                "\"direct\"",
+            )
+        }
     }
 
     compileOptions {
@@ -34,6 +56,7 @@ kotlin {
 dependencies {
     implementation(platform("androidx.compose:compose-bom:2025.09.01"))
     implementation("androidx.activity:activity-compose:1.11.0")
+    implementation("androidx.fragment:fragment-ktx:1.9.1")
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-tooling-preview")

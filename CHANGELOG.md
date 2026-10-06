@@ -1,5 +1,30 @@
 # Changelog
 
+## v0.1.4 — 2026-10-05
+
+### Added
+- Dual update channels: Google Play and Michel's Lab direct/sideload.
+- Automatic public update-manifest check for sideload installs.
+- Automatic direct APK download.
+- SHA-256 verification before install.
+- Package ID and versionCode verification.
+- Signing-certificate pinning to the currently installed LouderMe sideload identity.
+- PackageInstaller-based Android install handoff.
+- Unknown-source permission flow only in the sideload flavor.
+- Home/About update states for download progress, ready-to-install, permission required and installing.
+- Separate `play` and `sideload` Android product flavors.
+- Public LouderMe bootstrap update feed without exposing private source.
+- One-time stable sideload signing-key bootstrap workflow.
+
+### Security
+- The Play flavor does not request `REQUEST_INSTALL_PACKAGES`.
+- The direct updater never embeds a GitHub private token.
+- A downloaded APK is rejected if checksum, package, version or signing identity do not match.
+- Android retains final install confirmation.
+
+### Migration
+v0.1.3 and earlier GitHub debug APKs used non-durable CI debug signing. v0.1.4 establishes a stable sideload signing identity, so the transition from an existing debug install requires one uninstall/reinstall. Future stable-signed direct updates can update in place.
+
 ## v0.1.3 — 2026-10-05
 
 ### Added

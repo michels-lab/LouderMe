@@ -1247,3 +1247,99 @@ After green PR merge to `main`:
 - Android audible high-gain/EQ and Play production delivery remain device/store validation items.
 - Windows APO endpoint/audible validation remains a physical-machine item.
 - Windows Authenticode publisher signing remains unconfigured.
+
+
+## 2026-10-06 — Android v0.1.7 + Desktop v0.1.1 stable releases published
+
+### Authorization
+Michel explicitly authorized publication. Per repository release policy, both releases are **stable normal releases**, not prereleases.
+
+### Release source
+- PR #18 merged to `main`.
+- Release target commit: `da196b542a3f2e0cd196120006c2d40c40ff6ae5`.
+- Android version: `0.1.7` / versionCode `8`.
+- Desktop version: `0.1.1`.
+
+### Candidate validation
+- Android PR CI run `37544585036`: **success**.
+  - branding identity contract passed;
+  - Play + Direct unit/build validation passed;
+  - package ID and permission separation passed;
+  - validation artifacts uploaded.
+- Desktop PR CI run `37544585024`: **success**.
+  - native .NET build passed;
+  - real-global-boost contract passed;
+  - portable EXE passed;
+  - Inno Setup installer passed;
+  - checksums passed.
+
+### Android source release
+- Main Android release run `37544958547`: **success**.
+- Build and validate: success.
+- Stable Michel's Lab Direct signing: success.
+- Private source release publication: success.
+- Tag: `v0.1.7`.
+- Release type: stable / `prerelease=false`.
+- APK: `LouderMe-v0.1.7-sideload.apk`.
+- APK size: 22,118,266 bytes.
+- APK SHA-256: `ec61f53a8e80fa5f9b5cbda944ef4fa27b99a299508425981e24f6ef659d9df9`.
+
+### Android public Direct channel
+- Public publisher run `37545535455`: **success**.
+- Public tag: `louderme-v0.1.7`.
+- Release type: stable / not prerelease.
+- Public APK SHA-256: `ec61f53a8e80fa5f9b5cbda944ef4fa27b99a299508425981e24f6ef659d9df9`.
+- `louderme/latest.json` now advertises:
+  - versionName `0.1.7`;
+  - versionCode `8`;
+  - the v0.1.7 public APK URL;
+  - the matching SHA-256.
+- Transfer staging cleanup run `37545641762`: **skipped as intended** by the cleanup guard.
+
+### Desktop source release
+- Desktop release workflow run `37544958566`: **success**.
+- Independent Windows build run `37544958503`: **success**.
+- Tag: `desktop-v0.1.1`.
+- Release type: stable / `prerelease=false`.
+- Installer: `LouderMe-Setup-v0.1.1.exe`.
+  - size: 36,206,793 bytes;
+  - SHA-256: `6175aef2f06c8563ccd0273acc9204f376d46112c2ec5008b6012e56d18dcb38`.
+- Portable: `LouderMe-v0.1.1.exe`.
+  - size: 118,505,401 bytes;
+  - SHA-256: `733c1a2b270cc0e3737763eb0a71715edbdc90baca3736f6e27a1fe02196ed53`.
+
+### Desktop public channel
+- Public publisher run `37545285435`: **success**.
+- Public tag: `louderme-desktop-v0.1.1`.
+- Release type: stable / not prerelease.
+- Public hashes match the private source release:
+  - installer: `6175aef2f06c8563ccd0273acc9204f376d46112c2ec5008b6012e56d18dcb38`;
+  - portable: `733c1a2b270cc0e3737763eb0a71715edbdc90baca3736f6e27a1fe02196ed53`.
+- `louderme-desktop/latest.json` now advertises stable `0.1.1` with installer + portable URLs and matching SHA-256 values.
+- Transfer staging cleanup run `37545431086`: **skipped as intended** by the cleanup guard.
+
+### Delivered product changes
+Android v0.1.7:
+- complete integrated LouderMe / Michel's Lab branding;
+- current canonical Michel Duarte portrait;
+- official Michel's Lab lockup;
+- complete canonical social hierarchy including Facebook;
+- waveform-derived Boost/EQ visuals;
+- opt-in Start with phone;
+- existing 100–250% boost, EQ, Play/Direct split and updater preserved.
+
+Desktop v0.1.1:
+- native LouderMe waveform header and branded splash;
+- dedicated About hierarchy;
+- canonical author/studio/social identity;
+- waveform-derived Boost/EQ visuals;
+- stable-channel in-app updater with SHA-256 installer verification;
+- existing APO boost, EQ, Start with Windows and installer behavior preserved.
+
+### Known release boundaries
+- Android audible high-gain/EQ quality and Google Play production delivery remain device/store validation items.
+- Windows APO endpoint attachment/audible behavior remains a physical-machine validation item.
+- Windows Authenticode publisher signing is still not configured, so SmartScreen can warn.
+
+### Current status
+**Android v0.1.7 and LouderMe Desktop v0.1.1 are fully published on their stable public Michel's Lab channels.**

@@ -53,4 +53,4 @@ Filename: "{app}\LouderMe.exe"; Description: "{cm:LaunchApp}"; Flags: nowait pos
 
 
 [UninstallRun]
-Filename: "{cmd}"; Parameters: "/C reg delete \"HKCU\Software\Microsoft\Windows\CurrentVersion\Run\" /v LouderMe /f"; Flags: runhidden; RunOnceId: "RemoveLouderMeStartup"
+Filename: "{cmd}"; Parameters: "/C reg delete ""HKCU\Software\Microsoft\Windows\CurrentVersion\Run"" /v LouderMe /f"; Flags: runhidden; RunOnceId: "RemoveLouderMeStartup"

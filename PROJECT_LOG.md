@@ -680,3 +680,16 @@ Pending pull-request CI for Android resource compilation, both distribution flav
 
 ### Current status
 Official LouderMe identity is implemented on the branding branch and awaiting CI validation before merge.
+
+
+### Branding validation evidence — 2026-10-06
+- PR #9 merged to `main` as `8b1aa2ff4efabbcbdc0b5db063cec0df4ae91898`.
+- First PR CI run `37437629602` failed during Android resource linking because a literal color was incorrectly used as a layer-list `drawable` reference in `louderme_launch_background.xml`.
+- Corrected the splash background to use an embedded shape/solid drawable.
+- Second PR CI run `37437798285`: **success**.
+- Unit tests: passed.
+- Play debug build: passed.
+- Sideload debug/release builds: passed.
+- Package-ID and Play/sideload permission separation checks: passed.
+- Validation artifacts uploaded successfully.
+- No product version bump was made for this branding integration.

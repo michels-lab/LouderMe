@@ -61,3 +61,39 @@ This starts LouderMe when the current Windows user signs in.
 
 ## Validation boundary
 CI can validate compilation, packaging, gain math and configuration generation. Endpoint attachment, reboot behavior, audio-driver compatibility and audible high-gain quality require validation on a physical Windows machine.
+
+
+## Product identity and About
+
+Desktop is a first-class LouderMe product surface, not a generic utility wrapper.
+
+The native Windows UI now uses:
+- the canonical flowing-waveform geometry in the main header and branded startup surface;
+- waveform-derived live boost and EQ visual feedback;
+- the canonical Michel Duarte portrait;
+- the official Michel's Lab parent-brand lockup;
+- a dedicated native About surface following Product → Author → Michel's Lab → Social hierarchy;
+- canonical Instagram, Facebook, LinkedIn, GitHub and Email contact order.
+
+The executable/shortcut/taskbar icon remains derived from the official LouderMe app-icon source.
+
+## In-app stable updater
+
+LouderMe Desktop reads the public stable manifest:
+
+`https://raw.githubusercontent.com/realmichelduarte/michel-s-life-releases/main/louderme-desktop/latest.json`
+
+Update behavior:
+1. compare the published stable version against the running assembly/product version;
+2. only expose install action when a newer version exists;
+3. download the published installer into the user's local LouderMe update folder;
+4. verify the installer SHA-256 from the manifest;
+5. ask Windows to launch the verified installer.
+
+The updater never treats an unverified download as installable.
+
+## Windows publisher signing
+
+The updater verifies published SHA-256 integrity, but **Authenticode publisher signing is still a separate release capability**.
+
+Do not describe a Desktop build as signed unless the actual release artifact carries a valid Windows publisher signature. Unsigned/new-reputation builds can still trigger SmartScreen.

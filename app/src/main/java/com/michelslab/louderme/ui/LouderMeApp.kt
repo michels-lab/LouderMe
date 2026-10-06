@@ -43,12 +43,14 @@ fun LouderMeApp(
     updateStatus: UpdateStatus,
     audioState: AudioEngineUiState,
     equalizerState: EqualizerUiState,
+    startWithPhoneEnabled: Boolean,
     onCheckForUpdates: () -> Unit,
     onInstallUpdate: () -> Unit,
     onBoostToggle: (Boolean) -> Unit,
     onBoostLevelSelected: (Int) -> Unit,
     onEqEnabledChanged: (Boolean) -> Unit,
     onEqPresetSelected: (EqualizerPreset) -> Unit,
+    onStartWithPhoneChanged: (Boolean) -> Unit,
     onEqBandChanged: (Int, Float) -> Unit,
 ) {
     var showAbout by remember { mutableStateOf(false) }
@@ -66,6 +68,7 @@ fun LouderMeApp(
                 updateStatus = updateStatus,
                 audioState = audioState,
                 equalizerState = equalizerState,
+                startWithPhoneEnabled = startWithPhoneEnabled,
                 onAbout = { showAbout = true },
                 onCheckForUpdates = onCheckForUpdates,
                 onInstallUpdate = onInstallUpdate,
@@ -73,6 +76,7 @@ fun LouderMeApp(
                 onBoostLevelSelected = onBoostLevelSelected,
                 onEqEnabledChanged = onEqEnabledChanged,
                 onEqPresetSelected = onEqPresetSelected,
+                onStartWithPhoneChanged = onStartWithPhoneChanged,
                 onEqBandChanged = onEqBandChanged,
             )
         }
@@ -85,6 +89,7 @@ private fun HomeScreen(
     updateStatus: UpdateStatus,
     audioState: AudioEngineUiState,
     equalizerState: EqualizerUiState,
+    startWithPhoneEnabled: Boolean,
     onAbout: () -> Unit,
     onCheckForUpdates: () -> Unit,
     onInstallUpdate: () -> Unit,
@@ -92,6 +97,7 @@ private fun HomeScreen(
     onBoostLevelSelected: (Int) -> Unit,
     onEqEnabledChanged: (Boolean) -> Unit,
     onEqPresetSelected: (EqualizerPreset) -> Unit,
+    onStartWithPhoneChanged: (Boolean) -> Unit,
     onEqBandChanged: (Int, Float) -> Unit,
 ) {
     val levels = listOf(100, 125, 150, 175, 200, 225, 250)
@@ -129,6 +135,11 @@ private fun HomeScreen(
                 status = updateStatus,
                 onCheckForUpdates = onCheckForUpdates,
                 onInstallUpdate = onInstallUpdate,
+            )
+
+            StartupPanel(
+                enabled = startWithPhoneEnabled,
+                onEnabledChanged = onStartWithPhoneChanged,
             )
 
             BoostHero(
@@ -304,6 +315,49 @@ private fun HomeScreen(
             )
 
             Spacer(Modifier.height(18.dp))
+        }
+    }
+}
+
+@Composable
+private fun StartupPanel(
+    enabled: Boolean,
+    onEnabledChanged: (Boolean) -> Unit,
+) {
+    Panel {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Eyebrow("STARTUP", LouderMeColors.Gold)
+                Spacer(Modifier.height(5.dp))
+                Text(
+                    "Start with phone",
+                    color = LouderMeColors.Text,
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "When enabled, LouderMe restores your last boost level after the phone finishes booting.",
+                    color = LouderMeColors.Muted,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+
+            Spacer(Modifier.width(14.dp))
+
+            Switch(
+                checked = enabled,
+                onCheckedChange = onEnabledChanged,
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = LouderMeColors.Text,
+                    checkedTrackColor = LouderMeColors.Blue,
+                    uncheckedThumbColor = LouderMeColors.Muted,
+                    uncheckedTrackColor = LouderMeColors.Surface3,
+                ),
+            )
         }
     }
 }

@@ -922,3 +922,43 @@ Desktop remains v0.1.0 during this implementation. No Desktop release is publish
 - Merge used `[skip ci]` intentionally to avoid re-running the already released Android v0.1.6 publication path for a Desktop-only feature.
 - Desktop version remains v0.1.0 and is **not yet released**.
 - Physical Windows endpoint/APO attachment and audible 100/150/200/250% validation remain required before claiming hardware-level validation.
+
+
+## 2026-10-06 — LouderMe Desktop v0.1.0 stable release candidate
+
+### Authorization
+Michel explicitly authorized publication of the first LouderMe Desktop release.
+
+### Release
+- product: LouderMe Desktop;
+- version: `0.1.0`;
+- channel: stable;
+- release type: normal release, not prerelease;
+- source tag: `desktop-v0.1.0`;
+- public distribution tag: `louderme-desktop-v0.1.0`.
+
+### Planned assets
+- `LouderMe-Setup-v0.1.0.exe`;
+- `LouderMe-Setup-v0.1.0.exe.sha256`;
+- `LouderMe-v0.1.0.exe`;
+- `LouderMe-v0.1.0.exe.sha256`.
+
+### Release gate
+Publication requires a build from the exact merged `main` commit:
+- .NET 10 restore/build;
+- real 100–250% global-boost contract;
+- Equalizer APO managed-config contract;
+- self-contained portable EXE;
+- Inno Setup installer;
+- SHA-256 files.
+
+### Distribution
+Public Windows binaries will be published in `realmichelduarte/michel-s-life-releases` under a Desktop-specific tag/feed, separate from LouderMe Android.
+
+### Known release boundary
+- Equalizer APO 1.4.2 x64 remains a local prerequisite for system-wide boost above 100%.
+- Physical Windows/APO audible validation is still pending.
+- Windows Authenticode publisher signing is not configured for v0.1.0; published SHA-256 files verify file integrity, but SmartScreen may warn.
+
+### Current status
+Stable release candidate prepared; pending PR CI, merge-to-main release build, public transfer verification and final publication.

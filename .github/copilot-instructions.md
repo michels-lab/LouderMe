@@ -15,3 +15,21 @@ Product identity / About are fundamental product contracts. Treat the approved f
 
 
 For logo/About/branding work, follow the Michel-Software-Standards Product Identity Standard and BRAND_ADOPTION_PLAYBOOK. Replace actual platform identity references, adapt the official geometry to this app's existing visual language, avoid sticker-style logo placement, preserve unrelated behavior, validate the build, and do not release without explicit authorization.
+
+## Structured handoff requirement
+
+For any tracked Michel's Lab task, return enough machine-readable continuation context for the master handoff registry:
+
+- task ID and repository;
+- owner/role and branch;
+- outcome;
+- commits and areas changed;
+- validations that **actually ran** and their real result;
+- evidence status: `verified`, `inferred`, or `blocked`;
+- remaining work;
+- blockers/manual evidence still required;
+- suggested next owner/role when useful.
+
+Do not list planned tests/builds/device checks as completed validation. If required validation was not performed, the task must be released/handed back with that work pending rather than described as complete.
+
+

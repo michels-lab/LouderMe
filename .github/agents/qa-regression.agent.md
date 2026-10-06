@@ -20,3 +20,6 @@ Focus on:
 - claims about 175–250% quality, routing or EQ audibility that lack physical-device evidence.
 
 If assigned only to audit, report evidence and acceptance criteria. If assigned to fix, keep the correction narrow and update `PROJECT_LOG.md`.
+
+For UI/About changes, treat identity/About regression as a real defect: verify recognizable canonical logo geometry, product-derived audio visual language, product → author → Michel's Lab hierarchy, canonical portrait usage, and social controls that visibly show both network icon and network name.
+

@@ -472,3 +472,39 @@ After that one-time migration, same-key direct releases can update in place.
 
 ### Current status
 Code and CI architecture prepared. Pending final branch validation, one-time signing bootstrap, secret installation and public v0.1.4 baseline publication.
+
+
+## 2026-10-06 — Stable sideload signer bootstrap validated
+
+### Validation
+- Bootstrap workflow run: `37392415939`.
+- Current-HEAD Android validation: **success**.
+- Play + sideload flavor builds/tests: **success**.
+- Play permission audit: **success** — no `REQUEST_INSTALL_PACKAGES`.
+- Sideload permission audit: **success** — `REQUEST_INSTALL_PACKAGES` present.
+- Stable sideload signing bootstrap: **success**.
+- Signed bootstrap artifact: `LouderMe-v0.1.4-stable-sideload`.
+- Private signing handoff artifact: `LouderMe-sideload-signing-material-PRIVATE`.
+- Private handoff expires 2026-10-13 and must be transferred to GitHub Actions secrets plus a secure offline backup.
+
+### Stable signing identity
+- Certificate DN: `CN=Michel's Lab, OU=Software, O=Michel's Lab, L=Saltillo, ST=Coahuila, C=MX`.
+- Certificate SHA-256: `4a5bb9d9456a656821c3c1105854bda17e24273fd0d09e9495edd5b01e783aa3`.
+- RSA key size: 4096 bits.
+- APK signature scheme verified: v3.
+- Signed v0.1.4 sideload APK size: 22,100,564 bytes.
+- Signed APK SHA-256: `7eee11c065330d0064378172840cdb5aa067c17463332db8a6c6626e674f9d83`.
+
+### Security boundary
+The private key/password material is not committed to Git and must never be copied into app source, documentation, logs, chat, or the public update feed.
+
+### Remaining infrastructure gate
+The GitHub connector cannot write Actions Secrets. Before merging v0.1.4 to `main`, the private handoff values must be added to the LouderMe repository as Actions secrets, and a fine-grained cross-repository token must be added for publishing the public Michel's Lab release feed.
+
+### Migration
+v0.1.3 and older direct APKs were CI-debug signed. Android cannot update those in-place to the new stable signer.
+
+One-time migration:
+1. uninstall the old direct/debug LouderMe;
+2. install the stable signed v0.1.4 sideload baseline;
+3. from v0.1.5 onward, same-signer direct updates can install in place after Android confirmation.

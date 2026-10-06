@@ -21,6 +21,8 @@ WizardStyle=modern
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequiredOverridesAllowed=dialog
+CloseApplications=yes
+CloseApplicationsFilter=LouderMe.exe
 SetupIconFile=..\src\LouderMeDesktop\Assets\LouderMe.ico
 UninstallDisplayIcon={app}\LouderMe.exe
 
@@ -48,3 +50,7 @@ Name: "desktopicon"; Description: "{cm:DesktopShortcut}"; GroupDescription: "{cm
 
 [Run]
 Filename: "{app}\LouderMe.exe"; Description: "{cm:LaunchApp}"; Flags: nowait postinstall skipifsilent
+
+
+[UninstallRun]
+Filename: "{cmd}"; Parameters: "/C reg delete \"HKCU\Software\Microsoft\Windows\CurrentVersion\Run\" /v LouderMe /f"; Flags: runhidden; RunOnceId: "RemoveLouderMeStartup"

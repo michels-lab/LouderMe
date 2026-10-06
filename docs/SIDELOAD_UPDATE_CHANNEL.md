@@ -58,3 +58,18 @@ Losing the key breaks same-package sideload updates.
 ## Bootstrap status
 
 The stable sideload signing identity is bootstrapped exactly once from the designated v0.1.4 release-candidate commit. The resulting private handoff artifact is temporary and must be moved into GitHub Actions secrets plus a secure offline backup before merging v0.1.4 to main.
+
+
+## Canonical sideload signing identity
+
+Established by bootstrap workflow run `37392415939`.
+
+- Certificate SHA-256: `4a5bb9d9456a656821c3c1105854bda17e24273fd0d09e9495edd5b01e783aa3`
+- Certificate DN: `CN=Michel's Lab, OU=Software, O=Michel's Lab, L=Saltillo, ST=Coahuila, C=MX`
+- RSA: 4096-bit
+- Verified APK signature scheme: v3
+
+The fingerprint is public identity metadata. The private key and passwords remain secret.
+
+The first stable signed baseline APK has SHA-256:
+`7eee11c065330d0064378172840cdb5aa067c17463332db8a6c6626e674f9d83`.

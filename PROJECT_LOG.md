@@ -825,3 +825,22 @@ The current Desktop milestone does **not** claim system-wide gain above the norm
 - Desktop Windows CI is required to prove .NET restore/build, self-contained EXE packaging, icon generation, Inno Setup installer creation and checksums.
 - Android PR CI is required to prove the boot receiver/UI integration compiles in both Play and sideload flavors.
 - Actual reboot/sign-in behavior remains a physical-device / Windows-session validation item.
+
+
+### Final validation / merge evidence — 2026-10-06
+- PR #12 merged to `main` as `8ef1e49ee40fd4ea565de31c4df9fc5bf5c16b27`.
+- Android PR CI run `37512825591`: **success**.
+  - Play + sideload tests/builds passed.
+  - package IDs and permission split passed.
+  - Android validation artifacts uploaded.
+- Desktop PR CI run `37512825617`: **success**.
+  - .NET 10 restore/build passed.
+  - official Windows icon generation passed.
+  - self-contained portable EXE publication passed.
+  - native startup integration checks passed.
+  - Inno Setup installer build passed.
+  - portable + installer SHA-256 generation passed.
+  - Windows artifact upload passed.
+- Earlier desktop branch run `37512672065`: **success**, artifact `LouderMe-Desktop-v0.1.0`.
+- Merge commit intentionally includes `[skip ci]` so this feature merge does not mutate or republish the already released Android v0.1.6 artifacts.
+- No Desktop release has been published yet.

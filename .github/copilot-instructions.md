@@ -32,7 +32,7 @@ For any tracked Michel's Lab task, return enough machine-readable continuation c
 
 Do not list planned tests/builds/device checks as completed validation. If required validation was not performed, the task must be released/handed back with that work pending rather than described as complete.
 
-<!-- MICHELSLAB_SHARED_CONTRACT_BEGIN id=child-agent-core version=2026-10-06.1 -->
+<!-- MICHELSLAB_SHARED_CONTRACT_BEGIN id=child-agent-core version=2026-10-06.2 -->
 # Michel's Lab shared child-agent contract
 
 This managed block is cross-project policy. Repository-specific instructions may add stricter local rules outside this block, but they must not weaken or contradict it.
@@ -52,6 +52,15 @@ This managed block is cross-project policy. Repository-specific instructions may
 - About hierarchy is **Product identity → About the author → Michel's Lab → social profiles**.
 - Use the current canonical Michel Duarte portrait and the official Michel's Lab parent-brand assets from the master authority when implementing/updating About.
 - Visible social controls use recognizable network icon **and** visible network name with canonical profile URLs.
+
+## Canonical identity asset precedence
+
+- Product-logo authority is `shared-assets/product-logos/manifest.json` in the master standards repository.
+- Michel's Lab parent-brand authority is `shared-assets/michels-lab/manifest.json`.
+- Assets explicitly marked legacy/rejected must never supersede the current canonical geometry.
+- When `.michelslab/identity-sync.json` marks an identity section `enforced`, child canonical copies must match the master source exactly; hash drift is a governance defect.
+- When identity state is `migration_pending`, do not auto-replace local assets. Stop, reconcile the active surfaces explicitly and preserve the approved master geometry.
+- A local filename such as `official-*.svg` is not proof of authority by itself; authority comes from the current master manifest and identity-sync policy.
 
 ## Cross-chat coordination
 

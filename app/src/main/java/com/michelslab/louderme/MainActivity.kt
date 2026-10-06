@@ -24,6 +24,7 @@ import com.michelslab.louderme.audio.EqualizerStateStore
 import com.michelslab.louderme.audio.EqualizerStatus
 import com.michelslab.louderme.audio.EqualizerUiState
 import com.michelslab.louderme.ui.LouderMeApp
+import com.michelslab.louderme.startup.StartupPreferences
 import com.michelslab.louderme.update.UpdateCoordinator
 import com.michelslab.louderme.update.UpdateStatus
 
@@ -31,6 +32,7 @@ class MainActivity : ComponentActivity() {
     private val updateStatus = mutableStateOf<UpdateStatus>(UpdateStatus.Checking)
     private val audioState = mutableStateOf(AudioEngineUiState())
     private val equalizerState = mutableStateOf(EqualizerUiState())
+    private val startOnBoot = mutableStateOf(false)
 
     private lateinit var updateCoordinator: UpdateCoordinator
     private var pendingBoostPercent: Int? = null
@@ -65,6 +67,7 @@ class MainActivity : ComponentActivity() {
 
         audioState.value = AudioBoostStateStore.read(this)
         equalizerState.value = EqualizerStateStore.read(this)
+        startOnBoot.value = StartupPreferences.isStartOnBootEnabled(this)
 
         updateCoordinator = UpdateCoordinator(
             activity = this,
@@ -79,11 +82,16 @@ class MainActivity : ComponentActivity() {
                 updateStatus = updateStatus.value,
                 audioState = audioState.value,
                 equalizerState = equalizerState.value,
+                startOnBoot = startOnBoot.value,
                 onCheckForUpdates = {
                     updateCoordinator.checkForUpdates(automatic = false)
                 },
                 onInstallUpdate = {
                     updateCoordinator.installAvailableUpdate()
+                },
+                onStartOnBootChanged = { enabled ->
+                    StartupPreferences.setStartOnBootEnabled(this, enabled)
+                    startOnBoot.value = enabled
                 },
                 onBoostToggle = { enabled ->
                     if (enabled) {

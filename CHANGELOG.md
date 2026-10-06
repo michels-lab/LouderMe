@@ -1,5 +1,46 @@
 # Changelog
 
+## Android v0.1.7 — 2026-10-06
+
+### Added / changed
+- Full integrated LouderMe branding and About hierarchy.
+- Current canonical Michel Duarte portrait and official Michel's Lab parent-brand lockup.
+- Instagram, Facebook, LinkedIn, GitHub and Email rows with recognizable glyph + visible name.
+- Official `SOUND THAT LIFTS YOU` About hierarchy.
+- Waveform-derived Global Boost and EQ visualization.
+- Opt-in **Start with phone** behavior.
+
+### Preserved
+- 100–250% boost engine.
+- 7-band EQ and presets.
+- Play / Michel's Lab Direct split.
+- Stable Direct signing identity and verified in-app sideload updater.
+
+### Validation boundary
+- Audible high-gain/EQ behavior and Play production delivery remain physical/store gates.
+
+## Desktop v0.1.1 — 2026-10-06
+
+### Added / changed
+- Native LouderMe waveform header and branded splash.
+- Dedicated About surface with canonical author/studio identity and complete social hierarchy.
+- Waveform-derived boost activity and EQ curve.
+- Verified in-app stable updater using `louderme-desktop/latest.json`.
+- Installer SHA-256 verification before launch.
+- Michel's Lab publisher/support/update metadata in the installer.
+
+### Preserved
+- Native Windows endpoint volume/mute.
+- APO-backed Global Boost 100–250%.
+- 7-band EQ.
+- Start with Windows.
+- Portable EXE + Inno Setup installer distribution.
+
+### Validation boundary
+- Authenticode is not configured.
+- Physical Windows APO/audio validation remains pending.
+
+
 ## Desktop v0.1.0 — 2026-10-06
 
 ### Added

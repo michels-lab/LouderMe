@@ -15,3 +15,6 @@ For UI changes, honor system insets and the existing product-family design. For 
 Run the strongest relevant current-commit Gradle/build/test checks. Record meaningful evidence in `PROJECT_LOG.md`.
 
 Do not change versions or publish releases unless explicitly authorized. Return target-device/store blockers instead of inventing success.
+
+Fundamental identity requirement: any visual/About work must follow `AGENTS.md`: the flowing-waveform geometry is the product-wide design foundation; About uses product → author → Michel's Lab → social hierarchy; every social profile visibly shows icon + network name. Do not implement sticker branding or regress this contract.
+

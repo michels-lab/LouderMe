@@ -6,7 +6,6 @@ on:
       - main
     paths:
       - 'desktop/releases/v*.md'
-      - '.github/workflows/release-louderme-desktop.yml'
 
 permissions:
   contents: write

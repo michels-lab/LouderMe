@@ -856,3 +856,9 @@ Both Android and Windows PR validation must pass again on the final branch head 
 - After the portable EXE smoke test passed, Inno Setup 6.7.1 rejected the `[UninstallRun]` startup-cleanup command because its quoted registry path used C-style escaping.
 - Corrected the installer to use Inno Setup's doubled-quote syntax around the HKCU Run registry path.
 - Final Windows validation still requires installer compile + silent install + installed-EXE launch + uninstall to pass on the corrected head.
+
+
+### Installed-copy smoke-test finding
+- Inno Setup compiled `LouderMe-Setup-v0.1.0.exe` successfully.
+- The subsequent smoke step failed before installation because the installer script wrote to `desktop/artifacts/` while CI expected the repository-level `artifacts/` directory.
+- Aligned `OutputDir` with the repository-level artifact directory. This is a CI/package-path correction; the generated installer binary itself had compiled successfully.

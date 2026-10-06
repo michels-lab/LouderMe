@@ -1,0 +1,5 @@
+LouderMe Desktop
+
+Copyright (c) 2026 Michel Armando Duarte Flores / Michel's Lab.
+
+This desktop component follows the repository's root license terms.

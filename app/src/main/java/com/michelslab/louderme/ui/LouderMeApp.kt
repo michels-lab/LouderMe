@@ -43,8 +43,10 @@ fun LouderMeApp(
     updateStatus: UpdateStatus,
     audioState: AudioEngineUiState,
     equalizerState: EqualizerUiState,
+    startOnBoot: Boolean,
     onCheckForUpdates: () -> Unit,
     onInstallUpdate: () -> Unit,
+    onStartOnBootChanged: (Boolean) -> Unit,
     onBoostToggle: (Boolean) -> Unit,
     onBoostLevelSelected: (Int) -> Unit,
     onEqEnabledChanged: (Boolean) -> Unit,
@@ -59,6 +61,8 @@ fun LouderMeApp(
                 updateStatus = updateStatus,
                 onCheckForUpdates = onCheckForUpdates,
                 onInstallUpdate = onInstallUpdate,
+                startOnBoot = startOnBoot,
+                onStartOnBootChanged = onStartOnBootChanged,
                 onBack = { showAbout = false },
             )
         } else {
@@ -1229,6 +1233,8 @@ private fun AboutScreen(
     updateStatus: UpdateStatus,
     onCheckForUpdates: () -> Unit,
     onInstallUpdate: () -> Unit,
+    startOnBoot: Boolean,
+    onStartOnBootChanged: (Boolean) -> Unit,
     onBack: () -> Unit,
 ) {
     val uriHandler = LocalUriHandler.current
@@ -1422,6 +1428,39 @@ private fun AboutScreen(
                     color = LouderMeColors.Muted,
                     style = MaterialTheme.typography.bodySmall,
                 )
+            }
+
+            Panel {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        PanelHeading(
+                            eyebrow = "STARTUP",
+                            title = "Start with phone",
+                            subtitle = "Resume LouderMe automatically after Android finishes booting.",
+                        )
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            "When enabled, LouderMe resumes the previously active boost after boot. Android or the device manufacturer can still restrict background startup.",
+                            color = LouderMeColors.Muted,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    Switch(
+                        checked = startOnBoot,
+                        onCheckedChange = onStartOnBootChanged,
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = LouderMeColors.Text,
+                            checkedTrackColor = LouderMeColors.Blue,
+                            uncheckedThumbColor = LouderMeColors.Muted,
+                            uncheckedTrackColor = LouderMeColors.Surface3,
+                        ),
+                    )
+                }
             }
 
             Panel {

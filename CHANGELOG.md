@@ -1,5 +1,39 @@
 # Changelog
 
+## Desktop v0.1.0 — 2026-10-06
+
+### Added
+- First native Windows release of LouderMe.
+- Self-contained `LouderMe-v0.1.0.exe` portable build.
+- Installable `LouderMe-Setup-v0.1.0.exe` package via Inno Setup.
+- Official LouderMe Option 4 Windows icon and Michel's Lab identity.
+- Native Windows output-device detection, 0–100% master-volume control and mute.
+- Opt-in **Start LouderMe with Windows**.
+- Real **Global Boost 100–250%** using the Windows APO effects path.
+- Percent-to-digital-gain mapping: 150% = +3.52 dB, 200% = +6.02 dB, 250% = +7.96 dB.
+- 7-band EQ with Flat, Bass, Deep Bass, Dialogue, Treble, Speaker, Headphones and Custom presets.
+- Safe Equalizer APO configuration integration through LouderMe's own managed include.
+- First-use backup of the existing Equalizer APO main configuration.
+- SHA-256 checksums for the portable executable and installer.
+
+### Windows audio dependency
+- System-wide boost above the native Windows 0–100 endpoint requires Equalizer APO 1.4.2 x64.
+- LouderMe does not redistribute Equalizer APO; the app links to its official project page.
+- ASIO and WASAPI exclusive-mode streams can bypass Windows APO effects.
+
+### Validation
+- Native .NET 10 build passed.
+- Real-global-boost contract passed.
+- Portable EXE generation passed.
+- Inno Setup installer generation passed.
+- EXE and installer checksum generation passed.
+- Android regression CI passed so the Desktop addition does not break the mobile product.
+
+### Validation boundary
+- Physical Windows endpoint/APO attachment and audible 100/150/200/250% behavior still require validation on the target PC.
+- Windows Authenticode/code-signing is not configured for v0.1.0; SHA-256 integrity files are published.
+
+
 ## v0.1.6 — 2026-10-06
 
 ### Added

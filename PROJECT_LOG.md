@@ -779,3 +779,49 @@ v0.1.6 is the first stable LouderMe release carrying the official Michel's Lab *
 
 ### Current status
 **LouderMe v0.1.6 is fully released on the stable direct channel and discoverable by the in-app sideload updater.**
+
+
+## 2026-10-06 — Cross-device startup + native Windows desktop foundation
+
+### User request
+- LouderMe Android and LouderMe Desktop must both offer opt-in startup with the device.
+- LouderMe Desktop must be a real installable Windows application, not an HTML file.
+
+### Android implementation
+- Added an opt-in **Start with phone** preference.
+- Added `RECEIVE_BOOT_COMPLETED`.
+- Added `BootCompletedReceiver`.
+- On Android boot, LouderMe resumes the previously active boost only when:
+  - the user enabled start-on-boot;
+  - boost was active before shutdown/reboot;
+  - notification permission is available where Android requires it.
+- The receiver starts the existing foreground audio service instead of attempting to force-open an Activity.
+- Startup remains disabled by default.
+- Manufacturer/OS background-start restrictions remain an Android platform boundary.
+
+### Windows Desktop foundation
+Created `desktop/` as a native Windows product surface:
+- .NET 10 WinForms native application;
+- NAudio 3.1.0 stable package for Windows Core Audio endpoint access;
+- no browser/WebView desktop UI;
+- default playback-device detection;
+- real Windows master-volume control;
+- mute control;
+- native **Start LouderMe with Windows** setting via `HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run`;
+- Inno Setup installer with optional startup and desktop-shortcut tasks;
+- self-contained single-file portable EXE build;
+- official LouderMe icon generated from the canonical Option 4 SVG;
+- SHA-256 checksums for portable EXE and installer.
+
+### Accuracy boundary
+The current Desktop milestone does **not** claim system-wide gain above the normal Windows endpoint maximum. Windows master volume is 0–100. A true >100% system-wide boost needs a separately validated audio-processing path; the UI explicitly says so rather than relabeling endpoint volume as 250%.
+
+### Versioning
+- Android remains v0.1.6 / versionCode 7 on this feature branch.
+- Desktop starts as v0.1.0.
+- No release publication is authorized by this feature implementation.
+
+### Validation
+- Desktop Windows CI is required to prove .NET restore/build, self-contained EXE packaging, icon generation, Inno Setup installer creation and checksums.
+- Android PR CI is required to prove the boot receiver/UI integration compiles in both Play and sideload flavors.
+- Actual reboot/sign-in behavior remains a physical-device / Windows-session validation item.

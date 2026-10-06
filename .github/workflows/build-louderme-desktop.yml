@@ -1,0 +1,151 @@
+name: Build LouderMe Desktop for Windows
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**'
+      - 'development/**'
+      - 'release/**'
+      - 'fix/**'
+    paths:
+      - 'desktop/**'
+      - 'app/src/main/assets/branding/louderme/**'
+      - '.github/workflows/build-louderme-desktop.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'desktop/**'
+      - 'app/src/main/assets/branding/louderme/**'
+      - '.github/workflows/build-louderme-desktop.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: louderme-desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build and smoke-test Windows installer
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out exact commit
+        uses: actions/checkout@v5
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Generate official Windows icon
+        shell: pwsh
+        run: |
+          choco install imagemagick --yes --no-progress
+          New-Item -ItemType Directory -Force 'desktop/src/LouderMeDesktop/Assets' | Out-Null
+          $magick = Get-Command magick -ErrorAction SilentlyContinue
+          if (-not $magick) {
+            $exe = Get-ChildItem "$env:ProgramFiles\ImageMagick*" -Filter magick.exe -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+            if (-not $exe) { throw 'ImageMagick magick.exe not found.' }
+            $magickPath = $exe.FullName
+          } else {
+            $magickPath = $magick.Source
+          }
+
+          & $magickPath -background none             'app/src/main/assets/branding/louderme/official-app-icon.svg'             -define icon:auto-resize=256,128,64,48,32,16             'desktop/src/LouderMeDesktop/Assets/LouderMe.ico'
+
+          if ($LASTEXITCODE -ne 0) { throw 'Official LouderMe Windows icon generation failed.' }
+
+      - name: Restore and compile native desktop app
+        shell: pwsh
+        run: |
+          dotnet restore desktop/src/LouderMeDesktop/LouderMeDesktop.csproj
+          dotnet build desktop/src/LouderMeDesktop/LouderMeDesktop.csproj -c Release --no-restore
+
+      - name: Resolve desktop version
+        id: version
+        shell: pwsh
+        run: |
+          [xml]$proj = Get-Content 'desktop/src/LouderMeDesktop/LouderMeDesktop.csproj'
+          $v = [string]$proj.Project.PropertyGroup.Version
+          if ([string]::IsNullOrWhiteSpace($v)) { throw 'Desktop version not found.' }
+          "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Publish self-contained portable EXE
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force artifacts/publish | Out-Null
+          dotnet publish desktop/src/LouderMeDesktop/LouderMeDesktop.csproj             -c Release -r win-x64 --self-contained true             -p:PublishSingleFile=true             -p:IncludeNativeLibrariesForSelfExtract=true             --no-restore             -o artifacts/publish
+
+          $v='${{ steps.version.outputs.version }}'
+          Copy-Item artifacts/publish/LouderMe.exe "artifacts/LouderMe-Desktop-v$v.exe"
+
+      - name: Smoke-test portable EXE
+        shell: pwsh
+        run: |
+          $process = Start-Process 'artifacts/publish/LouderMe.exe' -ArgumentList '--startup' -PassThru
+          Start-Sleep -Seconds 4
+          if ($process.HasExited) {
+            throw "Portable LouderMe exited unexpectedly with code $($process.ExitCode)."
+          }
+          Stop-Process -Id $process.Id -Force
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          choco install innosetup --yes --no-progress
+          $v='${{ steps.version.outputs.version }}'
+          $publish=(Resolve-Path 'artifacts/publish').Path
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"             "/DMyAppVersion=$v"             "/DPublishDir=$publish"             desktop/installer/LouderMe.iss
+          if ($LASTEXITCODE -ne 0) { throw 'Inno Setup build failed.' }
+
+      - name: Smoke-test installer and installed EXE
+        shell: pwsh
+        run: |
+          $v='${{ steps.version.outputs.version }}'
+          $installer="artifacts/LouderMe-Setup-v$v.exe"
+          $installDir=Join-Path $env:RUNNER_TEMP 'LouderMeSmoke'
+          & $installer /VERYSILENT /SUPPRESSMSGBOXES /NORESTART "/DIR=$installDir"
+          if ($LASTEXITCODE -ne 0) { throw 'Silent installer failed.' }
+
+          $installedExe=Join-Path $installDir 'LouderMe.exe'
+          if (-not (Test-Path $installedExe)) { throw 'Installed LouderMe.exe not found.' }
+
+          $process = Start-Process $installedExe -ArgumentList '--startup' -PassThru
+          Start-Sleep -Seconds 4
+          if ($process.HasExited) { throw 'Installed LouderMe exited unexpectedly.' }
+          Stop-Process -Id $process.Id -Force
+
+          $uninstaller=Join-Path $installDir 'unins000.exe'
+          if (Test-Path $uninstaller) {
+            & $uninstaller /VERYSILENT /SUPPRESSMSGBOXES /NORESTART
+          }
+
+      - name: Create SHA-256 checksums
+        shell: pwsh
+        run: |
+          $v='${{ steps.version.outputs.version }}'
+          $files=@(
+            "artifacts/LouderMe-Desktop-v$v.exe",
+            "artifacts/LouderMe-Setup-v$v.exe"
+          )
+          foreach ($file in $files) {
+            $hash=(Get-FileHash $file -Algorithm SHA256).Hash.ToLowerInvariant()
+            $name=[IO.Path]::GetFileName($file)
+            "$hash  $name" | Set-Content "$file.sha256" -Encoding ascii
+          }
+
+      - name: Upload Windows build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: LouderMe-Desktop-v${{ steps.version.outputs.version }}
+          path: |
+            artifacts/LouderMe-Desktop-v${{ steps.version.outputs.version }}.exe
+            artifacts/LouderMe-Desktop-v${{ steps.version.outputs.version }}.exe.sha256
+            artifacts/LouderMe-Setup-v${{ steps.version.outputs.version }}.exe
+            artifacts/LouderMe-Setup-v${{ steps.version.outputs.version }}.exe.sha256
+            desktop/src/LouderMeDesktop/Assets/LouderMe.ico

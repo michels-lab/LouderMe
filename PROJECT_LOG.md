@@ -1180,3 +1180,20 @@ A final green current-HEAD run is required before merge.
   - Desktop stable: v0.1.0.
 - A new Desktop/Android release requires separate explicit authorization and a new version; the already-published Desktop v0.1.0 must not be overwritten.
 - Windows Authenticode remains unimplemented because no publisher certificate has been configured.
+
+
+## 2026-10-06 — Agent contracts reconciled with dual-platform product state
+
+After LouderMe branding/Desktop work landed, the repository-local agent prompts still described LouderMe primarily as Android-only.
+
+Updated the local contract surfaces to current product truth:
+- `AGENTS.md` now treats LouderMe as Android + native Windows Desktop;
+- App Maintainer covers Compose/Gradle and .NET/APO/Inno Setup/updater work;
+- QA Regression covers Windows endpoint/APO/config/installer/feed/SmartScreen boundaries in addition to Android;
+- Release Manager covers Android Play/Direct plus Desktop source/public tags, checksums, public feed and Authenticode truthfulness;
+- Copilot instructions now preserve both Android and Windows engine/update boundaries;
+- release wording is stable-by-default when Michel explicitly says "release" and does not request prerelease/beta/RC.
+
+The canonical Michel's Lab managed contract block was preserved unchanged.
+
+No product code, version metadata, release artifact or public feed was changed by this agent-contract synchronization.

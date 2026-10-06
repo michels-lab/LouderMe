@@ -1,12 +1,12 @@
 # Copilot instructions — LouderMe
 
-Read `AGENTS.md`, `PROJECT_LOG.md` and the relevant Gradle/workflow files before editing.
+Read `AGENTS.md`, `PROJECT_LOG.md` and the relevant Android or Windows build/workflow files before editing.
 
-Keep Play and sideload distribution paths separate. Preserve stable signing and direct-update integrity. Never introduce privileged secrets or CI-debug signing as a production update identity.
+Keep Android Play and sideload distribution paths separate. Preserve Android stable signing/direct-update integrity and the Windows installer/feed/update contract. Never introduce privileged secrets or CI-debug signing as a production update identity.
 
-Do not confuse digital target gain with acoustic dB SPL. Keep EQ mapping/clamping explicit and preserve Android safe-area behavior.
+Do not confuse digital target gain with acoustic dB SPL. Keep Android EQ mapping/clamping explicit and preserve Android safe-area behavior. On Windows, keep native endpoint volume at 0–100 and route Global Boost above 100% through the documented APO path.
 
-Use current-commit build/test evidence. Real-device audio quality, routing, PackageInstaller and Play-delivery claims remain open until actually tested.
+Use current-commit build/test evidence. Android device audio/routing/PackageInstaller/Play-delivery claims and Windows APO attachment/audible behavior/SmartScreen/AuthentiCode claims remain open until actually tested.
 
 Update `PROJECT_LOG.md` for meaningful work. Do not publish a release unless explicitly assigned.
 

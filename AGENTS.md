@@ -1,12 +1,18 @@
 # LouderMe — Agent Contract
 
-LouderMe is an Android audio utility with separate Google Play and Michel's Lab Direct/sideload distribution paths. Before editing, read `.michelslab/project.yml`, `MICHELS_LAB_PROJECT.md`, `PROJECT_LOG.md`, `docs/INFRASTRUCTURE_AUDIT.md`, and the workflows/Gradle configuration that own the affected behavior.
+LouderMe is a dual-platform audio utility: Android plus a native Windows Desktop app. Android has separate Google Play and Michel's Lab Direct/sideload distribution paths; Windows has its own installer/portable stable channel. Before editing, read `.michelslab/project.yml`, `MICHELS_LAB_PROJECT.md`, `PROJECT_LOG.md`, `docs/INFRASTRUCTURE_AUDIT.md`, and the platform-specific workflows/build configuration that own the affected behavior.
 
 Shared Michel's Lab rules live in `realmichelduarte/Michel-Software-Standards`.
 
 ## Product constraints
 
-- Preserve separate `play` and `sideload` behavior. Do not leak `REQUEST_INSTALL_PACKAGES` into the Play flavor.
+- Preserve separate Android `play` and `sideload` behavior. Do not leak `REQUEST_INSTALL_PACKAGES` into the Play flavor.
+- Treat Android and Windows as distinct product surfaces that share LouderMe identity and audio semantics but have different engines, packaging, updater and validation boundaries.
+- Windows endpoint volume remains 0–100%. Desktop Global Boost above 100% must use the documented Windows APO processing path; never relabel normal endpoint volume as 250%.
+- Desktop currently uses user-installed Equalizer APO 1.4.2 as the local system-effects backend. Preserve LouderMe's managed `LouderMe.txt` include/backup behavior and do not overwrite unrelated user APO configuration.
+- ASIO and WASAPI exclusive-mode streams can bypass Windows system effects; do not claim universal system-wide coverage when the platform path is bypassed.
+- Preserve Desktop release separation: source tag `desktop-vX.Y.Z`, public tag `louderme-desktop-vX.Y.Z`, and public `louderme-desktop/latest.json` stable feed.
+- Desktop updater downloads only a newer published installer and must verify its manifest SHA-256 before Windows is asked to launch it.
 - Michel's Lab Direct updates require a stable signing identity, public anonymous feed, SHA-256 verification, package/version validation and signing continuity before Android receives the APK.
 - Never replace stable release signing with ephemeral CI debug signing.
 - Do not describe target signal gain as measured acoustic dB SPL.
@@ -44,9 +50,9 @@ Follow `standards/PRODUCT_IDENTITY_STANDARD.md` and `standards/ABOUT_STANDARD.md
 
 ## Validation
 
-Inspect the current workflows and run the strongest relevant Gradle/build/test path for the changed flavor/surface. Validate manifest/permission separation when updater/distribution code changes.
+Inspect the current workflows and run the strongest relevant validation for the changed platform: Gradle/build/tests plus manifest/permission separation for Android; .NET build, APO-contract checks, portable/installer packaging and updater/feed integrity for Windows.
 
-Device-only audio quality, output routing, PackageInstaller UX and Play-delivery behavior remain explicitly unvalidated until exercised on the target device/channel.
+Device-only Android audio quality, output routing, PackageInstaller UX and Play-delivery behavior remain explicitly unvalidated until exercised on the target device/channel. Windows APO endpoint attachment, reboot behavior, SmartScreen/AuthentiCode state and audible 100–250% behavior remain unvalidated until exercised on a real Windows machine.
 
 ## Completion
 

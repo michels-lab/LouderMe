@@ -12,7 +12,7 @@ internal sealed class AboutForm : Form
     private static readonly Color Bg = BrandColors.Bg;
     private static readonly Color Surface = BrandColors.Surface;
     private static readonly Color Surface2 = BrandColors.Surface2;
-    private static readonly Color Text = BrandColors.Text;
+    private static readonly Color TextPrimary = BrandColors.Text;
     private static readonly Color Muted = BrandColors.Muted;
     private static readonly Color Cyan = BrandColors.Cyan;
     private static readonly Color Gold = BrandColors.Gold;
@@ -86,7 +86,7 @@ internal sealed class AboutForm : Form
         {
             AutoSize = true,
             Text = "LouderMe Desktop",
-            ForeColor = Text,
+            ForeColor = TextPrimary,
             Font = new Font("Segoe UI Semibold", 26f, FontStyle.Bold),
             Anchor = AnchorStyles.None,
         });
@@ -162,7 +162,7 @@ internal sealed class AboutForm : Form
         {
             AutoSize = true,
             Text = DeveloperProfile.Developer,
-            ForeColor = Text,
+            ForeColor = TextPrimary,
             Font = new Font("Segoe UI Semibold", 20f, FontStyle.Bold),
             Margin = new Padding(0, 7, 0, 2),
         });
@@ -276,7 +276,7 @@ internal sealed class AboutForm : Form
         {
             AutoSize = true,
             Text = DeveloperProfile.Copyright,
-            ForeColor = Text,
+            ForeColor = TextPrimary,
             Margin = new Padding(0, 10, 0, 0),
         });
         stack.Controls.Add(new Label
@@ -352,7 +352,7 @@ internal sealed class AboutForm : Form
             Width = 38,
             Dock = DockStyle.Left,
             TextAlign = ContentAlignment.MiddleCenter,
-            ForeColor = Text,
+            ForeColor = TextPrimary,
             Font = new Font("Segoe UI Semibold", icon == "in" ? 9f : 11f, FontStyle.Bold),
         };
         var label = new Label
@@ -360,7 +360,7 @@ internal sealed class AboutForm : Form
             Text = name,
             Dock = DockStyle.Fill,
             TextAlign = ContentAlignment.MiddleLeft,
-            ForeColor = Text,
+            ForeColor = TextPrimary,
             Font = new Font("Segoe UI Semibold", 10f, FontStyle.Bold),
         };
         var arrow = new Label

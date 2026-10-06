@@ -1,6 +1,6 @@
 # LouderMe — Agent Contract
 
-LouderMe is an Android audio utility with separate Google Play and Michel's Lab Direct/sideload distribution paths. Before editing, read `.michelslab/project.yml`, `MICHELS_LAB_PROJECT.md`, `PROJECT_LOG.md`, `docs/INFRASTRUCTURE_AUDIT.md`, and the workflows/Gradle configuration that own the affected behavior.
+LouderMe is a cross-platform audio utility with Android and native Windows Desktop surfaces. Android keeps separate Google Play and Michel's Lab Direct/sideload distribution paths. Before editing, read `.michelslab/project.yml`, `MICHELS_LAB_PROJECT.md`, `PROJECT_LOG.md`, `docs/INFRASTRUCTURE_AUDIT.md`, and the workflows/Gradle configuration that own the affected behavior.
 
 Shared Michel's Lab rules live in `realmichelduarte/Michel-Software-Standards`.
 
@@ -13,6 +13,10 @@ Shared Michel's Lab rules live in `realmichelduarte/Michel-Software-Standards`.
 - Equalizer/product-facing bands must remain stable while device-specific band mapping/clamping stays explicit.
 - Foreground app chrome must honor Android system insets/safe drawing; do not fix status-bar collisions with one-device magic padding.
 - Preserve the current IG Cleaner-family visual language unless redesign is explicitly requested.
+- Windows Desktop must remain a native installable application; do not replace it with a browser-only/HTML shell.
+- Desktop installers should follow the Michel's Lab Windows pattern: self-contained portable EXE + Inno Setup installer + SHA-256 checksums.
+- Startup behavior is opt-in. Android uses the boot-completed path; Windows uses current-user startup and should start minimized rather than stealing focus.
+- Do not claim Windows system-wide boost above 100% until a real DSP/APO path is implemented and validated. Endpoint 100% must never be relabeled as 125–250%.
 - High-gain and EQ audible quality require real target-device validation; repository tests cannot prove acoustic behavior.
 - Never commit signing keys/passwords, Play credentials or privileged service secrets.
 

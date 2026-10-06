@@ -900,3 +900,25 @@ Processing remains local. No account, telemetry, cloud service, audio upload or 
 
 ### Version / release
 Desktop remains v0.1.0 during this implementation. No Desktop release is published by this change unless separately authorized.
+
+
+### Final Windows global-boost validation — 2026-10-06
+- PR #13: **merged**.
+- Merge commit: `443c8cd09af593bd15d9dc7d46d2cd43b8044a18`.
+- Desktop PR CI run `37515489882`: **success**.
+  - .NET 10 native build passed.
+  - real-global-boost source contract passed.
+  - 100–250% gain formula contract passed.
+  - APO managed configuration contract passed.
+  - portable self-contained EXE passed.
+  - Inno Setup installer passed.
+  - EXE/installer checksums passed.
+  - Windows artifact upload passed.
+- Android regression CI run `37515490245`: **success**.
+  - unit/build validation passed;
+  - Play and sideload builds passed;
+  - package ID and permission separation passed.
+- Additional branch Windows run `37515460340`: **success**.
+- Merge used `[skip ci]` intentionally to avoid re-running the already released Android v0.1.6 publication path for a Desktop-only feature.
+- Desktop version remains v0.1.0 and is **not yet released**.
+- Physical Windows endpoint/APO attachment and audible 100/150/200/250% validation remain required before claiming hardware-level validation.

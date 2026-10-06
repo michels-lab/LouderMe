@@ -162,7 +162,7 @@ jobs:
           KEY_PASS="$(openssl rand -hex 24)"
           ALIAS="louderme_sideload"
 
-          keytool -genkeypair             -keystore signing/louderme-sideload.jks             -storepass "$STORE_PASS"             -keypass "$KEY_PASS"             -alias "$ALIAS"             -keyalg RSA             -keysize 4096             -validity 10000             -dname "CN=Michel's Lab, OU=Software, O=Michel's Lab, L=Saltillo, ST=Coahuila, C=MX"
+          keytool -genkeypair             -storetype JKS             -keystore signing/louderme-sideload.jks             -storepass "$STORE_PASS"             -keypass "$KEY_PASS"             -alias "$ALIAS"             -keyalg RSA             -keysize 4096             -validity 10000             -dname "CN=Michel's Lab, OU=Software, O=Michel's Lab, L=Saltillo, ST=Coahuila, C=MX"
 
           BUILD_TOOLS="${ANDROID_HOME:-/usr/local/lib/android/sdk}/build-tools/36.0.0"
           VERSION="${{ needs.validate.outputs.version }}"

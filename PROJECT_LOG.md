@@ -728,3 +728,54 @@ The release branch must pass full Android CI. After merge to `main`, the stable 
 
 ### Current status
 Release candidate prepared; pending CI.
+
+
+## 2026-10-06 — LouderMe v0.1.6 stable release published
+
+### Authorization
+Michel explicitly requested a **release**, not a prerelease.
+
+### Validation
+- Release PR: #10.
+- Release-candidate CI run: `37497219727` — **success**.
+- Merge to `main`: `1e8c29a99ce402fe24e2bdeba7dc4180771d0ff8`.
+- Main build/sign/release run: `37497675432` — **success**.
+- Unit tests: passed.
+- Play build: passed.
+- Sideload build: passed.
+- Package ID verification: passed.
+- Play/sideload permission separation: passed.
+- Stable Michel's Lab Direct signing: passed.
+- Private release publication: passed.
+- Public publisher run: `37498269151` — **success**.
+- Transfer-staging cleanup run: `37498345236` — correctly **skipped** by the cleanup guard.
+
+### Release evidence
+Private source release:
+- tag: `v0.1.6`;
+- release type: stable, not prerelease;
+- APK: `LouderMe-v0.1.6-sideload.apk`;
+- APK size: 22,130,370 bytes;
+- APK SHA-256: `b0b0165b2b7b967e090083ae0b681d3bf2591eafbc8b9277129fc27cafc3a6e5`.
+
+Public Michel's Lab Direct release:
+- tag: `louderme-v0.1.6`;
+- release type: stable, not prerelease;
+- APK: `LouderMe-v0.1.6-sideload.apk`;
+- APK size: 22,130,370 bytes;
+- APK SHA-256: `b0b0165b2b7b967e090083ae0b681d3bf2591eafbc8b9277129fc27cafc3a6e5`.
+
+### Public updater feed
+`louderme/latest.json` now advertises:
+- appId: `com.michelslab.louderme`;
+- channel: `sideload`;
+- versionName: `0.1.6`;
+- versionCode: `7`;
+- APK URL: public `louderme-v0.1.6` asset;
+- SHA-256: `b0b0165b2b7b967e090083ae0b681d3bf2591eafbc8b9277129fc27cafc3a6e5`.
+
+### Delivered branding
+v0.1.6 is the first stable LouderMe release carrying the official Michel's Lab **Option 4 — flowing waveform** identity across launcher, adaptive icon, splash, command bar and About.
+
+### Current status
+**LouderMe v0.1.6 is fully released on the stable direct channel and discoverable by the in-app sideload updater.**

@@ -377,7 +377,7 @@ jobs:
           test -f "$NOTES"
 
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" "$APK" "$CHECKSUM" --clobber
+            echo "Release $TAG already exists; leaving published assets unchanged."
           else
             gh release create "$TAG" \
               "$APK" \

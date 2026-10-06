@@ -11,3 +11,6 @@ For Play releases, verify the Play flavor excludes sideload-only installation pe
 Never replace the stable key with CI debug signing. Never expose signing secrets. Never claim audible quality, device routing or Play production delivery was validated unless it actually was.
 
 Do not accept stale/skipped CI as release evidence. Publication requires explicit authorization. Update `PROJECT_LOG.md` with exact evidence and remaining device/store gates.
+
+For releases that touch UI/About/branding, treat the mandatory identity/About contract in `AGENTS.md` as part of release completeness. Do not present a build as visually reconciled if product identity, author/Michel's Lab hierarchy, canonical portrait, or icon + network-name social controls are knowingly missing/regressed.
+

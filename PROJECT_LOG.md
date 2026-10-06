@@ -1343,3 +1343,72 @@ Desktop v0.1.1:
 
 ### Current status
 **Android v0.1.7 and LouderMe Desktop v0.1.1 are fully published on their stable public Michel's Lab channels.**
+
+
+## 2026-10-06 — LIMÓN handoff after v0.1.7 / Desktop v0.1.1 field feedback
+
+### Production regression — Android About
+User reported that the public Android **v0.1.7 / versionCode 8** app closes/crashes when opening About.
+
+Evidence/state:
+- issue created: **#19 — Android v0.1.7 crashes when opening About**;
+- repository CI for v0.1.7 had passed, so the failure is a runtime/device regression not caught by the current build/static checks;
+- root cause is **not yet confirmed**;
+- likely investigation surface is the new About/branding runtime path: `LouderMeApp.kt`, `BrandComponents.kt`, canonical Michel's Lab raster asset loading and target-device rendering;
+- next session must reproduce on the target Samsung and capture the actual stack trace/logcat before declaring a fix;
+- do not overwrite v0.1.7; any production correction requires a new stable Android version.
+
+### Desktop installer experience feedback
+User expected LouderMe Desktop to install like FoamLens / Michel's Life and reported that the current public v0.1.1 flow does not communicate that clearly enough.
+
+Audit finding:
+- FoamLens and Michel's Life also use GitHub-built Windows releases with Inno Setup installers;
+- Michel's Life additionally demonstrates optional Authenticode signing through `WINDOWS_CERT_BASE64` / `WINDOWS_CERT_PASSWORD` and `signtool`;
+- LouderMe v0.1.1 does have an Inno Setup installer, but the public release also exposes a generically named portable EXE, making the normal install path ambiguous;
+- LouderMe is currently unsigned with Authenticode, so Windows can show **Unknown publisher** before the installer wizard. This cannot be honestly removed without a real publisher certificate.
+
+### Desktop hotfix branch
+Branch: `fix/desktop-installer-experience`
+Current branch head at handoff: `84b8d5ec740938112796fec25ddca3a639f39493`
+
+Changes already staged on that branch:
+- Desktop source version bumped from 0.1.1 to **0.1.2**;
+- `desktop/installer/LouderMe.iss` reworked toward the Michel's Lab / FoamLens / Michel's Life install pattern;
+- bilingual English/Spanish installer messages added;
+- installer-side Start with Windows option retained;
+- branded installer wizard-image references added;
+- `desktop/installer/prepare-branding.ps1` added to generate ICO + installer wizard BMP assets from canonical LouderMe branding;
+- normal Desktop CI updated to generate installer branding, rename the portable artifact toward **LouderMe-Portable-vX.Y.Z.exe**, validate installer contract and smoke-test an actual install/uninstall;
+- release workflow partially updated to use the branded installer assets and explicit portable naming.
+
+### Desktop hotfix validation status
+**Not validated yet.**
+No PR has been opened and no CI result exists for the v0.1.2 installer branch at this handoff.
+
+Before merge/release:
+1. finish/review both Desktop workflows for consistent `LouderMe-Portable-vX.Y.Z.exe` naming;
+2. ensure public publisher/feed logic also understands the new portable filename;
+3. add/update v0.1.2 release notes/changelog;
+4. run Windows PR CI;
+5. confirm branded installer builds;
+6. confirm CI installs `LouderMe.exe` into an isolated directory and uninstalls cleanly;
+7. publish only after explicit stable release authorization.
+
+### Shared standards finding
+The Michel's Lab master repository already documents:
+- Windows installer + portable + SHA-256;
+- current-commit validation;
+- installer smoke installation/uninstallation;
+- public binary release repositories;
+- automatic updater expectations.
+
+However, it does **not yet state strongly enough** that the normal Windows production path should be built/published from GitHub Actions, that the installer is the recommended user-facing artifact, and that a portable build should be clearly secondary/named as portable.
+
+A master-standard update was investigated but **not yet committed** at this LIMÓN stop.
+
+### Stop state
+Public versions remain:
+- Android **v0.1.7** — contains the About crash regression;
+- Desktop **v0.1.1** — stable/public, but installer UX/naming needs the v0.1.2 hotfix.
+
+No hotfix release was published in this session after the field reports.

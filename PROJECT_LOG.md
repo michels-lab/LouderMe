@@ -591,3 +591,26 @@ Exactly one migration reinstall is required:
 **v0.1.4 is released and the Michel's Lab Direct update channel is operational.**
 
 No additional manual GitHub browsing should be necessary for normal same-signer sideload updates after the one-time v0.1.4 migration.
+
+
+## 2026-10-06 — v0.1.5 high-gain peak protection candidate
+
+### Goal
+Improve quality and overload handling at 225–250% without replacing the Samsung-validated LoudnessEnhancer path.
+
+### Platform finding
+Android's LoudnessEnhancer already compresses samples that would otherwise exceed the platform sample range. DynamicsProcessing exposes a dedicated Limiter stage intended to protect the signal from overloading and distortion.
+
+### Implementation
+- Kept LoudnessEnhancer as the primary session-0 engine.
+- Added `PeakProtectionPolicy` for the DynamicsProcessing fallback.
+- Explicit limiter begins at 175% and becomes progressively stronger at 200%, 225% and 250%.
+- Limiter configuration failure is non-fatal; the fallback continues and reports the condition in diagnostics.
+- Added unit tests for policy thresholds, progression and supported-range clamping.
+- Bumped candidate version to v0.1.5 / versionCode 6.
+
+### Validation boundary
+Code is prepared on `release/v0.1.5`. CI must pass before merge or release. Real-device listening remains required to judge tonal quality and audible limiting behavior.
+
+### Current status
+Release candidate prepared; pending CI.

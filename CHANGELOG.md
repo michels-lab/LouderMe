@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.1.5 — 2026-10-06
+
+### Added
+- Explicit high-gain peak-protection policy for the DynamicsProcessing fallback.
+- Real DynamicsProcessing Limiter configuration from 175% upward.
+- Progressive limiter profiles for 175%, 200%, 225% and 250% boost ranges.
+- Unit tests for protection thresholds, progression and input clamping.
+
+### Changed
+- The already-validated LoudnessEnhancer path remains the primary engine and is not replaced.
+- High-gain diagnostics now explain that Android LoudnessEnhancer compresses samples that would exceed the supported sample range.
+- DynamicsProcessing keeps working even if a device rejects LouderMe's explicit limiter configuration; that failure is surfaced in diagnostics instead of breaking the fallback.
+
+### Validation boundary
+- This release candidate still requires CI compilation/tests.
+- Audible EQ and high-gain quality validation on the target Samsung device remain physical-device checks.
+- Peak protection reduces digital overload risk; it is not a measurement or guarantee of acoustic listening safety.
+
+
 ## v0.1.4 — 2026-10-05
 
 ### Added

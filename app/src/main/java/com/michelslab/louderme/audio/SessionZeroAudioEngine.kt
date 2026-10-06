@@ -46,7 +46,11 @@ class SessionZeroAudioEngine : AudioEngine {
                 gainDb = gainDb,
                 implementation = "Session 0 · ${descriptor.name} · ${descriptor.implementor}",
                 message = if (enabled && hasControl) {
-                    "Engine attached. This path was audibly validated on the target Samsung device."
+                    if (safePercent >= PeakProtectionPolicy.ENABLE_FROM_PERCENT) {
+                        "Engine attached. Android LoudnessEnhancer compresses samples that would exceed the supported sample range; this path was audibly validated on the target Samsung device."
+                    } else {
+                        "Engine attached. This path was audibly validated on the target Samsung device."
+                    }
                 } else {
                     "Effect exists, but LouderMe does not have full control of the engine."
                 },
@@ -65,6 +69,34 @@ class SessionZeroAudioEngine : AudioEngine {
             }
 
             effect.setInputGainAllChannelsTo(gainDb.toFloat())
+
+            val protection = PeakProtectionPolicy.forPercent(safePercent)
+            val protectionNote = if (protection.enabled) {
+                runCatching {
+                    effect.setLimiterAllChannelsTo(
+                        DynamicsProcessing.Limiter(
+                            true,
+                            true,
+                            0,
+                            protection.attackMs,
+                            protection.releaseMs,
+                            protection.ratio,
+                            protection.thresholdDbfs,
+                            0f,
+                        )
+                    )
+                }.fold(
+                    onSuccess = {
+                        "Peak limiter ${protection.label.lowercase()} · ${protection.thresholdDbfs} dBFS · ${protection.ratio}:1"
+                    },
+                    onFailure = { error ->
+                        "Peak limiter unavailable (${error.message ?: error::class.java.simpleName})"
+                    }
+                )
+            } else {
+                "Peak limiter off below ${PeakProtectionPolicy.ENABLE_FROM_PERCENT}%"
+            }
+
             val enableCode = effect.setEnabled(true)
             val hasControl = effect.hasControl()
             val enabled = effect.enabled
@@ -84,9 +116,9 @@ class SessionZeroAudioEngine : AudioEngine {
                 gainDb = gainDb,
                 implementation = "Session 0 fallback · ${descriptor.name} · ${descriptor.implementor}",
                 message = if (enabled && hasControl) {
-                    "Dynamics engine attached. Compatibility can still vary by device."
+                    "Dynamics engine attached. $protectionNote. Compatibility can still vary by device."
                 } else {
-                    "Dynamics effect opened, but LouderMe does not have full control."
+                    "Dynamics effect opened, but LouderMe does not have full control. $protectionNote."
                 },
             )
         }

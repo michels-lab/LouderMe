@@ -73,3 +73,8 @@ The fingerprint is public identity metadata. The private key and passwords remai
 
 The first stable signed baseline APK has SHA-256:
 `7eee11c065330d0064378172840cdb5aa067c17463332db8a6c6626e674f9d83`.
+
+
+## Bootstrap requested
+
+The stable sideload signing bootstrap was intentionally triggered for v0.1.4 so the four repository signing secrets can be configured once and reused for all future direct LouderMe updates.

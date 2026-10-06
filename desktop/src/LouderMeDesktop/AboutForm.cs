@@ -23,7 +23,7 @@ internal sealed class AboutForm : Form
 
         Text = "About LouderMe";
         StartPosition = FormStartPosition.CenterParent;
-        MinimumSize = new Size(760, 720);
+        MinimumSize = new Size(860, 720);
         Size = new Size(860, 860);
         BackColor = Bg;
         ForeColor = TextPrimary;

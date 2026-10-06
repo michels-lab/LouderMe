@@ -14,12 +14,14 @@ LouderMe now ships with its official Michel's Lab product identity: **Option 4 â
 This release does not alter the audio engine, 100â€“250% boost range, EQ behavior, updater architecture, signing identity, Play/sideload permission split, or local privacy model.
 
 ## Validation
-The release candidate must pass the full LouderMe Android CI before publication:
-- unit tests;
-- Play build;
-- sideload build;
-- package-ID verification;
-- Play/sideload permission separation;
-- stable Michel's Lab Direct signing after merge to `main`.
+- Release-candidate unit tests: passed.
+- Play build: passed.
+- Sideload build: passed.
+- Package-ID verification: passed.
+- Play/sideload permission separation: passed.
+- Stable Michel's Lab Direct signing: passed.
+- Private stable release publication: passed.
+- Public Michel's Lab Direct release publication: passed.
+- Public update feed now advertises versionCode 7 / versionName 0.1.6.
 
-The official branding implementation already passed its dedicated PR validation before this version bump.
+This is a stable release, not a prerelease.

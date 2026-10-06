@@ -962,3 +962,58 @@ Public Windows binaries will be published in `realmichelduarte/michel-s-life-rel
 
 ### Current status
 Stable release candidate prepared; pending PR CI, merge-to-main release build, public transfer verification and final publication.
+
+
+## 2026-10-06 — LouderMe Desktop v0.1.0 stable release published
+
+### Authorization
+Michel explicitly authorized publication of the first LouderMe Desktop stable release.
+
+### Source release
+- tag: `desktop-v0.1.0`;
+- release type: stable, not prerelease;
+- target commit: `dbd775e5fc492a12dbfbb2bbcd931a9bd397a958`;
+- release workflow run: `37519498262` — **success**;
+- Desktop build workflow run: `37519498307` — **success**;
+- Android regression workflow run: `37519498193` — **success**.
+
+Assets:
+- `LouderMe-Setup-v0.1.0.exe` — 36,163,803 bytes — SHA-256 `958a4e9545e20b7654b10331683958d9c8cd71ae64a1ef7b1492f2c1225a4a0f`;
+- `LouderMe-v0.1.0.exe` — 118,431,673 bytes — SHA-256 `0e1832b282c5daa3c45e828ba5dcdab53dea3326b03a62c80a4422efccf499a8`;
+- matching checksum files published.
+
+### Public Michel's Lab Windows channel
+Public release:
+- repository: `realmichelduarte/michel-s-life-releases`;
+- tag: `louderme-desktop-v0.1.0`;
+- release type: stable, not prerelease;
+- publisher workflow run: `37519908247` — **success**.
+
+Public feed:
+- `louderme-desktop/latest.json`;
+- channel: `stable`;
+- platform: `windows-x64`;
+- versionName: `0.1.0`;
+- installer SHA-256: `958a4e9545e20b7654b10331683958d9c8cd71ae64a1ef7b1492f2c1225a4a0f`;
+- portable SHA-256: `0e1832b282c5daa3c45e828ba5dcdab53dea3326b03a62c80a4422efccf499a8`.
+
+Transfer staging was removed after publication.
+
+### Release contents
+- native .NET 10 WinForms app;
+- official LouderMe identity;
+- Windows endpoint device/volume/mute control;
+- opt-in Start LouderMe with Windows;
+- real APO-backed Global Boost 100–250%;
+- 7-band EQ and presets;
+- Inno Setup installer;
+- self-contained portable EXE;
+- SHA-256 integrity files.
+
+### Known release boundary
+- Equalizer APO 1.4.2 x64 is required for system-wide gain above 100%;
+- physical Windows endpoint/APO audible validation remains pending;
+- Windows Authenticode publisher signing is not configured for v0.1.0, so SmartScreen can warn even when hashes match.
+
+### Current status
+**LouderMe Desktop v0.1.0 is fully published on the stable public Windows channel.**

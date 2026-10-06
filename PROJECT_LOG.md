@@ -1197,3 +1197,53 @@ Updated the local contract surfaces to current product truth:
 The canonical Michel's Lab managed contract block was preserved unchanged.
 
 No product code, version metadata, release artifact or public feed was changed by this agent-contract synchronization.
+
+
+## 2026-10-06 — Android v0.1.7 + Desktop v0.1.1 stable release candidate
+
+### Authorization
+Michel explicitly authorized publication of the next LouderMe release after the integrated branding implementation.
+
+### Versions
+- Android: `0.1.7` / versionCode `8`.
+- Windows Desktop: `0.1.1`.
+- Release type: **stable**, not prerelease.
+
+### Included Android changes
+- integrated About/product branding;
+- current canonical Michel Duarte portrait;
+- official Michel's Lab parent-brand lockup;
+- canonical social rows including Facebook;
+- waveform-derived Boost/EQ visual language;
+- opt-in Start with phone;
+- existing audio engine, EQ, Play/Direct updater and stable signing preserved.
+
+### Included Desktop changes
+- native LouderMe waveform header and branded splash;
+- dedicated About surface with canonical author/studio/social hierarchy;
+- waveform-derived Boost/EQ visuals;
+- stable-feed in-app updater with installer SHA-256 verification;
+- existing APO-backed Global Boost, EQ, startup and installer behavior preserved.
+
+### Release gates
+Candidate must pass PR validation before merge:
+- Android current-commit unit/build validation for Play + Direct;
+- Android branding identity contract;
+- package ID and permission split;
+- Desktop native .NET build;
+- Desktop branding/About/splash/updater contract;
+- APO boost contract;
+- portable EXE + Inno Setup installer + checksums.
+
+### Publication plan
+After green PR merge to `main`:
+- Android workflow publishes private source tag `v0.1.7` and stable-signed APK.
+- Desktop workflow publishes private source tag `desktop-v0.1.1`.
+- validated artifacts are transferred to the public Michel's Lab release repo;
+- public tags become `louderme-v0.1.7` and `louderme-desktop-v0.1.1`;
+- public feeds `louderme/latest.json` and `louderme-desktop/latest.json` are advanced only after checksum verification.
+
+### Known boundaries
+- Android audible high-gain/EQ and Play production delivery remain device/store validation items.
+- Windows APO endpoint/audible validation remains a physical-machine item.
+- Windows Authenticode publisher signing remains unconfigured.

@@ -131,7 +131,7 @@ internal sealed class DesktopUpdateService
 
     public static void LaunchInstaller(string path)
     {
-        Process.Start(new ProcessStartInfo
+        _ = Process.Start(new ProcessStartInfo
         {
             FileName = path,
             UseShellExecute = true,

@@ -8,6 +8,7 @@ internal sealed class MainForm : Form
     private readonly AudioDeviceController _audio = new();
     private readonly EqualizerApoEngine _apo = new();
     private readonly DesktopAudioSettings _settings = DesktopSettingsStore.Load();
+    private readonly DesktopUpdateService _updates = new();
 
     private readonly Label _deviceValue = new();
     private readonly Label _volumeValue = new();
@@ -24,6 +25,11 @@ internal sealed class MainForm : Form
     private readonly ComboBox _preset = new();
     private readonly NumericUpDown[] _eqBands = new NumericUpDown[7];
     private readonly Label[] _eqBandValues = new Label[7];
+    private readonly AudioPulseControl _boostWave = new();
+    private readonly EqCurveControl _eqWave = new();
+    private readonly Label _updateStatus = new();
+    private readonly Button _updateAction = new();
+    private DesktopUpdateCheck? _lastUpdateCheck;
 
     private bool _loading;
 
@@ -49,6 +55,8 @@ internal sealed class MainForm : Form
 
         BuildUi();
         LoadState();
+
+        Shown += async (_, _) => await CheckForUpdatesAsync(silent: true);
     }
 
     protected override void Dispose(bool disposing)
@@ -73,29 +81,56 @@ internal sealed class MainForm : Form
             root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
-        var header = new FlowLayoutPanel
+        var header = new TableLayoutPanel
+        {
+            AutoSize = true,
+            Dock = DockStyle.Top,
+            ColumnCount = 2,
+            RowCount = 1,
+            Margin = new Padding(0, 0, 0, 18),
+        };
+        header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150));
+        header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+
+        header.Controls.Add(new WaveformMarkControl
+        {
+            Width = 138,
+            Height = 84,
+            Margin = new Padding(0, 0, 12, 0),
+        }, 0, 0);
+
+        var headerText = new FlowLayoutPanel
         {
             AutoSize = true,
             FlowDirection = FlowDirection.TopDown,
             WrapContents = false,
-            Dock = DockStyle.Top,
+            Dock = DockStyle.Fill,
+            Margin = new Padding(0),
         };
-        header.Controls.Add(new Label
+        headerText.Controls.Add(new Label
         {
             AutoSize = true,
-            Text = "LOUDERME",
-            Font = new Font("Segoe UI Semibold", 25f, FontStyle.Bold),
+            Text = "LouderMe",
+            Font = new Font("Segoe UI Semibold", 27f, FontStyle.Bold),
             ForeColor = TextPrimary,
-            Margin = new Padding(0, 0, 0, 4),
+            Margin = new Padding(0, 4, 0, 1),
         });
-        header.Controls.Add(new Label
+        headerText.Controls.Add(new Label
+        {
+            AutoSize = true,
+            Text = "SOUND THAT LIFTS YOU",
+            ForeColor = Gold,
+            Font = new Font("Consolas", 9f, FontStyle.Bold),
+            Margin = new Padding(0, 0, 0, 3),
+        });
+        headerText.Controls.Add(new Label
         {
             AutoSize = true,
             Text = "Michel's Lab · Native Windows Audio Workspace",
-            ForeColor = Gold,
-            Font = new Font("Consolas", 9f, FontStyle.Bold),
-            Margin = new Padding(0, 0, 0, 20),
+            ForeColor = Muted,
+            Font = new Font("Consolas", 8f, FontStyle.Bold),
         });
+        header.Controls.Add(headerText, 1, 0);
         root.Controls.Add(header);
 
         BuildOutputCard(root);
@@ -160,7 +195,7 @@ internal sealed class MainForm : Form
     {
         var card = Card("GLOBAL BOOST · SYSTEM-WIDE APO");
         var layout = (TableLayoutPanel)card.Controls[0];
-        layout.RowCount = 8;
+        layout.RowCount = 9;
 
         _boostEnabled.Text = "Enable global boost";
         _boostEnabled.AutoSize = true;
@@ -202,6 +237,7 @@ internal sealed class MainForm : Form
         {
             _boostValue.Text = $"{_boost.Value}%";
             _boostDb.Text = $"{BoostMath.PercentToDb(_boost.Value):+0.00;-0.00;0.00} dB";
+            _boostWave.BoostPercent = _boost.Value;
             if (_loading) return;
             _settings.BoostPercent = _boost.Value;
         };
@@ -209,6 +245,12 @@ internal sealed class MainForm : Form
         _boost.KeyUp += (_, _) => ApplyProcessing();
         layout.SetColumnSpan(_boost, 2);
         layout.Controls.Add(_boost, 0, 2);
+
+        _boostWave.Dock = DockStyle.Fill;
+        _boostWave.Height = 58;
+        _boostWave.Margin = new Padding(0, 2, 0, 6);
+        layout.SetColumnSpan(_boostWave, 2);
+        layout.Controls.Add(_boostWave, 0, 3);
 
         var quick = new FlowLayoutPanel
         {
@@ -229,13 +271,13 @@ internal sealed class MainForm : Form
             quick.Controls.Add(button);
         }
         layout.SetColumnSpan(quick, 2);
-        layout.Controls.Add(quick, 0, 3);
+        layout.Controls.Add(quick, 0, 4);
 
         _engineStatus.AutoSize = true;
         _engineStatus.ForeColor = Muted;
         _engineStatus.MaximumSize = new Size(800, 0);
         layout.SetColumnSpan(_engineStatus, 2);
-        layout.Controls.Add(_engineStatus, 0, 4);
+        layout.Controls.Add(_engineStatus, 0, 5);
 
         var actions = new FlowLayoutPanel
         {
@@ -279,7 +321,7 @@ internal sealed class MainForm : Form
         actions.Controls.Add(configure);
         actions.Controls.Add(refresh);
         layout.SetColumnSpan(actions, 2);
-        layout.Controls.Add(actions, 0, 5);
+        layout.Controls.Add(actions, 0, 6);
 
         var note = new Label
         {
@@ -294,7 +336,7 @@ internal sealed class MainForm : Form
                 "ASIO and WASAPI exclusive streams can bypass Windows APO effects.",
         };
         layout.SetColumnSpan(note, 2);
-        layout.Controls.Add(note, 0, 6);
+        layout.Controls.Add(note, 0, 7);
         root.Controls.Add(card);
     }
 
@@ -302,7 +344,7 @@ internal sealed class MainForm : Form
     {
         var card = Card("7-BAND EQUALIZER");
         var layout = (TableLayoutPanel)card.Controls[0];
-        layout.RowCount = 11;
+        layout.RowCount = 12;
 
         _eqEnabled.Text = "Enable equalizer";
         _eqEnabled.AutoSize = true;
@@ -340,10 +382,17 @@ internal sealed class MainForm : Form
             finally { _loading = false; }
 
             _settings.EqualizerGainsDb = gains;
+            _eqWave.Gains = gains;
             UpdateEqValueLabels();
             ApplyProcessing();
         };
         layout.Controls.Add(_preset, 1, 1);
+
+        _eqWave.Dock = DockStyle.Fill;
+        _eqWave.Height = 68;
+        _eqWave.Margin = new Padding(0, 8, 0, 8);
+        layout.SetColumnSpan(_eqWave, 2);
+        layout.Controls.Add(_eqWave, 0, 2);
 
         for (var i = 0; i < EqualizerPresets.FrequenciesHz.Length; i++)
         {
@@ -392,6 +441,7 @@ internal sealed class MainForm : Form
                 try { _preset.SelectedItem = "Custom"; }
                 finally { _loading = false; }
                 _settings.EqualizerGainsDb[index] = (float)value.Value;
+                _eqWave.Gains = _settings.EqualizerGainsDb;
                 ApplyProcessing();
             };
             _eqBands[i] = value;
@@ -410,7 +460,7 @@ internal sealed class MainForm : Form
             bandRow.Controls.Add(value, 1, 0);
             bandRow.Controls.Add(valueLabel, 2, 0);
             layout.SetColumnSpan(bandRow, 2);
-            layout.Controls.Add(bandRow, 0, 2 + i);
+            layout.Controls.Add(bandRow, 0, 3 + i);
         }
 
         root.Controls.Add(card);
@@ -464,16 +514,33 @@ internal sealed class MainForm : Form
 
         var refresh = Button("Refresh device", Cyan);
         refresh.Click += (_, _) => LoadState();
-        var about = Button("About Michel's Lab", Gold);
+
+        _updateAction.AutoSize = true;
+        _updateAction.Text = "Check updates";
+        _updateAction.FlatStyle = FlatStyle.Flat;
+        _updateAction.ForeColor = Cyan;
+        _updateAction.BackColor = Surface;
+        _updateAction.Padding = new Padding(10, 6, 10, 6);
+        _updateAction.Margin = new Padding(0, 0, 10, 0);
+        _updateAction.FlatAppearance.BorderColor = Line;
+        _updateAction.FlatAppearance.BorderSize = 1;
+        _updateAction.Click += async (_, _) => await HandleUpdateActionAsync();
+
+        var about = Button("About LouderMe", Gold);
         about.Click += (_, _) =>
         {
-            MessageBox.Show(
-                "LouderMe Desktop\n\nNative Windows edition by Michel's Lab.\nSystem-wide boost uses the Windows APO effects path.\n© 2026 Michel Armando Duarte Flores",
-                "About LouderMe",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information);
+            using var form = new AboutForm(_updates);
+            form.ShowDialog(this);
         };
+
+        _updateStatus.AutoSize = true;
+        _updateStatus.ForeColor = Muted;
+        _updateStatus.Text = $"v{_updates.CurrentVersionText} · stable";
+        _updateStatus.Margin = new Padding(6, 9, 14, 0);
+
         footer.Controls.Add(refresh);
+        footer.Controls.Add(_updateAction);
+        footer.Controls.Add(_updateStatus);
         footer.Controls.Add(about);
         root.Controls.Add(footer);
     }
@@ -494,6 +561,7 @@ internal sealed class MainForm : Form
             _boost.Value = Math.Clamp(_settings.BoostPercent, 100, 250);
             _boostValue.Text = $"{_boost.Value}%";
             _boostDb.Text = $"{BoostMath.PercentToDb(_boost.Value):+0.00;-0.00;0.00} dB";
+            _boostWave.BoostPercent = _boost.Value;
             _eqEnabled.Checked = _settings.EqualizerEnabled;
 
             var presetName = EqualizerPresets.Names.Contains(_settings.Preset)
@@ -506,6 +574,7 @@ internal sealed class MainForm : Form
                 var gain = _settings.EqualizerGainsDb.ElementAtOrDefault(i);
                 _eqBands[i].Value = (decimal)Math.Clamp(gain, -10f, 10f);
             }
+            _eqWave.Gains = _settings.EqualizerGainsDb;
             UpdateEqValueLabels();
         }
         catch (Exception ex)
@@ -583,6 +652,94 @@ internal sealed class MainForm : Form
     {
         for (var i = 0; i < _eqBands.Length; i++)
             _eqBandValues[i].Text = $"{_eqBands[i].Value:+0.0;-0.0;0.0} dB";
+    }
+
+    private async Task CheckForUpdatesAsync(bool silent)
+    {
+        try
+        {
+            if (!silent)
+            {
+                _updateAction.Enabled = false;
+                _updateStatus.ForeColor = Muted;
+                _updateStatus.Text = "Checking stable channel…";
+            }
+
+            _lastUpdateCheck = await _updates.CheckAsync();
+
+            if (_lastUpdateCheck.UpdateAvailable)
+            {
+                _updateStatus.ForeColor = Gold;
+                _updateStatus.Text = $"v{_lastUpdateCheck.LatestVersion} available";
+                _updateAction.Text = $"Install v{_lastUpdateCheck.LatestVersion}";
+            }
+            else
+            {
+                _updateStatus.ForeColor = Cyan;
+                _updateStatus.Text = $"v{_updates.CurrentVersionText} · current";
+                _updateAction.Text = "Check updates";
+            }
+        }
+        catch (Exception ex)
+        {
+            if (!silent)
+            {
+                _updateStatus.ForeColor = Red;
+                _updateStatus.Text = "Update check failed";
+                MessageBox.Show(
+                    ex.Message,
+                    "LouderMe update",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+            }
+        }
+        finally
+        {
+            _updateAction.Enabled = true;
+        }
+    }
+
+    private async Task HandleUpdateActionAsync()
+    {
+        if (_lastUpdateCheck?.UpdateAvailable != true || _lastUpdateCheck.Manifest is null)
+        {
+            await CheckForUpdatesAsync(silent: false);
+            return;
+        }
+
+        try
+        {
+            _updateAction.Enabled = false;
+            _updateStatus.ForeColor = Gold;
+            _updateStatus.Text = "Downloading update…";
+
+            var progress = new Progress<int>(percent =>
+            {
+                _updateStatus.Text = $"Downloading · {percent}%";
+            });
+
+            var installer = await _updates.DownloadInstallerAsync(
+                _lastUpdateCheck.Manifest,
+                progress);
+
+            _updateStatus.ForeColor = Cyan;
+            _updateStatus.Text = "Verified · opening installer";
+            DesktopUpdateService.LaunchInstaller(installer);
+        }
+        catch (Exception ex)
+        {
+            _updateStatus.ForeColor = Red;
+            _updateStatus.Text = "Update failed";
+            MessageBox.Show(
+                ex.Message,
+                "LouderMe update",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+        }
+        finally
+        {
+            _updateAction.Enabled = true;
+        }
     }
 
     private void ShowEngineError(Exception ex)

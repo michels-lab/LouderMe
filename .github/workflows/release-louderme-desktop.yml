@@ -6,7 +6,6 @@ on:
       - main
     paths:
       - 'desktop/releases/v*.md'
-      - '.github/workflows/release-louderme-desktop.yml'
 
 permissions:
   contents: write
@@ -68,6 +67,30 @@ jobs:
           foreach ($required in @('Device: all','Stage: post-mix','Channel: all','Preamp:','GraphicEQ:','Include: LouderMe.txt')) {
             if ($config -notmatch [regex]::Escape($required)) { throw "APO config contract missing: $required" }
           }
+
+          if ((git hash-object desktop/src/LouderMeDesktop/Assets/MichelDuarte.jpg) -ne 'be4d18572bec28d53783cd4db05cb6cd289a7916') {
+            throw 'Desktop Michel Duarte portrait is not canonical.'
+          }
+          if ((git hash-object desktop/src/LouderMeDesktop/Assets/MichelsLabLockup.png) -ne '7819ef5c7d1a5c338c67c9bbd517e5448724a5cf') {
+            throw "Desktop Michel's Lab lockup is not canonical."
+          }
+
+          foreach ($file in @(
+            'desktop/src/LouderMeDesktop/AboutForm.cs',
+            'desktop/src/LouderMeDesktop/SplashForm.cs',
+            'desktop/src/LouderMeDesktop/BrandingControls.cs',
+            'desktop/src/LouderMeDesktop/DesktopUpdateService.cs'
+          )) {
+            if (-not (Test-Path $file)) { throw "Required Desktop product surface missing: $file" }
+          }
+
+          $about=Get-Content 'desktop/src/LouderMeDesktop/AboutForm.cs' -Raw
+          foreach ($required in @('ABOUT THE AUTHOR','Instagram','Facebook','LinkedIn','GitHub','Email','MichelsLabLockup')) {
+            if ($about -notmatch [regex]::Escape($required)) { throw "Desktop About contract missing: $required" }
+          }
+
+          $updater=Get-Content 'desktop/src/LouderMeDesktop/DesktopUpdateService.cs' -Raw
+          if ($updater -notmatch 'louderme-desktop/latest.json') { throw 'Desktop stable update feed is missing.' }
 
       - name: Publish portable Windows executable
         shell: pwsh

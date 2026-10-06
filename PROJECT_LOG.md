@@ -1017,3 +1017,10 @@ Transfer staging was removed after publication.
 
 ### Current status
 **LouderMe Desktop v0.1.0 is fully published on the stable public Windows channel.**
+
+## 2026-10-06 — Intelligent Michel's Lab brand-adoption guidance
+
+Repository instructions now explicitly route logo, launcher, splash/startup and About work through the Michel-Software-Standards Product Identity Standard and Brand Adoption Playbook.
+
+The required interpretation is structural integration rather than sticker placement: replace active legacy identity, adapt canonical geometry to the existing product design language, preserve unrelated behavior, validate the build, and keep release publication separate unless explicitly authorized.
+

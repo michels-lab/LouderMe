@@ -12,3 +12,6 @@ Update `PROJECT_LOG.md` for meaningful work. Do not publish a release unless exp
 
 Product identity / About are fundamental product contracts. Treat the approved flowing-waveform geometry as the visual foundation across LouderMe, not as a sticker. About must lead with LouderMe identity/version, then About the author with the canonical Michel Duarte portrait, then the official Michel's Lab parent-brand mark, then social links rendered as **network icon + visible network name** using canonical profile URLs.
 
+
+
+For logo/About/branding work, follow the Michel-Software-Standards Product Identity Standard and BRAND_ADOPTION_PLAYBOOK. Replace actual platform identity references, adapt the official geometry to this app's existing visual language, avoid sticker-style logo placement, preserve unrelated behavior, validate the build, and do not release without explicit authorization.

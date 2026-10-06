@@ -1379,8 +1379,8 @@ private fun AboutScreen(
                             style = MaterialTheme.typography.bodySmall,
                         )
                         Spacer(Modifier.height(10.dp))
-                        Image(
-                            painter = painterResource(R.drawable.michels_lab_lockup),
+                        CanonicalAssetImage(
+                            assetPath = "branding/michels-lab/official-lockup.png",
                             contentDescription = "Michel's Lab",
                             modifier = Modifier
                                 .fillMaxWidth()

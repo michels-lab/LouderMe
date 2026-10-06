@@ -90,6 +90,8 @@ jobs:
           $process = Start-Process 'artifacts/publish/LouderMe.exe' -ArgumentList '--startup' -PassThru
           Start-Sleep -Seconds 4
           if ($process.HasExited) {
+            $log=Join-Path $env:LOCALAPPDATA 'MichelsLab\LouderMe\crash.log'
+            if (Test-Path $log) { Get-Content $log }
             throw "Portable LouderMe exited unexpectedly with code $($process.ExitCode)."
           }
           Stop-Process -Id $process.Id -Force
@@ -117,7 +119,11 @@ jobs:
 
           $process = Start-Process $installedExe -ArgumentList '--startup' -PassThru
           Start-Sleep -Seconds 4
-          if ($process.HasExited) { throw 'Installed LouderMe exited unexpectedly.' }
+          if ($process.HasExited) {
+            $log=Join-Path $env:LOCALAPPDATA 'MichelsLab\LouderMe\crash.log'
+            if (Test-Path $log) { Get-Content $log }
+            throw "Installed LouderMe exited unexpectedly with code $($process.ExitCode)."
+          }
           Stop-Process -Id $process.Id -Force
 
           $uninstaller=Join-Path $installDir 'unins000.exe'

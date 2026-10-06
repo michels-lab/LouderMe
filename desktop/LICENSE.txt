@@ -1,0 +1,12 @@
+LouderMe Desktop — Proprietary Software License
+
+Copyright (c) 2026 Michel Armando Duarte Flores / Michel's Lab.
+All Rights Reserved.
+
+This desktop edition is part of LouderMe and is governed by the repository's proprietary license. No permission is granted to copy, modify, redistribute, rebrand, sublicense, sell, reverse engineer, or incorporate this software into another product without prior written authorization.
+
+Third-party dependencies retain their respective licenses.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, TO THE MAXIMUM EXTENT PERMITTED BY LAW.
+
+Contact: realmichelduarte@gmail.com

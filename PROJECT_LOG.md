@@ -693,3 +693,38 @@ Official LouderMe identity is implemented on the branding branch and awaiting CI
 - Package-ID and Play/sideload permission separation checks: passed.
 - Validation artifacts uploaded successfully.
 - No product version bump was made for this branding integration.
+
+
+## 2026-10-06 — v0.1.6 stable branding release candidate
+
+### Release authorization
+Michel explicitly authorized a **stable release**, not a prerelease.
+
+### Scope
+v0.1.6 packages the already-merged official LouderMe branding:
+- Option 4 — flowing waveform;
+- official launcher/round launcher;
+- Android adaptive icon;
+- branded launch/splash;
+- official command-bar mark;
+- official About waveform/wordmark/tagline treatment.
+
+### Version
+- versionName: `0.1.6`
+- versionCode: `7`
+
+### Preserved behavior
+No change to:
+- 100–250% boost behavior;
+- LoudnessEnhancer/DynamicsProcessing engine selection;
+- EQ mapping or presets;
+- updater verification;
+- stable sideload signer;
+- Play/sideload permission separation;
+- local privacy behavior.
+
+### Validation / release gate
+The release branch must pass full Android CI. After merge to `main`, the stable signing job and private release publication must succeed. The signed artifact must then be propagated to the public Michel's Lab Direct release repository and `louderme/latest.json` must advertise versionCode 7 / versionName 0.1.6.
+
+### Current status
+Release candidate prepared; pending CI.

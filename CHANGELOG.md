@@ -1,5 +1,27 @@
 # Changelog
 
+## v0.1.6 — 2026-10-06
+
+### Added
+- Official LouderMe **Option 4 — flowing waveform** product identity from the Michel's Lab standards repository.
+- Official Android launcher and round-launcher icon.
+- Adaptive Android launcher foreground/background assets.
+- Official branded launch/splash treatment.
+- Official waveform branding in the command bar.
+- Official waveform, wordmark and `SOUND THAT LIFTS YOU` treatment in About.
+- Canonical SVG branding sources stored locally for provenance without runtime dependency on the private standards repository.
+
+### Changed
+- Replaced the temporary `LM` placeholder identity with the official LouderMe mark.
+- Preserved the existing IG Cleaner-family layout, audio engine, EQ, updater, signing and distribution behavior.
+
+### Validation
+- Branding PR CI passed unit tests and Play/sideload builds.
+- Package ID and flavor permission separation checks passed.
+- Android resource linking issue found in the first splash implementation was corrected before merge.
+- Audible EQ/high-gain quality remains a physical-device validation item and is unchanged by this branding release.
+
+
 ## v0.1.5 — 2026-10-06
 
 ### Added

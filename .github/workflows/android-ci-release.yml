@@ -15,6 +15,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: louderme-android-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   validate:
     name: Build and validate current HEAD
@@ -128,7 +132,7 @@ jobs:
     runs-on: ubuntu-latest
 
     outputs:
-      signed_ready: ${{ steps.sign.outputs.signed_ready }}
+      signed_ready: ${{ steps.sign.outputs.signed_ready || 'false' }}
 
     steps:
       - name: Set up Java 17
@@ -151,22 +155,36 @@ jobs:
           name: LouderMe-Android-v${{ needs.validate.outputs.version }}
           path: validated
 
+      - name: Check stable sideload signing configuration
+        id: key_config
+        env:
+          KEYSTORE_BASE64: ${{ secrets.LOUDERME_SIDELOAD_KEYSTORE_BASE64 }}
+          STORE_PASS: ${{ secrets.LOUDERME_SIDELOAD_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.LOUDERME_SIDELOAD_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.LOUDERME_SIDELOAD_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$STORE_PASS" ] || [ -z "$KEY_ALIAS" ] || [ -z "$KEY_PASS" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Stable sideload signing secrets are not configured yet. Validation passed; signing/publication are intentionally skipped."
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Restore existing stable sideload keystore
-        id: key
+        if: steps.key_config.outputs.ready == 'true'
         env:
           KEYSTORE_BASE64: ${{ secrets.LOUDERME_SIDELOAD_KEYSTORE_BASE64 }}
         shell: bash
         run: |
           set -euo pipefail
-          if [ -z "$KEYSTORE_BASE64" ]; then
-            echo "::error::Missing LOUDERME_SIDELOAD_KEYSTORE_BASE64. Existing alias/password secrets cannot reconstruct the private keystore."
-            exit 1
-          fi
           mkdir -p signing
           printf '%s' "$KEYSTORE_BASE64" | base64 --decode > signing/louderme-sideload.jks
           test -s signing/louderme-sideload.jks
 
       - name: Sign and verify sideload APK with existing key
+        if: steps.key_config.outputs.ready == 'true'
         id: sign
         env:
           STORE_PASS: ${{ secrets.LOUDERME_SIDELOAD_STORE_PASSWORD }}
@@ -200,6 +218,7 @@ jobs:
           echo "signed_ready=true" >> "$GITHUB_OUTPUT"
 
       - name: Upload stable signed sideload APK
+        if: steps.key_config.outputs.ready == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: LouderMe-v${{ needs.validate.outputs.version }}-stable-sideload
@@ -213,7 +232,7 @@ jobs:
     needs:
       - validate
       - sign_sideload
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.sign_sideload.outputs.signed_ready == 'true'
     runs-on: ubuntu-latest
 
     steps:

@@ -7,7 +7,7 @@ internal sealed class BrandMarkControl : Control
     public BrandMarkControl()
     {
         DoubleBuffered = true;
-        BackColor = Color.Transparent;
+        BackColor = Color.FromArgb(9, 14, 23);
         MinimumSize = new Size(120, 70);
     }
 

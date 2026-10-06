@@ -13,6 +13,7 @@ internal static class EqualizerApoConfigBuilder
         var sb = new StringBuilder();
         sb.AppendLine("# LouderMe managed configuration");
         sb.AppendLine("# Generated automatically. Manual changes may be overwritten.");
+        sb.AppendLine("Device: all");
         sb.AppendLine("Stage: post-mix");
         sb.AppendLine("Channel: all");
 

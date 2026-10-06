@@ -79,6 +79,9 @@ jobs:
           grep -q 'create("play")' app/build.gradle.kts
           grep -q 'create("sideload")' app/build.gradle.kts
           grep -q 'UPDATE_CHANNEL' app/build.gradle.kts
+          grep -q 'android.permission.RECEIVE_BOOT_COMPLETED' app/src/main/AndroidManifest.xml
+          grep -q '.startup.BootReceiver' app/src/main/AndroidManifest.xml
+          grep -q 'Start with phone' app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt
 
       - name: Run tests and build distribution flavors
         run: |

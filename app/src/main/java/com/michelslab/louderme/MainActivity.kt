@@ -24,6 +24,7 @@ import com.michelslab.louderme.audio.EqualizerStateStore
 import com.michelslab.louderme.audio.EqualizerStatus
 import com.michelslab.louderme.audio.EqualizerUiState
 import com.michelslab.louderme.ui.LouderMeApp
+import com.michelslab.louderme.startup.StartupPreferenceStore
 import com.michelslab.louderme.update.UpdateCoordinator
 import com.michelslab.louderme.update.UpdateStatus
 
@@ -31,6 +32,7 @@ class MainActivity : ComponentActivity() {
     private val updateStatus = mutableStateOf<UpdateStatus>(UpdateStatus.Checking)
     private val audioState = mutableStateOf(AudioEngineUiState())
     private val equalizerState = mutableStateOf(EqualizerUiState())
+    private val startWithPhoneEnabled = mutableStateOf(false)
 
     private lateinit var updateCoordinator: UpdateCoordinator
     private var pendingBoostPercent: Int? = null
@@ -65,6 +67,7 @@ class MainActivity : ComponentActivity() {
 
         audioState.value = AudioBoostStateStore.read(this)
         equalizerState.value = EqualizerStateStore.read(this)
+        startWithPhoneEnabled.value = StartupPreferenceStore.isStartWithPhoneEnabled(this)
 
         updateCoordinator = UpdateCoordinator(
             activity = this,
@@ -79,6 +82,7 @@ class MainActivity : ComponentActivity() {
                 updateStatus = updateStatus.value,
                 audioState = audioState.value,
                 equalizerState = equalizerState.value,
+                startWithPhoneEnabled = startWithPhoneEnabled.value,
                 onCheckForUpdates = {
                     updateCoordinator.checkForUpdates(automatic = false)
                 },
@@ -124,6 +128,10 @@ class MainActivity : ComponentActivity() {
                             message = "Preset " + preset.displayName + " selected.",
                         )
                     )
+                },
+                onStartWithPhoneChanged = { enabled ->
+                    StartupPreferenceStore.setStartWithPhoneEnabled(this, enabled)
+                    startWithPhoneEnabled.value = enabled
                 },
                 onEqBandChanged = { index, gainDb ->
                     val gains = EqualizerPresets.sanitize(

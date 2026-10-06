@@ -1149,3 +1149,34 @@ A final green current-HEAD run is required before merge.
 - Desktop remains v0.1.0 in source.
 - No new release/version bump is authorized by this branding implementation.
 - A future release must bump to a new product version and cannot overwrite the already-published Desktop v0.1.0 release.
+
+
+### Final integrated-branding validation / merge — 2026-10-06
+- PR #17 **merged**.
+- Merge commit: `ab0b127c3b27ba640724e0abb5125db7195a1d49`.
+- Final Desktop PR CI run `37540074990`: **success**.
+  - native .NET build passed;
+  - canonical asset/About/splash/updater contract passed;
+  - portable EXE passed;
+  - installer passed;
+  - SHA-256 generation passed;
+  - artifact upload passed.
+- Final Android PR CI run `37540075001`: **success**.
+  - canonical branding contract passed;
+  - Play + Direct unit/build validation passed;
+  - package IDs and permission split passed;
+  - validation artifacts uploaded.
+- Android intermediate AAPT2 failure was traced to compiling the canonical Michel's Lab PNG from `res/drawable`.
+  - Resolution: preserve the exact canonical PNG bytes under `app/src/main/assets/branding/michels-lab/` and decode them natively from Compose.
+  - This keeps the master asset unchanged while avoiding AAPT2 raster compilation.
+- Desktop release workflow trigger was hardened so editing the release workflow cannot republish an already-released version; stable publication requires an explicit `desktop/releases/vX.Y.Z.md` release note or manual dispatch.
+- Merge used `[skip ci]` intentionally because this product/branding change is **not** a release and must not republish Android v0.1.6 or Desktop v0.1.0.
+
+### Current product state after merge
+- Android source: integrated LouderMe + Michel's Lab branding complete under the current contract.
+- Desktop source: integrated branding, native About/splash, waveform-derived UI and verified stable-feed updater implemented.
+- Existing public binaries remain unchanged:
+  - Android stable: v0.1.6;
+  - Desktop stable: v0.1.0.
+- A new Desktop/Android release requires separate explicit authorization and a new version; the already-published Desktop v0.1.0 must not be overwritten.
+- Windows Authenticode remains unimplemented because no publisher certificate has been configured.

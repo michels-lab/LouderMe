@@ -779,3 +779,64 @@ v0.1.6 is the first stable LouderMe release carrying the official Michel's Lab *
 
 ### Current status
 **LouderMe v0.1.6 is fully released on the stable direct channel and discoverable by the in-app sideload updater.**
+
+
+## 2026-10-06 — LouderMe Desktop foundation + automatic startup controls
+
+### Request
+Create a real Windows Desktop LouderMe that installs as an `.exe` application like FoamLens/Michel's Life, not an HTML file, and give both Android and Desktop the ability to start with the device/computer.
+
+### Android implementation
+- Added opt-in **Start with phone** UI.
+- Added local `StartupPreferenceStore`.
+- Added `RECEIVE_BOOT_COMPLETED`.
+- Added `BootReceiver`.
+- On boot, the receiver restores the last saved boost percentage through `AudioBoostService`.
+- The app does not force-open its Activity at boot.
+- Existing Android audio, EQ, updater, flavor separation and signing behavior are otherwise unchanged.
+- Android product version remains v0.1.6 / versionCode 7; no release was authorized by this request.
+
+### Desktop architecture decision
+Desktop is implemented as a native Windows application, not a WebView/HTML wrapper:
+- .NET 10 WinForms;
+- NAudio 3.1.0 for Windows Core Audio endpoint control;
+- self-contained single-file `LouderMe.exe`;
+- Inno Setup installer;
+- official Option 4 flowing-waveform identity;
+- independent Desktop version line starting at v0.1.0.
+
+### Desktop features implemented
+- real default-output master volume;
+- real mute/unmute;
+- quick endpoint levels;
+- persisted LouderMe 100–250% target selection;
+- explicit diagnostics distinguishing a requested LouderMe target from what Windows endpoint volume can actually apply;
+- opt-in **Start with Windows** via HKCU Run;
+- `--startup` launches minimized to system tray;
+- close-to-tray + tray Open/Exit controls;
+- installer/start-menu/optional desktop shortcuts.
+
+### Critical Windows audio finding
+Windows Core Audio endpoint volume does not provide a portable global gain path above the endpoint's real maximum. Therefore the Desktop foundation intentionally does **not** pretend that endpoint 100% equals LouderMe 125–250%.
+
+A native Windows DSP/APO module is the next required audio milestone for:
+- real >100% system-wide gain;
+- system-wide EQ;
+- limiter/peak protection equivalent to LouderMe Android.
+
+### CI / validation plan
+New Windows CI:
+- generates the official Windows ICO from the canonical SVG;
+- compiles current Desktop HEAD;
+- publishes a self-contained win-x64 EXE;
+- smoke-launches the portable EXE;
+- builds an Inno Setup installer;
+- silently installs it into an isolated path;
+- smoke-launches the installed EXE;
+- uninstalls/cleans up;
+- publishes temporary workflow artifacts + SHA-256 checksums.
+
+Android CI now also asserts the boot permission, receiver and startup control wiring.
+
+### Current status
+Implementation prepared on `feature/desktop-and-autostart`. Pending Android + Windows CI. No Desktop production release has been published.

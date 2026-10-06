@@ -125,6 +125,118 @@ jobs:
           name: LouderMe-Android-v${{ steps.version.outputs.version }}
           path: artifacts/
 
+  bootstrap_sideload_key:
+    name: Bootstrap first stable sideload key
+    needs: validate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/release/v0.1.4'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Prepare Android build tools
+        run: |
+          SDKMANAGER="${ANDROID_HOME:-/usr/local/lib/android/sdk}/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKMANAGER" ]; then
+            SDKMANAGER="/usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager"
+          fi
+          "$SDKMANAGER" "build-tools;36.0.0"
+
+      - name: Download validated unsigned APK
+        uses: actions/download-artifact@v4
+        with:
+          name: LouderMe-Android-v${{ needs.validate.outputs.version }}
+          path: validated
+
+      - name: Generate stable sideload key and sign baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p signing signed
+          STORE_PASS="$(openssl rand -hex 24)"
+          KEY_PASS="$STORE_PASS"
+          ALIAS="louderme_sideload"
+
+          keytool -genkeypair \
+            -storetype PKCS12 \
+            -keystore signing/louderme-sideload.jks \
+            -storepass "$STORE_PASS" \
+            -keypass "$KEY_PASS" \
+            -alias "$ALIAS" \
+            -keyalg RSA \
+            -keysize 4096 \
+            -validity 10000 \
+            -dname "CN=Michel's Lab, OU=Software, O=Michel's Lab, L=Saltillo, ST=Coahuila, C=MX"
+
+          BUILD_TOOLS="${ANDROID_HOME:-/usr/local/lib/android/sdk}/build-tools/36.0.0"
+          VERSION="${{ needs.validate.outputs.version }}"
+          UNSIGNED="validated/LouderMe-v$VERSION-sideload-release-unsigned.apk"
+          ALIGNED="signed/LouderMe-v$VERSION-sideload-aligned.apk"
+          FINAL="signed/LouderMe-v$VERSION-sideload.apk"
+
+          "$BUILD_TOOLS/zipalign" -p -f 4 "$UNSIGNED" "$ALIGNED"
+
+          "$BUILD_TOOLS/apksigner" sign \
+            --ks signing/louderme-sideload.jks \
+            --ks-key-alias "$ALIAS" \
+            --ks-pass "pass:$STORE_PASS" \
+            --key-pass "pass:$KEY_PASS" \
+            --out "$FINAL" \
+            "$ALIGNED"
+
+          "$BUILD_TOOLS/apksigner" verify \
+            --verbose \
+            --print-certs \
+            "$FINAL" | tee signed/signature-verification.txt
+
+          sha256sum "$FINAL" | tee "$FINAL.sha256"
+
+          BASE64_KEYSTORE="$(base64 -w 0 signing/louderme-sideload.jks)"
+
+          {
+            echo "LOUDERME_SIDELOAD_KEYSTORE_BASE64=$BASE64_KEYSTORE"
+            echo "LOUDERME_SIDELOAD_STORE_PASSWORD=$STORE_PASS"
+            echo "LOUDERME_SIDELOAD_KEY_ALIAS=$ALIAS"
+            echo "LOUDERME_SIDELOAD_KEY_PASSWORD=$KEY_PASS"
+          } > signing/github-actions-secrets.txt
+
+          cat > signing/README-PRIVATE.txt <<'TXT'
+          LouderMe stable sideload signing material.
+
+          KEEP THIS PRIVATE.
+
+          Add the four values in github-actions-secrets.txt as repository
+          Actions secrets in realmichelduarte/LouderMe.
+
+          This is a one-time bootstrap. Future direct APKs must use exactly
+          this key or Android will reject in-place updates.
+          TXT
+
+      - name: Upload stable signed v0.1.4 APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: LouderMe-v${{ needs.validate.outputs.version }}-stable-sideload-bootstrap
+          retention-days: 90
+          path: |
+            signed/LouderMe-v${{ needs.validate.outputs.version }}-sideload.apk
+            signed/LouderMe-v${{ needs.validate.outputs.version }}-sideload.apk.sha256
+            signed/signature-verification.txt
+
+      - name: Upload private signing handoff
+        uses: actions/upload-artifact@v4
+        with:
+          name: LouderMe-sideload-signing-material-PRIVATE
+          retention-days: 7
+          path: |
+            signing/louderme-sideload.jks
+            signing/github-actions-secrets.txt
+            signing/README-PRIVATE.txt
+
   sign_sideload:
     name: Sign stable Michel's Lab Direct APK
     needs: validate

@@ -458,6 +458,16 @@ private fun EqualizerPanel(
             )
         }
 
+        Spacer(Modifier.height(12.dp))
+
+        EqWavePreview(
+            gainsDb = state.gainsDb,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(58.dp),
+            color = if (state.enabled) LouderMeColors.Cyan else LouderMeColors.Dim,
+        )
+
         Spacer(Modifier.height(13.dp))
 
         Eyebrow("PRESETS", LouderMeColors.Muted)
@@ -845,7 +855,13 @@ private fun BoostHero(
                 )
             }
 
-            DividerLine()
+            CanonicalWaveform(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                color = if (audioState.isRunning) LouderMeColors.Cyan else LouderMeColors.Dim,
+                alpha = if (audioState.isRunning) 0.92f else 0.42f,
+            )
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -1261,9 +1277,9 @@ private fun AboutScreen(
                         Text("Back", color = LouderMeColors.Cyan)
                     }
                     Column(modifier = Modifier.weight(1f)) {
-                        Eyebrow("MICHEL'S LAB", LouderMeColors.Gold)
+                        Eyebrow("LOUDERME", LouderMeColors.Cyan)
                         Text(
-                            "About LouderMe",
+                            "About",
                             color = LouderMeColors.Text,
                             style = MaterialTheme.typography.titleLarge,
                         )
@@ -1304,16 +1320,24 @@ private fun AboutScreen(
                     LouderMeBrandLockup(
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    Spacer(Modifier.height(14.dp))
+                    Spacer(Modifier.height(12.dp))
+                    BadgePill(
+                        text = "v" + BuildConfig.VERSION_NAME,
+                        color = LouderMeColors.Cyan,
+                    )
+                    Spacer(Modifier.height(12.dp))
                     Text(
-                        "Make everything louder.",
+                        "SOUND THAT LIFTS YOU",
                         color = Color.White,
-                        style = MaterialTheme.typography.headlineMedium,
+                        fontFamily = FontFamily.Monospace,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 2.0.sp,
                         textAlign = TextAlign.Center,
                     )
                     Spacer(Modifier.height(7.dp))
                     Text(
-                        "A Michel's Lab audio utility built around fast gain control, equalization and transparent diagnostics.",
+                        "System-wide gain, equalization and transparent diagnostics in a focused Michel's Lab audio workspace.",
                         color = LouderMeColors.Muted,
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center,
@@ -1341,35 +1365,49 @@ private fun AboutScreen(
                     )
 
                     Column(modifier = Modifier.weight(1f)) {
-                        Eyebrow("DEVELOPER · MICHEL'S LAB", LouderMeColors.Gold)
+                        Eyebrow("ABOUT THE AUTHOR", LouderMeColors.Gold)
                         Spacer(Modifier.height(7.dp))
                         Text(
-                            "Michel Duarte",
+                            DeveloperProfile.developer,
                             color = LouderMeColors.Text,
                             style = MaterialTheme.typography.headlineMedium,
                         )
                         Spacer(Modifier.height(5.dp))
                         Text(
-                            "Independent software by Michel's Lab.",
+                            "Developer · Michel's Lab",
                             color = LouderMeColors.Muted,
                             style = MaterialTheme.typography.bodySmall,
+                        )
+                        Spacer(Modifier.height(10.dp))
+                        Image(
+                            painter = painterResource(R.drawable.michels_lab_lockup),
+                            contentDescription = "Michel's Lab",
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp),
+                            contentScale = ContentScale.Fit,
                         )
                     }
                 }
 
                 Spacer(Modifier.height(14.dp))
+                WaveDivider()
+                Spacer(Modifier.height(5.dp))
 
-                SocialButton("Instagram") {
-                    uriHandler.openUri("https://www.instagram.com/realmichelduarte/")
+                SocialButton(SocialNetwork.INSTAGRAM, "Instagram") {
+                    uriHandler.openUri(DeveloperProfile.instagram)
                 }
-                SocialButton("LinkedIn") {
-                    uriHandler.openUri("https://www.linkedin.com/in/realmichelduart/")
+                SocialButton(SocialNetwork.FACEBOOK, "Facebook") {
+                    uriHandler.openUri(DeveloperProfile.facebook)
                 }
-                SocialButton("GitHub") {
-                    uriHandler.openUri("https://github.com/realmichelduarte")
+                SocialButton(SocialNetwork.LINKEDIN, "LinkedIn") {
+                    uriHandler.openUri(DeveloperProfile.linkedin)
                 }
-                SocialButton("Email") {
-                    uriHandler.openUri("mailto:realmichelduarte@gmail.com")
+                SocialButton(SocialNetwork.GITHUB, "GitHub") {
+                    uriHandler.openUri(DeveloperProfile.github)
+                }
+                SocialButton(SocialNetwork.EMAIL, "Email") {
+                    uriHandler.openUri("mailto:" + DeveloperProfile.email)
                 }
             }
 
@@ -1477,7 +1515,7 @@ private fun AboutScreen(
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "© 2026 Michel Armando Duarte Flores / Michel's Lab",
+                    DeveloperProfile.copyright,
                     color = LouderMeColors.Text,
                     style = MaterialTheme.typography.bodySmall,
                 )
@@ -1495,6 +1533,7 @@ private fun AboutScreen(
 
 @Composable
 private fun SocialButton(
+    network: SocialNetwork,
     label: String,
     onClick: () -> Unit,
 ) {
@@ -1506,14 +1545,17 @@ private fun SocialButton(
             .background(LouderMeColors.Surface2)
             .border(1.dp, LouderMeColors.Line, RoundedCornerShape(13.dp))
             .clickable(onClick = onClick)
-            .padding(horizontal = 13.dp, vertical = 11.dp),
+            .padding(horizontal = 12.dp, vertical = 9.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(11.dp),
         ) {
+            SocialGlyph(network = network)
             Text(
                 label,
+                modifier = Modifier.weight(1f),
                 color = LouderMeColors.Text,
                 fontWeight = FontWeight.Bold,
                 fontSize = 11.sp,
@@ -1525,6 +1567,17 @@ private fun SocialButton(
             )
         }
     }
+}
+
+@Composable
+private fun WaveDivider() {
+    CanonicalWaveform(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(22.dp),
+        color = LouderMeColors.LineStrong,
+        alpha = 0.58f,
+    )
 }
 
 @Composable

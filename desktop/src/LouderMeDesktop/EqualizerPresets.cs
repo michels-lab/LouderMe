@@ -16,7 +16,7 @@ internal static class EqualizerPresets
             ["Headphones"] = [1f, 1f, 0f, 0f, 1f, 2f, 2f],
         };
 
-    public static IReadOnlyList<string> Names => Presets.Keys.ToArray();
+    public static IReadOnlyList<string> Names => Presets.Keys.Concat(["Custom"]).ToArray();
 
     public static float[] For(string name) =>
         Presets.TryGetValue(name, out var values)

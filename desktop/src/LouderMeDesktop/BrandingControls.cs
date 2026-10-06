@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Drawing.Drawing2D;
 
 namespace LouderMeDesktop;
@@ -20,6 +21,8 @@ internal static class BrandColors
 
 internal sealed class WaveformMarkControl : Control
 {
+    [Browsable(false)]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public float Opacity { get; set; } = 1f;
 
     public WaveformMarkControl()
@@ -110,6 +113,8 @@ internal sealed class AudioPulseControl : Control
 {
     private int _boostPercent = 100;
 
+    [Browsable(false)]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public int BoostPercent
     {
         get => _boostPercent;
@@ -175,6 +180,8 @@ internal sealed class EqCurveControl : Control
 {
     private float[] _gains = new float[7];
 
+    [Browsable(false)]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public float[] Gains
     {
         get => _gains;

@@ -4,7 +4,7 @@ namespace LouderMeDesktop;
 
 internal sealed class WindowsAudioController : IDisposable
 {
-    private readonly MMDeviceEnumerator _enumerator = new();
+    private MMDeviceEnumerator? _enumerator;
     private MMDevice? _device;
 
     public string DeviceName
@@ -56,12 +56,13 @@ internal sealed class WindowsAudioController : IDisposable
     private void EnsureDevice()
     {
         if (_device is not null) return;
+        _enumerator ??= new MMDeviceEnumerator();
         _device = _enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
     }
 
     public void Dispose()
     {
         _device?.Dispose();
-        _enumerator.Dispose();
+        _enumerator?.Dispose();
     }
 }

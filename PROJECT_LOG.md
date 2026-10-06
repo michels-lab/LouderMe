@@ -614,3 +614,27 @@ Code is prepared on `release/v0.1.5`. CI must pass before merge or release. Real
 
 ### Current status
 Release candidate prepared; pending CI.
+
+
+## 2026-10-06 — Android status-bar collision fix
+
+### Finding
+A physical target-device screenshot showed the custom LouderMe Home command bar occupying the Android status-bar region. The LM mark, product title and About action visually collided with the clock, media/notification indicators and system icons. The About screen used the same unsafe custom-top-bar pattern.
+
+### Root cause
+The app intentionally renders edge-to-edge on modern Android, but its custom Compose top bars did not apply system safe-drawing insets. Material 3 `Scaffold` does not automatically make arbitrary custom top-bar content respect the status-bar/cutout inset.
+
+### Action completed
+- Applied `WindowInsets.safeDrawing` to the foreground content of the Home command bar.
+- Limited the inset application to Top + Horizontal sides so the decorative bar background can remain edge-to-edge without adding irrelevant bottom navigation padding.
+- Applied the same correction to the About top bar.
+- Preserved the existing layout proportions and Michel's Lab visual design.
+- Did not use a device-specific fixed dp/pixel workaround.
+
+### Validation
+- Source-level review confirms both custom top bars now consume safe-drawing top/horizontal insets before their ordinary visual padding.
+- Android compilation/CI is the next automated gate.
+- Final visual confirmation remains a physical-device check because the original defect was device-rendered.
+
+### Current status
+Implementation is on `main` in commit `ed524ce1fb5ba97499fe53229781a1f5cb2a0fb1`. Pending CI result and on-device screenshot confirmation.

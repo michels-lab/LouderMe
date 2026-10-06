@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 600">
+<defs><linearGradient id="wave" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#1439ba"/><stop offset=".35" stop-color="#08d6ee"/><stop offset=".65" stop-color="#0d5fdc"/><stop offset=".88" stop-color="#efc04a"/><stop offset="1" stop-color="#0c3154"/></linearGradient></defs>
+<path d="M65 275 C135 300 166 365 220 367 C286 369 291 145 365 141 C437 136 449 335 510 328 C572 321 563 97 631 98 C681 100 701 198 715 245" fill="none" stroke="url(#wave)" stroke-width="70" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="704" cy="335" r="35" fill="url(#wave)"/>
+<text x="80" y="505" font-family="Arial, Helvetica, sans-serif" font-size="142" font-weight="800" fill="#06182d">Louder</text>
+<text x="570" y="505" font-family="Arial, Helvetica, sans-serif" font-size="142" font-weight="800" fill="#168ff0">Me</text>
+<text x="855" y="318" font-family="Arial, sans-serif" font-size="32" letter-spacing="10" fill="#486580">SOUND THAT LIFTS YOU</text>
+</svg>

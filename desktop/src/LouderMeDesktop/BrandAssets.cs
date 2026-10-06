@@ -9,6 +9,7 @@ internal static class BrandAssets
         var assembly = Assembly.GetExecutingAssembly();
         using var stream = assembly.GetManifestResourceStream(logicalName)
             ?? throw new InvalidOperationException($"Embedded brand asset not found: {logicalName}");
-        return new Bitmap(stream);
+        using var source = new Bitmap(stream);
+        return new Bitmap(source);
     }
 }

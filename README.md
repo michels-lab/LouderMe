@@ -4,9 +4,11 @@
 
 LouderMe is an Android audio utility by **Michel's Lab** for increasing quiet media output, shaping sound with a real equalizer, and exposing the state of the Android audio engine instead of hiding it behind fake controls.
 
-## Current release line
+## Current public release bundle
 
-**v0.1.4 — Dual-channel automatic updates**
+**Android v0.1.9 + Windows Desktop v0.1.4**
+
+Michel's Lab publishes the current stable Android and Windows binaries together on one public GitHub release page. Platform versions remain explicit when their release lines differ.
 
 ### Global Boost
 - 100%, 125%, 150%, 175%, 200%, 225%, 250%.
@@ -69,7 +71,8 @@ near-black workspace, layered blue-black surfaces, cyan/blue operational accents
 - Product: `LouderMe`
 - Studio: **Michel's Lab**
 - Android package: `com.michelslab.louderme`
-- Current version: `0.1.4`
+- Current Android version: `0.1.9`
+- Current Windows Desktop version: `0.1.4`
 - Developer: Michel Duarte / Michel Armando Duarte Flores
 - License: Proprietary — All Rights Reserved
 
@@ -86,3 +89,10 @@ Direct updates verify SHA-256, package identity, version and signing identity be
 v0.1.4 is the stable-signing migration baseline. Older CI-debug APKs require one uninstall/reinstall because Android will not accept a new signing identity as an in-place update. After the stable v0.1.4 baseline is installed, later direct releases can update in place.
 
 Android still shows the required system installation confirmation.
+
+
+## Unified public release
+
+The customer-facing public binary channel groups the current stable Android and Windows builds in one GitHub release. Android and Desktop keep separate updater manifests and real platform version numbers, but both manifests point to the same release page.
+
+When one platform is updated, the public publisher carries forward the validated current binaries of the other platform so the release remains complete.

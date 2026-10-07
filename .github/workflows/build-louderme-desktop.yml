@@ -42,7 +42,7 @@ jobs:
           "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           Write-Host "Building LouderMe Desktop v$v"
 
-      - name: Generate official Windows and installer branding
+      - name: Generate official Windows icon
         shell: pwsh
         run: |
           choco install imagemagick --yes --no-progress
@@ -122,19 +122,15 @@ jobs:
           if ((Get-Item $portable).Length -lt 1000000) { throw 'Portable executable is unexpectedly small.' }
           $iss=Get-Content desktop/installer/LouderMe.iss -Raw
           foreach ($required in @(
+            'WizardStyle=modern',
             'Start LouderMe with Windows',
-            'WizardImageFile=',
-            'WizardSmallImageFile=',
             '[Languages]',
             'spanish.DesktopShortcut'
           )) {
             if ($iss -notmatch [regex]::Escape($required)) { throw "Installer contract missing: $required" }
           }
-          foreach ($asset in @(
-            'desktop/src/LouderMeDesktop/Assets/LouderMeInstallerWizard.bmp',
-            'desktop/src/LouderMeDesktop/Assets/LouderMeInstallerSmall.bmp'
-          )) {
-            if (-not (Test-Path $asset)) { throw "Branded installer asset missing: $asset" }
+          if ($iss -match 'WizardImageFile=|WizardSmallImageFile=') {
+            throw 'LouderMe installer must keep FoamLens-style clean wizard without custom banner images.'
           }
           $startup=Get-Content desktop/src/LouderMeDesktop/StartupManager.cs -Raw
           if ($startup -notmatch 'CurrentVersion\\Run') { throw 'Native Windows startup integration is missing.' }
@@ -205,5 +201,3 @@ jobs:
             desktop/artifacts/LouderMe-Setup-v${{ steps.ver.outputs.version }}.exe
             desktop/artifacts/LouderMe-Setup-v${{ steps.ver.outputs.version }}.exe.sha256
             desktop/src/LouderMeDesktop/Assets/LouderMe.ico
-            desktop/src/LouderMeDesktop/Assets/LouderMeInstallerWizard.bmp
-            desktop/src/LouderMeDesktop/Assets/LouderMeInstallerSmall.bmp

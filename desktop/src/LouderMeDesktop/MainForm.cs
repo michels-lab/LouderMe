@@ -612,7 +612,7 @@ internal sealed class MainForm : Form
 
     private void RefreshDeviceVolumeFromSystem()
     {
-        if (_loading || IsDisposed || !IsHandleCreated) return;
+        if (_loading || IsDisposed || !IsHandleCreated || _volume.Capture) return;
 
         try
         {

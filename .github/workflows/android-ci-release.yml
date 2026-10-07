@@ -93,6 +93,10 @@ jobs:
           grep -q 'DeviceVolumePanel' app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt
           grep -q 'deviceVolumeSyncHandler' app/src/main/java/com/michelslab/louderme/MainActivity.kt
           grep -q 'Device Volume and Global Boost are separate' app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt
+          grep -q 'RequestPermission()) { granted ->' app/src/main/java/com/michelslab/louderme/MainActivity.kt
+          grep -q 'Boost was not started because notification permission was denied' app/src/main/java/com/michelslab/louderme/MainActivity.kt
+          grep -q 'Start with phone skipped' app/src/main/java/com/michelslab/louderme/startup/BootCompletedReceiver.kt
+          grep -q 'Start with phone failed' app/src/main/java/com/michelslab/louderme/startup/BootCompletedReceiver.kt
 
       - name: Run tests and build distribution flavors
         run: |

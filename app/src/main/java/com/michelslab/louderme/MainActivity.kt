@@ -375,7 +375,15 @@ class MainActivity : ComponentActivity() {
             .setAction(action)
             .putExtra(AudioBoostContract.EXTRA_PERCENT, percent)
 
-        startForegroundService(intent)
+        runCatching {
+            startForegroundService(intent)
+        }.onFailure { error ->
+            audioState.value = audioState.value.copy(
+                status = AudioEngineStatus.ERROR,
+                implementation = "Foreground service start failed",
+                message = error.message ?: error.javaClass.simpleName,
+            )
+        }
     }
 
     private fun stopBoost() {

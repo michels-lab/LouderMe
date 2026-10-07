@@ -1485,3 +1485,48 @@ The corrupt/rejected portrait was a confirmed About defect and a plausible contr
 
 ### Distribution state
 Both public stable feeds and release assets were verified after publication. Temporary transfer-staging files were removed from the public binary repository after successful publishing.
+
+
+## 2026-10-06 — Android v0.1.9 system Back hotfix + Desktop v0.1.3 FoamLens installer parity
+
+### Android v0.1.9 / versionCode 10
+- User validated on the target Samsung that v0.1.8 About opens normally and the in-app Back control returns to the main screen.
+- A separate navigation defect remained: Android system/gesture Back from About exited the app.
+- Added Compose `BackHandler(enabled = showAbout)` so system Back from About now performs `showAbout = false`.
+- System Back from the LouderMe main screen remains unchanged and exits normally.
+- Android CI now explicitly guards the About BackHandler contract.
+- PR #21 merged at `e475940758a4b39a1957f2f4ba7f629ce349deed`.
+- Source release tag `v0.1.9`: stable, not prerelease.
+- Public release tag `louderme-v0.1.9`: stable, not prerelease.
+- Public feed `louderme/latest.json` points to v0.1.9 / versionCode 10.
+- Public APK SHA-256: `1c368d5c4c76d3622f1da132e335243cfa70e6ab8d4583c3b1f457ae8b328e64`.
+- Source workflow `37556701800`: success.
+- Public publisher workflow `37557109373`: success.
+- Original issue #19 (v0.1.7 About closes/crashes on open) was closed after target-device confirmation that About now opens normally. The asset defect was confirmed, but the exact sole runtime cause was not asserted.
+
+### Desktop v0.1.3
+- User screenshot showed v0.1.2 Setup did not visually match the FoamLens installer family because LouderMe added custom `WizardImageFile` and `WizardSmallImageFile` branding.
+- Compared directly with FoamLens `desktop/installer/FoamLens.iss`, which uses the clean modern Inno Setup wizard without custom wizard-banner images.
+- Removed LouderMe's custom side/header wizard imagery while preserving:
+  - `WizardStyle=modern`;
+  - LouderMe icon, product name/version and Michel's Lab publisher identity;
+  - English/Spanish installer text;
+  - optional desktop shortcut;
+  - optional Start LouderMe with Windows.
+- Simplified installer branding generation to the official Windows ICO only.
+- Windows CI now fails if `WizardImageFile` or `WizardSmallImageFile` is reintroduced.
+- PR #22 was rebased cleanly after the Android v0.1.9 merge, then merged at `67a6477798777a1d56dd039ee469db0b7b1cc32c`.
+- Source release tag `desktop-v0.1.3`: stable, not prerelease.
+- Public release tag `louderme-desktop-v0.1.3`: stable, not prerelease.
+- Recommended installer: `LouderMe-Setup-v0.1.3.exe`.
+- Secondary portable: `LouderMe-Portable-v0.1.3.exe`.
+- Public `louderme-desktop/latest.json` points to v0.1.3.
+- Installer SHA-256: `00f1a2a0ed289d47a4c36cfc09412ef6e721fd7c197c9201e60a635616acac39`.
+- Portable SHA-256: `b5cec6f3ba79687242becff4d7b81683f79e6e413c931dbc4612ccb25765167c`.
+- Source release workflow `37557224444`: success, including real install/uninstall smoke test.
+- Public publisher workflow `37557459967`: success.
+
+### Distribution state
+- Android v0.1.9 and Desktop v0.1.3 are both available in the public binary repository.
+- Both public update feeds point to the new stable versions.
+- Temporary transfer-staging files were removed after publication.

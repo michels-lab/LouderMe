@@ -1,5 +1,17 @@
 # Changelog
 
+## Desktop v0.1.4 — 2026-10-06
+
+### Fixed
+- Fixes installed Desktop startup crash caused by transparent WinForms custom controls lacking `SupportsTransparentBackColor`.
+- Applies the required style to WaveformMarkControl, AudioPulseControl, EqCurveControl and SocialGlyphControl.
+- Adds startup crash diagnostics under LocalAppData instead of silent process termination.
+
+### Validation
+- Windows CI now launches the actual installed LouderMe executable and requires it to stay alive before uninstalling.
+- Stable release CI uses the same runtime gate.
+- Reproduced v0.1.3 failure in CI before the fix; the corrected controls pass the new installed-runtime smoke test.
+
 ## Desktop v0.1.3 — 2026-10-06
 
 ### Fixed

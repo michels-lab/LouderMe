@@ -1530,3 +1530,67 @@ Both public stable feeds and release assets were verified after publication. Tem
 - Android v0.1.9 and Desktop v0.1.3 are both available in the public binary repository.
 - Both public update feeds point to the new stable versions.
 - Temporary transfer-staging files were removed after publication.
+
+
+## 2026-10-06 — Desktop v0.1.3 installed-startup regression reproduced and fixed in v0.1.4 candidate
+
+### Field report
+- User installed public Desktop v0.1.3 successfully, but the application did not open afterward.
+
+### CI gap discovered
+- The prior Windows installer smoke test verified installation and uninstallation only.
+- It did **not** launch the installed `LouderMe.exe`.
+- This differed from FoamLens, whose Windows CI validates the packaged/installed executable at runtime.
+
+### Reproduction
+Branch: `fix/desktop-installed-startup`
+
+Initial diagnostic CI run: **37558473562**
+- installer build: success;
+- install: success;
+- installed EXE launch: **failure**;
+- process exit code: `-532462766` / `0xE0434352` (.NET unhandled exception).
+
+A temporary startup diagnostic layer was then added so the installed smoke test could print the real exception.
+
+Diagnostic CI run: **37558716952**
+
+Confirmed stack trace:
+```
+System.ArgumentException: Control does not support transparent background colors.
+   at System.Windows.Forms.Control.set_BackColor(Color value)
+   at LouderMeDesktop.WaveformMarkControl..ctor()
+   at LouderMeDesktop.SplashForm..ctor()
+   at LouderMeDesktop.Program.Main(String[] args)
+```
+
+### Root cause
+Custom WinForms controls were assigning `BackColor = Color.Transparent` without first enabling `ControlStyles.SupportsTransparentBackColor`.
+
+The unsafe pattern existed in four controls:
+- `WaveformMarkControl`;
+- `AudioPulseControl`;
+- `EqCurveControl`;
+- `SocialGlyphControl`.
+
+### Fix
+- All four controls now enable `SupportsTransparentBackColor` before assigning transparent backgrounds.
+- Startup exceptions are logged to:
+  `%LOCALAPPDATA%\Michel's Lab\LouderMe\startup-crash.log`
+- Production startup failures show the diagnostic path instead of silently terminating.
+- Windows build CI now performs: install → launch installed EXE → require it to stay alive → terminate → uninstall.
+- Stable release CI now carries the same installed-runtime launch gate.
+- CI statically guards that all four transparent custom controls keep the required WinForms style.
+
+### v0.1.4 candidate validation
+PR: **#24 — Desktop v0.1.4 — fix installed startup crash**
+
+Validated head: `14d2482e898a1cd66014eb1659c3ff9334b4fa54`
+
+- Windows PR CI run **37559243120**: **success**, including installed executable startup.
+- Android PR CI run **37559243046**: **success**.
+- Same-head Android push CI run **37559235544**: **success**.
+- PR #24 state: mergeable / clean.
+
+### Release boundary
+Desktop v0.1.4 is prepared and validated but **not yet published** in this entry. Merge/publication still requires explicit stable release authorization.

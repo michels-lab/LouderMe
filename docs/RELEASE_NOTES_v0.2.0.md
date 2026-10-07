@@ -10,12 +10,17 @@ Stable-candidate Android feature release by **Michel's Lab**.
 - Device Volume remains explicitly separate from LouderMe Global Boost 100–250%.
 
 ## Reliability
-- Adds tested percent ↔ Android volume-step mapping.
+- Adds tested percent ↔ Android volume-step mapping and snaps the slider to the phone's real discrete media-volume steps.
+- Treats volume step zero as muted even on devices that do not explicitly report stream mute.
 - Handles unavailable device-volume access without crashing the UI.
+- External resync does not fight the user while the volume thumb is being dragged.
+- Notification permission denial no longer starts Global Boost anyway.
+- Start with phone clears stale running state if boot restart is blocked or foreground-service startup fails.
 - Keeps About system Back behavior from v0.1.9.
 
 ## Bug fixes
 - Restores the current canonical Michel's Lab lockup asset in the Android About surface and updates CI to reject the obsolete/corrupt interim asset.
+- Makes canonical About image decoding fail soft with an in-app fallback instead of allowing a malformed/missing asset to crash About.
 
 ## Distribution
 - package: `com.michelslab.louderme`

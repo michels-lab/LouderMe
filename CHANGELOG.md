@@ -9,7 +9,16 @@
 
 ### Fixed
 - Desktop volume UI no longer goes stale when Windows volume changes outside LouderMe.
+- Desktop live polling no longer fights the user while the volume slider is actively dragged.
+- A temporarily missing Windows audio endpoint no longer prevents startup/boost/EQ settings from loading.
+- Equalizer APO read/write permission problems are now surfaced as UI status instead of escaping as runtime crashes.
+- Desktop updater validates feed schema/product identity and closes LouderMe cleanly after launching a verified installer.
+- Windows post-install launch runs as the original user instead of inheriting installer elevation.
 - Android volume state resyncs while the app is active instead of being a one-time snapshot.
+- Android volume slider uses the phone's actual discrete media-volume steps and treats step zero as muted.
+- Android notification permission denial no longer starts the boost anyway.
+- Android Start with phone no longer leaves a stale running state when notification permission or foreground-service startup blocks the restart.
+- Android About canonical image loading now falls back safely instead of crashing if a bundled image cannot be opened/decoded.
 - Android and Desktop now vendor the restored canonical Michel's Lab lockup rather than the obsolete/corrupt interim asset.
 
 ### Versioning

@@ -2,13 +2,20 @@
 
 **Make everything louder.**
 
-LouderMe is an Android audio utility by **Michel's Lab** for increasing quiet media output, shaping sound with a real equalizer, and exposing the state of the Android audio engine instead of hiding it behind fake controls.
+LouderMe is a cross-platform Android + Windows audio utility by **Michel's Lab** for controlling real device volume, increasing quiet media output, shaping sound with an equalizer, and exposing audio-engine state instead of hiding it behind fake controls.
 
 ## Current public release bundle
 
 **Android v0.1.9 + Windows Desktop v0.1.4**
 
 Michel's Lab publishes the current stable Android and Windows binaries together on one public GitHub release page. Platform versions remain explicit when their release lines differ.
+
+## Next candidate — v0.2.0
+
+The next Android + Desktop candidate adds **Device Volume** as a separate first-class control:
+- Android: real media-stream volume, 0–100%, synchronized with hardware/system volume changes.
+- Windows: real active playback-endpoint master volume, 0–100%, synchronized with external volume and device changes.
+- Global Boost remains a separate LouderMe gain stage at 100–250%.
 
 ### Global Boost
 - 100%, 125%, 150%, 175%, 200%, 225%, 250%.

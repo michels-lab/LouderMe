@@ -38,7 +38,7 @@ jobs:
           "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           "notes=$notes" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
 
-      - name: Generate official Windows and installer branding
+      - name: Generate official Windows icon
         shell: pwsh
         run: |
           choco install imagemagick --yes --no-progress
@@ -89,14 +89,11 @@ jobs:
           if ($updater -notmatch 'louderme-desktop/latest.json') { throw 'Desktop stable update feed is missing.' }
 
           $iss=Get-Content 'desktop/installer/LouderMe.iss' -Raw
-          foreach ($required in @('WizardImageFile=','WizardSmallImageFile=','[Languages]','spanish.DesktopShortcut','Start LouderMe with Windows')) {
+          foreach ($required in @('WizardStyle=modern','[Languages]','spanish.DesktopShortcut','Start LouderMe with Windows')) {
             if ($iss -notmatch [regex]::Escape($required)) { throw "Installer experience contract missing: $required" }
           }
-          foreach ($asset in @(
-            'desktop/src/LouderMeDesktop/Assets/LouderMeInstallerWizard.bmp',
-            'desktop/src/LouderMeDesktop/Assets/LouderMeInstallerSmall.bmp'
-          )) {
-            if (-not (Test-Path $asset)) { throw "Installer branding asset missing: $asset" }
+          if ($iss -match 'WizardImageFile=|WizardSmallImageFile=') {
+            throw 'LouderMe installer must keep FoamLens-style clean wizard without custom banner images.'
           }
 
       - name: Publish portable Windows executable

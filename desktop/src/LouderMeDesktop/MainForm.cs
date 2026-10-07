@@ -651,17 +651,17 @@ internal sealed class MainForm : Form
     {
         if (_loading) return;
 
-        DesktopSettingsStore.Save(_settings);
-        var status = _apo.GetStatus();
-
-        if (!status.Installed)
-        {
-            RefreshEngineStatus();
-            return;
-        }
-
         try
         {
+            DesktopSettingsStore.Save(_settings);
+            var status = _apo.GetStatus();
+
+            if (!status.Installed)
+            {
+                RefreshEngineStatus();
+                return;
+            }
+
             _apo.Apply(_settings);
             RefreshEngineStatus();
         }
@@ -669,7 +669,7 @@ internal sealed class MainForm : Form
         {
             _engineStatus.ForeColor = Gold;
             _engineStatus.Text =
-                "Equalizer APO is installed, but Windows denied write access to its config folder. " +
+                "Equalizer APO is installed, but Windows denied access to its config folder. " +
                 "Run LouderMe as administrator once to link the managed configuration.";
         }
         catch (Exception ex)
@@ -680,30 +680,44 @@ internal sealed class MainForm : Form
 
     private void RefreshEngineStatus()
     {
-        var status = _apo.GetStatus();
+        try
+        {
+            var status = _apo.GetStatus();
 
-        if (!status.Installed)
+            if (!status.Installed)
+            {
+                _engineStatus.ForeColor = Gold;
+                _engineStatus.Text =
+                    "Boost engine required. Install Equalizer APO 1.4.2 x64 from the official SourceForge page, " +
+                    "select the active playback device in Configurator, reboot if requested, then press Refresh engine. " +
+                    "Official x64 SHA-256: 7403be7427bbe1936a40dded082829b6e217fc4f5990fee5cba501f0ae055afa";
+                return;
+            }
+
+            if (!status.Configured)
+            {
+                _engineStatus.ForeColor = Gold;
+                _engineStatus.Text =
+                    status.Message + " Change any LouderMe boost/EQ control to link it.";
+                return;
+            }
+
+            _engineStatus.ForeColor = Cyan;
+            _engineStatus.Text =
+                $"{status.Message} Target boost: {_settings.BoostPercent}% " +
+                $"({BoostMath.PercentToDb(_settings.BoostPercent):+0.00;-0.00;0.00} dB).";
+        }
+        catch (UnauthorizedAccessException)
         {
             _engineStatus.ForeColor = Gold;
             _engineStatus.Text =
-                "Boost engine required. Install Equalizer APO 1.4.2 x64 from the official SourceForge page, " +
-                "select the active playback device in Configurator, reboot if requested, then press Refresh engine. " +
-                "Official x64 SHA-256: 7403be7427bbe1936a40dded082829b6e217fc4f5990fee5cba501f0ae055afa";
-            return;
+                "Equalizer APO is present, but Windows denied access to its configuration. " +
+                "Device Volume remains available; run LouderMe as administrator once if you want to configure boost/EQ.";
         }
-
-        if (!status.Configured)
+        catch (Exception ex)
         {
-            _engineStatus.ForeColor = Gold;
-            _engineStatus.Text =
-                status.Message + " Change any LouderMe boost/EQ control to link it.";
-            return;
+            ShowEngineError(ex);
         }
-
-        _engineStatus.ForeColor = Cyan;
-        _engineStatus.Text =
-            $"{status.Message} Target boost: {_settings.BoostPercent}% " +
-            $"({BoostMath.PercentToDb(_settings.BoostPercent):+0.00;-0.00;0.00} dB).";
     }
 
     private void UpdateEqValueLabels()
@@ -783,6 +797,7 @@ internal sealed class MainForm : Form
             _updateStatus.ForeColor = Cyan;
             _updateStatus.Text = "Verified · opening installer";
             DesktopUpdateService.LaunchInstaller(installer);
+            BeginInvoke(new Action(Close));
         }
         catch (Exception ex)
         {

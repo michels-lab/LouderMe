@@ -137,7 +137,8 @@ jobs:
             'WizardStyle=modern',
             'Start LouderMe with Windows',
             '[Languages]',
-            'spanish.DesktopShortcut'
+            'spanish.DesktopShortcut',
+            'runasoriginaluser'
           )) {
             if ($iss -notmatch [regex]::Escape($required)) { throw "Installer contract missing: $required" }
           }

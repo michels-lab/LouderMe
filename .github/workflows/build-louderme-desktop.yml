@@ -167,6 +167,34 @@ jobs:
           $hash=(Get-FileHash $exe -Algorithm SHA256).Hash.ToLowerInvariant()
           "$hash  LouderMe-Setup-v$v.exe" | Set-Content "$exe.sha256" -Encoding ascii
 
+      - name: Smoke-test real Windows installation
+        shell: pwsh
+        run: |
+          $v='${{ steps.ver.outputs.version }}'
+          $setup=(Resolve-Path "desktop/artifacts/LouderMe-Setup-v$v.exe").Path
+          $target=Join-Path $env:RUNNER_TEMP 'LouderMeInstallerSmoke'
+          $log=Join-Path $env:RUNNER_TEMP 'LouderMeInstallerSmoke.log'
+          Remove-Item $target -Recurse -Force -ErrorAction SilentlyContinue
+          $args=@('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/CURRENTUSER',"/DIR=$target","/LOG=$log")
+          $process=Start-Process -FilePath $setup -ArgumentList $args -PassThru -Wait
+          if ($process.ExitCode -ne 0) {
+            if (Test-Path $log) { Get-Content $log }
+            throw "Installer smoke test failed with exit code $($process.ExitCode)."
+          }
+          if (-not (Test-Path (Join-Path $target 'LouderMe.exe'))) {
+            if (Test-Path $log) { Get-Content $log }
+            throw 'Installer completed but LouderMe.exe was not installed.'
+          }
+          $uninstaller=Join-Path $target 'unins000.exe'
+          if (-not (Test-Path $uninstaller)) { throw 'Installer did not register an uninstaller.' }
+          $uninstall=Start-Process -FilePath $uninstaller -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART') -PassThru -Wait
+          if ($uninstall.ExitCode -ne 0) { throw "Uninstaller smoke test failed with exit code $($uninstall.ExitCode)." }
+          if (Test-Path $target) {
+            Start-Sleep -Seconds 2
+            if (Test-Path $target) { Remove-Item $target -Recurse -Force -ErrorAction SilentlyContinue }
+          }
+          Write-Host 'LouderMe setup installed and uninstalled successfully.'
+
       - name: Upload Windows build
         uses: actions/upload-artifact@v4
         with:

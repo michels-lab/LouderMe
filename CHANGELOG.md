@@ -1,5 +1,19 @@
 # Changelog
 
+## Desktop v0.1.3 — 2026-10-06
+
+### Fixed
+- Aligns the Windows installer visually with FoamLens' clean modern Inno Setup wizard.
+- Removes LouderMe-specific custom wizard banner images that made Setup look like a separate installer family.
+- Adds CI enforcement preventing `WizardImageFile` / `WizardSmallImageFile` from returning.
+
+### Preserved
+- Official LouderMe icon and Michel's Lab publisher identity.
+- English/Spanish installer text.
+- Desktop shortcut and Start with Windows options.
+- Setup + Portable distribution, updater and SHA-256 verification.
+- Existing audio behavior.
+
 ## Android v0.1.9 — 2026-10-06
 
 ### Fixed

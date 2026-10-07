@@ -113,3 +113,7 @@ Do not describe a Desktop build as signed unless the actual release artifact car
 Desktop feature, branding, CI or workflow maintenance changes do not publish a stable release by themselves.
 
 The stable publisher runs from an explicit versioned release note under `desktop/releases/vX.Y.Z.md` or a deliberate manual workflow dispatch. Editing the release workflow alone must not overwrite an already-published Desktop version.
+
+
+### Installer visual contract
+The recommended Setup uses the **FoamLens-style clean modern wizard**. LouderMe keeps its own icon, product metadata, bilingual text and startup/shortcut options, but does not use custom left-side or header wizard banner images.

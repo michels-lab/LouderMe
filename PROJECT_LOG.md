@@ -1445,3 +1445,43 @@ Head validated: `c687e45d8309e9b631387acdd6da91c222c5ceab`
 
 ### Separate Android regression
 Issue **#19** remains open for the Android v0.1.7 About crash. Source inspection confirms the canonical Michel's Lab lockup and Michel Duarte portrait resources are present; no runtime root cause has been proven without target-device stack-trace/logcat evidence. Do not claim this Android regression fixed yet.
+
+
+## 2026-10-06 — Stable releases published: Desktop v0.1.2 + Android v0.1.8
+
+### Release decision
+Michel explicitly authorized publication after the canonical About portrait correction. The validated PR #20 was merged to `main` at commit `654635407ef3f63a5a00ed04db7e0fa1e92f3a5e`.
+
+### Desktop v0.1.2
+- Source release tag: `desktop-v0.1.2` — stable, not prerelease.
+- Public release tag: `louderme-desktop-v0.1.2` — stable, not prerelease.
+- Recommended installer: `LouderMe-Setup-v0.1.2.exe`.
+- Secondary portable build: `LouderMe-Portable-v0.1.2.exe`.
+- Both binaries publish matching SHA-256 files.
+- Public `louderme-desktop/latest.json` now points to v0.1.2.
+- Installer SHA-256: `a042c5471a4b733f8503e1a809b57025cca33f4ebc1e9f16fccac29e1db12d36`.
+- Portable SHA-256: `ff4c465f2f48dfd2688ab67fbcd468ee04254ae457f3590f1e9d14b19ec07482`.
+- Source release workflow `37555024781`: success, including real install/uninstall smoke test.
+- Public publisher workflow `37555336629`: success.
+
+### Android v0.1.8
+- versionName: `0.1.8`; versionCode: `9`.
+- v0.1.7 was not overwritten.
+- Source release tag: `v0.1.8` — stable, not prerelease.
+- Public release tag: `louderme-v0.1.8` — stable, not prerelease.
+- Public APK: `LouderMe-v0.1.8-sideload.apk` with SHA-256 companion.
+- Public `louderme/latest.json` now points to v0.1.8 / code 9.
+- APK SHA-256: `6edd30284a6104c03cd3bd2c017f83ab318f01b8c8456bb7c804512d7936cb5f`.
+- Source Android workflow `37555024818`: success.
+- Public publisher workflow `37555426309`: success.
+
+### Canonical About portrait correction
+- Replaced rejected interim portrait blob `be4d18572bec28d53783cd4db05cb6cd289a7916` with canonical blob `18fe1a68722850c3d8f918dc0799f46ffeb6dbaf` in Android and Desktop.
+- Canonical JPEG remains byte-for-byte unchanged; only render size was reduced (Android 78×104 dp; Desktop 96×128 px).
+- CI now rejects portrait drift on both platforms.
+
+### Android issue #19
+The corrupt/rejected portrait was a confirmed About defect and a plausible contributor to the Android crash. Issue #19 remains open until v0.1.8 is opened on the target Samsung and About is confirmed not to crash. Do not claim the runtime crash conclusively fixed until that device validation occurs.
+
+### Distribution state
+Both public stable feeds and release assets were verified after publication. Temporary transfer-staging files were removed from the public binary repository after successful publishing.

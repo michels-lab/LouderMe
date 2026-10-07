@@ -59,6 +59,15 @@ Startup is opt-in and stored in:
 
 This starts LouderMe when the current Windows user signs in.
 
+## Windows packaging
+The normal Windows user-facing artifact is the installer:
+
+- `LouderMe-Setup-vX.Y.Z.exe` — **recommended** installation path; creates normal Windows app/shortcut/uninstall behavior.
+- `LouderMe-Portable-vX.Y.Z.exe` — secondary self-contained portable build; no installation required.
+- matching `.sha256` files are published for both artifacts.
+
+Both artifacts are built by GitHub Actions from the validated commit. The installer is smoke-tested by CI through a real silent install and uninstall before a stable release is allowed.
+
 ## Validation boundary
 CI can validate compilation, packaging, gain math and configuration generation. Endpoint attachment, reboot behavior, audio-driver compatibility and audible high-gain quality require validation on a physical Windows machine.
 

@@ -96,6 +96,8 @@ jobs:
 
           $brand=Get-Content 'desktop/src/LouderMeDesktop/BrandingControls.cs' -Raw
           if ($brand -notmatch 'WaveformMarkControl') { throw 'Desktop LouderMe waveform control is missing.' }
+          $transparentStyleCount=([regex]::Matches($brand, 'SetStyle\(ControlStyles\.SupportsTransparentBackColor, true\)')).Count
+          if ($transparentStyleCount -lt 4) { throw 'Transparent custom controls are missing SupportsTransparentBackColor.' }
 
           $updater=Get-Content 'desktop/src/LouderMeDesktop/DesktopUpdateService.cs' -Raw
           foreach ($required in @('louderme-desktop/latest.json','installerSha256','SHA256.HashDataAsync')) {

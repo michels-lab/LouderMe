@@ -82,7 +82,7 @@ jobs:
 
           test "$(git hash-object app/src/main/res/drawable/michel_duarte_avatar.jpg)" = "18fe1a68722850c3d8f918dc0799f46ffeb6dbaf"
           test "$(git hash-object app/src/main/assets/branding/michels-lab/official-mark.png)" = "f205c15c3b6bd7fe676ced83fd1ea2ae24c25586"
-          test "$(git hash-object app/src/main/assets/branding/michels-lab/official-lockup.png)" = "7819ef5c7d1a5c338c67c9bbd517e5448724a5cf"
+          test "$(git hash-object app/src/main/assets/branding/michels-lab/official-lockup.png)" = "7fd48093968b31ddacd3098f5b15d962de580652"
           grep -q 'SocialNetwork.FACEBOOK' app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt
           grep -q 'branding/michels-lab/official-lockup.png' app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt
           grep -q 'SOUND THAT LIFTS YOU' app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt

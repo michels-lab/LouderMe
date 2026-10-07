@@ -334,8 +334,15 @@ private fun DeviceVolumePanel(
     state: DeviceVolumeUiState,
     onVolumeChanged: (Int) -> Unit,
 ) {
-    var sliderValue by remember(state.percent) {
+    var sliderValue by remember {
         mutableFloatStateOf(state.percent.toFloat())
+    }
+    var dragging by remember { mutableStateOf(false) }
+
+    LaunchedEffect(state.percent) {
+        if (!dragging) {
+            sliderValue = state.percent.toFloat()
+        }
     }
 
     Panel {
@@ -373,8 +380,12 @@ private fun DeviceVolumePanel(
 
         Slider(
             value = sliderValue,
-            onValueChange = { sliderValue = it },
+            onValueChange = {
+                dragging = true
+                sliderValue = it
+            },
             onValueChangeFinished = {
+                dragging = false
                 onVolumeChanged(sliderValue.roundToInt())
             },
             valueRange = 0f..100f,

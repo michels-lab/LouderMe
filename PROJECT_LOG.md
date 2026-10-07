@@ -1412,3 +1412,36 @@ Public versions remain:
 - Desktop **v0.1.1** — stable/public, but installer UX/naming needs the v0.1.2 hotfix.
 
 No hotfix release was published in this session after the field reports.
+
+
+## 2026-10-06 — Desktop v0.1.2 installer hotfix validated in PR #20
+
+### Scope
+Continuation of the LIMÓN handoff for the Windows installer experience. No stable release was published by this work.
+
+### Implemented
+- Desktop candidate remains **v0.1.2** on `fix/desktop-installer-experience`.
+- The normal Windows artifact is the branded Inno Setup installer: `LouderMe-Setup-vX.Y.Z.exe`.
+- The standalone secondary artifact is explicitly named `LouderMe-Portable-vX.Y.Z.exe`.
+- Installer wizard branding is generated from canonical LouderMe assets.
+- English/Spanish installer messages and the optional **Start LouderMe with Windows** task are preserved.
+- Normal Windows CI now performs a real silent install, verifies `LouderMe.exe` and `unins000.exe`, and uninstalls the test installation.
+- The public Michel's Lab Desktop publisher was aligned to the explicit Portable filename while retaining a legacy-transfer fallback for older artifacts.
+- The current public stable feed remains Desktop v0.1.1 until an explicitly authorized v0.1.2 publication.
+
+### Verified evidence
+PR: **#20 — Desktop v0.1.2 — installer-first Windows experience**
+
+Head validated: `c687e45d8309e9b631387acdd6da91c222c5ceab`
+
+- Windows PR CI run **37550569236**: **success**.
+- Windows same-head push run **37550491583**: **success**; step **Smoke-test real Windows installation** passed.
+- Android PR CI run **37550569270**: **success**, confirming the Desktop hotfix did not regress the Android Play/Direct build gates.
+
+### Remaining release boundary
+- PR #20 is intentionally left open/unmerged because merging `desktop/releases/v0.1.2.md` to `main` triggers the stable Desktop release workflow.
+- Windows Authenticode remains unconfigured; SmartScreen/Unknown publisher can still appear.
+- Physical Windows APO endpoint/audible behavior remains a real-machine validation item.
+
+### Separate Android regression
+Issue **#19** remains open for the Android v0.1.7 About crash. Source inspection confirms the canonical Michel's Lab lockup and Michel Duarte portrait resources are present; no runtime root cause has been proven without target-device stack-trace/logcat evidence. Do not claim this Android regression fixed yet.

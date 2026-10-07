@@ -165,52 +165,52 @@ jobs:
           $hash=(Get-FileHash $exe -Algorithm SHA256).Hash.ToLowerInvariant()
           "$hash  LouderMe-Setup-v$v.exe" | Set-Content "$exe.sha256" -Encoding ascii
 
-      - name: Smoke-test real Windows installation
+      - name: Smoke-test installed LouderMe launch
         shell: pwsh
         run: |
           $v='${{ steps.ver.outputs.version }}'
           $setup=(Resolve-Path "desktop/artifacts/LouderMe-Setup-v$v.exe").Path
           $target=Join-Path $env:RUNNER_TEMP 'LouderMeInstallerSmoke'
           $log=Join-Path $env:RUNNER_TEMP 'LouderMeInstallerSmoke.log'
+          $evidence=Join-Path (Resolve-Path 'desktop/artifacts').Path 'LouderMe-Installed-launch.txt'
+          $crashLog=Join-Path $env:LOCALAPPDATA "Michel's Lab\LouderMe\startup-crash.log"
+
           Remove-Item $target -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item $crashLog -Force -ErrorAction SilentlyContinue
+
           $args=@('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/CURRENTUSER',"/DIR=$target","/LOG=$log")
           $process=Start-Process -FilePath $setup -ArgumentList $args -PassThru -Wait
           if ($process.ExitCode -ne 0) {
             if (Test-Path $log) { Get-Content $log }
             throw "Installer smoke test failed with exit code $($process.ExitCode)."
           }
+
           $installedExe=Join-Path $target 'LouderMe.exe'
           if (-not (Test-Path $installedExe)) {
             if (Test-Path $log) { Get-Content $log }
             throw 'Installer completed but LouderMe.exe was not installed.'
           }
 
-          # FoamLens-style runtime gate: installation is not considered valid unless
-          # the actual installed executable starts and stays alive.
-          $app=Start-Process -FilePath $installedExe -ArgumentList '--smoke-test' -PassThru
-          Start-Sleep -Seconds 5
-          $app.Refresh()
-          if ($app.HasExited) {
-            $crashLog=Join-Path $env:LOCALAPPDATA "Michel's Lab\LouderMe\startup-crash.log"
-            if (Test-Path $crashLog) {
-              Write-Host '---- LouderMe startup crash log ----'
-              Get-Content $crashLog
-            }
-            throw "Installed LouderMe exited during startup with code $($app.ExitCode)."
-          }
-          Write-Host "Installed LouderMe stayed alive after startup (PID $($app.Id))."
-          Stop-Process -Id $app.Id -Force -ErrorAction SilentlyContinue
-          $app.WaitForExit()
+          pwsh -File desktop/tools/windows_launch_smoke.ps1 `
+            -ExePath $installedExe `
+            -Arguments '--smoke-test' `
+            -MinimumAliveSeconds 8 `
+            -WindowTimeoutSeconds 20 `
+            -EvidencePath $evidence `
+            -CrashLogPath $crashLog
 
           $uninstaller=Join-Path $target 'unins000.exe'
           if (-not (Test-Path $uninstaller)) { throw 'Installer did not register an uninstaller.' }
           $uninstall=Start-Process -FilePath $uninstaller -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART') -PassThru -Wait
           if ($uninstall.ExitCode -ne 0) { throw "Uninstaller smoke test failed with exit code $($uninstall.ExitCode)." }
+
           if (Test-Path $target) {
             Start-Sleep -Seconds 2
             if (Test-Path $target) { Remove-Item $target -Recurse -Force -ErrorAction SilentlyContinue }
           }
-          Write-Host 'LouderMe setup installed, launched, stayed alive, and uninstalled successfully.'
+
+          Write-Host 'BUILD PASS + INSTALL PASS + LAUNCH PASS for LouderMe Windows Setup.'
+
 
       - name: Upload Windows build
         uses: actions/upload-artifact@v4
@@ -221,4 +221,5 @@ jobs:
             desktop/artifacts/LouderMe-Portable-v${{ steps.ver.outputs.version }}.exe.sha256
             desktop/artifacts/LouderMe-Setup-v${{ steps.ver.outputs.version }}.exe
             desktop/artifacts/LouderMe-Setup-v${{ steps.ver.outputs.version }}.exe.sha256
+            desktop/artifacts/LouderMe-Installed-launch.txt
             desktop/src/LouderMeDesktop/Assets/LouderMe.ico

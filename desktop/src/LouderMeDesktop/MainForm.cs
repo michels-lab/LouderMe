@@ -574,8 +574,19 @@ internal sealed class MainForm : Form
         _loading = true;
         try
         {
-            _audio.Refresh();
-            ApplyDeviceVolumeSnapshot(_audio.ReadSnapshot());
+            try
+            {
+                _audio.Refresh();
+                ApplyDeviceVolumeSnapshot(_audio.ReadSnapshot());
+            }
+            catch
+            {
+                _deviceValue.Text = "Device unavailable";
+                _volumeValue.Text = "—";
+                _volume.Enabled = false;
+                _mute.Enabled = false;
+            }
+
             _startWithWindows.Checked = StartupManager.IsEnabled();
 
             _boostEnabled.Checked = _settings.BoostEnabled;

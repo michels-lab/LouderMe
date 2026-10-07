@@ -34,9 +34,10 @@ class DeviceVolumeController(context: Context) {
     fun read(): DeviceVolumeUiState {
         val maxStep = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
         val step = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
-        val muted = runCatching {
-            audioManager.isStreamMute(AudioManager.STREAM_MUSIC)
-        }.getOrDefault(step == 0)
+        val muted =
+            runCatching {
+                audioManager.isStreamMute(AudioManager.STREAM_MUSIC)
+            }.getOrDefault(false) || step == 0
 
         return DeviceVolumeUiState(
             percent = DeviceVolumeMath.stepToPercent(step, maxStep),

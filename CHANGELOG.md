@@ -1,5 +1,41 @@
 # Changelog
 
+## Android v0.1.8 — 2026-10-06
+
+### Fixed
+- Replaces the rejected/corrupted interim Michel Duarte About portrait with the exact canonical 1440×1920 source.
+- Reduces the portrait only at render time so it fits the About layout without altering the underlying JPEG.
+- Adds CI enforcement for the canonical portrait blob.
+
+### Preserved
+- LouderMe/Michel's Lab branding hierarchy and social rows.
+- 100–250% boost, 7-band EQ, Play/Direct split, updater and Start with phone.
+
+### Validation boundary
+- Repository Android CI must pass for Play and Direct.
+- Issue #19 remains open until the v0.1.8 About screen is confirmed on the target Samsung.
+
+## Desktop v0.1.2 — 2026-10-06
+
+### Changed
+- Makes the Inno Setup installer the clear recommended Windows distribution path.
+- Renames the secondary self-contained executable to `LouderMe-Portable-v0.1.2.exe` so it cannot be mistaken for the installer.
+- Adds branded installer wizard imagery generated from the canonical LouderMe identity.
+- Adds English/Spanish installer text and preserves optional **Start LouderMe with Windows**.
+- Extends Windows CI to smoke-test a real install/uninstall cycle before release.
+- Aligns the public Michel's Lab Desktop publisher/feed with the explicit portable filename.
+
+### Preserved
+- APO-backed Global Boost 100–250%.
+- 7-band EQ.
+- Native Windows endpoint volume/mute.
+- In-app stable updater with installer SHA-256 verification.
+- Existing LouderMe/Michel's Lab product identity.
+
+### Validation boundary
+- Windows Authenticode publisher signing is still not configured.
+- Physical Windows APO/audio behavior remains a real-machine validation item.
+
 ## Android v0.1.7 — 2026-10-06
 
 ### Added / changed

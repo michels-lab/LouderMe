@@ -42,21 +42,17 @@ jobs:
           "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           Write-Host "Building LouderMe Desktop v$v"
 
-      - name: Generate official Windows icon
+      - name: Generate official Windows and installer branding
         shell: pwsh
         run: |
           choco install imagemagick --yes --no-progress
-          New-Item -ItemType Directory -Force 'desktop/src/LouderMeDesktop/Assets' | Out-Null
-          $source='app/src/main/assets/branding/louderme/official-app-icon.svg'
-          if (-not (Test-Path $source)) { throw 'Official LouderMe app icon is missing.' }
           $magick = Get-Command magick -ErrorAction SilentlyContinue
           if (-not $magick) {
             $exe = Get-ChildItem "$env:ProgramFiles\ImageMagick*" -Filter magick.exe -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
             if (-not $exe) { throw 'ImageMagick magick.exe not found.' }
             $magickPath = $exe.FullName
           } else { $magickPath = $magick.Source }
-          & $magickPath -background none $source -define icon:auto-resize=256,128,64,48,32,16 'desktop/src/LouderMeDesktop/Assets/LouderMe.ico'
-          if ($LASTEXITCODE -ne 0) { throw 'LouderMe icon generation failed.' }
+          pwsh -File desktop/installer/prepare-branding.ps1 -MagickPath $magickPath
 
       - name: Restore and build native desktop app
         shell: pwsh
@@ -83,7 +79,7 @@ jobs:
           $db250=20*[Math]::Log10(2.5)
           if ([Math]::Abs($db250-7.958800173) -gt 0.000001) { throw '250 percent gain conversion sanity check failed.' }
 
-          if ((git hash-object desktop/src/LouderMeDesktop/Assets/MichelDuarte.jpg) -ne 'be4d18572bec28d53783cd4db05cb6cd289a7916') {
+          if ((git hash-object desktop/src/LouderMeDesktop/Assets/MichelDuarte.jpg) -ne '18fe1a68722850c3d8f918dc0799f46ffeb6dbaf') {
             throw 'Desktop Michel Duarte portrait is not the canonical asset.'
           }
           if ((git hash-object desktop/src/LouderMeDesktop/Assets/MichelsLabLockup.png) -ne '7819ef5c7d1a5c338c67c9bbd517e5448724a5cf') {
@@ -115,17 +111,31 @@ jobs:
             -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
             -o desktop/artifacts/publish
           $v='${{ steps.ver.outputs.version }}'
-          Copy-Item desktop/artifacts/publish/LouderMe.exe "desktop/artifacts/LouderMe-v$v.exe"
+          Copy-Item desktop/artifacts/publish/LouderMe.exe "desktop/artifacts/LouderMe-Portable-v$v.exe"
 
       - name: Verify native desktop package
         shell: pwsh
         run: |
           $v='${{ steps.ver.outputs.version }}'
-          $portable="desktop/artifacts/LouderMe-v$v.exe"
+          $portable="desktop/artifacts/LouderMe-Portable-v$v.exe"
           if (-not (Test-Path $portable)) { throw 'Portable LouderMe EXE was not generated.' }
           if ((Get-Item $portable).Length -lt 1000000) { throw 'Portable executable is unexpectedly small.' }
           $iss=Get-Content desktop/installer/LouderMe.iss -Raw
-          if ($iss -notmatch 'Start LouderMe with Windows') { throw 'Installer startup option is missing.' }
+          foreach ($required in @(
+            'Start LouderMe with Windows',
+            'WizardImageFile=',
+            'WizardSmallImageFile=',
+            '[Languages]',
+            'spanish.DesktopShortcut'
+          )) {
+            if ($iss -notmatch [regex]::Escape($required)) { throw "Installer contract missing: $required" }
+          }
+          foreach ($asset in @(
+            'desktop/src/LouderMeDesktop/Assets/LouderMeInstallerWizard.bmp',
+            'desktop/src/LouderMeDesktop/Assets/LouderMeInstallerSmall.bmp'
+          )) {
+            if (-not (Test-Path $asset)) { throw "Branded installer asset missing: $asset" }
+          }
           $startup=Get-Content desktop/src/LouderMeDesktop/StartupManager.cs -Raw
           if ($startup -notmatch 'CurrentVersion\\Run') { throw 'Native Windows startup integration is missing.' }
 
@@ -133,9 +143,9 @@ jobs:
         shell: pwsh
         run: |
           $v='${{ steps.ver.outputs.version }}'
-          $exe="desktop/artifacts/LouderMe-v$v.exe"
+          $exe="desktop/artifacts/LouderMe-Portable-v$v.exe"
           $hash=(Get-FileHash $exe -Algorithm SHA256).Hash.ToLowerInvariant()
-          "$hash  LouderMe-v$v.exe" | Set-Content "$exe.sha256" -Encoding ascii
+          "$hash  LouderMe-Portable-v$v.exe" | Set-Content "$exe.sha256" -Encoding ascii
 
       - name: Build Windows installer
         shell: pwsh
@@ -157,13 +167,43 @@ jobs:
           $hash=(Get-FileHash $exe -Algorithm SHA256).Hash.ToLowerInvariant()
           "$hash  LouderMe-Setup-v$v.exe" | Set-Content "$exe.sha256" -Encoding ascii
 
+      - name: Smoke-test real Windows installation
+        shell: pwsh
+        run: |
+          $v='${{ steps.ver.outputs.version }}'
+          $setup=(Resolve-Path "desktop/artifacts/LouderMe-Setup-v$v.exe").Path
+          $target=Join-Path $env:RUNNER_TEMP 'LouderMeInstallerSmoke'
+          $log=Join-Path $env:RUNNER_TEMP 'LouderMeInstallerSmoke.log'
+          Remove-Item $target -Recurse -Force -ErrorAction SilentlyContinue
+          $args=@('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART','/CURRENTUSER',"/DIR=$target","/LOG=$log")
+          $process=Start-Process -FilePath $setup -ArgumentList $args -PassThru -Wait
+          if ($process.ExitCode -ne 0) {
+            if (Test-Path $log) { Get-Content $log }
+            throw "Installer smoke test failed with exit code $($process.ExitCode)."
+          }
+          if (-not (Test-Path (Join-Path $target 'LouderMe.exe'))) {
+            if (Test-Path $log) { Get-Content $log }
+            throw 'Installer completed but LouderMe.exe was not installed.'
+          }
+          $uninstaller=Join-Path $target 'unins000.exe'
+          if (-not (Test-Path $uninstaller)) { throw 'Installer did not register an uninstaller.' }
+          $uninstall=Start-Process -FilePath $uninstaller -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART') -PassThru -Wait
+          if ($uninstall.ExitCode -ne 0) { throw "Uninstaller smoke test failed with exit code $($uninstall.ExitCode)." }
+          if (Test-Path $target) {
+            Start-Sleep -Seconds 2
+            if (Test-Path $target) { Remove-Item $target -Recurse -Force -ErrorAction SilentlyContinue }
+          }
+          Write-Host 'LouderMe setup installed and uninstalled successfully.'
+
       - name: Upload Windows build
         uses: actions/upload-artifact@v4
         with:
           name: LouderMe-Desktop-v${{ steps.ver.outputs.version }}
           path: |
-            desktop/artifacts/LouderMe-v${{ steps.ver.outputs.version }}.exe
-            desktop/artifacts/LouderMe-v${{ steps.ver.outputs.version }}.exe.sha256
+            desktop/artifacts/LouderMe-Portable-v${{ steps.ver.outputs.version }}.exe
+            desktop/artifacts/LouderMe-Portable-v${{ steps.ver.outputs.version }}.exe.sha256
             desktop/artifacts/LouderMe-Setup-v${{ steps.ver.outputs.version }}.exe
             desktop/artifacts/LouderMe-Setup-v${{ steps.ver.outputs.version }}.exe.sha256
             desktop/src/LouderMeDesktop/Assets/LouderMe.ico
+            desktop/src/LouderMeDesktop/Assets/LouderMeInstallerWizard.bmp
+            desktop/src/LouderMeDesktop/Assets/LouderMeInstallerSmall.bmp

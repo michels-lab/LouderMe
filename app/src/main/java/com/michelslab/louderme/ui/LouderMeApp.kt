@@ -1354,7 +1354,7 @@ private fun AboutScreen(
                         painter = painterResource(R.drawable.michel_duarte_avatar),
                         contentDescription = "Michel Duarte",
                         modifier = Modifier
-                            .size(width = 96.dp, height = 132.dp)
+                            .size(width = 78.dp, height = 104.dp)
                             .clip(RoundedCornerShape(18.dp))
                             .border(
                                 1.dp,

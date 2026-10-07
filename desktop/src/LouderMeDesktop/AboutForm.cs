@@ -136,16 +136,16 @@ internal sealed class AboutForm : Form
             RowCount = 3,
             BackColor = Color.Transparent,
         };
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 118));
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
         var portrait = new PictureBox
         {
-            Width = 126,
-            Height = 168,
+            Width = 96,
+            Height = 128,
             SizeMode = PictureBoxSizeMode.Zoom,
             Image = BrandAssets.LoadBitmap("LouderMeDesktop.Assets.MichelDuarte.jpg"),
-            Margin = new Padding(0, 0, 18, 8),
+            Margin = new Padding(0, 0, 16, 8),
         };
         layout.SetRowSpan(portrait, 2);
         layout.Controls.Add(portrait, 0, 0);

@@ -89,6 +89,10 @@ jobs:
           grep -q 'CanonicalWaveform' app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt
           grep -q 'EqWavePreview' app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt
           grep -q 'BackHandler(enabled = showAbout)' app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt
+          grep -q 'AudioManager.STREAM_MUSIC' app/src/main/java/com/michelslab/louderme/audio/DeviceVolumeController.kt
+          grep -q 'DeviceVolumePanel' app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt
+          grep -q 'deviceVolumeSyncHandler' app/src/main/java/com/michelslab/louderme/MainActivity.kt
+          grep -q 'Device Volume and Global Boost are separate' app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt
 
       - name: Run tests and build distribution flavors
         run: |

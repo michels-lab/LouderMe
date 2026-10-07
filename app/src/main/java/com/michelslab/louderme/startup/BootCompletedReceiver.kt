@@ -9,6 +9,7 @@ import android.os.Build
 import com.michelslab.louderme.audio.AudioBoostContract
 import com.michelslab.louderme.audio.AudioBoostService
 import com.michelslab.louderme.audio.AudioBoostStateStore
+import com.michelslab.louderme.audio.AudioEngineStatus
 
 class BootCompletedReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
@@ -23,6 +24,14 @@ class BootCompletedReceiver : BroadcastReceiver() {
             context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) !=
             PackageManager.PERMISSION_GRANTED
         ) {
+            AudioBoostStateStore.write(
+                context,
+                savedState.copy(
+                    status = AudioEngineStatus.OFF,
+                    implementation = "Start with phone skipped",
+                    message = "Boost did not restart after boot because notification permission is unavailable.",
+                )
+            )
             return
         }
 

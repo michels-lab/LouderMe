@@ -1,5 +1,20 @@
 # Changelog
 
+## Android v0.1.8 — 2026-10-06
+
+### Fixed
+- Replaces the rejected/corrupted interim Michel Duarte About portrait with the exact canonical 1440×1920 source.
+- Reduces the portrait only at render time so it fits the About layout without altering the underlying JPEG.
+- Adds CI enforcement for the canonical portrait blob.
+
+### Preserved
+- LouderMe/Michel's Lab branding hierarchy and social rows.
+- 100–250% boost, 7-band EQ, Play/Direct split, updater and Start with phone.
+
+### Validation boundary
+- Repository Android CI must pass for Play and Direct.
+- Issue #19 remains open until the v0.1.8 About screen is confirmed on the target Samsung.
+
 ## Desktop v0.1.2 — 2026-10-06
 
 ### Changed

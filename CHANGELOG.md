@@ -1,5 +1,26 @@
 # Changelog
 
+## Desktop v0.1.2 — 2026-10-06
+
+### Changed
+- Makes the Inno Setup installer the clear recommended Windows distribution path.
+- Renames the secondary self-contained executable to `LouderMe-Portable-v0.1.2.exe` so it cannot be mistaken for the installer.
+- Adds branded installer wizard imagery generated from the canonical LouderMe identity.
+- Adds English/Spanish installer text and preserves optional **Start LouderMe with Windows**.
+- Extends Windows CI to smoke-test a real install/uninstall cycle before release.
+- Aligns the public Michel's Lab Desktop publisher/feed with the explicit portable filename.
+
+### Preserved
+- APO-backed Global Boost 100–250%.
+- 7-band EQ.
+- Native Windows endpoint volume/mute.
+- In-app stable updater with installer SHA-256 verification.
+- Existing LouderMe/Michel's Lab product identity.
+
+### Validation boundary
+- Windows Authenticode publisher signing is still not configured.
+- Physical Windows APO/audio behavior remains a real-machine validation item.
+
 ## Android v0.1.7 — 2026-10-06
 
 ### Added / changed

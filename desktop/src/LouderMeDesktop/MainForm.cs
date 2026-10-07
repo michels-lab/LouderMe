@@ -15,6 +15,7 @@ internal sealed class MainForm : Form
     private readonly TrackBar _volume = new();
     private readonly CheckBox _mute = new();
     private readonly CheckBox _startWithWindows = new();
+    private readonly System.Windows.Forms.Timer _deviceVolumeSyncTimer = new() { Interval = 500 };
 
     private readonly CheckBox _boostEnabled = new();
     private readonly TrackBar _boost = new();
@@ -56,12 +57,20 @@ internal sealed class MainForm : Form
         BuildUi();
         LoadState();
 
+        _deviceVolumeSyncTimer.Tick += (_, _) => RefreshDeviceVolumeFromSystem();
+        _deviceVolumeSyncTimer.Start();
+
         Shown += async (_, _) => await CheckForUpdatesAsync(silent: true);
     }
 
     protected override void Dispose(bool disposing)
     {
-        if (disposing) _audio.Dispose();
+        if (disposing)
+        {
+            _deviceVolumeSyncTimer.Stop();
+            _deviceVolumeSyncTimer.Dispose();
+            _audio.Dispose();
+        }
         base.Dispose(disposing);
     }
 
@@ -144,8 +153,9 @@ internal sealed class MainForm : Form
 
     private void BuildOutputCard(TableLayoutPanel root)
     {
-        var card = Card("SYSTEM OUTPUT");
+        var card = Card("DEVICE VOLUME · WINDOWS OUTPUT");
         var layout = (TableLayoutPanel)card.Controls[0];
+        layout.RowCount = 5;
 
         _deviceValue.AutoSize = true;
         _deviceValue.ForeColor = TextPrimary;
@@ -177,7 +187,7 @@ internal sealed class MainForm : Form
         layout.SetColumnSpan(_volume, 2);
         layout.Controls.Add(_volume, 0, 2);
 
-        _mute.Text = "Mute system output";
+        _mute.Text = "Mute device volume";
         _mute.AutoSize = true;
         _mute.ForeColor = Muted;
         _mute.CheckedChanged += (_, _) =>
@@ -188,6 +198,20 @@ internal sealed class MainForm : Form
         };
         layout.SetColumnSpan(_mute, 2);
         layout.Controls.Add(_mute, 0, 3);
+
+        var note = new Label
+        {
+            AutoSize = true,
+            ForeColor = Muted,
+            MaximumSize = new Size(800, 0),
+            Margin = new Padding(0, 8, 0, 0),
+            Text =
+                "Device Volume is the real Windows master output level (0–100%). " +
+                "It is separate from LouderMe Global Boost (100–250% post-volume signal gain). " +
+                "External Windows volume changes and active-device changes resync automatically.",
+        };
+        layout.SetColumnSpan(note, 2);
+        layout.Controls.Add(note, 0, 4);
         root.Controls.Add(card);
     }
 
@@ -551,10 +575,7 @@ internal sealed class MainForm : Form
         try
         {
             _audio.Refresh();
-            _deviceValue.Text = _audio.DeviceName;
-            _volume.Value = Math.Clamp(_audio.VolumePercent, _volume.Minimum, _volume.Maximum);
-            _volumeValue.Text = $"{_volume.Value}%";
-            _mute.Checked = _audio.Muted;
+            ApplyDeviceVolumeSnapshot(_audio.ReadSnapshot());
             _startWithWindows.Checked = StartupManager.IsEnabled();
 
             _boostEnabled.Checked = _settings.BoostEnabled;
@@ -587,6 +608,43 @@ internal sealed class MainForm : Form
         }
 
         RefreshEngineStatus();
+    }
+
+    private void RefreshDeviceVolumeFromSystem()
+    {
+        if (_loading || IsDisposed || !IsHandleCreated) return;
+
+        try
+        {
+            var snapshot = _audio.ReadSnapshot();
+            _loading = true;
+            ApplyDeviceVolumeSnapshot(snapshot);
+        }
+        catch
+        {
+            _loading = true;
+            _deviceValue.Text = "Device unavailable";
+            _volumeValue.Text = "—";
+            _volume.Enabled = false;
+            _mute.Enabled = false;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void ApplyDeviceVolumeSnapshot(DeviceVolumeSnapshot snapshot)
+    {
+        _deviceValue.Text = snapshot.DeviceName;
+        _volume.Enabled = true;
+        _mute.Enabled = true;
+        _volume.Value = Math.Clamp(
+            snapshot.VolumePercent,
+            _volume.Minimum,
+            _volume.Maximum);
+        _volumeValue.Text = $"{snapshot.VolumePercent}%";
+        _mute.Checked = snapshot.Muted;
     }
 
     private void ApplyProcessing()

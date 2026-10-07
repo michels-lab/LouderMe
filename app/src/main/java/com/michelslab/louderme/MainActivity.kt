@@ -59,10 +59,18 @@ class MainActivity : ComponentActivity() {
         }
 
     private val notificationPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) {
-            pendingBoostPercent?.let { percent ->
-                pendingBoostPercent = null
-                startBoost(percent)
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            val pending = pendingBoostPercent
+            pendingBoostPercent = null
+
+            if (granted && pending != null) {
+                startBoost(pending)
+            } else if (!granted && pending != null && !audioState.value.isRunning) {
+                audioState.value = audioState.value.copy(
+                    status = AudioEngineStatus.OFF,
+                    implementation = "Notification permission required",
+                    message = "Boost was not started because notification permission was denied.",
+                )
             }
         }
 

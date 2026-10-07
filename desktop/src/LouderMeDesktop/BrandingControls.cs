@@ -27,6 +27,7 @@ internal sealed class WaveformMarkControl : Control
 
     public WaveformMarkControl()
     {
+        SetStyle(ControlStyles.SupportsTransparentBackColor, true);
         DoubleBuffered = true;
         BackColor = Color.Transparent;
         MinimumSize = new Size(150, 60);
@@ -127,6 +128,7 @@ internal sealed class AudioPulseControl : Control
 
     public AudioPulseControl()
     {
+        SetStyle(ControlStyles.SupportsTransparentBackColor, true);
         DoubleBuffered = true;
         BackColor = Color.Transparent;
         Height = 56;
@@ -195,6 +197,7 @@ internal sealed class EqCurveControl : Control
 
     public EqCurveControl()
     {
+        SetStyle(ControlStyles.SupportsTransparentBackColor, true);
         DoubleBuffered = true;
         BackColor = Color.Transparent;
         Height = 68;
@@ -263,6 +266,7 @@ internal sealed class SocialGlyphControl : Control
 
     public SocialGlyphControl()
     {
+        SetStyle(ControlStyles.SupportsTransparentBackColor, true);
         DoubleBuffered = true;
         BackColor = Color.Transparent;
         Size = new Size(34, 34);

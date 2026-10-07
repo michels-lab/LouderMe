@@ -106,7 +106,7 @@ For any tracked Michel's Lab task, return enough machine-readable continuation c
 
 Do not list planned tests/builds/device checks as completed validation. If required validation was not performed, the task must be released/handed back with that work pending rather than described as complete.
 
-<!-- MICHELSLAB_SHARED_CONTRACT_BEGIN id=child-agent-core version=2026-10-06.2 -->
+<!-- MICHELSLAB_SHARED_CONTRACT_BEGIN id=child-agent-core version=2026-10-06.5 -->
 # Michel's Lab shared child-agent contract
 
 This managed block is cross-project policy. Repository-specific instructions may add stricter local rules outside this block, but they must not weaken or contradict it.
@@ -125,6 +125,7 @@ This managed block is cross-project policy. Repository-specific instructions may
 - Branding is a design language, not sticker placement.
 - About hierarchy is **Product identity → About the author → Michel's Lab → social profiles**.
 - Use the current canonical Michel Duarte portrait and the official Michel's Lab parent-brand assets from the master authority when implementing/updating About.
+- The canonical portrait file is immutable: child repositories must vendor it byte-for-byte. Never resize, crop, recompress, retouch, regenerate, convert or rewrite the portrait asset itself; use render-time layout/object-fit/masking only.
 - Visible social controls use recognizable network icon **and** visible network name with canonical profile URLs.
 
 ## Canonical identity asset precedence
@@ -165,4 +166,13 @@ Never list a planned build/test/device/store check as completed validation. If r
 - Manual/device/store/provider validation remains pending until actually performed.
 - Do not fabricate screenshots, device behavior, store status, cloud/provider state or test results.
 - Preserve unrelated known-good behavior and keep changes bounded to the assigned task.
+- For installable Windows apps, the canonical direct release is built by GitHub Actions from the authorized commit/tag and delivers a real Setup installer as the normal-user artifact.
+- Use `<Product>-Setup-vX.Y.Z.exe` for the recommended installer. If a portable build is also shipped, name it explicitly `<Product>-Portable-vX.Y.Z.exe`; never leave the portable filename ambiguous when both exist.
+- For installable Windows apps, separate evidence into **BUILD PASS → INSTALL PASS → LAUNCH PASS → FUNCTIONAL PASS**. A green installer/build job is not proof that the installed application starts.
+- Smoke-test the generated Windows installer by actually installing it and then **launching the executable from the installed location** before uninstalling. Merely verifying that the EXE exists is insufficient.
+- Installed-app LAUNCH PASS requires either a normal GUI process that remains alive long enough to expose a real top-level window, or an app-owned deterministic smoke mode that boots the real installed UI/runtime path and emits explicit success evidence.
+- If installed startup fails, preserve process exit/lifetime plus available app logs and Windows Application/.NET crash evidence before failing CI.
+- A portable launch PASS and an installed-app LAUNCH PASS are separate claims when both artifacts are shipped.
+- Publish SHA-256 for direct Windows binaries. Authenticode/code signing, when available, must happen before final checksum publication. Without a publisher certificate, do not hide or misrepresent Windows Unknown publisher/SmartScreen behavior.
+- FoamLens and Michel's Life are the current Windows release references; Michel's Life also demonstrates optional Authenticode and a separate Microsoft Store MSIX path.
 <!-- MICHELSLAB_SHARED_CONTRACT_END id=child-agent-core -->

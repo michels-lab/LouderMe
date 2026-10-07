@@ -97,6 +97,8 @@ jobs:
           grep -q 'Boost was not started because notification permission was denied' app/src/main/java/com/michelslab/louderme/MainActivity.kt
           grep -q 'Start with phone skipped' app/src/main/java/com/michelslab/louderme/startup/BootCompletedReceiver.kt
           grep -q 'Start with phone failed' app/src/main/java/com/michelslab/louderme/startup/BootCompletedReceiver.kt
+          grep -q 'runCatching' app/src/main/java/com/michelslab/louderme/ui/BrandComponents.kt
+          grep -q 'IMAGE UNAVAILABLE' app/src/main/java/com/michelslab/louderme/ui/BrandComponents.kt
 
       - name: Run tests and build distribution flavors
         run: |

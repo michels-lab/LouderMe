@@ -75,6 +75,13 @@ jobs:
           foreach ($required in @('Global Boost','250%','Get system-wide engine','Open Configurator')) {
             if ($ui -notmatch [regex]::Escape($required)) { throw "Desktop boost UI contract missing: $required" }
           }
+          foreach ($required in @('DEVICE VOLUME','0–100%','_deviceVolumeSyncTimer','RefreshDeviceVolumeFromSystem')) {
+            if ($ui -notmatch [regex]::Escape($required)) { throw "Desktop device-volume UI contract missing: $required" }
+          }
+          $deviceAudio=Get-Content 'desktop/src/LouderMeDesktop/AudioDeviceController.cs' -Raw
+          foreach ($required in @('MasterVolumeLevelScalar','GetDefaultAudioEndpoint','DeviceVolumeSnapshot')) {
+            if ($deviceAudio -notmatch [regex]::Escape($required)) { throw "Desktop real device-volume contract missing: $required" }
+          }
 
           $db250=20*[Math]::Log10(2.5)
           if ([Math]::Abs($db250-7.958800173) -gt 0.000001) { throw '250 percent gain conversion sanity check failed.' }

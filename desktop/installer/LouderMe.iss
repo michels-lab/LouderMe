@@ -65,4 +65,4 @@ Name: "startup"; Description: "{cm:StartupOption}"; GroupDescription: "{cm:Addit
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "LouderMe"; ValueData: """{app}\LouderMe.exe"" --startup"; Tasks: startup; Flags: uninsdeletevalue
 
 [Run]
-Filename: "{app}\LouderMe.exe"; Description: "{cm:LaunchApp}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\LouderMe.exe"; Description: "{cm:LaunchApp}"; Flags: nowait postinstall skipifsilent runasoriginaluser

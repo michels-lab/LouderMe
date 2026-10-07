@@ -142,6 +142,22 @@ jobs:
           $hash=(Get-FileHash $exe -Algorithm SHA256).Hash.ToLowerInvariant()
           "$hash  LouderMe-Portable-v$v.exe" | Set-Content "$exe.sha256" -Encoding ascii
 
+      - name: Smoke-test portable LouderMe launch
+        shell: pwsh
+        run: |
+          $v='${{ steps.ver.outputs.version }}'
+          $portable=(Resolve-Path "desktop/artifacts/LouderMe-Portable-v$v.exe").Path
+          $evidence=Join-Path (Resolve-Path 'desktop/artifacts').Path 'LouderMe-Portable-launch.txt'
+          $crashLog=Join-Path $env:LOCALAPPDATA "Michel's Lab\LouderMe\startup-crash.log"
+          Remove-Item $crashLog -Force -ErrorAction SilentlyContinue
+          pwsh -File desktop/tools/windows_launch_smoke.ps1 `
+            -ExePath $portable `
+            -Arguments '--smoke-test' `
+            -MinimumAliveSeconds 8 `
+            -WindowTimeoutSeconds 20 `
+            -EvidencePath $evidence `
+            -CrashLogPath $crashLog
+
       - name: Build Windows installer
         shell: pwsh
         run: |
@@ -182,20 +198,16 @@ jobs:
             throw 'Installer completed but LouderMe.exe was not installed.'
           }
 
-          $app=Start-Process -FilePath $installedExe -ArgumentList '--smoke-test' -PassThru
-          Start-Sleep -Seconds 5
-          $app.Refresh()
-          if ($app.HasExited) {
-            $crashLog=Join-Path $env:LOCALAPPDATA "Michel's Lab\LouderMe\startup-crash.log"
-            if (Test-Path $crashLog) {
-              Write-Host '---- LouderMe startup crash log ----'
-              Get-Content $crashLog
-            }
-            throw "Installed LouderMe exited during startup with code $($app.ExitCode)."
-          }
-          Write-Host "Installed LouderMe stayed alive after startup (PID $($app.Id))."
-          Stop-Process -Id $app.Id -Force -ErrorAction SilentlyContinue
-          $app.WaitForExit()
+          $evidence=Join-Path (Resolve-Path 'desktop/artifacts').Path 'LouderMe-Installed-launch.txt'
+          $crashLog=Join-Path $env:LOCALAPPDATA "Michel's Lab\LouderMe\startup-crash.log"
+          Remove-Item $crashLog -Force -ErrorAction SilentlyContinue
+          pwsh -File desktop/tools/windows_launch_smoke.ps1 `
+            -ExePath $installedExe `
+            -Arguments '--smoke-test' `
+            -MinimumAliveSeconds 8 `
+            -WindowTimeoutSeconds 20 `
+            -EvidencePath $evidence `
+            -CrashLogPath $crashLog
 
           $uninstaller=Join-Path $target 'unins000.exe'
           if (-not (Test-Path $uninstaller)) { throw 'Installer did not register an uninstaller.' }
@@ -233,6 +245,8 @@ jobs:
           path: |
             desktop/artifacts/LouderMe-Portable-v${{ steps.ver.outputs.version }}.exe
             desktop/artifacts/LouderMe-Portable-v${{ steps.ver.outputs.version }}.exe.sha256
+            desktop/artifacts/LouderMe-Portable-launch.txt
             desktop/artifacts/LouderMe-Setup-v${{ steps.ver.outputs.version }}.exe
             desktop/artifacts/LouderMe-Setup-v${{ steps.ver.outputs.version }}.exe.sha256
+            desktop/artifacts/LouderMe-Installed-launch.txt
             desktop/releases/v${{ steps.ver.outputs.version }}.md

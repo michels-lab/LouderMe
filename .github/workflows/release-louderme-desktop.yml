@@ -88,6 +88,15 @@ jobs:
           $updater=Get-Content 'desktop/src/LouderMeDesktop/DesktopUpdateService.cs' -Raw
           if ($updater -notmatch 'louderme-desktop/latest.json') { throw 'Desktop stable update feed is missing.' }
 
+          $brand=Get-Content 'desktop/src/LouderMeDesktop/BrandingControls.cs' -Raw
+          $transparentStyleCount=([regex]::Matches($brand, 'SetStyle\(ControlStyles\.SupportsTransparentBackColor, true\)')).Count
+          if ($transparentStyleCount -lt 4) { throw 'Transparent custom controls are missing SupportsTransparentBackColor.' }
+
+          $program=Get-Content 'desktop/src/LouderMeDesktop/Program.cs' -Raw
+          foreach ($required in @('startup-crash.log','--smoke-test','LouderMe startup error')) {
+            if ($program -notmatch [regex]::Escape($required)) { throw "Desktop startup diagnostics contract missing: $required" }
+          }
+
           $iss=Get-Content 'desktop/installer/LouderMe.iss' -Raw
           foreach ($required in @('WizardStyle=modern','[Languages]','spanish.DesktopShortcut','Start LouderMe with Windows')) {
             if ($iss -notmatch [regex]::Escape($required)) { throw "Installer experience contract missing: $required" }
@@ -150,15 +159,32 @@ jobs:
             if (Test-Path $log) { Get-Content $log }
             throw "Installer smoke test failed with exit code $($process.ExitCode)."
           }
-          if (-not (Test-Path (Join-Path $target 'LouderMe.exe'))) {
+          $installedExe=Join-Path $target 'LouderMe.exe'
+          if (-not (Test-Path $installedExe)) {
             if (Test-Path $log) { Get-Content $log }
             throw 'Installer completed but LouderMe.exe was not installed.'
           }
+
+          $app=Start-Process -FilePath $installedExe -ArgumentList '--smoke-test' -PassThru
+          Start-Sleep -Seconds 5
+          $app.Refresh()
+          if ($app.HasExited) {
+            $crashLog=Join-Path $env:LOCALAPPDATA "Michel's Lab\LouderMe\startup-crash.log"
+            if (Test-Path $crashLog) {
+              Write-Host '---- LouderMe startup crash log ----'
+              Get-Content $crashLog
+            }
+            throw "Installed LouderMe exited during startup with code $($app.ExitCode)."
+          }
+          Write-Host "Installed LouderMe stayed alive after startup (PID $($app.Id))."
+          Stop-Process -Id $app.Id -Force -ErrorAction SilentlyContinue
+          $app.WaitForExit()
+
           $uninstaller=Join-Path $target 'unins000.exe'
           if (-not (Test-Path $uninstaller)) { throw 'Installer did not register an uninstaller.' }
           $uninstall=Start-Process -FilePath $uninstaller -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART') -PassThru -Wait
           if ($uninstall.ExitCode -ne 0) { throw "Uninstaller smoke test failed with exit code $($uninstall.ExitCode)." }
-          Write-Host 'LouderMe setup installed and uninstalled successfully.'
+          Write-Host 'LouderMe setup installed, launched, stayed alive, and uninstalled successfully.'
 
       - name: Publish private source release
         env:

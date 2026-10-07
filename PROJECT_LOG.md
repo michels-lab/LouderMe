@@ -1594,3 +1594,57 @@ Validated head: `14d2482e898a1cd66014eb1659c3ff9334b4fa54`
 
 ### Release boundary
 Desktop v0.1.4 is prepared and validated but **not yet published** in this entry. Merge/publication still requires explicit stable release authorization.
+
+
+## 2026-10-06 — Desktop v0.1.4 published + unified Android/Windows public release
+
+### Desktop v0.1.4 publication
+- PR #24 merged at `1ab6e9f786c28be2657dc89af27aef9396123eea`.
+- Source release workflow `37560800602`: **success**.
+- Installed-runtime gate passed again in release CI: install → launch installed LouderMe → remain alive → terminate → uninstall.
+- Source release tag `desktop-v0.1.4`: stable, not prerelease.
+- Source assets:
+  - `LouderMe-Setup-v0.1.4.exe`
+  - `LouderMe-Portable-v0.1.4.exe`
+  - matching SHA-256 files.
+
+### Unified public release migration
+The user requested that Android and Windows downloads appear together on one public release page, matching the distribution style used by other Michel's Lab apps.
+
+Public release workflows were changed so either platform publisher:
+- reads the current stable metadata for the other platform;
+- downloads and checksum-verifies the unchanged platform's current binaries;
+- publishes both platforms into one unified GitHub release;
+- points both platform-specific update feeds to that same unified release;
+- serializes Android/Windows publication through one shared concurrency group.
+
+Current unified public release:
+- tag: `louderme-android-v0.1.9-desktop-v0.1.4`
+- title: `LouderMe — Android v0.1.9 + Windows v0.1.4`
+- stable / not prerelease / GitHub Latest release.
+
+Assets in the same release:
+- `LouderMe-v0.1.9-sideload.apk`
+- `LouderMe-v0.1.9-sideload.apk.sha256`
+- `LouderMe-Setup-v0.1.4.exe`
+- `LouderMe-Setup-v0.1.4.exe.sha256`
+- `LouderMe-Portable-v0.1.4.exe`
+- `LouderMe-Portable-v0.1.4.exe.sha256`
+
+Verified public feeds:
+- Android `louderme/latest.json`: v0.1.9 / versionCode 10, APK URL points to the unified release.
+- Desktop `louderme-desktop/latest.json`: v0.1.4, installer/portable URLs point to the same unified release.
+- Android APK SHA-256: `1c368d5c4c76d3622f1da132e335243cfa70e6ab8d4583c3b1f457ae8b328e64`.
+- Windows Setup SHA-256: `29d4813b9ca7cc8dd83ae13e1d86140ce1a5cbd957ec7e1ae49aceb633c52e01`.
+- Windows Portable SHA-256: `1a39efca925444960dc08d847e8209a1fb4bd861d6573f747e7761841585d646`.
+
+Publisher validation:
+- Windows-driven unified publisher `37561008337`: **success**.
+- Android-driven unified publisher `37561124781`: **success**.
+- Both directions were tested to prove that future updates from either platform keep one complete release bundle.
+- Temporary transfer staging files were removed after validation.
+
+### Standards
+The reusable rule was added to Michel-Software-Standards `standards/REPOSITORY_DISTRIBUTION_STANDARD.md`: multi-platform products should expose one unified customer-facing public release containing all current stable platform binaries while preserving real platform versions and separate updater feeds when needed.
+
+Historical platform-specific releases were intentionally retained for compatibility.

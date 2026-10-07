@@ -42,6 +42,18 @@ class BootCompletedReceiver : BroadcastReceiver() {
                 savedState.percent.coerceIn(100, 250),
             )
 
-        context.startForegroundService(serviceIntent)
+        runCatching {
+            context.startForegroundService(serviceIntent)
+        }.onFailure { error ->
+            AudioBoostStateStore.write(
+                context,
+                savedState.copy(
+                    status = AudioEngineStatus.OFF,
+                    implementation = "Start with phone failed",
+                    message = "Boost could not restart after boot: " +
+                        (error.message ?: error.javaClass.simpleName),
+                )
+            )
+        }
     }
 }

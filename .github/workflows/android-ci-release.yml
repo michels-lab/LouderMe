@@ -88,6 +88,7 @@ jobs:
           grep -q 'SOUND THAT LIFTS YOU' app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt
           grep -q 'CanonicalWaveform' app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt
           grep -q 'EqWavePreview' app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt
+          grep -q 'BackHandler(enabled = showAbout)' app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt
 
       - name: Run tests and build distribution flavors
         run: |

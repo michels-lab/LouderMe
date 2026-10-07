@@ -1,5 +1,6 @@
 package com.michelslab.louderme.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -56,6 +57,10 @@ fun LouderMeApp(
     var showAbout by remember { mutableStateOf(false) }
 
     LouderMeTheme {
+        BackHandler(enabled = showAbout) {
+            showAbout = false
+        }
+
         if (showAbout) {
             AboutScreen(
                 updateStatus = updateStatus,

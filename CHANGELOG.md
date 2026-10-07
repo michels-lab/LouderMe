@@ -1,5 +1,18 @@
 # Changelog
 
+## Android v0.1.9 — 2026-10-06
+
+### Fixed
+- Android system/gesture Back now returns from About to the main LouderMe screen instead of closing the app.
+- The in-app Back button and system Back now produce the same About navigation result.
+
+### Preserved
+- System Back from the main screen still exits normally.
+- v0.1.8 canonical About portrait, boost, EQ, updater, Play/Direct split and Start with phone.
+
+### Validation
+- Android CI explicitly guards the About `BackHandler(enabled = showAbout)` contract and rebuilds Play + Direct variants.
+
 ## Android v0.1.8 — 2026-10-06
 
 ### Fixed

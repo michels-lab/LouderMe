@@ -38,9 +38,11 @@ fun CanonicalAssetImage(
 ) {
     val context = LocalContext.current
     val image = remember(assetPath) {
-        context.assets.open(assetPath).use { input ->
-            BitmapFactory.decodeStream(input)?.asImageBitmap()
-        }
+        runCatching {
+            context.assets.open(assetPath).use { input ->
+                BitmapFactory.decodeStream(input)?.asImageBitmap()
+            }
+        }.getOrNull()
     }
 
     if (image != null) {
@@ -50,6 +52,21 @@ fun CanonicalAssetImage(
             modifier = modifier,
             contentScale = contentScale,
         )
+    } else {
+        Box(
+            modifier = modifier
+                .background(LouderMeColors.Surface3)
+                .border(1.dp, LouderMeColors.Line, RoundedCornerShape(12.dp)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                "IMAGE UNAVAILABLE",
+                color = LouderMeColors.Dim,
+                fontFamily = FontFamily.Monospace,
+                fontSize = 8.sp,
+                fontWeight = FontWeight.Bold,
+            )
+        }
     }
 }
 

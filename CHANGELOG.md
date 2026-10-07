@@ -1,5 +1,21 @@
 # Changelog
 
+## Android + Desktop v0.2.0 — 2026-10-07
+
+### Added
+- Android: real Device / Media Volume control using `AudioManager.STREAM_MUSIC`, 0–100%, with live external resync.
+- Desktop: first-class Windows Device Volume with live external resync and automatic default playback-device detection.
+- CI contracts that keep Device Volume distinct from Global Boost.
+
+### Fixed
+- Desktop volume UI no longer goes stale when Windows volume changes outside LouderMe.
+- Android volume state resyncs while the app is active instead of being a one-time snapshot.
+- Android and Desktop now vendor the restored canonical Michel's Lab lockup rather than the obsolete/corrupt interim asset.
+
+### Versioning
+- Android: v0.2.0 / versionCode 11.
+- Desktop: v0.2.0.
+
 ## Desktop v0.1.4 — 2026-10-06
 
 ### Fixed

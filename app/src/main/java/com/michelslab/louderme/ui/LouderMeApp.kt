@@ -378,7 +378,7 @@ private fun DeviceVolumePanel(
                 onVolumeChanged(sliderValue.roundToInt())
             },
             valueRange = 0f..100f,
-            steps = 99,
+            steps = (state.maxStep - 1).coerceAtLeast(0),
             enabled = state.available,
             colors = SliderDefaults.colors(
                 thumbColor = LouderMeColors.Cyan,

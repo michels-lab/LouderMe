@@ -115,7 +115,7 @@ jobs:
           }
 
           $iss=Get-Content 'desktop/installer/LouderMe.iss' -Raw
-          foreach ($required in @('WizardStyle=modern','[Languages]','spanish.DesktopShortcut','Start LouderMe with Windows')) {
+          foreach ($required in @('WizardStyle=modern','[Languages]','spanish.DesktopShortcut','Start LouderMe with Windows','runasoriginaluser')) {
             if ($iss -notmatch [regex]::Escape($required)) { throw "Installer experience contract missing: $required" }
           }
           if ($iss -match 'WizardImageFile=|WizardSmallImageFile=') {

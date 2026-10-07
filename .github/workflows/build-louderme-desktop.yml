@@ -96,6 +96,8 @@ jobs:
 
           $brand=Get-Content 'desktop/src/LouderMeDesktop/BrandingControls.cs' -Raw
           if ($brand -notmatch 'WaveformMarkControl') { throw 'Desktop LouderMe waveform control is missing.' }
+          $transparentStyleCount=([regex]::Matches($brand, 'SetStyle\(ControlStyles\.SupportsTransparentBackColor, true\)')).Count
+          if ($transparentStyleCount -lt 4) { throw 'Transparent custom controls are missing SupportsTransparentBackColor.' }
 
           $updater=Get-Content 'desktop/src/LouderMeDesktop/DesktopUpdateService.cs' -Raw
           foreach ($required in @('louderme-desktop/latest.json','installerSha256','SHA256.HashDataAsync')) {
@@ -177,10 +179,29 @@ jobs:
             if (Test-Path $log) { Get-Content $log }
             throw "Installer smoke test failed with exit code $($process.ExitCode)."
           }
-          if (-not (Test-Path (Join-Path $target 'LouderMe.exe'))) {
+          $installedExe=Join-Path $target 'LouderMe.exe'
+          if (-not (Test-Path $installedExe)) {
             if (Test-Path $log) { Get-Content $log }
             throw 'Installer completed but LouderMe.exe was not installed.'
           }
+
+          # FoamLens-style runtime gate: installation is not considered valid unless
+          # the actual installed executable starts and stays alive.
+          $app=Start-Process -FilePath $installedExe -ArgumentList '--smoke-test' -PassThru
+          Start-Sleep -Seconds 5
+          $app.Refresh()
+          if ($app.HasExited) {
+            $crashLog=Join-Path $env:LOCALAPPDATA "Michel's Lab\LouderMe\startup-crash.log"
+            if (Test-Path $crashLog) {
+              Write-Host '---- LouderMe startup crash log ----'
+              Get-Content $crashLog
+            }
+            throw "Installed LouderMe exited during startup with code $($app.ExitCode)."
+          }
+          Write-Host "Installed LouderMe stayed alive after startup (PID $($app.Id))."
+          Stop-Process -Id $app.Id -Force -ErrorAction SilentlyContinue
+          $app.WaitForExit()
+
           $uninstaller=Join-Path $target 'unins000.exe'
           if (-not (Test-Path $uninstaller)) { throw 'Installer did not register an uninstaller.' }
           $uninstall=Start-Process -FilePath $uninstaller -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART') -PassThru -Wait
@@ -189,7 +210,7 @@ jobs:
             Start-Sleep -Seconds 2
             if (Test-Path $target) { Remove-Item $target -Recurse -Force -ErrorAction SilentlyContinue }
           }
-          Write-Host 'LouderMe setup installed and uninstalled successfully.'
+          Write-Host 'LouderMe setup installed, launched, stayed alive, and uninstalled successfully.'
 
       - name: Upload Windows build
         uses: actions/upload-artifact@v4

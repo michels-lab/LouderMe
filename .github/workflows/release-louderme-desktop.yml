@@ -67,7 +67,7 @@ jobs:
           if ((git hash-object desktop/src/LouderMeDesktop/Assets/MichelDuarte.jpg) -ne '18fe1a68722850c3d8f918dc0799f46ffeb6dbaf') {
             throw 'Desktop Michel Duarte portrait is not canonical.'
           }
-          if ((git hash-object desktop/src/LouderMeDesktop/Assets/MichelsLabLockup.png) -ne '7819ef5c7d1a5c338c67c9bbd517e5448724a5cf') {
+          if ((git hash-object desktop/src/LouderMeDesktop/Assets/MichelsLabLockup.png) -ne '7fd48093968b31ddacd3098f5b15d962de580652') {
             throw "Desktop Michel's Lab lockup is not canonical."
           }
 

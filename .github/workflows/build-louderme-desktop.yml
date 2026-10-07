@@ -107,8 +107,11 @@ jobs:
           if ($transparentStyleCount -lt 4) { throw 'Transparent custom controls are missing SupportsTransparentBackColor.' }
 
           $updater=Get-Content 'desktop/src/LouderMeDesktop/DesktopUpdateService.cs' -Raw
-          foreach ($required in @('louderme-desktop/latest.json','installerSha256','SHA256.HashDataAsync')) {
+          foreach ($required in @('louderme-desktop/latest.json','installerSha256','SHA256.HashDataAsync','feed schema is not supported','feed product does not match LouderMe Desktop')) {
             if ($updater -notmatch [regex]::Escape($required)) { throw "Desktop updater contract missing: $required" }
+          }
+          foreach ($required in @('BeginInvoke(new Action(Close))','Equalizer APO is present, but Windows denied access','_volume.Capture')) {
+            if ($ui -notmatch [regex]::Escape($required)) { throw "Desktop runtime hardening contract missing: $required" }
           }
 
       - name: Publish portable Windows executable

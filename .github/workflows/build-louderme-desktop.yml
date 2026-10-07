@@ -156,6 +156,22 @@ jobs:
           $hash=(Get-FileHash $exe -Algorithm SHA256).Hash.ToLowerInvariant()
           "$hash  LouderMe-Portable-v$v.exe" | Set-Content "$exe.sha256" -Encoding ascii
 
+      - name: Smoke-test portable LouderMe launch
+        shell: pwsh
+        run: |
+          $v='${{ steps.ver.outputs.version }}'
+          $portable=(Resolve-Path "desktop/artifacts/LouderMe-Portable-v$v.exe").Path
+          $evidence=Join-Path (Resolve-Path 'desktop/artifacts').Path 'LouderMe-Portable-launch.txt'
+          $crashLog=Join-Path $env:LOCALAPPDATA "Michel's Lab\LouderMe\startup-crash.log"
+          Remove-Item $crashLog -Force -ErrorAction SilentlyContinue
+          pwsh -File desktop/tools/windows_launch_smoke.ps1 `
+            -ExePath $portable `
+            -Arguments '--smoke-test' `
+            -MinimumAliveSeconds 8 `
+            -WindowTimeoutSeconds 20 `
+            -EvidencePath $evidence `
+            -CrashLogPath $crashLog
+
       - name: Build Windows installer
         shell: pwsh
         run: |
@@ -230,6 +246,7 @@ jobs:
           path: |
             desktop/artifacts/LouderMe-Portable-v${{ steps.ver.outputs.version }}.exe
             desktop/artifacts/LouderMe-Portable-v${{ steps.ver.outputs.version }}.exe.sha256
+            desktop/artifacts/LouderMe-Portable-launch.txt
             desktop/artifacts/LouderMe-Setup-v${{ steps.ver.outputs.version }}.exe
             desktop/artifacts/LouderMe-Setup-v${{ steps.ver.outputs.version }}.exe.sha256
             desktop/artifacts/LouderMe-Installed-launch.txt

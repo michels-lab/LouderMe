@@ -106,6 +106,14 @@ jobs:
             if ($deviceAudio -notmatch [regex]::Escape($required)) { throw "Desktop real device-volume contract missing: $required" }
           }
 
+          $updater=Get-Content 'desktop/src/LouderMeDesktop/DesktopUpdateService.cs' -Raw
+          foreach ($required in @('feed schema is not supported','feed product does not match LouderMe Desktop')) {
+            if ($updater -notmatch [regex]::Escape($required)) { throw "Desktop updater identity contract missing: $required" }
+          }
+          foreach ($required in @('BeginInvoke(new Action(Close))','Equalizer APO is present, but Windows denied access','_volume.Capture')) {
+            if ($ui -notmatch [regex]::Escape($required)) { throw "Desktop runtime hardening contract missing: $required" }
+          }
+
           $iss=Get-Content 'desktop/installer/LouderMe.iss' -Raw
           foreach ($required in @('WizardStyle=modern','[Languages]','spanish.DesktopShortcut','Start LouderMe with Windows')) {
             if ($iss -notmatch [regex]::Escape($required)) { throw "Installer experience contract missing: $required" }

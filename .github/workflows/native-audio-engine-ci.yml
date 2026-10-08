@@ -1,0 +1,31 @@
+name: Michel's Lab native audio DSP CI
+on:
+  push:
+    paths:
+      - 'native/audio-engine/**'
+      - '.github/workflows/native-audio-engine-ci.yml'
+  pull_request:
+    paths:
+      - 'native/audio-engine/**'
+      - '.github/workflows/native-audio-engine-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  dsp:
+    name: Native DSP compile and PCM tests
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Configure DSP
+        run: cmake -S native/audio-engine -B native/audio-engine/build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
+      - name: Compile C++17 DSP
+        run: cmake --build native/audio-engine/build --config Release --parallel
+      - name: Test gain, EQ, limiter and channel isolation
+        run: ctest --test-dir native/audio-engine/build -C Release --output-on-failure

@@ -29,6 +29,7 @@ internal sealed class MainForm : Form
     private readonly EqCurveControl _eqWave = new();
     private readonly Label _updateStatus = new();
     private readonly Button _updateAction = new();
+    private readonly Button _aboutAction = new();
     private DesktopUpdateCheck? _lastUpdateCheck;
 
     private bool _loading;
@@ -47,8 +48,11 @@ internal sealed class MainForm : Form
     {
         Text = "LouderMe";
         StartPosition = FormStartPosition.CenterScreen;
-        MinimumSize = new Size(820, 700);
-        Size = new Size(980, 900);
+        MinimumSize = new Size(480, 440);
+        var workArea = Screen.FromPoint(Cursor.Position).WorkingArea;
+        Size = new Size(
+            Math.Min(980, Math.Max(480, workArea.Width - 48)),
+            Math.Min(840, Math.Max(440, workArea.Height - 48)));
         BackColor = Bg;
         ForeColor = TextPrimary;
         Font = new Font("Segoe UI", 10f);
@@ -75,39 +79,36 @@ internal sealed class MainForm : Form
 
     private void BuildUi()
     {
-        var root = new TableLayoutPanel
+        // Persistent header must remain visible independently of scroll position.
+        var shell = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 7,
-            Padding = new Padding(28),
+            RowCount = 2,
+            Padding = new Padding(16, 10, 16, 10),
             BackColor = Bg,
-            AutoScroll = true,
         };
-
-        for (var i = 0; i < 6; i++)
-            root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        shell.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        shell.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
         var header = new TableLayoutPanel
         {
             AutoSize = true,
             Dock = DockStyle.Top,
-            ColumnCount = 2,
+            ColumnCount = 3,
             RowCount = 1,
-            Margin = new Padding(0, 0, 0, 18),
+            Margin = new Padding(0, 0, 0, 8),
         };
-        header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150));
+        header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 88));
         header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-
+        header.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         header.Controls.Add(new WaveformMarkControl
         {
-            Width = 138,
-            Height = 84,
-            Margin = new Padding(0, 0, 12, 0),
+            Width = 82,
+            Height = 58,
+            Margin = new Padding(0, 0, 6, 0),
         }, 0, 0);
-
-        var headerText = new FlowLayoutPanel
+        var titleStack = new FlowLayoutPanel
         {
             AutoSize = true,
             FlowDirection = FlowDirection.TopDown,
@@ -115,39 +116,75 @@ internal sealed class MainForm : Form
             Dock = DockStyle.Fill,
             Margin = new Padding(0),
         };
-        headerText.Controls.Add(new Label
+        titleStack.Controls.Add(new Label
         {
             AutoSize = true,
             Text = "LouderMe",
-            Font = new Font("Segoe UI Semibold", 27f, FontStyle.Bold),
+            Font = new Font("Segoe UI Semibold", 22f, FontStyle.Bold),
             ForeColor = TextPrimary,
-            Margin = new Padding(0, 4, 0, 1),
+            Margin = new Padding(0, 0, 0, 1),
         });
-        headerText.Controls.Add(new Label
+        titleStack.Controls.Add(new Label
         {
             AutoSize = true,
             Text = "SOUND THAT LIFTS YOU",
             ForeColor = Gold,
-            Font = new Font("Consolas", 9f, FontStyle.Bold),
-            Margin = new Padding(0, 0, 0, 3),
-        });
-        headerText.Controls.Add(new Label
-        {
-            AutoSize = true,
-            Text = "Michel's Lab · Native Windows Audio Workspace",
-            ForeColor = Muted,
             Font = new Font("Consolas", 8f, FontStyle.Bold),
+            Margin = new Padding(0),
         });
-        header.Controls.Add(headerText, 1, 0);
-        root.Controls.Add(header);
+        header.Controls.Add(titleStack, 1, 0);
 
-        BuildOutputCard(root);
-        BuildBoostCard(root);
-        BuildEqualizerCard(root);
-        BuildStartupCard(root);
-        BuildFooter(root);
+        _aboutAction.Text = "About";
+        _aboutAction.AutoSize = true;
+        _aboutAction.FlatStyle = FlatStyle.Flat;
+        _aboutAction.ForeColor = Gold;
+        _aboutAction.BackColor = Surface;
+        _aboutAction.Padding = new Padding(8, 5, 8, 5);
+        _aboutAction.FlatAppearance.BorderColor = Line;
+        _aboutAction.Anchor = AnchorStyles.Right;
+        _aboutAction.Click += (_, _) => OpenAbout();
+        header.Controls.Add(_aboutAction, 2, 0);
+        shell.Controls.Add(header, 0, 0);
 
-        Controls.Add(root);
+        // A regular scrollable Panel is the scroll owner; the old percent-sized
+        // TableLayoutPanel could grow off-screen without exposing working scroll.
+        var viewport = new Panel
+        {
+            Dock = DockStyle.Fill,
+            AutoScroll = true,
+            TabStop = true,
+            BackColor = Bg,
+        };
+        var content = new TableLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            ColumnCount = 1,
+            RowCount = 5,
+            Padding = new Padding(0, 4, 8, 8),
+            Margin = new Padding(0),
+            BackColor = Bg,
+        };
+        content.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        for (var i = 0; i < 5; i++)
+            content.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        BuildOutputCard(content);
+        BuildBoostCard(content);
+        BuildEqualizerCard(content);
+        BuildStartupCard(content);
+        BuildFooter(content);
+
+        viewport.Controls.Add(content);
+        shell.Controls.Add(viewport, 0, 1);
+        Controls.Add(shell);
+        Shown += (_, _) => viewport.Focus();
+    }
+
+    private void OpenAbout()
+    {
+        using var form = new AboutForm(_updates);
+        form.ShowDialog(this);
     }
 
     private void BuildOutputCard(TableLayoutPanel root)
@@ -294,7 +331,7 @@ internal sealed class MainForm : Form
             WrapContents = true,
             Margin = new Padding(0, 10, 0, 0),
         };
-        var getEngine = Button("Get system-wide engine", Gold);
+        var getEngine = Button("Install Equalizer APO", Gold);
         getEngine.Click += (_, _) =>
         {
             Process.Start(new ProcessStartInfo
@@ -324,7 +361,11 @@ internal sealed class MainForm : Form
             });
         };
         var refresh = Button("Refresh engine", Cyan);
-        refresh.Click += (_, _) => RefreshEngineStatus();
+        refresh.Click += (_, _) =>
+        {
+            if (_apo.GetStatus().Installed) ApplyProcessing();
+            else RefreshEngineStatus();
+        };
         actions.Controls.Add(getEngine);
         actions.Controls.Add(configure);
         actions.Controls.Add(refresh);
@@ -534,13 +575,6 @@ internal sealed class MainForm : Form
         _updateAction.FlatAppearance.BorderSize = 1;
         _updateAction.Click += async (_, _) => await HandleUpdateActionAsync();
 
-        var about = Button("About LouderMe", Gold);
-        about.Click += (_, _) =>
-        {
-            using var form = new AboutForm(_updates);
-            form.ShowDialog(this);
-        };
-
         _updateStatus.AutoSize = true;
         _updateStatus.ForeColor = Muted;
         _updateStatus.Text = $"v{_updates.CurrentVersionText} · stable";
@@ -549,7 +583,6 @@ internal sealed class MainForm : Form
         footer.Controls.Add(refresh);
         footer.Controls.Add(_updateAction);
         footer.Controls.Add(_updateStatus);
-        footer.Controls.Add(about);
         root.Controls.Add(footer);
     }
 
@@ -652,9 +685,9 @@ internal sealed class MainForm : Form
         {
             _engineStatus.ForeColor = Gold;
             _engineStatus.Text =
-                "Boost engine required. Install Equalizer APO 1.4.2 x64 from the official SourceForge page, " +
-                "select the active playback device in Configurator, reboot if requested, then press Refresh engine. " +
-                "Official x64 SHA-256: 7403be7427bbe1936a40dded082829b6e217fc4f5990fee5cba501f0ae055afa";
+                "Boost/EQ unavailable: Equalizer APO is not detected. Install Equalizer APO, " +
+                "select your playback device in Configurator and restart Windows if required. " +
+                "Then click Refresh engine. Device volume works without APO.";
             return;
         }
 

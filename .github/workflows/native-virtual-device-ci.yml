@@ -96,11 +96,26 @@ jobs:
         run: python louderme/native/virtual-driver/prepare_sysvad.py --upstream-root upstream
       - name: Set up MSBuild
         uses: microsoft/setup-msbuild@v2
-      - name: Build actual x64 WDK driver solution
+      - name: Locate WDK StampInf utility for native driver project
         shell: pwsh
         run: |
-          msbuild upstream/audio/sysvad/sysvad.sln /m /p:Configuration=Release /p:Platform=x64 /v:minimal
-          if ($LASTEXITCODE -ne 0) { throw 'The WDK driver failed to compile.' }
+          $candidates = @(
+            (Get-ChildItem -Path 'upstream/packages' -Filter 'stampinf.exe' -Recurse -ErrorAction SilentlyContinue),
+            (Get-ChildItem -Path "${env:ProgramFiles(x86)}\\Windows Kits\\10\\bin" -Filter 'stampinf.exe' -Recurse -ErrorAction SilentlyContinue)
+          ) | Where-Object { $_ -is [System.IO.FileInfo] }
+          if ($candidates.Count -eq 0) {
+            throw 'StampInf.exe not found in WDK NuGet or installed WDK. Driver package compilation cannot complete.'
+          }
+          $path = $candidates[0].DirectoryName
+          Write-Host "Found WDK StampInf under: $path"
+          Add-Content -Path $env:GITHUB_PATH -Value $path
+      - name: Build x64 SysVAD render miniport and kernel driver (exclude unrelated demo APOs)
+        shell: pwsh
+        run: |
+          msbuild upstream/audio/sysvad/EndpointsCommon/EndpointsCommon.vcxproj /m /p:Configuration=Release /p:Platform=x64 /v:minimal
+          if ($LASTEXITCODE -ne 0) { throw 'SysVAD render endpoint library did not compile.' }
+          msbuild upstream/audio/sysvad/TabletAudioSample/TabletAudioSample.vcxproj /m /p:Configuration=Release /p:Platform=x64 /v:minimal
+          if ($LASTEXITCODE -ne 0) { throw 'LouderME SysVAD render-only driver failed WDK build.' }
       - name: Verify compiled driver is not claimed signed or installed
         shell: pwsh
         run: |

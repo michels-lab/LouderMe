@@ -97,11 +97,8 @@ internal static class Program
             }
             engine.ConfigureEqualizer(eqText is not null, eqGains);
             using var playback = new WasapiOut(physical, AudioClientShareMode.Shared, true, 75);
-            var buffer = new BufferedWaveProvider(inputFormat)
+            var buffer = new BufferedWaveProvider(inputFormat, TimeSpan.FromMilliseconds(250))
             {
-                BufferLength = Math.Max(inputFormat.BlockAlign,
-                    (inputFormat.AverageBytesPerSecond / 4 / inputFormat.BlockAlign) *
-                    inputFormat.BlockAlign),
                 DiscardOnBufferOverflow = false,
                 ReadFully = true
             };

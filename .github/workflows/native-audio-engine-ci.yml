@@ -3,6 +3,7 @@ on:
   push:
     paths:
       - 'native/audio-engine/**'
+      - 'native/windows-bridge/**'
       - '.github/workflows/native-audio-engine-ci.yml'
   pull_request:
     paths:
@@ -29,3 +30,29 @@ jobs:
         run: cmake --build native/audio-engine/build --config Release --parallel
       - name: Test gain, EQ, limiter and channel isolation
         run: ctest --test-dir native/audio-engine/build -C Release --output-on-failure
+
+  windows_bridge:
+    name: Windows managed/native DSP bridge interop
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Configure native DSP DLL
+        run: cmake -S native/audio-engine -B native/audio-engine/build -DCMAKE_BUILD_TYPE=Release
+      - name: Build native DSP DLL
+        run: cmake --build native/audio-engine/build --config Release --target louderme_audio_c
+      - name: Build experimental bridge
+        run: dotnet build native/windows-bridge/LouderMeAudioBridge.csproj -c Release
+      - name: Validate native C ABI from managed code
+        shell: pwsh
+        run: |
+          $dll = Get-ChildItem 'native/audio-engine/build' -Filter 'louderme_audio_c.dll' -Recurse | Select-Object -First 1
+          if ($null -eq $dll) { throw 'Native DLL missing.' }
+          $outDir = 'native/windows-bridge/bin/Release/net10.0-windows'
+          Copy-Item $dll.FullName -Destination "$outDir/louderme_audio_c.dll"
+          dotnet "$outDir/LouderMeAudioBridge.dll" --check-native
+          if ($LASTEXITCODE -ne 0) { throw 'Native managed bridge DSP test failed.' }

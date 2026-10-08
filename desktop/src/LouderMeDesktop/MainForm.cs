@@ -31,6 +31,7 @@ internal sealed class MainForm : Form
     private readonly Button _updateAction = new();
     private readonly Button _aboutAction = new();
     private IMessageFilter? _wheelFilter;
+    private Panel? _contentViewport;
     private DesktopUpdateCheck? _lastUpdateCheck;
 
     private bool _loading;
@@ -179,6 +180,7 @@ internal sealed class MainForm : Form
         BuildFooter(content);
 
         viewport.Controls.Add(content);
+        _contentViewport = viewport;
         shell.Controls.Add(viewport, 0, 1);
         Controls.Add(shell);
         _wheelFilter = new ViewportWheelFilter(this, viewport);
@@ -190,6 +192,39 @@ internal sealed class MainForm : Form
     {
         using var form = new AboutForm(_updates);
         form.ShowDialog(this);
+    }
+
+    internal void AssertCompactLayout()
+    {
+        // Invoked by an installed/runtime smoke invocation after Shown.
+        // This tests actual WinForms bounds and scrolling, not only source strings.
+        Size = new Size(600, 520);
+        PerformLayout();
+        Application.DoEvents();
+
+        var viewport = _contentViewport
+            ?? throw new InvalidOperationException("Scrollable workspace not initialized.");
+        if (!viewport.AutoScroll || viewport.ClientSize.Height < 100)
+            throw new InvalidOperationException("Main workspace scroll viewport is unusable.");
+
+        var aboutBounds = _aboutAction.RectangleToScreen(_aboutAction.ClientRectangle);
+        var windowBounds = RectangleToScreen(ClientRectangle);
+        if (!_aboutAction.Visible || !_aboutAction.Enabled || aboutBounds.IsEmpty ||
+            !windowBounds.Contains(aboutBounds) || aboutBounds.Bottom > viewport.RectangleToScreen(viewport.ClientRectangle).Top)
+            throw new InvalidOperationException("About is not visibly anchored in the fixed top header.");
+
+        var maxScroll = Math.Max(0, viewport.DisplayRectangle.Height - viewport.ClientSize.Height);
+        if (maxScroll <= 0)
+            throw new InvalidOperationException("Compact workspace has no vertical scroll range.");
+
+        viewport.AutoScrollPosition = new Point(0, maxScroll);
+        Application.DoEvents();
+        if (-viewport.AutoScrollPosition.Y <= 0)
+            throw new InvalidOperationException("Compact workspace could not scroll to lower cards.");
+
+        if (!_aboutAction.Visible || !windowBounds.Contains(
+                _aboutAction.RectangleToScreen(_aboutAction.ClientRectangle)))
+            throw new InvalidOperationException("About disappeared while workspace scrolled.");
     }
 
     // Wheel scrolling must work even while a nested slider/button has focus.

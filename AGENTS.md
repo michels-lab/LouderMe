@@ -35,18 +35,11 @@ Do not satisfy branding by pasting the source SVG into unrelated screens. Transl
 
 ### About hierarchy
 
-About MUST be intentionally designed in this order:
+1. **LouderMe product identity**: official mark, product name, actual version, and waveform-derived visual language.
+2. **Paired author/studio composition**: portrait + Michel Duarte + developer role on the left, official Michel's Lab logo/lockup + studio identity + canonical slogan **TOOLS WITH IDENTITY.** on the right where width permits. Stack responsively on narrow screens without splitting their visual grouping.
+3. **Social profiles**: every canonical network rendered with recognizable icon AND visible name.
 
-1. **Product identity first** — approved LouderMe mark/lockup, product name, real current version and product-facing composition derived from the app identity.
-2. **About the author** — current canonical Michel Duarte portrait, **Michel Duarte**, and appropriate developer copy.
-3. **Michel's Lab parent brand** — official Michel's Lab mark/lockup shown as the studio/ecosystem identity without overpowering LouderMe.
-4. **Social profiles** — each visible network link shows the recognizable network icon **and** the visible network name together, using canonical URLs from the master `brand/developer-profile.json`.
-
-Do not finish About with text-only social links or icon-only social buttons. Accessibility labels/tooltips supplement the visible network name; they do not replace it.
-
-Treat this hierarchy and the product-wide logo-derived design language as part of product completeness. Visual work must not regress it.
-
-Follow `standards/PRODUCT_IDENTITY_STANDARD.md` and `standards/ABOUT_STANDARD.md` in `michels-lab/Michel-Software-Standards`.
+Do not replace the studio slogan with lengthy promotional text. The LouderMe product slogan **SOUND THAT LIFTS YOU** remains separate. Desktop initial About viewport (>=1024×700) must expose five canonical social entries without scrolling. Follow the current master About, Product Identity, Native Interface and Rendered UI Release Gate standards.
 
 ## Validation
 
@@ -71,7 +64,7 @@ When the user asks to update/adopt the app logo, icon, splash, startup or About:
 - replace the real active platform identity references instead of layering the new logo over legacy/generic branding;
 - use the app icon for launcher/executable/favicon derivatives, the mark for compact identity, and the lockup for larger splash/About surfaces when appropriate;
 - treat the logo geometry as design language where useful, but do not repeat the literal logo across screens;
-- build About in the hierarchy Product → Author → Michel's Lab → Social;
+- build About as Product → paired Author/Michel's Lab → Social, with the canonical studio slogan TOOLS WITH IDENTITY.;
 - use the canonical Michel Duarte portrait and Michel's Lab mark in About;
 - preserve unrelated product behavior;
 - update this repository's project/audit log and validate current build/CI;

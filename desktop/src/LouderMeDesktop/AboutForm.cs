@@ -56,9 +56,11 @@ internal sealed class AboutForm : Form
 
         // Widths are based on the actual client viewport, never an 800px card
         // on a narrower monitor. The root remains vertically scrollable.
+        var fittingCards = false;
         void FitCardsToViewport()
         {
-            if (root.IsDisposed) return;
+            if (root.IsDisposed || fittingCards) return;
+            fittingCards = true;
             var available = Math.Max(340, root.ClientSize.Width - root.Padding.Horizontal - 22);
             root.SuspendLayout();
             try
@@ -87,7 +89,11 @@ internal sealed class AboutForm : Form
                     }
                 }
             }
-            finally { root.ResumeLayout(true); }
+            finally
+            {
+                root.ResumeLayout(true);
+                fittingCards = false;
+            }
         }
         root.ClientSizeChanged += (_, _) => FitCardsToViewport();
         Shown += (_, _) => FitCardsToViewport();

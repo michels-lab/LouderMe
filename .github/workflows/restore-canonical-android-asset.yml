@@ -1,0 +1,53 @@
+name: Restore canonical LouderMe Android v0.1.10 asset
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/restore-canonical-android-asset.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  restore:
+    name: Verify and restore published Android source asset
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download canonical APK from verified public unified release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          gh release download louderme-android-v0.1.10-desktop-v0.1.5 \
+            --repo michels-lab/michel-s-life-releases \
+            --pattern 'LouderMe-v0.1.10-sideload.apk*' --dir dist
+
+          APK='dist/LouderMe-v0.1.10-sideload.apk'
+          SUM='dist/LouderMe-v0.1.10-sideload.apk.sha256'
+          test -s "$APK"
+          test -s "$SUM"
+          EXPECTED="$(awk '{print $1}' "$SUM")"
+          ACTUAL="$(sha256sum "$APK" | awk '{print $1}')"
+          PINNED='de092ebbc9516395a588f22092075ac7293d291a0f49d3655773b5c6bba1be38'
+          if [ "$EXPECTED" != "$ACTUAL" ] || [ "$ACTUAL" != "$PINNED" ]; then
+            echo "::error::Canonical stable artifact digest mismatch; source asset not modified."
+            exit 1
+          fi
+
+          SOURCE_ASSET_DIGEST="$(gh api repos/michels-lab/LouderMe/releases/tags/v0.1.10 \
+            --jq '.assets[] | select(.name=="LouderMe-v0.1.10-sideload.apk") | .digest')"
+          if [ "$SOURCE_ASSET_DIGEST" = "sha256:$PINNED" ]; then
+            echo "Source asset already matches canonical public release."
+            exit 0
+          fi
+
+          gh release upload v0.1.10 --repo michels-lab/LouderMe --clobber \
+            "$APK" "$SUM"
+
+          FINAL_DIGEST="$(gh api repos/michels-lab/LouderMe/releases/tags/v0.1.10 \
+            --jq '.assets[] | select(.name=="LouderMe-v0.1.10-sideload.apk") | .digest')"
+          test "$FINAL_DIGEST" = "sha256:$PINNED"
+          echo "Recovered source release v0.1.10 to canonical public artifact: $FINAL_DIGEST."

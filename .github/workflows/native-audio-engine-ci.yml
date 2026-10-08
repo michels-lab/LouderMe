@@ -8,6 +8,7 @@ on:
   pull_request:
     paths:
       - 'native/audio-engine/**'
+      - 'native/windows-bridge/**'
       - '.github/workflows/native-audio-engine-ci.yml'
 
 permissions:

@@ -59,7 +59,10 @@ Windows default; doing so remains an explicit manual test-lab operation.
 dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --source-id "<VIRTUAL_RENDER_ID>" --output-id "<PHYSICAL_RENDER_ID>" --boost 150 --confirm-experimental
 ```
 
-Ctrl+C stops the bridge. The DSP is connected only to the chosen virtual
+Ctrl+C stops the bridge. Optional experimental seven-band EQ gains are available at startup through
+`--eq-db 0,0,0,0,8,0,0` (comma-separated dB for 60/170/310/600/1000/3000/12000 Hz; -10 to +10). They are applied before capture begins; live UI updates are not yet implemented.
+
+The DSP is connected only to the chosen virtual
 endpoint capture stream. **Listening to audio on an ordinary physical output
 does not prove that the virtual bridge is processing it.**
 

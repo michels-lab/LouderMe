@@ -144,14 +144,22 @@ def prepare(repo: Path, dry_run: bool = False) -> dict:
     for rel, patch in work.items():
         target = root / rel
         raw = target.read_bytes()
-        # Preserve SysVAD ASCII/C++ file encodings; they are all compatible.
-        original = raw.decode("utf-8-sig")
+        # Some SysVAD INF templates use UTF-16 LE with BOM, not UTF-8.
+        # Preserve their original encoding so Inf2Cat/StampInf can read them.
+        if raw.startswith((b"\\xff\\xfe", b"\\xfe\\xff")):
+            encoding = "utf-16"
+        elif raw.startswith(b"\\xef\\xbb\\xbf"):
+            encoding = "utf-8-sig"
+        else:
+            encoding = "utf-8"
+        original = raw.decode(encoding)
         updated = patch(original)
         if updated == original:
             raise ValueError(f"No patch applied for {rel}")
-        patched[rel] = {"sha256": hashlib.sha256(updated.encode("utf-8")).hexdigest()}
+        encoded = updated.encode(encoding)
+        patched[rel] = {"sha256": hashlib.sha256(encoded).hexdigest(), "encoding": encoding}
         if not dry_run:
-            target.write_bytes(updated.encode("utf-8"))
+            target.write_bytes(encoded)
     manifest = {
         "lab_only": True,
         "upstream_repository": "microsoft/Windows-driver-samples",

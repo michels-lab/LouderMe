@@ -47,7 +47,7 @@ def patch_minipairs(text: str) -> str:
     text = replace_exact(
         text,
         "#define g_cCaptureEndpoints (SIZEOF_ARRAY(g_CaptureEndpoints))",
-        "#define g_cCaptureEndpoints 0 // LouderME lab: no capture devices",
+        "static ULONG g_cCaptureEndpoints = 0; // LouderME lab: no capture devices",
         "minipairs.h"
     )
     # Use loopback-capable render rather than the sample offload option.

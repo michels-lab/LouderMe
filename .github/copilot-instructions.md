@@ -39,7 +39,7 @@ This managed block is cross-project policy. Repository-specific instructions may
 
 ## Shared authority
 
-- Michel's Lab shared standards, product identity, governance, release and coordination rules are authoritative in `realmichelduarte/Michel-Software-Standards`.
+- Michel's Lab shared standards, product identity, governance, release and coordination rules are authoritative in `michels-lab/Michel-Software-Standards`.
 - Keep product implementation truth and product-specific audit logs in this child repository.
 - Do not silently invent a conflicting local Michel's Lab rule.
 - Never commit secrets, credentials, signing material, private tokens or passwords.

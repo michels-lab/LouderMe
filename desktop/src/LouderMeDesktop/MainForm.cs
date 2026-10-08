@@ -383,7 +383,7 @@ internal sealed class MainForm : Form
 
         _engineStatus.AutoSize = true;
         _engineStatus.ForeColor = Muted;
-        _engineStatus.MaximumSize = new Size(800, 0);
+        _engineStatus.MaximumSize = new Size(540, 0);
         layout.SetColumnSpan(_engineStatus, 2);
         layout.Controls.Add(_engineStatus, 0, 5);
 
@@ -449,6 +449,12 @@ internal sealed class MainForm : Form
         };
         layout.SetColumnSpan(note, 2);
         layout.Controls.Add(note, 0, 7);
+        card.ClientSizeChanged += (_, _) =>
+        {
+            var textWidth = Math.Max(210, card.ClientSize.Width - card.Padding.Horizontal - 22);
+            _engineStatus.MaximumSize = new Size(textWidth, 0);
+            note.MaximumSize = new Size(textWidth, 0);
+        };
         root.Controls.Add(card);
     }
 
@@ -611,6 +617,9 @@ internal sealed class MainForm : Form
         };
         layout.SetColumnSpan(startupInfo, 2);
         layout.Controls.Add(startupInfo, 0, 2);
+        card.ClientSizeChanged += (_, _) =>
+            startupInfo.MaximumSize = new Size(
+                Math.Max(210, card.ClientSize.Width - card.Padding.Horizontal - 22), 0);
         root.Controls.Add(card);
     }
 

@@ -1722,3 +1722,11 @@ Historical platform-specific releases were intentionally retained for compatibil
 - **Current shipped Desktop v0.1.5 / source current Desktop v0.1.5 still uses user-installed Equalizer APO for actual system-wide output processing.** This standalone DSP does not alter system audio and is not a release-ready replacement.
 - Next: verify CI, measure DSP performance and signal fidelity, implement and test Windows OS audio routing/integration, hook control plane, certify/sign necessary components, then switch user-facing engine status only after actual hardware verification.
 - No release or installer-driver change performed in this milestone.
+
+## 2026-10-08 — Windows audio bridge prototype / own DSP C ABI (M2 partial)
+
+- Developed a versioned native C ABI (`native/audio-engine/include/louderme/AudioEngineC.h` and `AudioEngineC.cpp`) over Michel's Lab-owned C++ PCM DSP; functions for create/destroy, boost, EQ and in-place processing. Includes ABI test on Windows/Linux.
+- Added an isolated managed .NET 10 Windows WASAPI host prototype (`native/windows-bridge`) using NAudio: captures shared-mode loopback **only from an explicitly selected LouderME Virtual render endpoint**, processes PCM in the native DSP library, then sends samples to an explicitly selected independent physical output. It never changes Windows default audio device, creates a driver or performs unannounced capture.
+- Guarded against source=destination and capturing an ordinary physical source; only uses float32 PCM when virtual and real endpoints' mix sample rate/channel format match; errors instead of silently resampling. Drops overflow packets and tracks processed/dropped counts. No recording or network.
+- CI extended to build C native ABI shared library/test on Windows and Linux plus .NET bridge build and native DLL interop check on Windows; real virtual audio driver and physical-device routing tests remain **NOT IMPLEMENTED/NOT VERIFIED**.
+- Production Windows still uses Equalizer APO until the own signed virtual endpoint, OS routing, robust audio bridge, driver packaging and measurements exist. This prototype does not replace the system-wide engine, and no release was made.

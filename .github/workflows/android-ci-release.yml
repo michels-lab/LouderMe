@@ -147,10 +147,33 @@ jobs:
           name: LouderMe-Android-v${{ steps.version.outputs.version }}
           path: artifacts/
 
+  release_guard:
+    name: Check stable Android release uniqueness
+    needs: validate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    outputs:
+      publish: ${{ steps.check.outputs.publish }}
+    steps:
+      - name: Prevent same-version APK overwrites
+        id: check
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          set -euo pipefail
+          if gh release view "v$VERSION" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Stable Android v$VERSION already exists; no re-sign or clobber."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
   sign_sideload:
     name: Sign stable Michel's Lab Direct APK
-    needs: validate
-    if: github.event_name != 'pull_request'
+    needs: [validate, release_guard]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.release_guard.outputs.publish == 'true'
     runs-on: ubuntu-latest
 
     outputs:
@@ -325,8 +348,9 @@ jobs:
     name: Publish validated private release
     needs:
       - validate
+      - release_guard
       - sign_sideload
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.sign_sideload.outputs.signed_ready == 'true'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.release_guard.outputs.publish == 'true' && needs.sign_sideload.outputs.signed_ready == 'true'
     runs-on: ubuntu-latest
 
     steps:
@@ -355,12 +379,12 @@ jobs:
           test -f "$NOTES"
 
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" "$APK" "$CHECKSUM" --clobber
-          else
-            gh release create "$TAG" \
-              "$APK" \
-              "$CHECKSUM" \
-              --target "$GITHUB_SHA" \
-              --title "LouderMe $TAG" \
-              --notes-file "$NOTES"
+            echo "::error::Stable version already exists. Refusing to replace published APK."
+            exit 1
           fi
+          gh release create "$TAG" \
+            "$APK" \
+            "$CHECKSUM" \
+            --target "$GITHUB_SHA" \
+            --title "LouderMe $TAG" \
+            --notes-file "$NOTES"

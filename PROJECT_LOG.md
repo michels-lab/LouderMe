@@ -1700,3 +1700,9 @@ Historical platform-specific releases were intentionally retained for compatibil
 - Replaced the oversized APO missing-dependency text with a shorter actionable message and explicit distinction between independent Windows device volume and third-party Equalizer APO-dependent Boost/EQ. Equalizer APO remains a user-installed prerequisite; do not claim the boost works without it.
 - Added static CI safeguards for top About and scrolling in both Desktop build and release workflows, and added local agent requirements.
 - Validation: pending same-SHA CI Windows build, installation/launch smoke, and user's real-window follow-up. No new Windows release published by these source changes.
+
+## 2026-10-08 — Stop existing Android releases being silently replaced
+
+- Desktop-only commits to main still trigger the Android CI & Direct Release workflow. Existing source workflow previously re-signed and uploaded the published APK with `--clobber` even when `versionName` was unchanged, risking mismatch with stable updater SHA-256.
+- Added `release_guard` to check whether the stable Android tag already exists. If so, signing and publication jobs skip while build validation continues. The publisher also refuses to overwrite an existing tag as a second safeguard.
+- Future Android releases require a unique version and validated continuity of the original signing identity. No new APK version or release authorized by this guard.

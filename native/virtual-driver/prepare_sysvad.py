@@ -146,9 +146,9 @@ def prepare(repo: Path, dry_run: bool = False) -> dict:
         raw = target.read_bytes()
         # Some SysVAD INF templates use UTF-16 LE with BOM, not UTF-8.
         # Preserve their original encoding so Inf2Cat/StampInf can read them.
-        if raw.startswith((b"\\xff\\xfe", b"\\xfe\\xff")):
+        if raw.startswith((b"\xff\xfe", b"\xfe\xff")):
             encoding = "utf-16"
-        elif raw.startswith(b"\\xef\\xbb\\xbf"):
+        elif raw.startswith(b"\xef\xbb\xbf"):
             encoding = "utf-8-sig"
         else:
             encoding = "utf-8"

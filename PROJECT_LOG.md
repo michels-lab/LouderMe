@@ -1648,3 +1648,14 @@ Publisher validation:
 The reusable rule was added to Michel-Software-Standards `standards/REPOSITORY_DISTRIBUTION_STANDARD.md`: multi-platform products should expose one unified customer-facing public release containing all current stable platform binaries while preserving real platform versions and separate updater feeds when needed.
 
 Historical platform-specific releases were intentionally retained for compatibility.
+
+
+## 2026-10-07 — Repository transferred to Michel's Lab organization
+
+**Change:** repository ownership moved from `realmichelduarte/LouderMe` to `michels-lab/LouderMe`.
+
+**Active references updated:** `.michelslab` governance and agent/Copilot authority now use `michels-lab`; Android Direct and Windows Desktop update manifests now resolve from `michels-lab/michel-s-life-releases` instead of the old-owner redirect.
+
+**Preserved intentionally:** Michel Duarte personal developer/social identity remains under `realmichelduarte`. No release is authorized by this migration change.
+
+**Validation:** Android and Windows branch CI are required before merge.

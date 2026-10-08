@@ -1,0 +1,99 @@
+name: LouderME Virtual Render Driver Lab CI
+on:
+  pull_request:
+    paths:
+      - 'native/virtual-driver/**'
+      - '.github/workflows/native-virtual-device-ci.yml'
+  push:
+    paths:
+      - 'native/virtual-driver/**'
+      - '.github/workflows/native-virtual-device-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  derive:
+    name: Derive pinned SysVAD one-output/no-microphone lab source
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout LouderME
+        uses: actions/checkout@v4
+        with:
+          path: louderme
+      - name: Checkout pinned MS-PL SysVAD source
+        uses: actions/checkout@v4
+        with:
+          repository: microsoft/Windows-driver-samples
+          ref: 2dc3fd3a0cc84a2933f2194e7ec0871584979071
+          path: upstream
+          sparse-checkout: |
+            audio/sysvad
+            LICENSE
+      - name: Test derivation guards
+        run: python -m unittest discover -s louderme/native/virtual-driver/tests -v
+      - name: Produce local virtual-render source and metadata
+        run: |
+          python louderme/native/virtual-driver/prepare_sysvad.py --upstream-root upstream
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('upstream/audio/sysvad/LOUDERME_LAB_MANIFEST.json')
+          info = json.loads(p.read_text())
+          assert info['render_endpoints'] == 1
+          assert info['capture_endpoints'] == 0
+          assert info['hardware_id'] == r'Root\LouderMe_VirtualRender_Lab'
+          assert info['driver_signed'] is False
+          assert info['real_audio_verified'] is False
+          inf = Path('upstream/audio/sysvad/TabletAudioSample/ComponentizedAudioSample.inx').read_text()
+          assert 'LouderME Virtual Speaker' in inf
+          assert 'TODO-Set-Provider' not in inf
+          assert 'LICENSE-MS-PL.txt' in [f.name for f in p.parent.iterdir()]
+          print('Pinned Windows virtual device lab source derivation verified.')
+          PY
+      - name: Validate no signed or installable driver is published
+        run: |
+          test ! -f upstream/audio/sysvad/TabletAudioSample/tabletaudiosample.sys
+          test ! -f upstream/audio/sysvad/TabletAudioSample/tabletaudiosample.inf
+          echo 'Source-only prototype: no signed driver/install occurred.'
+
+  driver_build:
+    name: Compile derived driver package with WDK NuGet (no install)
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    needs: derive
+    runs-on: windows-2025-vs2026
+    steps:
+      - name: Checkout LouderME
+        uses: actions/checkout@v4
+        with:
+          path: louderme
+      - name: Checkout pinned Microsoft SysVAD with WIL
+        uses: actions/checkout@v4
+        with:
+          repository: microsoft/Windows-driver-samples
+          ref: 2dc3fd3a0cc84a2933f2194e7ec0871584979071
+          path: upstream
+          submodules: recursive
+      - name: Restore Microsoft sample WDK packages
+        shell: pwsh
+        run: |
+          nuget restore upstream/packages.config -PackagesDirectory upstream/packages
+          if ($LASTEXITCODE -ne 0) { throw 'WDK NuGet restore failed.' }
+      - name: Transform Microsoft driver source (lab only)
+        run: python louderme/native/virtual-driver/prepare_sysvad.py --upstream-root upstream
+      - name: Set up MSBuild
+        uses: microsoft/setup-msbuild@v2
+      - name: Build actual x64 WDK driver solution
+        shell: pwsh
+        run: |
+          msbuild upstream/audio/sysvad/sysvad.sln /m /p:Configuration=Release /p:Platform=x64 /v:minimal
+          if ($LASTEXITCODE -ne 0) { throw 'The WDK driver failed to compile.' }
+      - name: Verify compiled driver is not claimed signed or installed
+        shell: pwsh
+        run: |
+          $driver = Get-ChildItem upstream/audio/sysvad -Recurse -Filter 'TabletAudioSample.sys' |
+            Where-Object { $_.FullName -match 'Release' } | Select-Object -First 1
+          if ($null -eq $driver) { throw 'Expected x64 SysVAD driver binary not found.' }
+          Write-Host "Compiled unsigned lab driver: $($driver.FullName)"
+          Write-Host 'Never deploy unsigned/test-signed driver to end-user machines.'

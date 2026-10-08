@@ -45,6 +45,8 @@ fun LouderMeApp(
     audioState: AudioEngineUiState,
     equalizerState: EqualizerUiState,
     startOnBoot: Boolean,
+    deviceVolumePercent: Int,
+    onDeviceVolumeChanged: (Int) -> Unit,
     onCheckForUpdates: () -> Unit,
     onInstallUpdate: () -> Unit,
     onStartOnBootChanged: (Boolean) -> Unit,
@@ -75,6 +77,8 @@ fun LouderMeApp(
                 updateStatus = updateStatus,
                 audioState = audioState,
                 equalizerState = equalizerState,
+                deviceVolumePercent = deviceVolumePercent,
+                onDeviceVolumeChanged = onDeviceVolumeChanged,
                 onAbout = { showAbout = true },
                 onCheckForUpdates = onCheckForUpdates,
                 onInstallUpdate = onInstallUpdate,
@@ -94,6 +98,8 @@ private fun HomeScreen(
     updateStatus: UpdateStatus,
     audioState: AudioEngineUiState,
     equalizerState: EqualizerUiState,
+    deviceVolumePercent: Int,
+    onDeviceVolumeChanged: (Int) -> Unit,
     onAbout: () -> Unit,
     onCheckForUpdates: () -> Unit,
     onInstallUpdate: () -> Unit,
@@ -139,6 +145,20 @@ private fun HomeScreen(
                 onCheckForUpdates = onCheckForUpdates,
                 onInstallUpdate = onInstallUpdate,
             )
+
+            Panel {
+                PanelHeading(
+                    eyebrow = "DEVICE VOLUME",
+                    title = "Media volume · 0–100%",
+                    subtitle = "Controls Android media volume, separate from Global Boost.",
+                )
+                Text("$deviceVolumePercent%", color = LouderMeColors.Cyan)
+                Slider(
+                    value = deviceVolumePercent.toFloat(),
+                    onValueChange = { onDeviceVolumeChanged(it.roundToInt()) },
+                    valueRange = 0f..100f,
+                )
+            }
 
             BoostHero(
                 audioState = audioState,

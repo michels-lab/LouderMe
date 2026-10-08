@@ -113,6 +113,32 @@ def patch_inf(text: str, extension: bool) -> str:
     return text
 
 
+def patch_adapter(text: str) -> str:
+    # Never allow SysVAD's optional render-to-disk recording to be enabled
+    # via a Windows registry value, and suppress demo-generated sine tones.
+    if "DWORD g_DoNotCreateDataFiles = 1;" not in text:
+        raise ValueError("SysVAD recording default unexpectedly changed")
+    text = replace_exact(
+        text, "DWORD g_DisableToneGenerator = 0;",
+        "DWORD g_DisableToneGenerator = 1; // LouderME: no sample-generated audio",
+        "adapter.cpp"
+    )
+    rows = text.splitlines(keepends=True)
+    matches = [i for i, row in enumerate(rows) if 'L"DoNotCreateDataFiles"' in row]
+    if len(matches) != 1:
+        raise ValueError("Unexpected SysVAD recording registry controls")
+    old_row = rows[matches[0]]
+    ending = "\\r\\n" if old_row.endswith("\\r\\n") else "\\n"
+    rows[matches[0]] = (
+        "        // LouderME privacy: recording-to-disk is permanently disabled."
+        + ending
+    )
+    text = "".join(rows)
+    if 'L"DoNotCreateDataFiles"' in text:
+        raise ValueError("Render audio recording registry override remains")
+    return text
+
+
 def patch_resource(text: str) -> str:
     return replace_exact(
         text, '"Microsoft Virtual Audio Tablet Sample Driver"',
@@ -138,7 +164,8 @@ def prepare(repo: Path, dry_run: bool = False) -> dict:
         "TabletAudioSample/minipairs.h": patch_minipairs,
         "TabletAudioSample/ComponentizedAudioSample.inx": lambda s: patch_inf(s, False),
         "TabletAudioSample/ComponentizedAudioSampleExtension.inx": lambda s: patch_inf(s, True),
-        "TabletAudioSample/TabletAudioSample.rc": patch_resource
+        "TabletAudioSample/TabletAudioSample.rc": patch_resource,
+        "adapter.cpp": patch_adapter
     }
     patched = {}
     for rel, patch in work.items():
@@ -168,6 +195,8 @@ def prepare(repo: Path, dry_run: bool = False) -> dict:
         "service": SERVICE_NAME,
         "render_endpoints": 1,
         "capture_endpoints": 0,
+        "recording_to_file_enabled": False,
+        "sample_tone_generator_enabled": False,
         "driver_signed": False,
         "driver_installed": False,
         "real_audio_verified": False,

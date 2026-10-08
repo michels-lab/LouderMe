@@ -56,6 +56,11 @@ jobs:
           dotnet restore desktop/src/LouderMeDesktop/LouderMeDesktop.csproj
           dotnet build desktop/src/LouderMeDesktop/LouderMeDesktop.csproj -c Release --no-restore
 
+          $mainUi=Get-Content 'desktop/src/LouderMeDesktop/MainForm.cs' -Raw
+          foreach ($required in @('header.Controls.Add(_aboutAction, 2, 0)','var viewport = new Panel','AutoScroll = true','ViewportWheelFilter','private void OpenAbout()')) {
+            if (-not $mainUi.Contains($required)) { throw "Desktop top-About/scroll contract missing: $required" }
+          }
+
           $math=Get-Content 'desktop/src/LouderMeDesktop/BoostMath.cs' -Raw
           if ($math -notmatch '20d \* Math\.Log10') { throw 'Percent-to-dB gain conversion is missing.' }
 

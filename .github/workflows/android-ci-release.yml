@@ -214,57 +214,8 @@ jobs:
           fi
 
           if [ "$READY" != "true" ]; then
-            API="https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts?name=LouderMe-sideload-signing-material-PRIVATE&per_page=100"
-            RESPONSE="$(curl --fail --silent --show-error \
-              -H "Authorization: Bearer $GH_TOKEN" \
-              -H "Accept: application/vnd.github+json" \
-              "$API")"
-
-            ARTIFACT_ID="$(printf '%s' "$RESPONSE" | jq -r '
-              [.artifacts[] | select(.expired == false)]
-              | sort_by(.created_at)
-              | reverse
-              | .[0].id // empty
-            ')"
-
-            if [ -z "$ARTIFACT_ID" ]; then
-              echo "::error::No valid stable sideload signing identity is available."
-              echo "ready=false" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
-
-            curl --fail --location --silent --show-error \
-              -H "Authorization: Bearer $GH_TOKEN" \
-              -H "Accept: application/vnd.github+json" \
-              "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID/zip" \
-              --output signing-vault.zip
-
-            mkdir -p signing-vault
-            unzip -q signing-vault.zip -d signing-vault
-
-            KEYSTORE_FILE="$(find signing-vault -type f -name 'louderme-sideload.jks' | head -n 1)"
-            HANDOFF_FILE="$(find signing-vault -type f -name 'github-actions-secrets.txt' | head -n 1)"
-
-            test -f "$KEYSTORE_FILE"
-            test -f "$HANDOFF_FILE"
-
-            cp "$KEYSTORE_FILE" signing/louderme-sideload.jks
-
-            STORE_PASS="$(grep '^LOUDERME_SIDELOAD_STORE_PASSWORD=' "$HANDOFF_FILE" | cut -d= -f2-)"
-            KEY_ALIAS="$(grep '^LOUDERME_SIDELOAD_KEY_ALIAS=' "$HANDOFF_FILE" | cut -d= -f2-)"
-            KEY_PASS="$(grep '^LOUDERME_SIDELOAD_KEY_PASSWORD=' "$HANDOFF_FILE" | cut -d= -f2-)"
-
-            test -n "$STORE_PASS"
-            test -n "$KEY_ALIAS"
-            test -n "$KEY_PASS"
-
-            keytool -list \
-              -keystore signing/louderme-sideload.jks \
-              -storepass "$STORE_PASS" \
-              -alias "$KEY_ALIAS" >/dev/null
-
-            READY=true
-            echo "Using private Actions signing vault."
+            echo "::error::Stable Android signing Secrets must be configured; public workflow cannot recover signing keys from Actions artifacts."
+            exit 1
           fi
 
           echo "::add-mask::$STORE_PASS"
@@ -338,17 +289,6 @@ jobs:
             validated/LouderMe-v${{ needs.validate.outputs.version }}-sideload.apk
             validated/LouderMe-v${{ needs.validate.outputs.version }}-sideload.apk.sha256
             validated/sideload-signature.txt
-
-      - name: Refresh private signing vault
-        if: steps.key_config.outputs.ready == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: LouderMe-sideload-signing-material-PRIVATE
-          retention-days: 90
-          path: |
-            signing/louderme-sideload.jks
-            signing/github-actions-secrets.txt
-            signing/README-PRIVATE.txt
 
   publish_private_release:
     name: Publish validated private release

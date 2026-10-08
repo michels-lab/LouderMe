@@ -1684,3 +1684,10 @@ Historical platform-specific releases were intentionally retained for compatibil
 - Existing build, checksum, real installer installation/launch and uninstall smoke checks are retained unchanged.
 - This change does **not** establish rendered UI PASS or human visual acceptance. Post-release visual review remains outstanding and any defect found requires a follow-up fix.
 - No release was published in this change.
+
+## 2026-10-08 — Stable release preparation: Android v0.1.10 / Windows v0.1.5
+
+- User explicitly authorized release. Version changes: Android versionName 0.1.10 / versionCode 11; Desktop 0.1.5.
+- Includes real-device volume controls (Android media stream and Windows playback endpoint) distinct from 100–250% Global Boost, plus Michel's Lab studio About slogan.
+- Source repository visibility is public. Removed Android workflow fallback that retrieved production signing keys/passwords from GitHub Actions artifacts, and removed private signing-vault artifact publication. Stable sideload signing now requires valid GitHub Actions Secrets; fail closed if absent. Existing public artifacts and old credentials should be reviewed for exposure; do not assume a key is safe merely because the new workflow is hardened.
+- Release notes prepared for both platforms. Same-SHA CI and published artifacts must be rechecked before claiming the release completed. Physical device behavior remains pending.

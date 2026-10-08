@@ -12,8 +12,8 @@ android {
         applicationId = "com.michelslab.louderme"
         minSdk = 29
         targetSdk = 36
-        versionCode = 10
-        versionName = "0.1.9"
+        versionCode = 11
+        versionName = "0.1.10"
     }
 
     flavorDimensions += "distribution"

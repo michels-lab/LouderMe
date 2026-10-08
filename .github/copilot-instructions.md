@@ -32,7 +32,7 @@ For any tracked Michel's Lab task, return enough machine-readable continuation c
 
 Do not list planned tests/builds/device checks as completed validation. If required validation was not performed, the task must be released/handed back with that work pending rather than described as complete.
 
-<!-- MICHELSLAB_SHARED_CONTRACT_BEGIN id=child-agent-core version=2026-10-07.2 -->
+<!-- MICHELSLAB_SHARED_CONTRACT_BEGIN id=child-agent-core version=2026-10-08.1 -->
 # Michel's Lab shared child-agent contract
 
 This managed block is cross-project policy. Repository-specific instructions may add stricter local rules outside this block, but they must not weaken or contradict it.
@@ -49,10 +49,19 @@ This managed block is cross-project policy. Repository-specific instructions may
 
 - Preserve the approved product-logo geometry; contextual color, material, lighting and motion may adapt without identity drift.
 - Branding is a design language, not sticker placement.
-- About hierarchy is **Product identity → About the author → Michel's Lab → social profiles**.
+- About hierarchy is **Product identity → paired author/studio composition → social profiles**.
+- The paired author/studio composition should show **Michel Duarte** and **Michel's Lab** side by side when width permits: portrait + name + developer role on one side; official Michel's Lab logo/lockup + studio name + canonical slogan **`TOOLS WITH IDENTITY.`** on the other.
+- Narrow/mobile layouts may stack responsively, but the author and studio must remain visually grouped as one intentional composition.
+- Do not replace the Michel's Lab slogan with a paragraph-length studio review by default.
 - Use the current canonical Michel Duarte portrait and the official Michel's Lab parent-brand assets from the master authority when implementing/updating About.
 - The canonical portrait file is immutable: child repositories must vendor it byte-for-byte. Never resize, crop, recompress, retouch, regenerate, convert or rewrite the portrait asset itself; use render-time layout/object-fit/masking only.
 - Visible social controls use recognizable network icon **and** visible network name with canonical profile URLs.
+
+## Rendered visual brand release gate — mandatory for every app
+
+- For launch, splash, About, launcher or product-identity changes, follow `standards/BRAND_VISUAL_VALIDATION_STANDARD.md`. Checking that an official asset exists/decodes or that a build passes is **not** visual acceptance.
+- Inspect computed final UI geometry, theme/text contrast, clipping/overlap and duplicate lockup/heading. CI must fail for known visual violations; require screenshots from the exact candidate and human visual review before release.
+- Validate relevant viewport sizes/themes in the actual browser/native/mobile runtime, including the packaged app where possible. If evidence is missing, explicitly report `pending visual review`; never say branding is complete from static tests alone.
 
 ## Canonical identity asset precedence
 
@@ -125,4 +134,12 @@ After a merge, release, tag or provider mutation, re-read authoritative state be
 - A portable launch PASS and an installed-app LAUNCH PASS are separate claims when both artifacts are shipped.
 - Publish SHA-256 for direct Windows binaries. Authenticode/code signing, when available, must happen before final checksum publication. Without a publisher certificate, do not hide or misrepresent Windows Unknown publisher/SmartScreen behavior.
 - FoamLens and Michel's Life are the current Windows release references; Michel's Life also demonstrates optional Authenticode and a separate Microsoft Store MSIX path.
+
+## P0 mandatory rendered-UI release gate (master-owned; every app)
+
+- Source scans/XML assertions, build success, CI green, icon/blob hashes and file presence never prove the app **visibly renders**. Every release of a user-facing app MUST open the actual built/installed candidate and capture **Home + About + changed screens** across two supported viewport sizes; the capture must show meaningful nonblank content, visible author portrait, Michel's Lab logo and **`TOOLS WITH IDENTITY.`**, appropriate icons + network names, working scroll and Close/Back. Test native view bounds/visibility and navigation, not just inflation.
+- Screenshots must originate from the actual runtime (Android emulator/physical device, Windows installed GUI, real browser), be checksum-validated and bound to the exact release source SHA plus candidate artifact SHA-256. A **human must inspect the rendered screenshots**, approve them in a protected GitHub Environment tied to that release, and record evidence. The app's release workflow MUST fail closed if capture, manifest validation or approval is missing, stale, blank, or rejected—even when the user asks to release or other CI jobs pass.
+- Mandatory reference: `michels-lab/Michel-Software-Standards/standards/RENDERED_UI_RELEASE_GATE.md`; validator: `tools/visual_release_gate.py` (vendor/consume with tests). Never fabricate images, attestations or user approval; agents cannot self-certify independent visual review. Do not claim device/store testing from an emulator. A pure no-UI-change release needs documented same-artifact UI identity and bounded exception as defined in the standard.
+- Release manager: block and open P0 on omitted/unreviewed or broken About/changed UI. QA agent: inspect actual pixels and record **SOURCE, BUILD, LAUNCH, RENDER, VISUAL REVIEW and DEVICE** independently. App maintainer: implement real UI smoke tests and screenshot capture at appropriate viewports. Static PASS is not visual PASS.
+- **Important rollout boundary:** this shared contract does NOT, on its own, modify the child release workflow. Until that repository's workflow demonstrably includes capture + validated image evidence + protected approval, mark it **NOT ENFORCED / P0** and do not represent all apps as protected.
 <!-- MICHELSLAB_SHARED_CONTRACT_END id=child-agent-core -->

@@ -31,6 +31,7 @@ import com.michelslab.louderme.R
 import com.michelslab.louderme.audio.AudioEngineStatus
 import com.michelslab.louderme.audio.AudioEngineUiState
 import com.michelslab.louderme.audio.BoostMath
+import com.michelslab.louderme.audio.DeviceVolumeUiState
 import com.michelslab.louderme.audio.EqualizerPreset
 import com.michelslab.louderme.audio.EqualizerPresets
 import com.michelslab.louderme.audio.EqualizerStatus
@@ -44,10 +45,12 @@ fun LouderMeApp(
     updateStatus: UpdateStatus,
     audioState: AudioEngineUiState,
     equalizerState: EqualizerUiState,
+    deviceVolumeState: DeviceVolumeUiState,
     startOnBoot: Boolean,
     onCheckForUpdates: () -> Unit,
     onInstallUpdate: () -> Unit,
     onStartOnBootChanged: (Boolean) -> Unit,
+    onDeviceVolumeChanged: (Int) -> Unit,
     onBoostToggle: (Boolean) -> Unit,
     onBoostLevelSelected: (Int) -> Unit,
     onEqEnabledChanged: (Boolean) -> Unit,
@@ -75,9 +78,11 @@ fun LouderMeApp(
                 updateStatus = updateStatus,
                 audioState = audioState,
                 equalizerState = equalizerState,
+                deviceVolumeState = deviceVolumeState,
                 onAbout = { showAbout = true },
                 onCheckForUpdates = onCheckForUpdates,
                 onInstallUpdate = onInstallUpdate,
+                onDeviceVolumeChanged = onDeviceVolumeChanged,
                 onBoostToggle = onBoostToggle,
                 onBoostLevelSelected = onBoostLevelSelected,
                 onEqEnabledChanged = onEqEnabledChanged,
@@ -94,9 +99,11 @@ private fun HomeScreen(
     updateStatus: UpdateStatus,
     audioState: AudioEngineUiState,
     equalizerState: EqualizerUiState,
+    deviceVolumeState: DeviceVolumeUiState,
     onAbout: () -> Unit,
     onCheckForUpdates: () -> Unit,
     onInstallUpdate: () -> Unit,
+    onDeviceVolumeChanged: (Int) -> Unit,
     onBoostToggle: (Boolean) -> Unit,
     onBoostLevelSelected: (Int) -> Unit,
     onEqEnabledChanged: (Boolean) -> Unit,
@@ -138,6 +145,11 @@ private fun HomeScreen(
                 status = updateStatus,
                 onCheckForUpdates = onCheckForUpdates,
                 onInstallUpdate = onInstallUpdate,
+            )
+
+            DeviceVolumePanel(
+                state = deviceVolumeState,
+                onVolumeChanged = onDeviceVolumeChanged,
             )
 
             BoostHero(
@@ -314,6 +326,101 @@ private fun HomeScreen(
 
             Spacer(Modifier.height(18.dp))
         }
+    }
+}
+
+@Composable
+private fun DeviceVolumePanel(
+    state: DeviceVolumeUiState,
+    onVolumeChanged: (Int) -> Unit,
+) {
+    var sliderValue by remember {
+        mutableFloatStateOf(state.percent.toFloat())
+    }
+    var dragging by remember { mutableStateOf(false) }
+
+    LaunchedEffect(state.percent) {
+        if (!dragging) {
+            sliderValue = state.percent.toFloat()
+        }
+    }
+
+    Panel {
+        PanelHeading(
+            eyebrow = "DEVICE VOLUME",
+            title = "Media volume",
+            subtitle = "Real Android media volume · the same system stream controlled by the phone volume buttons.",
+        )
+
+        Spacer(Modifier.height(10.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                sliderValue.roundToInt().toString() + "%",
+                color = if (state.available) LouderMeColors.Text else LouderMeColors.Red,
+                fontSize = 30.sp,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                if (state.maxStep > 0) {
+                    "SYSTEM · " + state.step + "/" + state.maxStep
+                } else {
+                    "SYSTEM · UNAVAILABLE"
+                },
+                color = if (state.available) LouderMeColors.Cyan else LouderMeColors.Red,
+                fontFamily = FontFamily.Monospace,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+
+        Slider(
+            value = sliderValue,
+            onValueChange = {
+                dragging = true
+                sliderValue = it
+            },
+            onValueChangeFinished = {
+                dragging = false
+                onVolumeChanged(sliderValue.roundToInt())
+            },
+            valueRange = 0f..100f,
+            steps = (state.maxStep - 1).coerceAtLeast(0),
+            enabled = state.available,
+            colors = SliderDefaults.colors(
+                thumbColor = LouderMeColors.Cyan,
+                activeTrackColor = LouderMeColors.Blue,
+                inactiveTrackColor = LouderMeColors.Surface3,
+                disabledThumbColor = LouderMeColors.Dim,
+                disabledActiveTrackColor = LouderMeColors.Surface3,
+            ),
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            MonoLabel("0%")
+            Text(
+                if (state.muted) "MUTED" else state.message,
+                color = if (state.muted) LouderMeColors.Gold else LouderMeColors.Muted,
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.weight(1f),
+            )
+            MonoLabel("100%")
+        }
+
+        Spacer(Modifier.height(6.dp))
+        Text(
+            "Device Volume and Global Boost are separate: this control changes Android's real media volume (0–100%); LouderMe boost remains an additional 100–250% signal-gain stage.",
+            color = LouderMeColors.Dim,
+            style = MaterialTheme.typography.bodySmall,
+        )
     }
 }
 

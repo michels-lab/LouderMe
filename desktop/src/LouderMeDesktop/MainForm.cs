@@ -15,6 +15,7 @@ internal sealed class MainForm : Form
     private readonly TrackBar _volume = new();
     private readonly CheckBox _mute = new();
     private readonly CheckBox _startWithWindows = new();
+    private readonly System.Windows.Forms.Timer _deviceVolumeSyncTimer = new() { Interval = 500 };
 
     private readonly CheckBox _boostEnabled = new();
     private readonly TrackBar _boost = new();
@@ -56,12 +57,20 @@ internal sealed class MainForm : Form
         BuildUi();
         LoadState();
 
+        _deviceVolumeSyncTimer.Tick += (_, _) => RefreshDeviceVolumeFromSystem();
+        _deviceVolumeSyncTimer.Start();
+
         Shown += async (_, _) => await CheckForUpdatesAsync(silent: true);
     }
 
     protected override void Dispose(bool disposing)
     {
-        if (disposing) _audio.Dispose();
+        if (disposing)
+        {
+            _deviceVolumeSyncTimer.Stop();
+            _deviceVolumeSyncTimer.Dispose();
+            _audio.Dispose();
+        }
         base.Dispose(disposing);
     }
 
@@ -144,8 +153,9 @@ internal sealed class MainForm : Form
 
     private void BuildOutputCard(TableLayoutPanel root)
     {
-        var card = Card("SYSTEM OUTPUT");
+        var card = Card("DEVICE VOLUME · WINDOWS OUTPUT");
         var layout = (TableLayoutPanel)card.Controls[0];
+        layout.RowCount = 5;
 
         _deviceValue.AutoSize = true;
         _deviceValue.ForeColor = TextPrimary;
@@ -177,7 +187,7 @@ internal sealed class MainForm : Form
         layout.SetColumnSpan(_volume, 2);
         layout.Controls.Add(_volume, 0, 2);
 
-        _mute.Text = "Mute system output";
+        _mute.Text = "Mute device volume";
         _mute.AutoSize = true;
         _mute.ForeColor = Muted;
         _mute.CheckedChanged += (_, _) =>
@@ -188,6 +198,20 @@ internal sealed class MainForm : Form
         };
         layout.SetColumnSpan(_mute, 2);
         layout.Controls.Add(_mute, 0, 3);
+
+        var note = new Label
+        {
+            AutoSize = true,
+            ForeColor = Muted,
+            MaximumSize = new Size(800, 0),
+            Margin = new Padding(0, 8, 0, 0),
+            Text =
+                "Device Volume is the real Windows master output level (0–100%). " +
+                "It is separate from LouderMe Global Boost (100–250% post-volume signal gain). " +
+                "External Windows volume changes and active-device changes resync automatically.",
+        };
+        layout.SetColumnSpan(note, 2);
+        layout.Controls.Add(note, 0, 4);
         root.Controls.Add(card);
     }
 
@@ -550,11 +574,19 @@ internal sealed class MainForm : Form
         _loading = true;
         try
         {
-            _audio.Refresh();
-            _deviceValue.Text = _audio.DeviceName;
-            _volume.Value = Math.Clamp(_audio.VolumePercent, _volume.Minimum, _volume.Maximum);
-            _volumeValue.Text = $"{_volume.Value}%";
-            _mute.Checked = _audio.Muted;
+            try
+            {
+                _audio.Refresh();
+                ApplyDeviceVolumeSnapshot(_audio.ReadSnapshot());
+            }
+            catch
+            {
+                _deviceValue.Text = "Device unavailable";
+                _volumeValue.Text = "—";
+                _volume.Enabled = false;
+                _mute.Enabled = false;
+            }
+
             _startWithWindows.Checked = StartupManager.IsEnabled();
 
             _boostEnabled.Checked = _settings.BoostEnabled;
@@ -589,21 +621,58 @@ internal sealed class MainForm : Form
         RefreshEngineStatus();
     }
 
+    private void RefreshDeviceVolumeFromSystem()
+    {
+        if (_loading || IsDisposed || !IsHandleCreated || _volume.Capture) return;
+
+        try
+        {
+            var snapshot = _audio.ReadSnapshot();
+            _loading = true;
+            ApplyDeviceVolumeSnapshot(snapshot);
+        }
+        catch
+        {
+            _loading = true;
+            _deviceValue.Text = "Device unavailable";
+            _volumeValue.Text = "—";
+            _volume.Enabled = false;
+            _mute.Enabled = false;
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void ApplyDeviceVolumeSnapshot(DeviceVolumeSnapshot snapshot)
+    {
+        _deviceValue.Text = snapshot.DeviceName;
+        _volume.Enabled = true;
+        _mute.Enabled = true;
+        _volume.Value = Math.Clamp(
+            snapshot.VolumePercent,
+            _volume.Minimum,
+            _volume.Maximum);
+        _volumeValue.Text = $"{snapshot.VolumePercent}%";
+        _mute.Checked = snapshot.Muted;
+    }
+
     private void ApplyProcessing()
     {
         if (_loading) return;
 
-        DesktopSettingsStore.Save(_settings);
-        var status = _apo.GetStatus();
-
-        if (!status.Installed)
-        {
-            RefreshEngineStatus();
-            return;
-        }
-
         try
         {
+            DesktopSettingsStore.Save(_settings);
+            var status = _apo.GetStatus();
+
+            if (!status.Installed)
+            {
+                RefreshEngineStatus();
+                return;
+            }
+
             _apo.Apply(_settings);
             RefreshEngineStatus();
         }
@@ -611,7 +680,7 @@ internal sealed class MainForm : Form
         {
             _engineStatus.ForeColor = Gold;
             _engineStatus.Text =
-                "Equalizer APO is installed, but Windows denied write access to its config folder. " +
+                "Equalizer APO is installed, but Windows denied access to its config folder. " +
                 "Run LouderMe as administrator once to link the managed configuration.";
         }
         catch (Exception ex)
@@ -622,30 +691,44 @@ internal sealed class MainForm : Form
 
     private void RefreshEngineStatus()
     {
-        var status = _apo.GetStatus();
+        try
+        {
+            var status = _apo.GetStatus();
 
-        if (!status.Installed)
+            if (!status.Installed)
+            {
+                _engineStatus.ForeColor = Gold;
+                _engineStatus.Text =
+                    "Boost engine required. Install Equalizer APO 1.4.2 x64 from the official SourceForge page, " +
+                    "select the active playback device in Configurator, reboot if requested, then press Refresh engine. " +
+                    "Official x64 SHA-256: 7403be7427bbe1936a40dded082829b6e217fc4f5990fee5cba501f0ae055afa";
+                return;
+            }
+
+            if (!status.Configured)
+            {
+                _engineStatus.ForeColor = Gold;
+                _engineStatus.Text =
+                    status.Message + " Change any LouderMe boost/EQ control to link it.";
+                return;
+            }
+
+            _engineStatus.ForeColor = Cyan;
+            _engineStatus.Text =
+                $"{status.Message} Target boost: {_settings.BoostPercent}% " +
+                $"({BoostMath.PercentToDb(_settings.BoostPercent):+0.00;-0.00;0.00} dB).";
+        }
+        catch (UnauthorizedAccessException)
         {
             _engineStatus.ForeColor = Gold;
             _engineStatus.Text =
-                "Boost engine required. Install Equalizer APO 1.4.2 x64 from the official SourceForge page, " +
-                "select the active playback device in Configurator, reboot if requested, then press Refresh engine. " +
-                "Official x64 SHA-256: 7403be7427bbe1936a40dded082829b6e217fc4f5990fee5cba501f0ae055afa";
-            return;
+                "Equalizer APO is present, but Windows denied access to its configuration. " +
+                "Device Volume remains available; run LouderMe as administrator once if you want to configure boost/EQ.";
         }
-
-        if (!status.Configured)
+        catch (Exception ex)
         {
-            _engineStatus.ForeColor = Gold;
-            _engineStatus.Text =
-                status.Message + " Change any LouderMe boost/EQ control to link it.";
-            return;
+            ShowEngineError(ex);
         }
-
-        _engineStatus.ForeColor = Cyan;
-        _engineStatus.Text =
-            $"{status.Message} Target boost: {_settings.BoostPercent}% " +
-            $"({BoostMath.PercentToDb(_settings.BoostPercent):+0.00;-0.00;0.00} dB).";
     }
 
     private void UpdateEqValueLabels()
@@ -725,6 +808,7 @@ internal sealed class MainForm : Form
             _updateStatus.ForeColor = Cyan;
             _updateStatus.Text = "Verified · opening installer";
             DesktopUpdateService.LaunchInstaller(installer);
+            BeginInvoke(new Action(Close));
         }
         catch (Exception ex)
         {

@@ -75,6 +75,13 @@ jobs:
           foreach ($required in @('Global Boost','250%','Get system-wide engine','Open Configurator')) {
             if ($ui -notmatch [regex]::Escape($required)) { throw "Desktop boost UI contract missing: $required" }
           }
+          foreach ($required in @('DEVICE VOLUME','0–100%','_deviceVolumeSyncTimer','RefreshDeviceVolumeFromSystem')) {
+            if ($ui -notmatch [regex]::Escape($required)) { throw "Desktop device-volume UI contract missing: $required" }
+          }
+          $deviceAudio=Get-Content 'desktop/src/LouderMeDesktop/AudioDeviceController.cs' -Raw
+          foreach ($required in @('MasterVolumeLevelScalar','GetDefaultAudioEndpoint','DeviceVolumeSnapshot')) {
+            if ($deviceAudio -notmatch [regex]::Escape($required)) { throw "Desktop real device-volume contract missing: $required" }
+          }
 
           $db250=20*[Math]::Log10(2.5)
           if ([Math]::Abs($db250-7.958800173) -gt 0.000001) { throw '250 percent gain conversion sanity check failed.' }
@@ -82,7 +89,7 @@ jobs:
           if ((git hash-object desktop/src/LouderMeDesktop/Assets/MichelDuarte.jpg) -ne '18fe1a68722850c3d8f918dc0799f46ffeb6dbaf') {
             throw 'Desktop Michel Duarte portrait is not the canonical asset.'
           }
-          if ((git hash-object desktop/src/LouderMeDesktop/Assets/MichelsLabLockup.png) -ne '7819ef5c7d1a5c338c67c9bbd517e5448724a5cf') {
+          if ((git hash-object desktop/src/LouderMeDesktop/Assets/MichelsLabLockup.png) -ne '7fd48093968b31ddacd3098f5b15d962de580652') {
             throw "Desktop Michel's Lab lockup is not canonical."
           }
 
@@ -100,8 +107,11 @@ jobs:
           if ($transparentStyleCount -lt 4) { throw 'Transparent custom controls are missing SupportsTransparentBackColor.' }
 
           $updater=Get-Content 'desktop/src/LouderMeDesktop/DesktopUpdateService.cs' -Raw
-          foreach ($required in @('louderme-desktop/latest.json','installerSha256','SHA256.HashDataAsync')) {
+          foreach ($required in @('louderme-desktop/latest.json','installerSha256','SHA256.HashDataAsync','feed schema is not supported','feed product does not match LouderMe Desktop')) {
             if ($updater -notmatch [regex]::Escape($required)) { throw "Desktop updater contract missing: $required" }
+          }
+          foreach ($required in @('BeginInvoke(new Action(Close))','Equalizer APO is present, but Windows denied access','_volume.Capture')) {
+            if ($ui -notmatch [regex]::Escape($required)) { throw "Desktop runtime hardening contract missing: $required" }
           }
 
       - name: Publish portable Windows executable
@@ -127,7 +137,8 @@ jobs:
             'WizardStyle=modern',
             'Start LouderMe with Windows',
             '[Languages]',
-            'spanish.DesktopShortcut'
+            'spanish.DesktopShortcut',
+            'runasoriginaluser'
           )) {
             if ($iss -notmatch [regex]::Escape($required)) { throw "Installer contract missing: $required" }
           }
@@ -144,6 +155,22 @@ jobs:
           $exe="desktop/artifacts/LouderMe-Portable-v$v.exe"
           $hash=(Get-FileHash $exe -Algorithm SHA256).Hash.ToLowerInvariant()
           "$hash  LouderMe-Portable-v$v.exe" | Set-Content "$exe.sha256" -Encoding ascii
+
+      - name: Smoke-test portable LouderMe launch
+        shell: pwsh
+        run: |
+          $v='${{ steps.ver.outputs.version }}'
+          $portable=(Resolve-Path "desktop/artifacts/LouderMe-Portable-v$v.exe").Path
+          $evidence=Join-Path (Resolve-Path 'desktop/artifacts').Path 'LouderMe-Portable-launch.txt'
+          $crashLog=Join-Path $env:LOCALAPPDATA "Michel's Lab\LouderMe\startup-crash.log"
+          Remove-Item $crashLog -Force -ErrorAction SilentlyContinue
+          pwsh -File desktop/tools/windows_launch_smoke.ps1 `
+            -ExePath $portable `
+            -Arguments '--smoke-test' `
+            -MinimumAliveSeconds 8 `
+            -WindowTimeoutSeconds 20 `
+            -EvidencePath $evidence `
+            -CrashLogPath $crashLog
 
       - name: Build Windows installer
         shell: pwsh
@@ -219,6 +246,7 @@ jobs:
           path: |
             desktop/artifacts/LouderMe-Portable-v${{ steps.ver.outputs.version }}.exe
             desktop/artifacts/LouderMe-Portable-v${{ steps.ver.outputs.version }}.exe.sha256
+            desktop/artifacts/LouderMe-Portable-launch.txt
             desktop/artifacts/LouderMe-Setup-v${{ steps.ver.outputs.version }}.exe
             desktop/artifacts/LouderMe-Setup-v${{ steps.ver.outputs.version }}.exe.sha256
             desktop/artifacts/LouderMe-Installed-launch.txt

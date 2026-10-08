@@ -67,7 +67,7 @@ jobs:
           if ((git hash-object desktop/src/LouderMeDesktop/Assets/MichelDuarte.jpg) -ne '18fe1a68722850c3d8f918dc0799f46ffeb6dbaf') {
             throw 'Desktop Michel Duarte portrait is not canonical.'
           }
-          if ((git hash-object desktop/src/LouderMeDesktop/Assets/MichelsLabLockup.png) -ne '7819ef5c7d1a5c338c67c9bbd517e5448724a5cf') {
+          if ((git hash-object desktop/src/LouderMeDesktop/Assets/MichelsLabLockup.png) -ne '7fd48093968b31ddacd3098f5b15d962de580652') {
             throw "Desktop Michel's Lab lockup is not canonical."
           }
 
@@ -97,8 +97,25 @@ jobs:
             if ($program -notmatch [regex]::Escape($required)) { throw "Desktop startup diagnostics contract missing: $required" }
           }
 
+          $ui=Get-Content 'desktop/src/LouderMeDesktop/MainForm.cs' -Raw
+          foreach ($required in @('DEVICE VOLUME','0–100%','_deviceVolumeSyncTimer','RefreshDeviceVolumeFromSystem')) {
+            if ($ui -notmatch [regex]::Escape($required)) { throw "Desktop device-volume UI contract missing: $required" }
+          }
+          $deviceAudio=Get-Content 'desktop/src/LouderMeDesktop/AudioDeviceController.cs' -Raw
+          foreach ($required in @('MasterVolumeLevelScalar','GetDefaultAudioEndpoint','DeviceVolumeSnapshot')) {
+            if ($deviceAudio -notmatch [regex]::Escape($required)) { throw "Desktop real device-volume contract missing: $required" }
+          }
+
+          $updater=Get-Content 'desktop/src/LouderMeDesktop/DesktopUpdateService.cs' -Raw
+          foreach ($required in @('feed schema is not supported','feed product does not match LouderMe Desktop')) {
+            if ($updater -notmatch [regex]::Escape($required)) { throw "Desktop updater identity contract missing: $required" }
+          }
+          foreach ($required in @('BeginInvoke(new Action(Close))','Equalizer APO is present, but Windows denied access','_volume.Capture')) {
+            if ($ui -notmatch [regex]::Escape($required)) { throw "Desktop runtime hardening contract missing: $required" }
+          }
+
           $iss=Get-Content 'desktop/installer/LouderMe.iss' -Raw
-          foreach ($required in @('WizardStyle=modern','[Languages]','spanish.DesktopShortcut','Start LouderMe with Windows')) {
+          foreach ($required in @('WizardStyle=modern','[Languages]','spanish.DesktopShortcut','Start LouderMe with Windows','runasoriginaluser')) {
             if ($iss -notmatch [regex]::Escape($required)) { throw "Installer experience contract missing: $required" }
           }
           if ($iss -match 'WizardImageFile=|WizardSmallImageFile=') {
@@ -124,6 +141,22 @@ jobs:
           if (-not (Test-Path $exe)) { throw 'Portable LouderMe EXE was not generated.' }
           $hash=(Get-FileHash $exe -Algorithm SHA256).Hash.ToLowerInvariant()
           "$hash  LouderMe-Portable-v$v.exe" | Set-Content "$exe.sha256" -Encoding ascii
+
+      - name: Smoke-test portable LouderMe launch
+        shell: pwsh
+        run: |
+          $v='${{ steps.ver.outputs.version }}'
+          $portable=(Resolve-Path "desktop/artifacts/LouderMe-Portable-v$v.exe").Path
+          $evidence=Join-Path (Resolve-Path 'desktop/artifacts').Path 'LouderMe-Portable-launch.txt'
+          $crashLog=Join-Path $env:LOCALAPPDATA "Michel's Lab\LouderMe\startup-crash.log"
+          Remove-Item $crashLog -Force -ErrorAction SilentlyContinue
+          pwsh -File desktop/tools/windows_launch_smoke.ps1 `
+            -ExePath $portable `
+            -Arguments '--smoke-test' `
+            -MinimumAliveSeconds 8 `
+            -WindowTimeoutSeconds 20 `
+            -EvidencePath $evidence `
+            -CrashLogPath $crashLog
 
       - name: Build Windows installer
         shell: pwsh
@@ -165,20 +198,16 @@ jobs:
             throw 'Installer completed but LouderMe.exe was not installed.'
           }
 
-          $app=Start-Process -FilePath $installedExe -ArgumentList '--smoke-test' -PassThru
-          Start-Sleep -Seconds 5
-          $app.Refresh()
-          if ($app.HasExited) {
-            $crashLog=Join-Path $env:LOCALAPPDATA "Michel's Lab\LouderMe\startup-crash.log"
-            if (Test-Path $crashLog) {
-              Write-Host '---- LouderMe startup crash log ----'
-              Get-Content $crashLog
-            }
-            throw "Installed LouderMe exited during startup with code $($app.ExitCode)."
-          }
-          Write-Host "Installed LouderMe stayed alive after startup (PID $($app.Id))."
-          Stop-Process -Id $app.Id -Force -ErrorAction SilentlyContinue
-          $app.WaitForExit()
+          $evidence=Join-Path (Resolve-Path 'desktop/artifacts').Path 'LouderMe-Installed-launch.txt'
+          $crashLog=Join-Path $env:LOCALAPPDATA "Michel's Lab\LouderMe\startup-crash.log"
+          Remove-Item $crashLog -Force -ErrorAction SilentlyContinue
+          pwsh -File desktop/tools/windows_launch_smoke.ps1 `
+            -ExePath $installedExe `
+            -Arguments '--smoke-test' `
+            -MinimumAliveSeconds 8 `
+            -WindowTimeoutSeconds 20 `
+            -EvidencePath $evidence `
+            -CrashLogPath $crashLog
 
           $uninstaller=Join-Path $target 'unins000.exe'
           if (-not (Test-Path $uninstaller)) { throw 'Installer did not register an uninstaller.' }
@@ -216,6 +245,8 @@ jobs:
           path: |
             desktop/artifacts/LouderMe-Portable-v${{ steps.ver.outputs.version }}.exe
             desktop/artifacts/LouderMe-Portable-v${{ steps.ver.outputs.version }}.exe.sha256
+            desktop/artifacts/LouderMe-Portable-launch.txt
             desktop/artifacts/LouderMe-Setup-v${{ steps.ver.outputs.version }}.exe
             desktop/artifacts/LouderMe-Setup-v${{ steps.ver.outputs.version }}.exe.sha256
+            desktop/artifacts/LouderMe-Installed-launch.txt
             desktop/releases/v${{ steps.ver.outputs.version }}.md

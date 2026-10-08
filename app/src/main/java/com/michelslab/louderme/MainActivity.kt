@@ -9,6 +9,8 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -18,6 +20,8 @@ import com.michelslab.louderme.audio.AudioBoostService
 import com.michelslab.louderme.audio.AudioBoostStateStore
 import com.michelslab.louderme.audio.AudioEngineStatus
 import com.michelslab.louderme.audio.AudioEngineUiState
+import com.michelslab.louderme.audio.DeviceVolumeController
+import com.michelslab.louderme.audio.DeviceVolumeUiState
 import com.michelslab.louderme.audio.EqualizerPreset
 import com.michelslab.louderme.audio.EqualizerPresets
 import com.michelslab.louderme.audio.EqualizerStateStore
@@ -32,9 +36,18 @@ class MainActivity : ComponentActivity() {
     private val updateStatus = mutableStateOf<UpdateStatus>(UpdateStatus.Checking)
     private val audioState = mutableStateOf(AudioEngineUiState())
     private val equalizerState = mutableStateOf(EqualizerUiState())
+    private val deviceVolumeState = mutableStateOf(DeviceVolumeUiState())
     private val startOnBoot = mutableStateOf(false)
 
     private lateinit var updateCoordinator: UpdateCoordinator
+    private lateinit var deviceVolumeController: DeviceVolumeController
+    private val deviceVolumeSyncHandler = Handler(Looper.getMainLooper())
+    private val deviceVolumeSync = object : Runnable {
+        override fun run() {
+            refreshDeviceVolume()
+            deviceVolumeSyncHandler.postDelayed(this, 750L)
+        }
+    }
     private var pendingBoostPercent: Int? = null
     private var audioReceiverRegistered = false
 
@@ -46,10 +59,18 @@ class MainActivity : ComponentActivity() {
         }
 
     private val notificationPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) {
-            pendingBoostPercent?.let { percent ->
-                pendingBoostPercent = null
-                startBoost(percent)
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            val pending = pendingBoostPercent
+            pendingBoostPercent = null
+
+            if (granted && pending != null) {
+                startBoost(pending)
+            } else if (!granted && pending != null && !audioState.value.isRunning) {
+                audioState.value = audioState.value.copy(
+                    status = AudioEngineStatus.OFF,
+                    implementation = "Notification permission required",
+                    message = "Boost was not started because notification permission was denied.",
+                )
             }
         }
 
@@ -67,6 +88,8 @@ class MainActivity : ComponentActivity() {
 
         audioState.value = AudioBoostStateStore.read(this)
         equalizerState.value = EqualizerStateStore.read(this)
+        deviceVolumeController = DeviceVolumeController(this)
+        refreshDeviceVolume()
         startOnBoot.value = StartupPreferences.isStartOnBootEnabled(this)
 
         updateCoordinator = UpdateCoordinator(
@@ -82,6 +105,7 @@ class MainActivity : ComponentActivity() {
                 updateStatus = updateStatus.value,
                 audioState = audioState.value,
                 equalizerState = equalizerState.value,
+                deviceVolumeState = deviceVolumeState.value,
                 startOnBoot = startOnBoot.value,
                 onCheckForUpdates = {
                     updateCoordinator.checkForUpdates(automatic = false)
@@ -92,6 +116,9 @@ class MainActivity : ComponentActivity() {
                 onStartOnBootChanged = { enabled ->
                     StartupPreferences.setStartOnBootEnabled(this, enabled)
                     startOnBoot.value = enabled
+                },
+                onDeviceVolumeChanged = { percent ->
+                    setDeviceVolume(percent)
                 },
                 onBoostToggle = { enabled ->
                     if (enabled) {
@@ -184,6 +211,9 @@ class MainActivity : ComponentActivity() {
         }
 
         audioState.value = AudioBoostStateStore.read(this)
+        refreshDeviceVolume()
+        deviceVolumeSyncHandler.removeCallbacks(deviceVolumeSync)
+        deviceVolumeSyncHandler.postDelayed(deviceVolumeSync, 750L)
 
         val storedEq = EqualizerStateStore.read(this)
         equalizerState.value = if (audioState.value.isRunning) {
@@ -198,6 +228,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onStop() {
+        deviceVolumeSyncHandler.removeCallbacks(deviceVolumeSync)
         if (audioReceiverRegistered) {
             unregisterReceiver(audioStateReceiver)
             audioReceiverRegistered = false
@@ -210,13 +241,45 @@ class MainActivity : ComponentActivity() {
         if (::updateCoordinator.isInitialized) {
             updateCoordinator.onResume()
         }
+        refreshDeviceVolume()
     }
 
     override fun onDestroy() {
+        deviceVolumeSyncHandler.removeCallbacks(deviceVolumeSync)
         if (::updateCoordinator.isInitialized) {
             updateCoordinator.shutdown()
         }
         super.onDestroy()
+    }
+
+    private fun refreshDeviceVolume() {
+        if (!::deviceVolumeController.isInitialized) return
+
+        runCatching {
+            deviceVolumeController.read()
+        }.onSuccess { state ->
+            deviceVolumeState.value = state
+        }.onFailure { error ->
+            deviceVolumeState.value = deviceVolumeState.value.copy(
+                available = false,
+                message = "Device volume unavailable: " + (error.message ?: error.javaClass.simpleName),
+            )
+        }
+    }
+
+    private fun setDeviceVolume(percent: Int) {
+        if (!::deviceVolumeController.isInitialized) return
+
+        runCatching {
+            deviceVolumeController.setPercent(percent)
+        }.onSuccess { state ->
+            deviceVolumeState.value = state
+        }.onFailure { error ->
+            deviceVolumeState.value = deviceVolumeState.value.copy(
+                available = false,
+                message = "Could not change device volume: " + (error.message ?: error.javaClass.simpleName),
+            )
+        }
     }
 
     private fun receiveAudioState(intent: Intent) {
@@ -312,7 +375,15 @@ class MainActivity : ComponentActivity() {
             .setAction(action)
             .putExtra(AudioBoostContract.EXTRA_PERCENT, percent)
 
-        startForegroundService(intent)
+        runCatching {
+            startForegroundService(intent)
+        }.onFailure { error ->
+            audioState.value = audioState.value.copy(
+                status = AudioEngineStatus.ERROR,
+                implementation = "Foreground service start failed",
+                message = error.message ?: error.javaClass.simpleName,
+            )
+        }
     }
 
     private fun stopBoost() {

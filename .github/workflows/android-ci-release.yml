@@ -82,13 +82,23 @@ jobs:
 
           test "$(git hash-object app/src/main/res/drawable/michel_duarte_avatar.jpg)" = "18fe1a68722850c3d8f918dc0799f46ffeb6dbaf"
           test "$(git hash-object app/src/main/assets/branding/michels-lab/official-mark.png)" = "f205c15c3b6bd7fe676ced83fd1ea2ae24c25586"
-          test "$(git hash-object app/src/main/assets/branding/michels-lab/official-lockup.png)" = "7819ef5c7d1a5c338c67c9bbd517e5448724a5cf"
+          test "$(git hash-object app/src/main/assets/branding/michels-lab/official-lockup.png)" = "7fd48093968b31ddacd3098f5b15d962de580652"
           grep -q 'SocialNetwork.FACEBOOK' app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt
           grep -q 'branding/michels-lab/official-lockup.png' app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt
           grep -q 'SOUND THAT LIFTS YOU' app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt
           grep -q 'CanonicalWaveform' app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt
           grep -q 'EqWavePreview' app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt
           grep -q 'BackHandler(enabled = showAbout)' app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt
+          grep -q 'AudioManager.STREAM_MUSIC' app/src/main/java/com/michelslab/louderme/audio/DeviceVolumeController.kt
+          grep -q 'DeviceVolumePanel' app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt
+          grep -q 'deviceVolumeSyncHandler' app/src/main/java/com/michelslab/louderme/MainActivity.kt
+          grep -q 'Device Volume and Global Boost are separate' app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt
+          grep -q 'RequestPermission()) { granted ->' app/src/main/java/com/michelslab/louderme/MainActivity.kt
+          grep -q 'Boost was not started because notification permission was denied' app/src/main/java/com/michelslab/louderme/MainActivity.kt
+          grep -q 'Start with phone skipped' app/src/main/java/com/michelslab/louderme/startup/BootCompletedReceiver.kt
+          grep -q 'Start with phone failed' app/src/main/java/com/michelslab/louderme/startup/BootCompletedReceiver.kt
+          grep -q 'runCatching' app/src/main/java/com/michelslab/louderme/ui/BrandComponents.kt
+          grep -q 'IMAGE UNAVAILABLE' app/src/main/java/com/michelslab/louderme/ui/BrandComponents.kt
 
       - name: Run tests and build distribution flavors
         run: |

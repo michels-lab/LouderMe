@@ -57,6 +57,12 @@ internal sealed class DesktopUpdateService
             new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
             ?? throw new InvalidDataException("Desktop update feed is empty.");
 
+        if (manifest.schema != 1)
+            throw new InvalidDataException("Desktop update feed schema is not supported.");
+
+        if (!manifest.product.Equals("LouderMe Desktop", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException("Desktop update feed product does not match LouderMe Desktop.");
+
         if (!manifest.channel.Equals("stable", StringComparison.OrdinalIgnoreCase))
             throw new InvalidDataException("Desktop update feed is not on the stable channel.");
 

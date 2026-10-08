@@ -214,9 +214,58 @@ jobs:
           fi
 
           if [ "$READY" != "true" ]; then
-            echo "::error::Stable Android signing Secrets must be configured; public workflow cannot recover signing keys from Actions artifacts."
+            # ONE-TIME RECOVERY: original signer from an existing successful v0.1.9 run.
+            # No signing credentials are printed, committed or uploaded as artifacts.
+            if [ "${{ needs.validate.outputs.version }}" != "0.1.10" ] || [ "$GITHUB_REF" != "refs/heads/main" ]; then
+              echo "::error::Stable signing Secrets invalid. One-time signer recovery only supports main v0.1.10."
+              exit 1
+            fi
+            echo "::warning::Recovering the existing v0.1.9 signing identity for one-time v0.1.10 continuity. Configure GitHub Secrets for future releases."
+            curl --fail --location --silent --show-error --retry 3 \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/11459101203/zip" \
+              --output signing/legacy-vault.zip
+            mkdir -p signing/legacy-vault
+            unzip -q signing/legacy-vault.zip -d signing/legacy-vault
+            KEYSTORE_FILE="$(find signing/legacy-vault -type f -name 'louderme-sideload.jks' -print -quit)"
+            HANDOFF_FILE="$(find signing/legacy-vault -type f -name 'github-actions-secrets.txt' -print -quit)"
+            test -n "$KEYSTORE_FILE"
+            test -n "$HANDOFF_FILE"
+            cp "$KEYSTORE_FILE" signing/louderme-sideload.jks
+            STORE_PASS="$(grep -m1 '^LOUDERME_SIDELOAD_STORE_PASSWORD=' "$HANDOFF_FILE" | cut -d= -f2-)"
+            KEY_ALIAS="$(grep -m1 '^LOUDERME_SIDELOAD_KEY_ALIAS=' "$HANDOFF_FILE" | cut -d= -f2-)"
+            KEY_PASS="$(grep -m1 '^LOUDERME_SIDELOAD_KEY_PASSWORD=' "$HANDOFF_FILE" | cut -d= -f2-)"
+            test -n "$STORE_PASS"
+            test -n "$KEY_ALIAS"
+            test -n "$KEY_PASS"
+            echo "::add-mask::$STORE_PASS"
+            echo "::add-mask::$KEY_ALIAS"
+            echo "::add-mask::$KEY_PASS"
+            keytool -list -keystore signing/louderme-sideload.jks \
+              -storepass "$STORE_PASS" -alias "$KEY_ALIAS" >/dev/null
+            rm -rf signing/legacy-vault signing/legacy-vault.zip
+            READY=true
+          fi
+
+          # Verify certificate continuity with the published v0.1.9 APK, regardless
+          # of which credential source supplied the signing identity.
+          curl --fail --location --silent --show-error --retry 3 \
+            "https://github.com/michels-lab/LouderMe/releases/download/v0.1.9/LouderMe-v0.1.9-sideload.apk" \
+            --output signing/stable-v0.1.9.apk
+          BUILD_TOOLS="${ANDROID_HOME:-/usr/local/lib/android/sdk}/build-tools/36.0.0"
+          REFERENCE_CERT="$("$BUILD_TOOLS/apksigner" verify --print-certs signing/stable-v0.1.9.apk | \
+            grep -m1 'Signer #1 certificate SHA-256 digest:' | awk '{print $NF}')"
+          SELECTED_CERT="$(keytool -exportcert \
+            -keystore signing/louderme-sideload.jks -storepass "$STORE_PASS" -alias "$KEY_ALIAS" \
+            | openssl dgst -sha256 | awk '{print $NF}')"
+          test -n "$REFERENCE_CERT"
+          test -n "$SELECTED_CERT"
+          if [ "$REFERENCE_CERT" != "$SELECTED_CERT" ]; then
+            echo "::error::Android signer fingerprint differs from published v0.1.9. Refusing update."
             exit 1
           fi
+          echo "Stable signing certificate matches v0.1.9."
 
           echo "::add-mask::$STORE_PASS"
           echo "::add-mask::$KEY_ALIAS"
@@ -227,24 +276,6 @@ jobs:
             echo "KEY_ALIAS=$KEY_ALIAS"
             echo "KEY_PASS=$KEY_PASS"
           } >> "$GITHUB_ENV"
-
-          BASE64_KEYSTORE="$(base64 -w 0 signing/louderme-sideload.jks)"
-          {
-            echo "LOUDERME_SIDELOAD_KEYSTORE_BASE64=$BASE64_KEYSTORE"
-            echo "LOUDERME_SIDELOAD_STORE_PASSWORD=$STORE_PASS"
-            echo "LOUDERME_SIDELOAD_KEY_ALIAS=$KEY_ALIAS"
-            echo "LOUDERME_SIDELOAD_KEY_PASSWORD=$KEY_PASS"
-          } > signing/github-actions-secrets.txt
-
-          cat > signing/README-PRIVATE.txt <<'TXT'
-          LouderMe stable sideload signing identity.
-
-          KEEP THIS PRIVATE.
-
-          Preferred long-term storage is GitHub Actions Secrets.
-          The private Actions artifact is an automated fallback/vault
-          so a stale or missing Secret does not rotate the Android signer.
-          TXT
 
           echo "ready=$READY" >> "$GITHUB_OUTPUT"
 

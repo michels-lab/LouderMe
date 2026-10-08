@@ -21,7 +21,7 @@ repository. It does not publish a signed driver or install an audio device.
 - Endpoint miniport list contains only the virtual **speaker render** endpoint.
   No sample capture/microphone endpoints are installed; unrelated demo render
   miniports (headphone/HDMI/SPDIF) are excluded.
-- The selected virtual speaker is configured with a loopback-support flag,
+- Optional SysVAD render-to-disk saving is **permanently disabled** and its\n  registry override is removed; the sample-generated test-tone feature is\n  disabled so sound-proof tests cannot mistake synthetic driver tones for\n  PCM originating from Windows playback clients.\n- The selected virtual speaker is configured with a loopback-support flag,
   allowing the existing WASAPI bridge to investigate its actual PCM stream.
   **This flag is not evidence that virtual SysVAD supplies non-silent PCM to
   loopback. Test on real Windows hardware before claiming it works.**

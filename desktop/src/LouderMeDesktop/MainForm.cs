@@ -30,6 +30,7 @@ internal sealed class MainForm : Form
     private readonly Label _updateStatus = new();
     private readonly Button _updateAction = new();
     private readonly Button _aboutAction = new();
+    private IMessageFilter? _wheelFilter;
     private DesktopUpdateCheck? _lastUpdateCheck;
 
     private bool _loading;
@@ -72,6 +73,8 @@ internal sealed class MainForm : Form
         {
             _deviceVolumeSyncTimer.Stop();
             _deviceVolumeSyncTimer.Dispose();
+            if (_wheelFilter is not null)
+                Application.RemoveMessageFilter(_wheelFilter);
             _audio.Dispose();
         }
         base.Dispose(disposing);
@@ -178,6 +181,8 @@ internal sealed class MainForm : Form
         viewport.Controls.Add(content);
         shell.Controls.Add(viewport, 0, 1);
         Controls.Add(shell);
+        _wheelFilter = new ViewportWheelFilter(this, viewport);
+        Application.AddMessageFilter(_wheelFilter);
         Shown += (_, _) => viewport.Focus();
     }
 
@@ -185,6 +190,29 @@ internal sealed class MainForm : Form
     {
         using var form = new AboutForm(_updates);
         form.ShowDialog(this);
+    }
+
+    // Wheel scrolling must work even while a nested slider/button has focus.
+    // Only intercept messages over the scroll viewport of the active main form.
+    private sealed class ViewportWheelFilter(Form owner, Panel viewport) : IMessageFilter
+    {
+        public bool PreFilterMessage(ref Message m)
+        {
+            const int WmMouseWheel = 0x020A;
+            if (m.Msg != WmMouseWheel || Form.ActiveForm != owner ||
+                !viewport.Visible || !viewport.RectangleToScreen(viewport.ClientRectangle).Contains(Cursor.Position))
+                return false;
+
+            var delta = unchecked((short)((m.WParam.ToInt64() >> 16) & 0xffff));
+            if (delta == 0) return false;
+            var maxScroll = Math.Max(0, viewport.DisplayRectangle.Height - viewport.ClientSize.Height);
+            var next = Math.Clamp(
+                -viewport.AutoScrollPosition.Y - Math.Sign(delta) *
+                Math.Max(3, SystemInformation.MouseWheelScrollLines) * 24,
+                0, maxScroll);
+            viewport.AutoScrollPosition = new Point(0, next);
+            return true;
+        }
     }
 
     private void BuildOutputCard(TableLayoutPanel root)

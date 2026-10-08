@@ -71,6 +71,13 @@ internal sealed class AboutForm : Form
                     card.Width = available;
                     foreach (var row in card.Controls.OfType<TableLayoutPanel>())
                     {
+                        foreach (var mark in row.Controls.OfType<WaveformMarkControl>())
+                            mark.Width = Math.Max(170, Math.Min(540, available - card.Padding.Horizontal - 18));
+                        foreach (var author in row.Controls.OfType<FlowLayoutPanel>())
+                        {
+                            foreach (var studioLogo in author.Controls.OfType<PictureBox>())
+                                studioLogo.Width = Math.Max(145, Math.Min(260, available - card.Padding.Horizontal - 134));
+                        }
                         foreach (var social in row.Controls.OfType<FlowLayoutPanel>())
                         {
                             if (social.Controls.OfType<Panel>().Any())

@@ -26,7 +26,7 @@ internal sealed record DesktopUpdateCheck(
 internal sealed class DesktopUpdateService
 {
     private const string FeedUrl =
-        "https://raw.githubusercontent.com/realmichelduarte/michel-s-life-releases/main/louderme-desktop/latest.json";
+        "https://raw.githubusercontent.com/michels-lab/michel-s-life-releases/main/louderme-desktop/latest.json";
 
     private readonly HttpClient _http = new()
     {

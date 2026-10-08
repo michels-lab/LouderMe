@@ -19,7 +19,7 @@ The source repository remains private.
 
 The public feed is:
 
-`realmichelduarte/michel-s-life-releases/louderme/latest.json`
+`michels-lab/michel-s-life-releases/louderme/latest.json`
 
 The feed contains only distribution metadata:
 - package ID;

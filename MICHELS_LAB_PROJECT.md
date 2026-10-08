@@ -4,7 +4,7 @@ This repository is part of the **Michel's Lab** software ecosystem.
 
 ## Authority
 
-- Shared engineering rules, reusable implementation patterns, branding conventions, cloud/security standards and cross-app status live in `realmichelduarte/Michel-Software-Standards`.
+- Shared engineering rules, reusable implementation patterns, branding conventions, cloud/security standards and cross-app status live in `michels-lab/Michel-Software-Standards`.
 - App-specific implementation truth remains in this repository and its own audit/project logs.
 - The machine-readable relationship is declared in `.michelslab/project.yml`.
 

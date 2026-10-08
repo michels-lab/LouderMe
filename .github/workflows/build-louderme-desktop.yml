@@ -63,6 +63,11 @@ jobs:
       - name: Validate real global boost contract
         shell: pwsh
         run: |
+          $mainUi=Get-Content 'desktop/src/LouderMeDesktop/MainForm.cs' -Raw
+          foreach ($required in @('header.Controls.Add(_aboutAction, 2, 0)','var viewport = new Panel','AutoScroll = true','ViewportWheelFilter','private void OpenAbout()')) {
+            if (-not $mainUi.Contains($required)) { throw "Desktop top-About/scroll contract missing: $required" }
+          }
+
           $math=Get-Content 'desktop/src/LouderMeDesktop/BoostMath.cs' -Raw
           if ($math -notmatch '20d \* Math\.Log10') { throw 'Percent-to-dB gain conversion is missing.' }
 
@@ -72,7 +77,7 @@ jobs:
           }
 
           $ui=Get-Content 'desktop/src/LouderMeDesktop/MainForm.cs' -Raw
-          foreach ($required in @('Global Boost','250%','Get system-wide engine','Open Configurator')) {
+          foreach ($required in @('Global Boost','250%','Install Equalizer APO','Open Configurator')) {
             if ($ui -notmatch [regex]::Escape($required)) { throw "Desktop boost UI contract missing: $required" }
           }
 

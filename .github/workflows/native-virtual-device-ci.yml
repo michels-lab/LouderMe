@@ -43,6 +43,8 @@ jobs:
           info = json.loads(p.read_text())
           assert info['render_endpoints'] == 1
           assert info['capture_endpoints'] == 0
+          assert info['recording_to_file_enabled'] is False
+          assert info['sample_tone_generator_enabled'] is False
           assert info['hardware_id'] == r'Root\LouderMe_VirtualRender_Lab'
           assert info['driver_signed'] is False
           assert info['real_audio_verified'] is False

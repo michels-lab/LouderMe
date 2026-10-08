@@ -60,6 +60,16 @@ jobs:
           dotnet restore desktop/src/LouderMeDesktop/LouderMeDesktop.csproj
           dotnet build desktop/src/LouderMeDesktop/LouderMeDesktop.csproj -c Release --no-restore
 
+      - name: Run real compact-window About and scroll smoke test
+        shell: pwsh
+        run: |
+          dotnet run --project desktop/src/LouderMeDesktop/LouderMeDesktop.csproj -c Release --no-build -- --layout-smoke-test
+          if ($LASTEXITCODE -ne 0) {
+            $crashLog=Join-Path $env:LOCALAPPDATA "Michel's Lab\\LouderMe\\startup-crash.log"
+            if (Test-Path $crashLog) { Get-Content $crashLog }
+            throw "Desktop compact layout smoke failed: About not visible or scrolling not reachable."
+          }
+
       - name: Validate real global boost contract
         shell: pwsh
         run: |

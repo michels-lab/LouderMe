@@ -81,7 +81,9 @@ internal static class Program
             using var playback = new WasapiOut(physical, AudioClientShareMode.Shared, true, 75);
             var buffer = new BufferedWaveProvider(inputFormat)
             {
-                BufferDuration = TimeSpan.FromMilliseconds(250),
+                BufferLength = Math.Max(inputFormat.BlockAlign,
+                    (inputFormat.AverageBytesPerSecond / 4 / inputFormat.BlockAlign) *
+                    inputFormat.BlockAlign),
                 DiscardOnBufferOverflow = false,
                 ReadFully = true
             };

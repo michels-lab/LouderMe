@@ -1659,3 +1659,20 @@ Historical platform-specific releases were intentionally retained for compatibil
 **Preserved intentionally:** Michel Duarte personal developer/social identity remains under `realmichelduarte`. No release is authorized by this migration change.
 
 **Validation:** Android and Windows branch CI are required before merge.
+
+## 2026-10-08 — Device-volume/identity continuation (partial)
+
+- Closed superseded PR #11 and resolved Desktop startup issue #23 after published v0.1.4 evidence.
+- Corrected README direct-update manifest ownership to michels-lab.
+- Added Michel's Lab 'Tools with identity' subtitle in Windows About; LouderMe tagline remains 'SOUND THAT LIFTS YOU'.
+- Added Windows polling of active endpoint master volume and mute; this is source-level work, not yet runtime-validated. Device volume remains 0–100%, independent from Global Boost 100–250%.
+- Android About + media-volume implementation remain pending; attempted Android source updates were blocked, so no Android result is claimed.
+- Windows build, installed startup test, real device test and current-SHA CI are pending. No release has been authorized or published.
+
+## 2026-10-08 — Android device volume and About implementation
+
+- After repository visibility changed to public, successfully added 'Tools with identity' under the Michel's Lab lockup in Android About.
+- Android MainActivity now reads and sets AudioManager.STREAM_MUSIC (true media stream), normalizes display to 0–100%, and resyncs once per second while the Activity is started. Foreground callbacks are removed on stop.
+- Android Compose now has a separate Device Volume slider panel above Global Boost; its changes request Android media stream volume independently from gain.
+- Pull request #31 opened with both platform implementations and documentation.
+- Android and Windows current-head CI/build status and real-device tests were not confirmed at time of this entry. Do not claim the volume feature functionally validated or close #26 until validation and merge.

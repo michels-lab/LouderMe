@@ -32,6 +32,7 @@ internal sealed class MainForm : Form
     private DesktopUpdateCheck? _lastUpdateCheck;
 
     private bool _loading;
+    private readonly System.Windows.Forms.Timer _deviceVolumeSyncTimer = new() { Interval = 1500 };
 
     private static readonly Color Bg = Color.FromArgb(6, 9, 16);
     private static readonly Color Surface = Color.FromArgb(12, 20, 34);
@@ -55,13 +56,20 @@ internal sealed class MainForm : Form
 
         BuildUi();
         LoadState();
+        _deviceVolumeSyncTimer.Tick += (_, _) => SyncDeviceVolume();
+        _deviceVolumeSyncTimer.Start();
 
         Shown += async (_, _) => await CheckForUpdatesAsync(silent: true);
     }
 
     protected override void Dispose(bool disposing)
     {
-        if (disposing) _audio.Dispose();
+        if (disposing)
+        {
+            _deviceVolumeSyncTimer.Stop();
+            _deviceVolumeSyncTimer.Dispose();
+            _audio.Dispose();
+        }
         base.Dispose(disposing);
     }
 
@@ -144,7 +152,7 @@ internal sealed class MainForm : Form
 
     private void BuildOutputCard(TableLayoutPanel root)
     {
-        var card = Card("SYSTEM OUTPUT");
+        var card = Card("DEVICE VOLUME · WINDOWS OUTPUT 0–100%");
         var layout = (TableLayoutPanel)card.Controls[0];
 
         _deviceValue.AutoSize = true;
@@ -543,6 +551,22 @@ internal sealed class MainForm : Form
         footer.Controls.Add(_updateStatus);
         footer.Controls.Add(about);
         root.Controls.Add(footer);
+    }
+
+    private void SyncDeviceVolume()
+    {
+        if (_loading || _volume.Capture || _mute.Focused) return;
+        try
+        {
+            _audio.Refresh();
+            _loading = true;
+            _deviceValue.Text = _audio.DeviceName;
+            _volume.Value = Math.Clamp(_audio.VolumePercent, 0, 100);
+            _volumeValue.Text = $"{_volume.Value}%";
+            _mute.Checked = _audio.Muted;
+        }
+        catch (Exception ex) { _deviceValue.Text = $"Device unavailable: {ex.Message}"; }
+        finally { _loading = false; }
     }
 
     private void LoadState()

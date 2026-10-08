@@ -9,6 +9,10 @@ import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.media.AudioManager
+import kotlin.math.roundToInt
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -33,6 +37,31 @@ class MainActivity : ComponentActivity() {
     private val audioState = mutableStateOf(AudioEngineUiState())
     private val equalizerState = mutableStateOf(EqualizerUiState())
     private val startOnBoot = mutableStateOf(false)
+    private val deviceVolumePercent = mutableStateOf(0)
+    private val deviceVolumeHandler = Handler(Looper.getMainLooper())
+    private val deviceVolumePoll = object : Runnable {
+        override fun run() {
+            refreshDeviceVolume()
+            deviceVolumeHandler.postDelayed(this, 1000L)
+        }
+    }
+
+    private fun mediaAudioManager(): AudioManager =
+        getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+    private fun refreshDeviceVolume() {
+        val manager = mediaAudioManager()
+        val max = manager.getStreamMaxVolume(AudioManager.STREAM_MUSIC).coerceAtLeast(1)
+        deviceVolumePercent.value = (manager.getStreamVolume(AudioManager.STREAM_MUSIC) * 100f / max).roundToInt().coerceIn(0, 100)
+    }
+
+    private fun setDeviceVolume(percent: Int) {
+        val manager = mediaAudioManager()
+        val max = manager.getStreamMaxVolume(AudioManager.STREAM_MUSIC).coerceAtLeast(1)
+        val value = (percent.coerceIn(0, 100) * max / 100f).roundToInt().coerceIn(0, max)
+        manager.setStreamVolume(AudioManager.STREAM_MUSIC, value, 0)
+        refreshDeviceVolume()
+    }
 
     private lateinit var updateCoordinator: UpdateCoordinator
     private var pendingBoostPercent: Int? = null
@@ -83,6 +112,8 @@ class MainActivity : ComponentActivity() {
                 audioState = audioState.value,
                 equalizerState = equalizerState.value,
                 startOnBoot = startOnBoot.value,
+                deviceVolumePercent = deviceVolumePercent.value,
+                onDeviceVolumeChanged = ::setDeviceVolume,
                 onCheckForUpdates = {
                     updateCoordinator.checkForUpdates(automatic = false)
                 },
@@ -162,6 +193,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
+        refreshDeviceVolume()
+        deviceVolumeHandler.removeCallbacks(deviceVolumePoll)
+        deviceVolumeHandler.post(deviceVolumePoll)
 
         if (!audioReceiverRegistered) {
             val filter = IntentFilter().apply {
@@ -198,6 +232,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onStop() {
+        deviceVolumeHandler.removeCallbacks(deviceVolumePoll)
         if (audioReceiverRegistered) {
             unregisterReceiver(audioStateReceiver)
             audioReceiverRegistered = false

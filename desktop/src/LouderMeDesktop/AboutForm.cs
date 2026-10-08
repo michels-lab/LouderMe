@@ -182,6 +182,14 @@ internal sealed class AboutForm : Form
             Margin = new Padding(0, 10, 0, 0),
         };
         author.Controls.Add(studio);
+        author.Controls.Add(new Label
+        {
+            AutoSize = true,
+            Text = "Tools with identity",
+            ForeColor = Gold,
+            Font = new Font("Consolas", 9f, FontStyle.Bold),
+            Margin = new Padding(0, 4, 0, 4),
+        });
         layout.Controls.Add(author, 1, 0);
 
         var socials = new FlowLayoutPanel

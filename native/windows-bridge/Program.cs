@@ -199,7 +199,30 @@ internal static class Program
         float sample = BinaryPrimitives.ReadSingleLittleEndian(pcm.AsSpan(pcm.Length - sizeof(float)));
         if (Math.Abs(sample - 0.15f) > 0.001f)
             throw new InvalidOperationException("Managed-to-native DSP gain test failed.");
-        Console.WriteLine($"Native Windows bridge P/Invoke: pass; last sample = {sample:F3}");
+        using var eqEngine = new NativeDsp(rate, channels, 100);
+        eqEngine.ConfigureEqualizer(true, new float[] { 0, 0, 0, 0, 8, 0, 0 });
+        byte[] tone = new byte[rate / 10 * channels * sizeof(float)];
+        for (var frame = 0; frame < rate / 10; frame++)
+        {
+            float value = 0.02f * MathF.Sin(2f * MathF.PI * 1000f * frame / rate);
+            for (var channel = 0; channel < channels; channel++)
+                BinaryPrimitives.WriteSingleLittleEndian(
+                    tone.AsSpan((frame * channels + channel) * sizeof(float)), value);
+        }
+        eqEngine.Process(tone, tone.Length, channels);
+        double energy = 0;
+        var count = 0;
+        for (var frame = rate / 20; frame < rate / 10; frame++)
+        {
+            var v = BinaryPrimitives.ReadSingleLittleEndian(
+                tone.AsSpan(frame * channels * sizeof(float)));
+            energy += v * v;
+            count++;
+        }
+        var level = Math.Sqrt(energy / count);
+        if (level < 0.028)
+            throw new InvalidOperationException("Managed native 1 kHz EQ response test failed.");
+        Console.WriteLine($"Native Windows bridge P/Invoke: gain={sample:F3}, 1kHz EQ RMS={level:F4}; passed");
         return 0;
     }
 }

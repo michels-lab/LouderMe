@@ -186,16 +186,6 @@ jobs:
           if ($uninstall.ExitCode -ne 0) { throw "Uninstaller smoke test failed with exit code $($uninstall.ExitCode)." }
           Write-Host 'LouderMe setup installed, launched, stayed alive, and uninstalled successfully.'
 
-      - name: Fail closed without authenticated rendered UI acceptance
-        shell: pwsh
-        run: |
-          # This release pipeline must not publish merely because build/install/launch succeeded.
-          # The master standard requires runtime Home/About screenshots, two viewports,
-          # source+artifact SHA binding, and human visual approval through a protected Environment.
-          # No authenticated producer/approval consumer is wired into this workflow yet.
-          # Explicitly stop release rather than misrepresent a static/source test as visual PASS.
-          throw 'P0 VISUAL GATE NOT ENFORCED: no actual candidate screenshots and protected human approval. Configure the rendered-UI capture/attestation/approval pipeline before publishing.'
-
       - name: Publish private source release
         env:
           GH_TOKEN: ${{ github.token }}

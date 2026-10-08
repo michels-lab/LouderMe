@@ -1676,3 +1676,11 @@ Historical platform-specific releases were intentionally retained for compatibil
 - Android Compose now has a separate Device Volume slider panel above Global Boost; its changes request Android media stream volume independently from gain.
 - Pull request #31 opened with both platform implementations and documentation.
 - Android and Windows current-head CI/build status and real-device tests were not confirmed at time of this entry. Do not claim the volume feature functionally validated or close #26 until validation and merge.
+
+## 2026-10-08 — Remove unconditional human-review publication blocker
+
+- User explicitly requested that visual inspection take place after publication rather than requiring manual human approval to start the release.
+- Removed the unconditional `throw` step from the Windows Desktop release workflow.
+- Existing build, checksum, real installer installation/launch and uninstall smoke checks are retained unchanged.
+- This change does **not** establish rendered UI PASS or human visual acceptance. Post-release visual review remains outstanding and any defect found requires a follow-up fix.
+- No release was published in this change.

@@ -10,7 +10,7 @@ Use current-commit build/test evidence. Android device audio/routing/PackageInst
 
 Update `PROJECT_LOG.md` for meaningful work. Do not publish a release unless explicitly assigned.
 
-Product identity / About are fundamental product contracts. Treat the approved flowing-waveform geometry as the visual foundation across LouderMe, not as a sticker. About must lead with LouderMe identity/version, then About the author with the canonical Michel Duarte portrait, then the official Michel's Lab parent-brand mark, then social links rendered as **network icon + visible network name** using canonical profile URLs.
+Product identity / About are fundamental product contracts. Treat the approved flowing-waveform geometry as the visual foundation across LouderMe, not as a sticker. About must lead with LouderMe identity/version, then a **paired author/studio** composition (Michel Duarte portrait/name/role beside the official Michel's Lab lockup and **TOOLS WITH IDENTITY.** when wide; grouped responsive stack on mobile), then social links rendered as **network icon + visible network name** using canonical profile URLs. Keep LouderMe's separate SOUND THAT LIFTS YOU product slogan.
 
 
 

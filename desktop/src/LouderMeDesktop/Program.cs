@@ -16,7 +16,9 @@ internal static class Program
     [STAThread]
     private static int Main(string[] args)
     {
-        var smokeTest = args.Any(arg =>
+        var layoutSmokeTest = args.Any(arg =>
+            arg.Equals("--layout-smoke-test", StringComparison.OrdinalIgnoreCase));
+        var smokeTest = layoutSmokeTest || args.Any(arg =>
             arg.Equals("--smoke-test", StringComparison.OrdinalIgnoreCase));
 
         try
@@ -51,6 +53,25 @@ internal static class Program
             }
 
             splash.Close();
+            if (layoutSmokeTest)
+            {
+                var layoutResult = 0;
+                main.Shown += (_, _) => main.BeginInvoke((Action)(() =>
+                {
+                    try
+                    {
+                        main.AssertCompactLayout();
+                    }
+                    catch (Exception ex)
+                    {
+                        WriteStartupCrash(ex);
+                        layoutResult = 1;
+                    }
+                    finally { main.Close(); }
+                }));
+                Application.Run(main);
+                return layoutResult;
+            }
             Application.Run(main);
             return 0;
         }

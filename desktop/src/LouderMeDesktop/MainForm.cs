@@ -29,6 +29,9 @@ internal sealed class MainForm : Form
     private readonly EqCurveControl _eqWave = new();
     private readonly Label _updateStatus = new();
     private readonly Button _updateAction = new();
+    private readonly Button _aboutAction = new();
+    private IMessageFilter? _wheelFilter;
+    private Panel? _contentViewport;
     private DesktopUpdateCheck? _lastUpdateCheck;
 
     private bool _loading;
@@ -47,8 +50,11 @@ internal sealed class MainForm : Form
     {
         Text = "LouderMe";
         StartPosition = FormStartPosition.CenterScreen;
-        MinimumSize = new Size(820, 700);
-        Size = new Size(980, 900);
+        MinimumSize = new Size(480, 440);
+        var workArea = Screen.FromPoint(Cursor.Position).WorkingArea;
+        Size = new Size(
+            Math.Min(980, Math.Max(480, workArea.Width - 48)),
+            Math.Min(840, Math.Max(440, workArea.Height - 48)));
         BackColor = Bg;
         ForeColor = TextPrimary;
         Font = new Font("Segoe UI", 10f);
@@ -68,6 +74,8 @@ internal sealed class MainForm : Form
         {
             _deviceVolumeSyncTimer.Stop();
             _deviceVolumeSyncTimer.Dispose();
+            if (_wheelFilter is not null)
+                Application.RemoveMessageFilter(_wheelFilter);
             _audio.Dispose();
         }
         base.Dispose(disposing);
@@ -75,39 +83,36 @@ internal sealed class MainForm : Form
 
     private void BuildUi()
     {
-        var root = new TableLayoutPanel
+        // Persistent header must remain visible independently of scroll position.
+        var shell = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
             ColumnCount = 1,
-            RowCount = 7,
-            Padding = new Padding(28),
+            RowCount = 2,
+            Padding = new Padding(16, 10, 16, 10),
             BackColor = Bg,
-            AutoScroll = true,
         };
-
-        for (var i = 0; i < 6; i++)
-            root.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+        shell.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        shell.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
         var header = new TableLayoutPanel
         {
             AutoSize = true,
             Dock = DockStyle.Top,
-            ColumnCount = 2,
+            ColumnCount = 3,
             RowCount = 1,
-            Margin = new Padding(0, 0, 0, 18),
+            Margin = new Padding(0, 0, 0, 8),
         };
-        header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150));
+        header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 88));
         header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-
+        header.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         header.Controls.Add(new WaveformMarkControl
         {
-            Width = 138,
-            Height = 84,
-            Margin = new Padding(0, 0, 12, 0),
+            Width = 82,
+            Height = 58,
+            Margin = new Padding(0, 0, 6, 0),
         }, 0, 0);
-
-        var headerText = new FlowLayoutPanel
+        var titleStack = new FlowLayoutPanel
         {
             AutoSize = true,
             FlowDirection = FlowDirection.TopDown,
@@ -115,39 +120,134 @@ internal sealed class MainForm : Form
             Dock = DockStyle.Fill,
             Margin = new Padding(0),
         };
-        headerText.Controls.Add(new Label
+        titleStack.Controls.Add(new Label
         {
             AutoSize = true,
             Text = "LouderMe",
-            Font = new Font("Segoe UI Semibold", 27f, FontStyle.Bold),
+            Font = new Font("Segoe UI Semibold", 22f, FontStyle.Bold),
             ForeColor = TextPrimary,
-            Margin = new Padding(0, 4, 0, 1),
+            Margin = new Padding(0, 0, 0, 1),
         });
-        headerText.Controls.Add(new Label
+        titleStack.Controls.Add(new Label
         {
             AutoSize = true,
             Text = "SOUND THAT LIFTS YOU",
             ForeColor = Gold,
-            Font = new Font("Consolas", 9f, FontStyle.Bold),
-            Margin = new Padding(0, 0, 0, 3),
-        });
-        headerText.Controls.Add(new Label
-        {
-            AutoSize = true,
-            Text = "Michel's Lab · Native Windows Audio Workspace",
-            ForeColor = Muted,
             Font = new Font("Consolas", 8f, FontStyle.Bold),
+            Margin = new Padding(0),
         });
-        header.Controls.Add(headerText, 1, 0);
-        root.Controls.Add(header);
+        header.Controls.Add(titleStack, 1, 0);
 
-        BuildOutputCard(root);
-        BuildBoostCard(root);
-        BuildEqualizerCard(root);
-        BuildStartupCard(root);
-        BuildFooter(root);
+        _aboutAction.Text = "About";
+        _aboutAction.AutoSize = true;
+        _aboutAction.FlatStyle = FlatStyle.Flat;
+        _aboutAction.ForeColor = Gold;
+        _aboutAction.BackColor = Surface;
+        _aboutAction.Padding = new Padding(8, 5, 8, 5);
+        _aboutAction.FlatAppearance.BorderColor = Line;
+        _aboutAction.Anchor = AnchorStyles.Right;
+        _aboutAction.Click += (_, _) => OpenAbout();
+        header.Controls.Add(_aboutAction, 2, 0);
+        shell.Controls.Add(header, 0, 0);
 
-        Controls.Add(root);
+        // A regular scrollable Panel is the scroll owner; the old percent-sized
+        // TableLayoutPanel could grow off-screen without exposing working scroll.
+        var viewport = new Panel
+        {
+            Dock = DockStyle.Fill,
+            AutoScroll = true,
+            TabStop = true,
+            BackColor = Bg,
+        };
+        var content = new TableLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            ColumnCount = 1,
+            RowCount = 5,
+            Padding = new Padding(0, 4, 8, 8),
+            Margin = new Padding(0),
+            BackColor = Bg,
+        };
+        content.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        for (var i = 0; i < 5; i++)
+            content.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        BuildOutputCard(content);
+        BuildBoostCard(content);
+        BuildEqualizerCard(content);
+        BuildStartupCard(content);
+        BuildFooter(content);
+
+        viewport.Controls.Add(content);
+        _contentViewport = viewport;
+        shell.Controls.Add(viewport, 0, 1);
+        Controls.Add(shell);
+        _wheelFilter = new ViewportWheelFilter(this, viewport);
+        Application.AddMessageFilter(_wheelFilter);
+        Shown += (_, _) => viewport.Focus();
+    }
+
+    private void OpenAbout()
+    {
+        using var form = new AboutForm(_updates);
+        form.ShowDialog(this);
+    }
+
+    internal void AssertCompactLayout()
+    {
+        // Invoked by an installed/runtime smoke invocation after Shown.
+        // This tests actual WinForms bounds and scrolling, not only source strings.
+        Size = new Size(600, 520);
+        PerformLayout();
+        Application.DoEvents();
+
+        var viewport = _contentViewport
+            ?? throw new InvalidOperationException("Scrollable workspace not initialized.");
+        if (!viewport.AutoScroll || viewport.ClientSize.Height < 100)
+            throw new InvalidOperationException("Main workspace scroll viewport is unusable.");
+
+        var aboutBounds = _aboutAction.RectangleToScreen(_aboutAction.ClientRectangle);
+        var windowBounds = RectangleToScreen(ClientRectangle);
+        if (!_aboutAction.Visible || !_aboutAction.Enabled || aboutBounds.IsEmpty ||
+            !windowBounds.Contains(aboutBounds) || aboutBounds.Bottom > viewport.RectangleToScreen(viewport.ClientRectangle).Top)
+            throw new InvalidOperationException("About is not visibly anchored in the fixed top header.");
+
+        var maxScroll = Math.Max(0, viewport.DisplayRectangle.Height - viewport.ClientSize.Height);
+        if (maxScroll <= 0)
+            throw new InvalidOperationException("Compact workspace has no vertical scroll range.");
+
+        viewport.AutoScrollPosition = new Point(0, maxScroll);
+        Application.DoEvents();
+        if (-viewport.AutoScrollPosition.Y <= 0)
+            throw new InvalidOperationException("Compact workspace could not scroll to lower cards.");
+
+        if (!_aboutAction.Visible || !windowBounds.Contains(
+                _aboutAction.RectangleToScreen(_aboutAction.ClientRectangle)))
+            throw new InvalidOperationException("About disappeared while workspace scrolled.");
+    }
+
+    // Wheel scrolling must work even while a nested slider/button has focus.
+    // Only intercept messages over the scroll viewport of the active main form.
+    private sealed class ViewportWheelFilter(Form owner, Panel viewport) : IMessageFilter
+    {
+        public bool PreFilterMessage(ref Message m)
+        {
+            const int WmMouseWheel = 0x020A;
+            if (m.Msg != WmMouseWheel || Form.ActiveForm != owner ||
+                !viewport.Visible || !viewport.RectangleToScreen(viewport.ClientRectangle).Contains(Cursor.Position))
+                return false;
+
+            var delta = unchecked((short)((m.WParam.ToInt64() >> 16) & 0xffff));
+            if (delta == 0) return false;
+            var maxScroll = Math.Max(0, viewport.DisplayRectangle.Height - viewport.ClientSize.Height);
+            var next = Math.Clamp(
+                -viewport.AutoScrollPosition.Y - Math.Sign(delta) *
+                Math.Max(3, SystemInformation.MouseWheelScrollLines) * 24,
+                0, maxScroll);
+            viewport.AutoScrollPosition = new Point(0, next);
+            return true;
+        }
     }
 
     private void BuildOutputCard(TableLayoutPanel root)
@@ -283,7 +383,7 @@ internal sealed class MainForm : Form
 
         _engineStatus.AutoSize = true;
         _engineStatus.ForeColor = Muted;
-        _engineStatus.MaximumSize = new Size(800, 0);
+        _engineStatus.MaximumSize = new Size(540, 0);
         layout.SetColumnSpan(_engineStatus, 2);
         layout.Controls.Add(_engineStatus, 0, 5);
 
@@ -294,7 +394,7 @@ internal sealed class MainForm : Form
             WrapContents = true,
             Margin = new Padding(0, 10, 0, 0),
         };
-        var getEngine = Button("Get system-wide engine", Gold);
+        var getEngine = Button("Install Equalizer APO", Gold);
         getEngine.Click += (_, _) =>
         {
             Process.Start(new ProcessStartInfo
@@ -324,7 +424,11 @@ internal sealed class MainForm : Form
             });
         };
         var refresh = Button("Refresh engine", Cyan);
-        refresh.Click += (_, _) => RefreshEngineStatus();
+        refresh.Click += (_, _) =>
+        {
+            if (_apo.GetStatus().Installed) ApplyProcessing();
+            else RefreshEngineStatus();
+        };
         actions.Controls.Add(getEngine);
         actions.Controls.Add(configure);
         actions.Controls.Add(refresh);
@@ -345,6 +449,12 @@ internal sealed class MainForm : Form
         };
         layout.SetColumnSpan(note, 2);
         layout.Controls.Add(note, 0, 7);
+        card.ClientSizeChanged += (_, _) =>
+        {
+            var textWidth = Math.Max(210, card.ClientSize.Width - card.Padding.Horizontal - 22);
+            _engineStatus.MaximumSize = new Size(textWidth, 0);
+            note.MaximumSize = new Size(textWidth, 0);
+        };
         root.Controls.Add(card);
     }
 
@@ -507,6 +617,9 @@ internal sealed class MainForm : Form
         };
         layout.SetColumnSpan(startupInfo, 2);
         layout.Controls.Add(startupInfo, 0, 2);
+        card.ClientSizeChanged += (_, _) =>
+            startupInfo.MaximumSize = new Size(
+                Math.Max(210, card.ClientSize.Width - card.Padding.Horizontal - 22), 0);
         root.Controls.Add(card);
     }
 
@@ -534,13 +647,6 @@ internal sealed class MainForm : Form
         _updateAction.FlatAppearance.BorderSize = 1;
         _updateAction.Click += async (_, _) => await HandleUpdateActionAsync();
 
-        var about = Button("About LouderMe", Gold);
-        about.Click += (_, _) =>
-        {
-            using var form = new AboutForm(_updates);
-            form.ShowDialog(this);
-        };
-
         _updateStatus.AutoSize = true;
         _updateStatus.ForeColor = Muted;
         _updateStatus.Text = $"v{_updates.CurrentVersionText} · stable";
@@ -549,7 +655,6 @@ internal sealed class MainForm : Form
         footer.Controls.Add(refresh);
         footer.Controls.Add(_updateAction);
         footer.Controls.Add(_updateStatus);
-        footer.Controls.Add(about);
         root.Controls.Add(footer);
     }
 
@@ -652,9 +757,9 @@ internal sealed class MainForm : Form
         {
             _engineStatus.ForeColor = Gold;
             _engineStatus.Text =
-                "Boost engine required. Install Equalizer APO 1.4.2 x64 from the official SourceForge page, " +
-                "select the active playback device in Configurator, reboot if requested, then press Refresh engine. " +
-                "Official x64 SHA-256: 7403be7427bbe1936a40dded082829b6e217fc4f5990fee5cba501f0ae055afa";
+                "Boost/EQ unavailable: Equalizer APO is not detected. Install Equalizer APO, " +
+                "select your playback device in Configurator and restart Windows if required. " +
+                "Then click Refresh engine. Device volume works without APO.";
             return;
         }
 

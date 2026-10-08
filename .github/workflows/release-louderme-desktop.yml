@@ -56,6 +56,11 @@ jobs:
           dotnet restore desktop/src/LouderMeDesktop/LouderMeDesktop.csproj
           dotnet build desktop/src/LouderMeDesktop/LouderMeDesktop.csproj -c Release --no-restore
 
+          $mainUi=Get-Content 'desktop/src/LouderMeDesktop/MainForm.cs' -Raw
+          foreach ($required in @('header.Controls.Add(_aboutAction, 2, 0)','var viewport = new Panel','AutoScroll = true','ViewportWheelFilter','private void OpenAbout()')) {
+            if (-not $mainUi.Contains($required)) { throw "Desktop top-About/scroll contract missing: $required" }
+          }
+
           $math=Get-Content 'desktop/src/LouderMeDesktop/BoostMath.cs' -Raw
           if ($math -notmatch '20d \* Math\.Log10') { throw 'Percent-to-dB gain conversion is missing.' }
 
@@ -179,6 +184,14 @@ jobs:
           Write-Host "Installed LouderMe stayed alive after startup (PID $($app.Id))."
           Stop-Process -Id $app.Id -Force -ErrorAction SilentlyContinue
           $app.WaitForExit()
+
+          # Test actual installed WinForms bounds at 600x520 and scroll reachability.
+          $layout=Start-Process -FilePath $installedExe -ArgumentList '--layout-smoke-test' -PassThru -Wait
+          if ($layout.ExitCode -ne 0) {
+            $crashLog=Join-Path $env:LOCALAPPDATA "Michel's Lab\\LouderMe\\startup-crash.log"
+            if (Test-Path $crashLog) { Get-Content $crashLog }
+            throw "Installed compact layout test failed with code $($layout.ExitCode)."
+          }
 
           $uninstaller=Join-Path $target 'unins000.exe'
           if (-not (Test-Path $uninstaller)) { throw 'Installer did not register an uninstaller.' }

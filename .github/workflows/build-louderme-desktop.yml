@@ -60,9 +60,24 @@ jobs:
           dotnet restore desktop/src/LouderMeDesktop/LouderMeDesktop.csproj
           dotnet build desktop/src/LouderMeDesktop/LouderMeDesktop.csproj -c Release --no-restore
 
+      - name: Run real compact-window About and scroll smoke test
+        shell: pwsh
+        run: |
+          dotnet run --project desktop/src/LouderMeDesktop/LouderMeDesktop.csproj -c Release --no-build -- --layout-smoke-test
+          if ($LASTEXITCODE -ne 0) {
+            $crashLog=Join-Path $env:LOCALAPPDATA "Michel's Lab\\LouderMe\\startup-crash.log"
+            if (Test-Path $crashLog) { Get-Content $crashLog }
+            throw "Desktop compact layout smoke failed: About not visible or scrolling not reachable."
+          }
+
       - name: Validate real global boost contract
         shell: pwsh
         run: |
+          $mainUi=Get-Content 'desktop/src/LouderMeDesktop/MainForm.cs' -Raw
+          foreach ($required in @('header.Controls.Add(_aboutAction, 2, 0)','var viewport = new Panel','AutoScroll = true','ViewportWheelFilter','private void OpenAbout()')) {
+            if (-not $mainUi.Contains($required)) { throw "Desktop top-About/scroll contract missing: $required" }
+          }
+
           $math=Get-Content 'desktop/src/LouderMeDesktop/BoostMath.cs' -Raw
           if ($math -notmatch '20d \* Math\.Log10') { throw 'Percent-to-dB gain conversion is missing.' }
 
@@ -72,7 +87,7 @@ jobs:
           }
 
           $ui=Get-Content 'desktop/src/LouderMeDesktop/MainForm.cs' -Raw
-          foreach ($required in @('Global Boost','250%','Get system-wide engine','Open Configurator')) {
+          foreach ($required in @('Global Boost','250%','Install Equalizer APO','Open Configurator')) {
             if ($ui -notmatch [regex]::Escape($required)) { throw "Desktop boost UI contract missing: $required" }
           }
 

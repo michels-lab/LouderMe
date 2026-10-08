@@ -71,6 +71,17 @@ SYSVAD.TopologySpeaker.szPname="SYSVAD Topology Speaker"
         self.assertIn("NOT FOR INSTALL", result)
         self.assertIn(MODULE.HARDWARE_ID, result)
 
+    def test_no_disk_recording_or_demo_generated_tone(self):
+        sample = (
+            "DWORD g_DoNotCreateDataFiles = 1;\n"
+            "DWORD g_DisableToneGenerator = 0;\n"
+            '    { NULL, L"DoNotCreateDataFiles", &g_DoNotCreateDataFiles },\n'
+        )
+        actual = MODULE.patch_adapter(sample)
+        self.assertIn("g_DoNotCreateDataFiles = 1", actual)
+        self.assertIn("g_DisableToneGenerator = 1", actual)
+        self.assertNotIn('L"DoNotCreateDataFiles"', actual)
+
     def test_mspl_text_is_required(self):
         source = (HERE.parent / "prepare_sysvad.py").read_text()
         self.assertIn("The Microsoft Public License (MS-PL)", source)

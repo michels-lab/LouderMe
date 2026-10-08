@@ -4,14 +4,14 @@ on:
     paths:
       - 'native/virtual-driver/**'
       - '.github/workflows/native-virtual-device-ci.yml'
-  push:
-    paths:
-      - 'native/virtual-driver/**'
-      - '.github/workflows/native-virtual-device-ci.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: sysvad-lab-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   derive:
@@ -80,6 +80,11 @@ jobs:
           ref: 2dc3fd3a0cc84a2933f2194e7ec0871584979071
           path: upstream
           submodules: recursive
+      - name: Reuse WDK NuGet dependencies when available
+        uses: actions/cache@v4
+        with:
+          path: upstream/packages
+          key: louderme-wdk-x64-28000-2526-v1
       - name: Restore x64-only Microsoft WDK packages
         shell: pwsh
         run: |

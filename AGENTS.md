@@ -41,6 +41,14 @@ Do not satisfy branding by pasting the source SVG into unrelated screens. Transl
 
 Do not replace the studio slogan with lengthy promotional text. The LouderMe product slogan **SOUND THAT LIFTS YOU** remains separate. Desktop initial About viewport (>=1024×700) must expose five canonical social entries without scrolling. Follow the current master About, Product Identity, Native Interface and Rendered UI Release Gate standards.
 
+## Persistent Desktop About and usable window — mandatory
+
+- About is a permanently visible, labeled action in the fixed **top header** from first launch, including at minimum supported window dimensions; never place its only entry in a scrollable footer, Home page, hidden sidebar or offscreen panel.
+- The main workspace must scroll vertically with mouse wheel even when child controls have focus. Keep the header outside the scrolling region, constrain initial window dimensions to the current monitor working area and ensure every lower panel remains reachable.
+- About itself must open within the monitor working area and expose readable social links on compact/high-DPI screens; size cards responsively.
+- Equalizer APO is a separate, user-installed requirement for system-wide gain above the Windows endpoint limit. Clearly differentiate unavailable Boost/EQ from the always-available 0–100% device volume control; do not claim APO is bundled.
+- Validate the actual installed window at compact and typical desktop sizes as well as the source/CI checks. Follow the master fixed-header About standard in `standards/BRAND_NATIVE_INTERFACE_STANDARD.md`.
+
 ## Validation
 
 Inspect the current workflows and run the strongest relevant validation for the changed platform: Gradle/build/tests plus manifest/permission separation for Android; .NET build, APO-contract checks, portable/installer packaging and updater/feed integrity for Windows.

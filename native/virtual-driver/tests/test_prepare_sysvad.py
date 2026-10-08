@@ -28,7 +28,7 @@ class DriverSourceDerivationTests(unittest.TestCase):
         render = actual.split("g_RenderEndpoints[]", 1)[1].split("};", 1)[0]
         self.assertEqual(render.count("&SpeakerMiniports"), 1)
         self.assertNotIn("SpeakerHp", render)
-        self.assertIn("g_cCaptureEndpoints 0", actual)
+        self.assertIn("g_cCaptureEndpoints = 0", actual)
         self.assertIn("nullptr", actual)
 
     def test_reject_upstream_endpoint_drift(self):

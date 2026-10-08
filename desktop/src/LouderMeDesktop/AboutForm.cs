@@ -23,8 +23,11 @@ internal sealed class AboutForm : Form
 
         Text = "About LouderMe";
         StartPosition = FormStartPosition.CenterParent;
-        MinimumSize = new Size(860, 720);
-        Size = new Size(860, 860);
+        MinimumSize = new Size(480, 440);
+        var workArea = Screen.FromPoint(Cursor.Position).WorkingArea;
+        Size = new Size(
+            Math.Min(860, Math.Max(480, workArea.Width - 48)),
+            Math.Min(840, Math.Max(440, workArea.Height - 48)));
         BackColor = Bg;
         ForeColor = TextPrimary;
         Font = new Font("Segoe UI", 10f);
@@ -50,6 +53,44 @@ internal sealed class AboutForm : Form
         root.Controls.Add(BuildAuthorCard());
         root.Controls.Add(BuildUpdateCard());
         root.Controls.Add(BuildPrivacyCard());
+
+        // Widths are based on the actual client viewport, never an 800px card
+        // on a narrower monitor. The root remains vertically scrollable.
+        void FitCardsToViewport()
+        {
+            if (root.IsDisposed) return;
+            var available = Math.Max(340, root.ClientSize.Width - root.Padding.Horizontal - 22);
+            root.SuspendLayout();
+            try
+            {
+                foreach (Control card in root.Controls)
+                {
+                    if (card is not Panel) continue;
+                    card.Width = available;
+                    foreach (var row in card.Controls.OfType<TableLayoutPanel>())
+                    {
+                        foreach (var social in row.Controls.OfType<FlowLayoutPanel>())
+                        {
+                            if (social.Controls.OfType<Panel>().Any())
+                            {
+                                foreach (var panel in social.Controls.OfType<Panel>())
+                                {
+                                    panel.Width = Math.Max(260, available - card.Padding.Horizontal - 12);
+                                    foreach (var label in panel.Controls.OfType<Label>())
+                                    {
+                                        if (label.Text is "Instagram" or "Facebook" or "LinkedIn" or "GitHub" or "Email")
+                                            label.Width = Math.Max(120, panel.Width - 102);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            finally { root.ResumeLayout(true); }
+        }
+        root.ClientSizeChanged += (_, _) => FitCardsToViewport();
+        Shown += (_, _) => FitCardsToViewport();
 
         var close = BrandButton("Close", Cyan);
         close.Click += (_, _) => Close();

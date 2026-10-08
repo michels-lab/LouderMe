@@ -1730,3 +1730,11 @@ Historical platform-specific releases were intentionally retained for compatibil
 - Guarded against source=destination and capturing an ordinary physical source; only uses float32 PCM when virtual and real endpoints' mix sample rate/channel format match; errors instead of silently resampling. Drops overflow packets and tracks processed/dropped counts. No recording or network.
 - CI extended to build C native ABI shared library/test on Windows and Linux plus .NET bridge build and native DLL interop check on Windows; real virtual audio driver and physical-device routing tests remain **NOT IMPLEMENTED/NOT VERIFIED**.
 - Production Windows still uses Equalizer APO until the own signed virtual endpoint, OS routing, robust audio bridge, driver packaging and measurements exist. This prototype does not replace the system-wide engine, and no release was made.
+
+## 2026-10-08 — M2 real Windows virtual endpoint source and WDK lab prototype
+
+- User authorized continuation of native system audio integration. Investigated official Microsoft SysVAD sample (MS-PL, upstream revision 2dc3fd3a0cc84a2933f2194e7ec0871584979071).
+- Added `native/virtual-driver/prepare_sysvad.py`: reproducible, version-pinned source derivation creating **one render-only speaker endpoint, zero microphone endpoints**, isolated `Root\LouderMe_VirtualRender_Lab` hardware ID, Michel's Lab speaker/device/service labeling, loopback-support configuration and preserved MS-PL license. No driver installation or shipping.
+- Added source guard tests, GitHub Actions source integration and experimental WDK x64 build workflow, plus explicit lab bring-up/readiness checklist.
+- **No signed virtual driver, INF-validated installed endpoint, non-silent WASAPI loopback, end-to-end audible DSP or physical-device evidence claimed.** Current released app remains on legacy Equalizer APO.
+- Next: resolve any pinned source derivation/WDK CI build failures; test signed lab deployment on isolated Windows hardware and prove real PCM capture/output once. Integrate actual endpoint only after evidence, then add robust routing/install/uninstall and user opt-in.

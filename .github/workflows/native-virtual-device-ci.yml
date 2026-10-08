@@ -46,7 +46,9 @@ jobs:
           assert info['hardware_id'] == r'Root\LouderMe_VirtualRender_Lab'
           assert info['driver_signed'] is False
           assert info['real_audio_verified'] is False
-          inf = Path('upstream/audio/sysvad/TabletAudioSample/ComponentizedAudioSample.inx').read_text()
+          pinf = Path('upstream/audio/sysvad/TabletAudioSample/ComponentizedAudioSample.inx')
+          raw_inf = pinf.read_bytes()
+          inf = raw_inf.decode('utf-16' if raw_inf.startswith((bytes.fromhex('fffe'), bytes.fromhex('feff'))) else 'utf-8')
           assert 'LouderME Virtual Speaker' in inf
           assert 'TODO-Set-Provider' not in inf
           assert 'LICENSE-MS-PL.txt' in [f.name for f in p.parent.iterdir()]

@@ -45,6 +45,15 @@ internal sealed class NativeDsp : IDisposable
         }
     }
 
+    public void ConfigureEqualizer(bool enabled, float[] gainsDb)
+    {
+        if (_handle == IntPtr.Zero) throw new ObjectDisposedException(nameof(NativeDsp));
+        if (gainsDb.Length != 7 || gainsDb.Any(g => !float.IsFinite(g) || g < -10 || g > 10))
+            throw new ArgumentException("EQ needs exactly seven finite gains in [-10,+10] dB.");
+        if (louderme_engine_set_eq(_handle, enabled ? 1 : 0, gainsDb) != 0)
+            throw new InvalidOperationException("Native EQ configuration failed.");
+    }
+
     // Must be called from the capture audio callback; no setters on other threads.
     public unsafe void Process(byte[] pcm, int byteCount, int channelCount)
     {

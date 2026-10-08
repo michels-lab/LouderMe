@@ -98,20 +98,22 @@ jobs:
         run: python louderme/native/virtual-driver/prepare_sysvad.py --upstream-root upstream
       - name: Set up MSBuild
         uses: microsoft/setup-msbuild@v2
-      - name: Locate WDK StampInf utility for native driver project
+      - name: Exclude INF stamping on CI without full WDK tools (kernel compile only)
         shell: pwsh
         run: |
-          $candidates = @(
-            (Get-ChildItem -Path 'upstream/packages' -Filter 'stampinf.exe' -Recurse -ErrorAction SilentlyContinue),
-            (Get-ChildItem -Path "${env:ProgramFiles(x86)}\\Windows Kits\\10\\bin" -Filter 'stampinf.exe' -Recurse -ErrorAction SilentlyContinue)
-          ) | Where-Object { $_ -is [System.IO.FileInfo] }
-          if ($candidates.Count -eq 0) {
-            throw 'StampInf.exe not found in WDK NuGet or installed WDK. Driver package compilation cannot complete.'
+          # The hosted VS2026/WDK NuGet runner has kernel headers and linker,
+          # but not StampInf.exe. Remove just the MSBuild INF item in this
+          # temporary checkout so compilation can prove the real .sys sources.
+          # Source INX remains preserved/validated; no installable INF or CAT.
+          $proj = 'upstream/audio/sysvad/TabletAudioSample/TabletAudioSample.vcxproj'
+          $source = Get-Content $proj -Raw
+          $old = '<Inf Exclude="@(Inx)" Include="*.inx" />'
+          if (-not $source.Contains($old)) {
+            throw 'Unexpected SysVAD INF build item: refuse unsafe project rewrite.'
           }
-          $path = $candidates[0].DirectoryName
-          Write-Host "Found WDK StampInf under: $path"
-          Add-Content -Path $env:GITHUB_PATH -Value $path
-      - name: Build x64 SysVAD render miniport and kernel driver (exclude unrelated demo APOs)
+          $source = $source.Replace($old, '<!-- LouderME lab: driver binary compile only; INF requires full WDK StampInf -->')
+          [System.IO.File]::WriteAllText((Resolve-Path $proj).Path, $source, [Text.UTF8Encoding]::new($false))
+      - name: Build x64 WaveRT render miniport and kernel SYS (no signed install package)
         shell: pwsh
         run: |
           msbuild upstream/audio/sysvad/EndpointsCommon/EndpointsCommon.vcxproj /m /p:Configuration=Release /p:Platform=x64 /v:minimal
@@ -124,5 +126,5 @@ jobs:
           $driver = Get-ChildItem upstream/audio/sysvad -Recurse -Filter 'TabletAudioSample.sys' |
             Where-Object { $_.FullName -match 'Release' } | Select-Object -First 1
           if ($null -eq $driver) { throw 'Expected x64 SysVAD driver binary not found.' }
-          Write-Host "Compiled unsigned lab driver: $($driver.FullName)"
-          Write-Host 'Never deploy unsigned/test-signed driver to end-user machines.'
+          Write-Host "Compiled lab-only kernel binary: $($driver.FullName)"
+          Write-Host 'No INF/CAT or production signing validated. Never install this CI output.'

@@ -1691,3 +1691,12 @@ Historical platform-specific releases were intentionally retained for compatibil
 - Includes real-device volume controls (Android media stream and Windows playback endpoint) distinct from 100–250% Global Boost, plus Michel's Lab studio About slogan.
 - Source repository visibility is public. Removed Android workflow fallback that retrieved production signing keys/passwords from GitHub Actions artifacts, and removed private signing-vault artifact publication. Stable sideload signing now requires valid GitHub Actions Secrets; fail closed if absent. Existing public artifacts and old credentials should be reviewed for exposure; do not assume a key is safe merely because the new workflow is hardened.
 - Release notes prepared for both platforms. Same-SHA CI and published artifacts must be rechecked before claiming the release completed. Physical device behavior remains pending.
+
+## 2026-10-08 — Windows compact-window regression and persistent About fix
+
+- User screenshot from Windows v0.1.5 at a small working-area height showed the main window clipped below the Boost card, no working mouse-wheel scroll and About unreachable because it was in the footer.
+- Reworked MainForm with monitor-clamped initial bounds, a fixed shell header with always-visible About at top-right and a separate vertically scrollable content Panel; mouse wheel is forwarded to that viewport even if a nested control has focus. Removed footer-only About entry.
+- Made AboutForm initial size fit the monitor and responsive card, artwork and social-entry widths.
+- Replaced the oversized APO missing-dependency text with a shorter actionable message and explicit distinction between independent Windows device volume and third-party Equalizer APO-dependent Boost/EQ. Equalizer APO remains a user-installed prerequisite; do not claim the boost works without it.
+- Added static CI safeguards for top About and scrolling in both Desktop build and release workflows, and added local agent requirements.
+- Validation: pending same-SHA CI Windows build, installation/launch smoke, and user's real-window follow-up. No new Windows release published by these source changes.

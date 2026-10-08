@@ -1659,3 +1659,10 @@ Historical platform-specific releases were intentionally retained for compatibil
 **Preserved intentionally:** Michel Duarte personal developer/social identity remains under `realmichelduarte`. No release is authorized by this migration change.
 
 **Validation:** Android and Windows branch CI are required before merge.
+
+## 2026-10-08 — Agent reconciliation and release gate audit
+
+- Reconciled LouderMe AGENTS.md and Copilot-local About instructions with master 2026-10-08.1: paired author/studio composition, canonical TOOLS WITH IDENTITY. slogan and separate SOUND THAT LIFTS YOU product tagline.
+- Confirmed Desktop release workflow previously smoke-tested installation and process launch but did not collect rendered About/Home screenshots, validate viewport geometry or enforce protected human image approval.
+- Added a deliberate fail-closed P0 gate before Desktop source release publication. This is a **temporary safeguard, NOT a completed screenshot/approval implementation**. Desktop release publication is blocked until authentic two-viewport screenshot capture, source/artifact SHA linkage and protected human visual review are wired into the workflow.
+- PR #31 Android/Windows device-volume functionality remains separately pending current-SHA CI and device testing; no claim of green CI, merged functionality or completed release.

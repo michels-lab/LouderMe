@@ -1392,6 +1392,7 @@ private fun AboutScreen(
                                 .height(48.dp),
                             contentScale = ContentScale.Fit,
                         )
+                        Text("Tools with identity", color = LouderMeColors.Gold)
                     }
                 }
 

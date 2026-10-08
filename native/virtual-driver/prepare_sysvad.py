@@ -128,7 +128,7 @@ def patch_adapter(text: str) -> str:
     if len(matches) != 1:
         raise ValueError("Unexpected SysVAD recording registry controls")
     old_row = rows[matches[0]]
-    ending = "\\r\\n" if old_row.endswith("\\r\\n") else "\\n"
+    ending = "\r\n" if old_row.endswith("\r\n") else "\n"
     rows[matches[0]] = (
         "        // LouderME privacy: recording-to-disk is permanently disabled."
         + ending

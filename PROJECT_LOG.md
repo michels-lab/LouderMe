@@ -1713,3 +1713,12 @@ Historical platform-specific releases were intentionally retained for compatibil
 - The unified public asset retained canonical SHA-256 `de092ebbc9516395a588f22092075ac7293d291a0f49d3655773b5c6bba1be38`.
 - Added a one-time CI workflow to fetch the canonical public APK/checksum, verify pinned SHA-256, restore identical files to the LouderMe source GitHub Release, then recheck source asset digest. It does not build or sign a new APK and does not modify the unified release.
 - Previous Android release guard PR #43 prevents future same-version overwrites; public feeds remain unchanged.
+
+## 2026-10-08 — Michel's Lab own native Audio Engine milestone 1
+
+- Product direction confirmed by owner: native gain/EQ DSP must be a LouderME competitive capability, not depend on user installing Equalizer APO.
+- Started portable C++17 native audio DSP in `native/audio-engine`: real normalized float PCM processing, 100–250% smooth gain, seven peaking filters and bounded soft limiter. Added synthetic PCM tests and Windows/Linux CMake CI.
+- Architecture decision recorded at `docs/NATIVE_AUDIO_ENGINE_ARCHITECTURE.md`: Windows custom APO vs signed virtual endpoint (with deployment limits); Android session/capture restrictions; no implication that a regular app can modify every other application's audio.
+- **Current shipped Desktop v0.1.5 / source current Desktop v0.1.5 still uses user-installed Equalizer APO for actual system-wide output processing.** This standalone DSP does not alter system audio and is not a release-ready replacement.
+- Next: verify CI, measure DSP performance and signal fidelity, implement and test Windows OS audio routing/integration, hook control plane, certify/sign necessary components, then switch user-facing engine status only after actual hardware verification.
+- No release or installer-driver change performed in this milestone.

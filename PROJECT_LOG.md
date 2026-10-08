@@ -1706,3 +1706,10 @@ Historical platform-specific releases were intentionally retained for compatibil
 - Desktop-only commits to main still trigger the Android CI & Direct Release workflow. Existing source workflow previously re-signed and uploaded the published APK with `--clobber` even when `versionName` was unchanged, risking mismatch with stable updater SHA-256.
 - Added `release_guard` to check whether the stable Android tag already exists. If so, signing and publication jobs skip while build validation continues. The publisher also refuses to overwrite an existing tag as a second safeguard.
 - Future Android releases require a unique version and validated continuity of the original signing identity. No new APK version or release authorized by this guard.
+
+## 2026-10-08 — Restore canonical Android APK after stale workflow clobber
+
+- A pre-guard Android main run replaced source-release v0.1.10 APK with a new same-version build (source release SHA-256 diverged from the already-published and validated unified release).
+- The unified public asset retained canonical SHA-256 `de092ebbc9516395a588f22092075ac7293d291a0f49d3655773b5c6bba1be38`.
+- Added a one-time CI workflow to fetch the canonical public APK/checksum, verify pinned SHA-256, restore identical files to the LouderMe source GitHub Release, then recheck source asset digest. It does not build or sign a new APK and does not modify the unified release.
+- Previous Android release guard PR #43 prevents future same-version overwrites; public feeds remain unchanged.

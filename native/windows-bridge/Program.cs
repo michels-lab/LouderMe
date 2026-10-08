@@ -44,7 +44,7 @@ internal static class Program
                 Console.Error.WriteLine(
                     "Experimental only. Use --list-devices, then " +
                     "--source-id <LOUDERME_VIRTUAL_ENDPOINT_ID> --output-id <PHYSICAL_ENDPOINT_ID> " +
-                    "--boost <100-250> --confirm-experimental");
+                    "--boost <100-250> [--eq-db b1,b2,b3,b4,b5,b6,b7] --confirm-experimental");
                 return 2;
             }
 
@@ -78,6 +78,24 @@ internal static class Program
 
             using var engine = new NativeDsp(
                 inputFormat.SampleRate, inputFormat.Channels, boost);
+            float[] eqGains = new float[7];
+            var eqText = GetArg(args, "--eq-db");
+            if (eqText is not null)
+            {
+                var parts = eqText.Split(',');
+                if (parts.Length != 7)
+                    throw new ArgumentException("Expected seven comma-separated EQ dB values.");
+                for (var i = 0; i < 7; i++)
+                {
+                    if (!float.TryParse(parts[i],
+                            System.Globalization.NumberStyles.Float,
+                            System.Globalization.CultureInfo.InvariantCulture,
+                            out eqGains[i]) || !float.IsFinite(eqGains[i]) ||
+                        eqGains[i] is < -10 or > 10)
+                        throw new ArgumentException("EQ gains must be finite values from -10 to +10 dB.");
+                }
+            }
+            engine.ConfigureEqualizer(eqText is not null, eqGains);
             using var playback = new WasapiOut(physical, AudioClientShareMode.Shared, true, 75);
             var buffer = new BufferedWaveProvider(inputFormat)
             {
@@ -125,7 +143,8 @@ internal static class Program
                 Console.WriteLine("Experimental routing. System default device is NOT changed.");
                 Console.WriteLine($"Source: {source.FriendlyName}");
                 Console.WriteLine($"Output: {physical.FriendlyName}");
-                Console.WriteLine($"DSP: {boost}% gain, own C++ engine, 7-band EQ disabled.");
+                Console.WriteLine($"DSP: {boost}% gain, own C++ engine, EQ " +
+                    (eqText is null ? "disabled" : $"enabled ({eqText} dB)"));
                 Console.WriteLine("Press Ctrl+C to stop; this is not a shipped system driver.");
 
                 playback.Play();

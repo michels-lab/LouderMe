@@ -123,12 +123,32 @@ jobs:
         run: |
           msbuild upstream/audio/sysvad/EndpointsCommon/EndpointsCommon.vcxproj /m /p:Configuration=Release /p:Platform=x64 /v:minimal
           if ($LASTEXITCODE -ne 0) { throw 'SysVAD render endpoint library did not compile.' }
-          # Compile-only lab path. This WDK NuGet runner's ApiValidator
-          # currently fails AFTER kernel link. Disabling it here does NOT
-          # waive the mandatory Universal/API validation for distribution.
-          msbuild upstream/audio/sysvad/TabletAudioSample/TabletAudioSample.vcxproj /m /p:Configuration=Release /p:Platform=x64 /p:RunApiValidator=false /v:minimal
-          if ($LASTEXITCODE -ne 0) { throw 'LouderME SysVAD kernel compilation failed.' }
-          Write-Warning 'COMPILE-ONLY: Universal API validation, INF/CAT packaging, driver signing and live-audio testing NOT VERIFIED.'
+          # Exact, auditable compile-only gate. MSBuild/WDK may fail *after*
+          # a successful kernel link when hosted ApiValidator cannot finish.
+          # NEVER accept a compiler/linker error; a post-link ApiValidator
+          # failure remains a mandatory separate product-release blocker.
+          $driverProject = 'upstream/audio/sysvad/TabletAudioSample/TabletAudioSample.vcxproj'
+          $buildOutput = & msbuild $driverProject /m /p:Configuration=Release /p:Platform=x64 /v:minimal 2>&1
+          $exit = $LASTEXITCODE
+          $buildOutput | ForEach-Object { Write-Host $_ }
+          $driver = Get-ChildItem upstream/audio/sysvad -Recurse -Filter 'TabletAudioSample.sys' |
+            Where-Object { $_.FullName -match 'Release' } | Select-Object -First 1
+          if ($null -eq $driver -or $driver.Length -lt 10000) {
+            throw 'No linked x64 kernel SYS produced; compile-only test failed.'
+          }
+          if ($exit -ne 0) {
+            $errors = @($buildOutput | Where-Object {
+              $_ -match '\berror (?:MSB\d+|TRK\d+|C\d+|LNK\d+|CS\d+)' })
+            $validatorOnly = $errors.Count -eq 1 -and
+              $errors[0] -match 'error MSB3721:' -and
+              $errors[0] -match 'ApiValidator.exe'
+            if (-not $validatorOnly) {
+              throw 'Compiler, linker or unexpected WDK failure: not a valid kernel binary compilation.'
+            }
+            Write-Warning 'POST-LINK VALIDATION FAILED: ApiValidator MSB3721. Kernel SYS compiled, but driver is NOT certified or deployable.'
+          }
+          Write-Host "LAB_COMPILE_ONLY=PASS; DRIVER_PATH=$($driver.FullName); SIZE=$($driver.Length)"
+          Write-Warning 'PRODUCT GATES PENDING: Universal APIs, stamped INF/CAT, approved driver signing, install/rollback, real virtual PCM and acoustic routing.'
       - name: Verify compiled driver is not claimed signed or installed
         shell: pwsh
         run: |

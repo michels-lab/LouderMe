@@ -87,13 +87,28 @@ must validate these conditions with properly signed test binaries:
    loopback of that same virtual render endpoint**. If SysVAD's virtual
    ring buffer returns silence, implement the missing render-to-loopback
    mechanism first; a device icon alone is not success.
-4. Start the experimental `native/windows-bridge` with a distinct physical
+4. With **only a lab virtual device installed**, use the bridge's dedicated
+   **signal proof** mode. The test program synthesizes a low-amplitude 440 Hz
+   signal and directs it to the virtual render endpoint selected by ID; it
+   measures loopback PCM from that same endpoint without routing audio
+   to any physical speaker:
+
+   ```powershell
+   dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --list-devices
+   dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --probe-virtual --source-id "<LOUDEME_VIRTUAL_ENDPOINT_ID>" --confirm-experimental
+   ```
+
+   A passing measurement reports a nonzero sample count, RMS and peak;
+   silence, unsupported format or absent endpoint returns a failure. This
+   is **not proof** that processed audio reached physical speakers.
+
+5. Start the experimental `native/windows-bridge` with a distinct physical
    output. Confirm transformed PCM reaches actual headphones/speakers exactly
    once, with 100–250% gain and 7-band EQ.
-5. Test crash/unplug/reboot recovery, physical device switching,
+6. Test crash/unplug/reboot recovery, physical device switching,
    buffer underruns, playback latency, CPU, 44.1/48/96 kHz sample rates,
    and format conversion. Restore original defaults on uninstall.
-6. Obtain appropriate Windows signing/distribution authorization and perform
+7. Obtain appropriate Windows signing/distribution authorization and perform
    an isolated production installer validation. Explicit user consent is
    mandatory for any driver install/device switch.
 

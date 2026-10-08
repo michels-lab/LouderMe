@@ -64,7 +64,7 @@ nuget restore upstream/packages.config -PackagesDirectory upstream/packages
 msbuild upstream/audio/sysvad/sysvad.sln /m /p:Configuration=Release /p:Platform=x64
 ```
 
-The workflow `native-virtual-device-ci.yml` prepares/checks actual
+**Current hosted WDK limitation:** the lab CI compiles the kernel binary with\n`RunApiValidator=false` because Universal API validation is failing in its\nseparate post-link stage. This is **not** permission to deploy; the API\nvalidator must pass on the final driver before any signed distribution. The\nCI also omits INF stamping because the hosted WDK environment lacks\n`StampInf.exe`. The generated `.sys` may have a local test signature, which is\nnot a trusted production signature.\n\nThe workflow `native-virtual-device-ci.yml` prepares/checks actual
 Microsoft source in Ubuntu, and attempts to compile the modified SysVAD
 solution on the Windows 2025/VS2026 runner using Microsoft's WDK NuGet
 layout. Source verification is distinct from successful driver compilation.

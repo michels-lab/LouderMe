@@ -1,5 +1,10 @@
 # Copilot instructions — LouderMe
 
+
+## Desktop About placement (mandatory)
+
+Every desktop application must display a clearly labeled, usable **About** action in its **fixed top application header** from initial launch and in every workspace. It must remain visible when the window is compact/high-DPI, the body is scrolled or a sidebar is collapsed; footer-only, Home-only, offscreen or hidden-overflow About is forbidden. Keep the header outside the scroll container and validate its actual rendered visibility and click bounds. Source of truth: `michels-lab/Michel-Software-Standards/standards/BRAND_NATIVE_INTERFACE_STANDARD.md`.
+
 Read `AGENTS.md`, `PROJECT_LOG.md` and the relevant Android or Windows build/workflow files before editing.
 
 Keep Android Play and sideload distribution paths separate. Preserve Android stable signing/direct-update integrity and the Windows installer/feed/update contract. Never introduce privileged secrets or CI-debug signing as a production update identity.

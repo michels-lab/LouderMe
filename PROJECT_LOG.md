@@ -1738,3 +1738,10 @@ Historical platform-specific releases were intentionally retained for compatibil
 - Added source guard tests, GitHub Actions source integration and experimental WDK x64 build workflow, plus explicit lab bring-up/readiness checklist.
 - **No signed virtual driver, INF-validated installed endpoint, non-silent WASAPI loopback, end-to-end audible DSP or physical-device evidence claimed.** Current released app remains on legacy Equalizer APO.
 - Next: resolve any pinned source derivation/WDK CI build failures; test signed lab deployment on isolated Windows hardware and prove real PCM capture/output once. Integrate actual endpoint only after evidence, then add robust routing/install/uninstall and user opt-in.
+
+## 2026-10-08 — Driver CI compile/test boundary
+
+- Real pinned SysVAD render-only source derivation passed Ubuntu CI; disabled vendor sample audio file recording and internal synthetic tones; C++/Windows bridge CI passed.
+- Windows WDK x64 miniport project compiled and linked `TabletAudioSample.sys` in run 37831513502, but post-link `ApiValidator.exe` failed with MSB3721. Hosted runner also lacks `StampInf.exe` for INF stamping. Neither validation is waived for distributing a kernel driver.
+- Separated **compile-only lab** build with MSBuild `RunApiValidator=false` and without INF stamping; it is NOT a production package and any automatic WDK test signature cannot be shipped. Next evidence: green compile-only test, then full API validation/INF verification and approved signing in a dedicated Windows driver lab, installed virtual render PCM loopback test, physical output DSP route.
+- No driver installed, no default output changed and no public release authorized.

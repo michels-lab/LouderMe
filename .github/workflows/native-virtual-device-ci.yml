@@ -140,8 +140,8 @@ jobs:
           if ($null -eq $driver -or $driver.Length -lt 10000) {
             throw 'No linked x64 kernel SYS produced; compile-only test failed.'
           }
-          $apiValidated = ($exit -eq 0)
-          if (-not $apiValidated) {
+          $projectCompleted = ($exit -eq 0)
+          if (-not $projectCompleted) {
             $errors = @($buildOutput | Where-Object {
               $_ -match '\berror (?:MSB\d+|TRK\d+|C\d+|LNK\d+|CS\d+)' })
             $validatorOnly = $errors.Count -eq 1 -and
@@ -153,9 +153,9 @@ jobs:
             Write-Warning 'POST-LINK VALIDATION FAILED: ApiValidator MSB3721. Kernel SYS compiled, but driver is NOT certified or deployable.'
           }
           "compiled=true" >> $env:GITHUB_OUTPUT
-          "api_validated=$($apiValidated.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+          "project_completed=$($projectCompleted.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
           Write-Host "LAB_COMPILE_ONLY=PASS; DRIVER_PATH=$($driver.FullName); SIZE=$($driver.Length)"
-          Write-Warning 'PRODUCT GATES PENDING: Universal APIs, stamped INF/CAT, approved driver signing, install/rollback, real virtual PCM and acoustic routing.'
+          Write-Warning 'PRODUCT GATES PENDING: Desktop INF /h, signed INF/CAT, Microsoft-trusted driver signing, install/rollback, real virtual PCM and physical routing.'
           # GitHub's pwsh wrapper exits with the LAST native process code.
           # Explicit zero here is legitimate ONLY after the precise link /
           # allowed post-link diagnostic check above has passed.
@@ -167,7 +167,7 @@ jobs:
             Where-Object { $_.FullName -match 'Release' } | Select-Object -First 1
           if ($null -eq $driver) { throw 'Expected x64 SysVAD driver binary not found.' }
           Write-Host "Compiled lab-only kernel binary: $($driver.FullName)"
-          Write-Warning 'Kernel SYS compiled; WDK may apply a TEST signature. Do not install or publish: no INF/CAT, Universal API certification or production signing validated.'
+          Write-Warning 'Kernel SYS compiled; WDK may apply a TEST signature. Do not install or publish: Desktop INF/CAT and trusted production signing are not validated.'
       - name: Diagnose Universal API compatibility independently
         id: apivalidator
         if: steps.kernel_compile.outputs.compiled == 'true'
@@ -216,14 +216,15 @@ jobs:
         shell: pwsh
         env:
           COMPILED: ${{ steps.kernel_compile.outputs.compiled }}
-          API_VALIDATED: ${{ steps.kernel_compile.outputs.api_validated }}
+          PROJECT_COMPLETED: ${{ steps.kernel_compile.outputs.project_completed }}
           STANDALONE_API: ${{ steps.apivalidator.outcome }}
         run: |
           @(
             '### LouderME virtual audio lab driver',
             "- Kernel SYS linked: $env:COMPILED",
-            "- WDK MSBuild API validation: $env:API_VALIDATED",
-            "- Standalone Universal API validator: $env:STANDALONE_API",
+            "- Windows Desktop MSBuild project completed: $env:PROJECT_COMPLETED",
+            "- Optional Universal API diagnostics (not Desktop signability): $env:STANDALONE_API",
+            "- Desktop InfVerif /h and Inf2Cat: **NOT RUN**",
             '- Signed consumer-ready INF/CAT: **false**',
             '- Installed live Windows endpoint: **false**',
             '- Audible global DSP: **not verified**',

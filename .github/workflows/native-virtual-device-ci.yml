@@ -57,6 +57,13 @@ jobs:
           raw_inf = pinf.read_bytes()
           inf = raw_inf.decode('utf-16' if raw_inf.startswith((bytes.fromhex('fffe'), bytes.fromhex('feff'))) else 'utf-8')
           assert 'LouderME Virtual Speaker' in inf
+          assert "keyworddetectorcontosoadapter.dll" not in inf.lower()
+          assert "KEYWORDDETECTORCONTOSOADAPTER.CopyList" not in inf
+          assert "HKR,,Security" not in inf
+          ifaces = inf.split("[SYSVAD_SA.NT.Interfaces]", 1)[1].split("[", 1)[0]
+          assert ifaces.count("AddInterface=") == 5
+          files = inf.split("[SourceDisksFiles]", 1)[1].split("[", 1)[0]
+          assert "tabletaudiosample.sys" in files.lower() and "keyworddetector" not in files.lower()
           assert 'TODO-Set-Provider' not in inf
           assert 'LICENSE-MS-PL.txt' in [f.name for f in p.parent.iterdir()]
           print('Pinned Windows virtual device lab source derivation verified.')
@@ -72,7 +79,7 @@ jobs:
     if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
     needs: derive
     runs-on: windows-2025-vs2026
-    timeout-minutes: 35
+    timeout-minutes: 75
     steps:
       - name: Checkout LouderME
         uses: actions/checkout@v4
@@ -213,6 +220,40 @@ jobs:
             throw "Universal ApiValidator failed (exit $LASTEXITCODE): driver NOT deployable."
           }
           Write-Host 'Universal ApiValidator standalone diagnostic passed.'
+      - name: Provision Windows WDK tools for INF/CAT validation
+        shell: pwsh
+        run: |
+          $kitRoot = Join-Path ([Environment]::GetFolderPath('ProgramFilesX86')) 'Windows Kits\10'
+          function HasTool([string]$name) {
+            if (-not (Test-Path $kitRoot)) { return $false }
+            return [bool](Get-ChildItem $kitRoot -File -Recurse -Filter "$name.exe" -ErrorAction SilentlyContinue |
+              Where-Object { $_.FullName -match '\\x64\\' } | Select-Object -First 1)
+          }
+          if (-not (HasTool 'StampInf') -or -not (HasTool 'InfVerif') -or -not (HasTool 'Inf2Cat')) {
+            if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
+              throw 'WinGet is not installed on the runner; cannot provision full WDK.'
+            }
+            # Microsoft official Windows SDK/WDK v28000, same major release
+            # as the pinned SysVAD and WDK NuGet compiler dependencies.
+            foreach ($id in @('Microsoft.WindowsSDK.10.0.28000','Microsoft.WindowsWDK.10.0.28000')) {
+              & winget install --id $id --exact --source winget --silent --disable-interactivity --accept-source-agreements --accept-package-agreements
+              if ($LASTEXITCODE -ne 0) { throw "$id installation failed (code $LASTEXITCODE)." }
+            }
+          }
+          foreach ($tool in @('StampInf','InfVerif','Inf2Cat')) {
+            if (-not (HasTool $tool)) { throw "WDK full-tool installation incomplete: $tool.exe missing" }
+            Write-Host "$tool found in Windows Kits x64 tools."
+          }
+      - name: Execute real full-WDK INF/CAT validation (no installation or distribution)
+        id: inf_package
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File louderme/native/virtual-driver/validate_lab_package.ps1 `
+            -SysVadRoot upstream/audio/sysvad -OutDir upstream/louderme-lab-package
+          if ($LASTEXITCODE -ne 0) {
+            throw "LouderME Desktop package FAILED official StampInf / InfVerif / Inf2Cat qualification."
+          }
+          "package_validated=true" >> $env:GITHUB_OUTPUT
       - name: Report distinct build and deployability states
         if: always()
         shell: pwsh
@@ -220,13 +261,14 @@ jobs:
           COMPILED: ${{ steps.kernel_compile.outputs.compiled }}
           PROJECT_COMPLETED: ${{ steps.kernel_compile.outputs.project_completed }}
           STANDALONE_API: ${{ steps.apivalidator.outcome }}
+          PACKAGE_VALIDATED: ${{ steps.inf_package.outputs.package_validated }}
         run: |
           @(
             '### LouderME virtual audio lab driver',
             "- Kernel SYS linked: $env:COMPILED",
             "- Windows Desktop MSBuild project completed: $env:PROJECT_COMPLETED",
             "- Optional Universal API diagnostics (not Desktop signability): $env:STANDALONE_API",
-            "- Desktop InfVerif /h and Inf2Cat: **NOT RUN**",
+            "- Desktop StampInf / InfVerif /h / Inf2Cat passed: $env:PACKAGE_VALIDATED",
             '- Signed consumer-ready INF/CAT: **false**',
             '- Installed live Windows endpoint: **false**',
             '- Audible global DSP: **not verified**',
@@ -234,3 +276,4 @@ jobs:
             '**Do not ship this driver from CI.**'
           ) | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
           if ($env:COMPILED -ne 'true') { throw 'Kernel compile not verified.' }
+          if ($env:PACKAGE_VALIDATED -ne 'true') { throw 'Full WDK package validation missing or failed.' }

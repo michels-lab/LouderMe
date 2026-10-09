@@ -165,17 +165,58 @@ jobs:
           if ($null -eq $driver) { throw 'Expected x64 SysVAD driver binary not found.' }
           Write-Host "Compiled lab-only kernel binary: $($driver.FullName)"
           Write-Warning 'Kernel SYS compiled; WDK may apply a TEST signature. Do not install or publish: no INF/CAT, Universal API certification or production signing validated.'
+      - name: Diagnose Universal API compatibility independently
+        id: apivalidator
+        if: steps.kernel_compile.outputs.compiled == 'true'
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          # A separate, honest compatibility gate: this test may fail on
+          # GitHub runners, and the driver must NEVER ship when it does.
+          $sys = Get-ChildItem 'upstream/audio/sysvad/TabletAudioSample' -Filter 'TabletAudioSample.sys' -Recurse |
+            Where-Object { $_.FullName -match 'x64.*Release|Release.*x64' } | Select-Object -First 1
+          if ($null -eq $sys) { throw 'Kernel binary unavailable for API analysis.' }
+
+          $api = Get-ChildItem 'upstream/packages' -Recurse -Filter 'ApiValidator.exe' |
+            Where-Object { $_.FullName -match 'WDK.x64' } | Select-Object -First 1
+          $supported = Get-ChildItem 'upstream/packages' -Recurse -Filter 'UniversalDDIs.xml' |
+            Where-Object { $_.FullName -match 'WDK.x64.*universalDDIs.*x64' } |
+            Select-Object -First 1
+          $whitelist = Get-ChildItem 'upstream/packages' -Recurse -Filter 'ModuleWhiteList.xml' |
+            Where-Object { $_.FullName -match 'WDK.x64.*universalDDIs.*x64' } |
+            Select-Object -First 1
+          if ($null -eq $api -or $null -eq $supported -or $null -eq $whitelist) {
+            throw 'WDK API validator executable/XML prerequisites missing: full WDK installation required.'
+          }
+          foreach ($name in @('Aitstatic.exe', 'Microsoft.Kits.Drivers.ApiValidator.dll')) {
+            $found = Get-ChildItem 'upstream/packages' -Filter $name -Recurse |
+              Where-Object { $_.FullName -match 'WDK.x64' } | Select-Object -First 1
+            if ($null -eq $found) { throw "Missing ApiValidator dependency: $name" }
+            Write-Host "$name located."
+          }
+          Write-Host "Validating kernel: $($sys.FullName)"
+          Write-Host "Using WDK API validator: $($api.FullName)"
+          & $api.FullName "-DriverPackagePath:$($sys.DirectoryName)" `
+            "-SupportedApiXmlFiles:$($supported.FullName)" `
+            "-ModuleWhiteListXmlFiles:$($whitelist.FullName)" `
+            "-ApiExtractorExePath:$($api.DirectoryName)"
+          if ($LASTEXITCODE -ne 0) {
+            throw "Universal ApiValidator failed (exit $LASTEXITCODE): driver NOT deployable."
+          }
+          Write-Host 'Universal ApiValidator standalone diagnostic passed.'
       - name: Report distinct build and deployability states
         if: always()
         shell: pwsh
         env:
           COMPILED: ${{ steps.kernel_compile.outputs.compiled }}
           API_VALIDATED: ${{ steps.kernel_compile.outputs.api_validated }}
+          STANDALONE_API: ${{ steps.apivalidator.outcome }}
         run: |
           @(
             '### LouderME virtual audio lab driver',
             "- Kernel SYS linked: $env:COMPILED",
-            "- Universal API validation: $env:API_VALIDATED",
+            "- WDK MSBuild API validation: $env:API_VALIDATED",
+            "- Standalone Universal API validator: $env:STANDALONE_API",
             '- Signed consumer-ready INF/CAT: **false**',
             '- Installed live Windows endpoint: **false**',
             '- Audible global DSP: **not verified**',

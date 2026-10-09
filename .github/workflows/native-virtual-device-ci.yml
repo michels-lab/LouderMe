@@ -226,8 +226,10 @@ jobs:
           $kitRoot = Join-Path ([Environment]::GetFolderPath('ProgramFilesX86')) 'Windows Kits\10'
           function HasTool([string]$name) {
             if (-not (Test-Path $kitRoot)) { return $false }
-            return [bool](Get-ChildItem $kitRoot -File -Recurse -Filter "$name.exe" -ErrorAction SilentlyContinue |
-              Where-Object { $_.FullName -match '\\x64\\' } | Select-Object -First 1)
+            $found = Get-ChildItem $kitRoot -File -Recurse -Filter "$name.exe" -ErrorAction SilentlyContinue |
+              Where-Object { $_.FullName -match '\\(x64|x86)\\' } | Select-Object -First 1
+            if ($found) { Write-Host "$name executable: $($found.FullName)" }
+            return [bool]$found
           }
           if (-not (HasTool 'StampInf') -or -not (HasTool 'InfVerif') -or -not (HasTool 'Inf2Cat')) {
             if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {

@@ -82,6 +82,14 @@ SYSVAD.TopologySpeaker.szPname="SYSVAD Topology Speaker"
         self.assertIn("g_DisableToneGenerator = 1", actual)
         self.assertNotIn('L"DoNotCreateDataFiles"', actual)
 
+    def test_target_platform_is_explicitly_desktop(self):
+        sample = "<DriverTargetPlatform>Universal</DriverTargetPlatform>" * 4
+        updated = MODULE.patch_project_for_desktop(sample)
+        self.assertEqual(updated.count("<DriverTargetPlatform>Desktop</DriverTargetPlatform>"), 4)
+        self.assertNotIn("Universal</DriverTargetPlatform>", updated)
+        with self.assertRaises(ValueError):
+            MODULE.patch_project_for_desktop(sample[:-1])
+
     def test_mspl_text_is_required(self):
         source = (HERE.parent / "prepare_sysvad.py").read_text()
         self.assertIn("The Microsoft Public License (MS-PL)", source)

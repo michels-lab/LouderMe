@@ -43,6 +43,8 @@ jobs:
           info = json.loads(p.read_text())
           assert info['render_endpoints'] == 1
           assert info['capture_endpoints'] == 0
+          assert info['sample_keyword_detector_included'] is False
+          assert info['package_file_references'] == ['tabletaudiosample.sys']
           assert info['driver_target_platform'] == 'Desktop'
           proj = Path('upstream/audio/sysvad/TabletAudioSample/TabletAudioSample.vcxproj').read_text()
           assert proj.count('<DriverTargetPlatform>Desktop</DriverTargetPlatform>') == 4

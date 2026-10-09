@@ -14,12 +14,12 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
 function Require-Tool([string]$Name) {
-  $kitRoot = Join-Path ([Environment]::GetFolderPath('ProgramFilesX86')) 'Windows Kits\10\bin'
+  $kitRoot = Join-Path ([Environment]::GetFolderPath('ProgramFilesX86')) 'Windows Kits\10'
   if (-not (Test-Path $kitRoot)) {
     throw "Full WDK/SDK required; Windows Kits bin directory missing: $kitRoot"
   }
   $tool = Get-ChildItem $kitRoot -Recurse -File -Filter "$Name.exe" |
-    Where-Object { $_.FullName -match '\\x64\\|\\x86\\' } |
+    Where-Object { $_.FullName -match '\\x64\\' } |
     Sort-Object FullName -Descending | Select-Object -First 1
   if ($null -eq $tool) {
     throw "$Name.exe missing. Install a matching full Windows SDK and WDK before packaging."
@@ -59,6 +59,12 @@ if (Test-Path $out) {
   }
 } else { New-Item -ItemType Directory -Path $out | Out-Null }
 
+# An actual INF package must reference only files produced by LouderME.
+$expectedFiles = @($meta.package_file_references)
+if ($expectedFiles.Count -ne 1 -or $expectedFiles[0] -ne 'tabletaudiosample.sys' -or
+    $meta.sample_keyword_detector_included) {
+  throw 'Driver package references include unshipped demo dependencies.'
+}
 $destInf = Join-Path $out 'LouderMeVirtualRenderLab.inf'
 $destSys = Join-Path $out 'TabletAudioSample.sys'
 Copy-Item $inx $destInf
@@ -83,5 +89,5 @@ $cat = Join-Path $out 'LouderMeVirtualRenderLab.cat'
 if (-not (Test-Path $cat)) { throw 'Inf2Cat did not produce a catalog.' }
 $sum = (Get-FileHash $destSys -Algorithm SHA256).Hash.ToLowerInvariant()
 Write-Host "LAB INF/CAT validation passed; unsigned SYS SHA-256: $sum"
-Write-Warning 'Unsigned/WDK-test-signed lab files. Universal API and installed playback are NOT established by this script.'
+Write-Warning 'Unsigned/WDK-test-signed lab files. Installed virtual audio playback and physical routing remain unverified.'
 Write-Warning 'Do not ship or install on a primary workstation.'

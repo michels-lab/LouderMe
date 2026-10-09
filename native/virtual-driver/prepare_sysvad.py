@@ -139,6 +139,18 @@ def patch_adapter(text: str) -> str:
     return text
 
 
+def patch_project_for_desktop(text: str) -> str:
+    # LouderME is explicitly a Windows desktop application; it does not
+    # target Windows IoT/Core, mobile, or other Universal-driver platforms.
+    # Microsoft's Desktop-driver model has its own INF/signing requirements
+    # and is NOT a substitute for those installation validation gates.
+    old = "<DriverTargetPlatform>Universal</DriverTargetPlatform>"
+    found = text.count(old)
+    if found != 4:
+        raise ValueError(f"Expected four SysVAD project platform configs, found {found}")
+    return text.replace(old, "<DriverTargetPlatform>Desktop</DriverTargetPlatform>")
+
+
 def patch_resource(text: str) -> str:
     return replace_exact(
         text, '"Microsoft Virtual Audio Tablet Sample Driver"',
@@ -165,7 +177,8 @@ def prepare(repo: Path, dry_run: bool = False) -> dict:
         "TabletAudioSample/ComponentizedAudioSample.inx": lambda s: patch_inf(s, False),
         "TabletAudioSample/ComponentizedAudioSampleExtension.inx": lambda s: patch_inf(s, True),
         "TabletAudioSample/TabletAudioSample.rc": patch_resource,
-        "adapter.cpp": patch_adapter
+        "adapter.cpp": patch_adapter,
+        "TabletAudioSample/TabletAudioSample.vcxproj": patch_project_for_desktop
     }
     patched = {}
     for rel, patch in work.items():
@@ -193,6 +206,7 @@ def prepare(repo: Path, dry_run: bool = False) -> dict:
         "upstream_commit": sha,
         "hardware_id": HARDWARE_ID,
         "service": SERVICE_NAME,
+        "driver_target_platform": "Desktop",
         "render_endpoints": 1,
         "capture_endpoints": 0,
         "recording_to_file_enabled": False,

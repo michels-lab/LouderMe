@@ -21,7 +21,11 @@ repository. It does not publish a signed driver or install an audio device.
 - Endpoint miniport list contains only the virtual **speaker render** endpoint.
   No sample capture/microphone endpoints are installed; unrelated demo render
   miniports (headphone/HDMI/SPDIF) are excluded.
-- Optional SysVAD render-to-disk saving is **permanently disabled** and its\n  registry override is removed; the sample-generated test-tone feature is\n  disabled so sound-proof tests cannot mistake synthetic driver tones for\n  PCM originating from Windows playback clients.\n- The selected virtual speaker is configured with a loopback-support flag,
+- Optional SysVAD render-to-disk saving is **permanently disabled** and its
+  registry override is removed; the sample-generated test-tone feature is
+  disabled so sound-proof tests cannot mistake synthetic driver tones for
+  PCM originating from Windows playback clients.
+- The selected virtual speaker is configured with a loopback-support flag,
   allowing the existing WASAPI bridge to investigate its actual PCM stream.
   **This flag is not evidence that virtual SysVAD supplies non-silent PCM to
   loopback. Test on real Windows hardware before claiming it works.**
@@ -80,6 +84,33 @@ layout. Source verification is distinct from successful driver compilation.
 **Do not install, publish or add the unsigned/test-signed driver to stable
 LouderME installers.** Building the WDK solution may generate unsigned or
 development-signed artifacts; that is not sufficient for consumer deployment.
+
+## INF/CAT preparation on a complete Windows driver lab (unverified)
+
+Microsoft's [WDK setup guidance](https://learn.microsoft.com/en-us/windows-hardware/drivers/download-the-wdk)
+calls for matching SDK/WDK components. On a **separate lab machine** with
+Windows 11 and Visual Studio 2026, install the official WDK if missing
+(for example, `winget install Microsoft.WindowsWDK.10.0.28000`; follow
+Microsoft's instructions for the matching SDK).
+
+After the upstream source is prepared and the kernel `.sys` is compiled
+in x64 Release, use the **validation-only** helper:
+
+```powershell
+pwsh native/virtual-driver/validate_lab_package.ps1 `
+  -SysVadRoot upstream/audio/sysvad `
+  -OutDir upstream/louderme-lab-package
+```
+
+It requires real `StampInf.exe`, `InfVerif.exe` and `Inf2Cat.exe`
+and **fails closed** if the INF violates Windows requirements, references
+missing files or cannot produce an unsigned CAT. It preserves the exact
+LouderME hardware ID and checks the source manifest. It does not install
+the driver, touch defaults or sign it for distribution.
+
+**Not yet run on a fully configured driver lab.** This script alone does
+not satisfy Universal `ApiValidator`, Microsoft's driver signing,
+installation, rollback or real PCM loopback acceptance.
 
 ## Device bring-up acceptance (pending, not yet passed)
 

@@ -189,6 +189,12 @@ def prune_reference_inf(text: str) -> str:
         sections.append("\n".join(kept).rstrip() + "\n")
 
     final = "\n".join(sections)
+    # Microsoft's sample uses a StampInf $ARCH$ placeholder, but -a x64
+    # on current WDK yields NTx64, which InfVerif rejects. Model sections
+    # for Windows x64 are canonically NTamd64.
+    final = final.replace("NT$ARCH$.10.0...22621", "NTamd64.10.0...22621")
+    if "NT$ARCH$" in final or "NTx64" in final:
+        raise ValueError("Invalid unresolved Windows INF architecture decoration")
     required_interface_count = 5
     interfaces = final.split("[SYSVAD_SA.NT.Interfaces]", 1)[1].split("[", 1)[0]
     if interfaces.count("AddInterface=") != required_interface_count:

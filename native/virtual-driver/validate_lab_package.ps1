@@ -73,7 +73,7 @@ Copy-Item $inx $destInf
 Copy-Item $sys.FullName $destSys
 
 # Genuine WDK tools: stamp architecture, date, version and catalog name.
-& $stamp '-f' $destInf '-a' 'x64' '-d' '*' '-v' '1.0.0.0' '-c' 'LouderMeVirtualRenderLab.cat'
+& $stamp '-f' $destInf '-d' '*' '-v' '1.0.0.0' '-c' 'LouderMeVirtualRenderLab.cat'
 if ($LASTEXITCODE -ne 0) { throw "StampInf failed with exit $LASTEXITCODE." }
 $infText = Get-Content $destInf -Raw
 if ($infText -notmatch [regex]::Escape($meta.hardware_id) -or

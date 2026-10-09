@@ -1752,3 +1752,10 @@ Historical platform-specific releases were intentionally retained for compatibil
 - Added explicit standalone `ApiValidator` diagnostic against x64 WDK XML and required executable dependencies to identify actual API or toolchain faults without silently certifying the driver. Follow-up CI will determine whether this diagnostic passes; failure is still a driver-release blocker.
 - Added `native/virtual-driver/validate_lab_package.ps1`, a **fail-closed** full-WDK lab validation helper using Microsoft StampInf, InfVerif /w and Inf2Cat for an unsigned test package. It requires a properly provisioned, matching SDK/WDK lab and has **not** yet been executed; signed distribution and device installation remain prohibited.
 - Stability boundaries: no modifications to the existing released Windows or Android binaries, no driver installed or default playback device changed, no audible virtual-to-physical proof. Issue #48 remains open.
+
+## 2026-10-09 — Correct Windows Desktop driver target (SysVAD M2)
+
+- Identified root product mismatch: Microsoft's reference SysVAD `TabletAudioSample.vcxproj` targeted the **Universal** driver model, whereas LouderME is a Windows desktop application. Official Microsoft `Windows Driver Types` guidance supports an explicit **Desktop** target with different qualification conditions.
+- Added a strict source derivation transformation for the four project configurations to `<DriverTargetPlatform>Desktop</DriverTargetPlatform>`, captured in the machine-readable manifest and regression-tested in CI.
+- Changed the full-WDK lab INF validation helper to run `InfVerif /h` (Desktop/WHQL eligibility rules) instead of treating Universal-driver API checks as automatically required for the desktop-only product. This does **not** waive platform-specific driver signing, package compliance, runtime tests or privileges.
+- **Awaiting CI** to confirm whether the desktop-target kernel build runs without the former post-link Universal `ApiValidator` error; WDK full INF/CAT toolchain and actual installed loopback/acoustic tests remain unverified, and no driver/release has shipped.

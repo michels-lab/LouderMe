@@ -113,6 +113,95 @@ def patch_inf(text: str, extension: bool) -> str:
     return text
 
 
+
+def prune_reference_inf(text: str) -> str:
+    """Keep only the render endpoint and kernel service actually used by LouderME.
+
+    The stock TabletAudioSample INF installs Contoso keyword detector DLL,
+    microphone category registry entries and dozens of unused interfaces.
+    That DLL is not built or shipped in the LouderME package. Its references
+    must be removed from source instead of bypassing package verification.
+    """
+    allowed = {
+        "Version", "SourceDisksNames", "SourceDisksFiles",
+        "SignatureAttributes", "SignatureAttributes.DRM",
+        "Manufacturer", "SYSVAD.NT$ARCH$.10.0...22621",
+        "DestinationDirs", "SYSVAD_SA.CopyList", "SYSVAD_SA.AddReg",
+        "SYSVAD.I.WaveSpeaker", "SYSVAD.I.WaveSpeaker.AddReg",
+        "SYSVAD.I.TopologySpeaker", "SYSVAD.I.TopologySpeaker.AddReg",
+        "SYSVAD_SA.NT", "SYSVAD_SA.NT.Interfaces",
+        "SYSVAD_SA.NT.Services", "LouderMe_VirtualRender_Service_Inst",
+        "SYSVAD_SA.NT.HW", "AUDIOHW.AddReg",
+        "SYSVAD_SA.NT.Wdf", "SYSVAD_SA_WdfSect", "Strings",
+    }
+    matches = list(re.finditer(r"(?m)^\[([^]\r\n]+)\][ \t]*\r?$", text))
+    found = {m.group(1) for m in matches}
+    if not allowed.issubset(found):
+        raise ValueError(f"Missing required INF sections: {sorted(allowed - found)}")
+    sections = []
+    for index, match in enumerate(matches):
+        section = match.group(1)
+        if section not in allowed:
+            continue
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
+        block = text[match.start():end]
+        kept = [block.splitlines()[0]]
+        for line in block.splitlines()[1:]:
+            stripped = line.strip()
+            low = stripped.lower()
+            if section == "SYSVAD_SA.NT.Interfaces":
+                # Do not advertise mic, headphone, HDMI or USB/Bluetooth sample endpoints.
+                if not low.startswith("addinterface=") or (
+                    "%ksname_wavespeaker%" not in low and
+                    "%ksname_topologyspeaker%" not in low
+                ):
+                    continue
+            if section == "SourceDisksFiles" and "keyworddetector" in low:
+                continue
+            if section == "SignatureAttributes" and "keyworddetector" in low:
+                continue
+            if section == "DestinationDirs" and "keyworddetector" in low:
+                continue
+            if section == "SYSVAD_SA.AddReg" and (
+                "micarray" in low or "micincustom" in low
+            ):
+                continue
+            if section == "SYSVAD.I.TopologySpeaker.AddReg" and (
+                low.startswith("hkr,fx") or "capxsampleapo" in low
+            ):
+                # No Microsoft demo APO registrations in the LouderME driver.
+                continue
+            if section == "AUDIOHW.AddReg" and "hkr,,security" in low:
+                # Do not inherit the reference sample's permissive WORLD_RW SDDL.
+                continue
+            if section == "SYSVAD_SA.NT" and low.startswith("copyfiles="):
+                line = "CopyFiles=SYSVAD_SA.CopyList"
+            if section == "SYSVAD_SA.NT" and low.startswith("addreg="):
+                line = "AddReg=SYSVAD_SA.AddReg"
+            if section == "Version" and low.startswith("catalogfile"):
+                line = "CatalogFile = LouderMeVirtualRenderLab.cat"
+            if section == "Strings" and (
+                "keyworddetector" in low or
+                "micarray" in low or "micin" in low
+            ):
+                continue
+            kept.append(line)
+        sections.append("\n".join(kept).rstrip() + "\n")
+
+    final = "\n".join(sections)
+    required_interface_count = 5
+    interfaces = final.split("[SYSVAD_SA.NT.Interfaces]", 1)[1].split("[", 1)[0]
+    if interfaces.count("AddInterface=") != required_interface_count:
+        raise ValueError("Expected exactly five speaker topology/render interfaces")
+    if "keyworddetectorcontosoadapter.dll" in final.lower():
+        raise ValueError("Unshipped Contoso keyword detector still referenced")
+    if "CopyFiles=SYSVAD_SA.CopyList,KEYWORD" in final:
+        raise ValueError("Unexpected keyword detector CopyFiles reference")
+    if "HKR,,Security" in final:
+        raise ValueError("Broad sample driver object SDDL retained")
+    return final
+
+
 def patch_adapter(text: str) -> str:
     # Never allow SysVAD's optional render-to-disk recording to be enabled
     # via a Windows registry value, and suppress demo-generated sine tones.
@@ -174,7 +263,7 @@ def prepare(repo: Path, dry_run: bool = False) -> dict:
 
     work = {
         "TabletAudioSample/minipairs.h": patch_minipairs,
-        "TabletAudioSample/ComponentizedAudioSample.inx": lambda s: patch_inf(s, False),
+        "TabletAudioSample/ComponentizedAudioSample.inx": lambda s: prune_reference_inf(patch_inf(s, False)),
         "TabletAudioSample/ComponentizedAudioSampleExtension.inx": lambda s: patch_inf(s, True),
         "TabletAudioSample/TabletAudioSample.rc": patch_resource,
         "adapter.cpp": patch_adapter,
@@ -209,6 +298,8 @@ def prepare(repo: Path, dry_run: bool = False) -> dict:
         "driver_target_platform": "Desktop",
         "render_endpoints": 1,
         "capture_endpoints": 0,
+        "package_file_references": ["tabletaudiosample.sys"],
+        "sample_keyword_detector_included": False,
         "recording_to_file_enabled": False,
         "sample_tone_generator_enabled": False,
         "driver_signed": False,

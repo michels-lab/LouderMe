@@ -85,3 +85,19 @@ does not prove that the virtual bridge is processing it.**
    Boost” without the external Equalizer APO fallback.
 
 See `docs/NATIVE_AUDIO_ENGINE_ARCHITECTURE.md` and Issues #46/#48.
+
+## Lab virtual endpoint PCM proof (no physical output)
+
+When a signed driver has been installed in a **dedicated Windows test VM**,
+run `--list-devices` to obtain its ID, then:
+
+```powershell
+dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --probe-virtual --source-id "<VIRTUAL_ID>" --confirm-experimental
+```
+
+This opt-in probe sends a quiet 440 Hz tone to the specified *virtual* output
+and uses WASAPI loopback of that same endpoint to calculate RMS/peak; it
+fails if PCM is silent or missing. It does not set any system default or
+send the tone to a physical speaker. A positive result alone is not a
+system-wide processed-sound test. Driver signing, safe installation and
+physical output measurements remain pending.

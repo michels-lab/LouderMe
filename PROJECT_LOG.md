@@ -1730,3 +1730,32 @@ Historical platform-specific releases were intentionally retained for compatibil
 - Guarded against source=destination and capturing an ordinary physical source; only uses float32 PCM when virtual and real endpoints' mix sample rate/channel format match; errors instead of silently resampling. Drops overflow packets and tracks processed/dropped counts. No recording or network.
 - CI extended to build C native ABI shared library/test on Windows and Linux plus .NET bridge build and native DLL interop check on Windows; real virtual audio driver and physical-device routing tests remain **NOT IMPLEMENTED/NOT VERIFIED**.
 - Production Windows still uses Equalizer APO until the own signed virtual endpoint, OS routing, robust audio bridge, driver packaging and measurements exist. This prototype does not replace the system-wide engine, and no release was made.
+
+## 2026-10-08 — M2 real Windows virtual endpoint source and WDK lab prototype
+
+- User authorized continuation of native system audio integration. Investigated official Microsoft SysVAD sample (MS-PL, upstream revision 2dc3fd3a0cc84a2933f2194e7ec0871584979071).
+- Added `native/virtual-driver/prepare_sysvad.py`: reproducible, version-pinned source derivation creating **one render-only speaker endpoint, zero microphone endpoints**, isolated `Root\LouderMe_VirtualRender_Lab` hardware ID, Michel's Lab speaker/device/service labeling, loopback-support configuration and preserved MS-PL license. No driver installation or shipping.
+- Added source guard tests, GitHub Actions source integration and experimental WDK x64 build workflow, plus explicit lab bring-up/readiness checklist.
+- **No signed virtual driver, INF-validated installed endpoint, non-silent WASAPI loopback, end-to-end audible DSP or physical-device evidence claimed.** Current released app remains on legacy Equalizer APO.
+- Next: resolve any pinned source derivation/WDK CI build failures; test signed lab deployment on isolated Windows hardware and prove real PCM capture/output once. Integrate actual endpoint only after evidence, then add robust routing/install/uninstall and user opt-in.
+
+## 2026-10-08 — Driver CI compile/test boundary
+
+- Real pinned SysVAD render-only source derivation passed Ubuntu CI; disabled vendor sample audio file recording and internal synthetic tones; C++/Windows bridge CI passed.
+- Windows WDK x64 miniport project compiled and linked `TabletAudioSample.sys` in run 37831513502, but post-link `ApiValidator.exe` failed with MSB3721. Hosted runner also lacks `StampInf.exe` for INF stamping. Neither validation is waived for distributing a kernel driver.
+- Separated **compile-only lab** acceptance of a linked SYS from a SPECIFIC recorded post-link `ApiValidator` MSB3721 error. This **does not bypass** the required Universal API/INF validation for packaging; it is NOT a production package and any automatic WDK test signature cannot be shipped. Next evidence: green compile-only test, then full API validation/INF verification and approved signing in a dedicated Windows driver lab, installed virtual render PCM loopback test, physical output DSP route.
+- No driver installed, no default output changed and no public release authorized.
+
+## 2026-10-09 — WDK CI lab compilation gate repaired, independent API analysis and lab package checks
+
+- Confirmed PR #50 kernel lab CI run 38002614365 **success**: pinned SysVAD source derivation + C++ WaveRT/driver compilation; the `TabletAudioSample.sys` exists and a *specific* post-link Universal API validation failure is recorded independently. Fixed GitHub PowerShell's implicit native-process exit-code propagation; do not confuse successful kernel linking with Windows driver certification.
+- Added explicit standalone `ApiValidator` diagnostic against x64 WDK XML and required executable dependencies to identify actual API or toolchain faults without silently certifying the driver. Follow-up CI will determine whether this diagnostic passes; failure is still a driver-release blocker.
+- Added `native/virtual-driver/validate_lab_package.ps1`, a **fail-closed** full-WDK lab validation helper using Microsoft StampInf, InfVerif /w and Inf2Cat for an unsigned test package. It requires a properly provisioned, matching SDK/WDK lab and has **not** yet been executed; signed distribution and device installation remain prohibited.
+- Stability boundaries: no modifications to the existing released Windows or Android binaries, no driver installed or default playback device changed, no audible virtual-to-physical proof. Issue #48 remains open.
+
+## 2026-10-09 — Correct Windows Desktop driver target (SysVAD M2)
+
+- Identified root product mismatch: Microsoft's reference SysVAD `TabletAudioSample.vcxproj` targeted the **Universal** driver model, whereas LouderME is a Windows desktop application. Official Microsoft `Windows Driver Types` guidance supports an explicit **Desktop** target with different qualification conditions.
+- Added a strict source derivation transformation for the four project configurations to `<DriverTargetPlatform>Desktop</DriverTargetPlatform>`, captured in the machine-readable manifest and regression-tested in CI.
+- Changed the full-WDK lab INF validation helper to run `InfVerif /h` (Desktop/WHQL eligibility rules) instead of treating Universal-driver API checks as automatically required for the desktop-only product. This does **not** waive platform-specific driver signing, package compliance, runtime tests or privileges.
+- **Awaiting CI** to confirm whether the desktop-target kernel build runs without the former post-link Universal `ApiValidator` error; WDK full INF/CAT toolchain and actual installed loopback/acoustic tests remain unverified, and no driver/release has shipped.

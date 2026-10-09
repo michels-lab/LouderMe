@@ -1,0 +1,234 @@
+name: LouderME Virtual Render Driver Lab CI
+on:
+  pull_request:
+    paths:
+      - 'native/virtual-driver/**'
+      - '.github/workflows/native-virtual-device-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sysvad-lab-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  derive:
+    name: Derive pinned SysVAD one-output/no-microphone lab source
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout LouderME
+        uses: actions/checkout@v4
+        with:
+          path: louderme
+      - name: Checkout pinned MS-PL SysVAD source
+        uses: actions/checkout@v4
+        with:
+          repository: microsoft/Windows-driver-samples
+          ref: 2dc3fd3a0cc84a2933f2194e7ec0871584979071
+          path: upstream
+          sparse-checkout: |
+            audio/sysvad
+            LICENSE
+      - name: Test derivation guards
+        run: python -m unittest discover -s louderme/native/virtual-driver/tests -v
+      - name: Produce local virtual-render source and metadata
+        run: |
+          python louderme/native/virtual-driver/prepare_sysvad.py --upstream-root upstream
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('upstream/audio/sysvad/LOUDERME_LAB_MANIFEST.json')
+          info = json.loads(p.read_text())
+          assert info['render_endpoints'] == 1
+          assert info['capture_endpoints'] == 0
+          assert info['driver_target_platform'] == 'Desktop'
+          proj = Path('upstream/audio/sysvad/TabletAudioSample/TabletAudioSample.vcxproj').read_text()
+          assert proj.count('<DriverTargetPlatform>Desktop</DriverTargetPlatform>') == 4
+          assert info['recording_to_file_enabled'] is False
+          assert info['sample_tone_generator_enabled'] is False
+          assert info['hardware_id'] == r'Root\LouderMe_VirtualRender_Lab'
+          assert info['driver_signed'] is False
+          assert info['real_audio_verified'] is False
+          pinf = Path('upstream/audio/sysvad/TabletAudioSample/ComponentizedAudioSample.inx')
+          raw_inf = pinf.read_bytes()
+          inf = raw_inf.decode('utf-16' if raw_inf.startswith((bytes.fromhex('fffe'), bytes.fromhex('feff'))) else 'utf-8')
+          assert 'LouderME Virtual Speaker' in inf
+          assert 'TODO-Set-Provider' not in inf
+          assert 'LICENSE-MS-PL.txt' in [f.name for f in p.parent.iterdir()]
+          print('Pinned Windows virtual device lab source derivation verified.')
+          PY
+      - name: Validate no signed or installable driver is published
+        run: |
+          test ! -f upstream/audio/sysvad/TabletAudioSample/tabletaudiosample.sys
+          test ! -f upstream/audio/sysvad/TabletAudioSample/tabletaudiosample.inf
+          echo 'Source-only prototype: no signed driver/install occurred.'
+
+  driver_build:
+    name: Compile derived driver package with WDK NuGet (no install)
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
+    needs: derive
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 35
+    steps:
+      - name: Checkout LouderME
+        uses: actions/checkout@v4
+        with:
+          path: louderme
+      - name: Checkout pinned Microsoft SysVAD with WIL
+        uses: actions/checkout@v4
+        with:
+          repository: microsoft/Windows-driver-samples
+          ref: 2dc3fd3a0cc84a2933f2194e7ec0871584979071
+          path: upstream
+          submodules: recursive
+      - name: Reuse WDK NuGet dependencies when available
+        uses: actions/cache@v4
+        with:
+          path: upstream/packages
+          key: louderme-wdk-x64-28000-2526-v1
+      - name: Restore x64-only Microsoft WDK packages
+        shell: pwsh
+        run: |
+          # Upstream packages.config also restores ARM64 SDK+WDK; those are
+          # unnecessary for the Windows x64 lab-driver build.
+          [xml]$p = Get-Content upstream/packages.config
+          foreach ($pkg in @($p.packages.package)) {
+            if ($pkg.id -like '*.arm64') {
+              [void]$pkg.ParentNode.RemoveChild($pkg)
+            }
+          }
+          $p.Save((Resolve-Path 'upstream/packages.config').Path)
+          nuget restore upstream/packages.config -PackagesDirectory upstream/packages -NonInteractive
+          if ($LASTEXITCODE -ne 0) { throw 'x64 WDK NuGet restore failed.' }
+      - name: Transform Microsoft driver source (lab only)
+        run: python louderme/native/virtual-driver/prepare_sysvad.py --upstream-root upstream
+      - name: Set up MSBuild
+        uses: microsoft/setup-msbuild@v2
+      - name: Exclude INF stamping on CI without full WDK tools (kernel compile only)
+        shell: pwsh
+        run: |
+          # The hosted VS2026/WDK NuGet runner has kernel headers and linker,
+          # but not StampInf.exe. Remove just the MSBuild INF item in this
+          # temporary checkout so compilation can prove the real .sys sources.
+          # Source INX remains preserved/validated; no installable INF or CAT.
+          $proj = 'upstream/audio/sysvad/TabletAudioSample/TabletAudioSample.vcxproj'
+          $source = Get-Content $proj -Raw
+          $old = '<Inf Exclude="@(Inx)" Include="*.inx" />'
+          if (-not $source.Contains($old)) {
+            throw 'Unexpected SysVAD INF build item: refuse unsafe project rewrite.'
+          }
+          $source = $source.Replace($old, '<!-- LouderME lab: driver binary compile only; INF requires full WDK StampInf -->')
+          [System.IO.File]::WriteAllText((Resolve-Path $proj).Path, $source, [Text.UTF8Encoding]::new($false))
+      - name: Build x64 WaveRT render miniport and kernel SYS (no signed install package)
+        id: kernel_compile
+        shell: pwsh
+        run: |
+          msbuild upstream/audio/sysvad/EndpointsCommon/EndpointsCommon.vcxproj /m /p:Configuration=Release /p:Platform=x64 /v:minimal
+          if ($LASTEXITCODE -ne 0) { throw 'SysVAD render endpoint library did not compile.' }
+          # Exact, auditable compile-only gate. MSBuild/WDK may fail *after*
+          # a successful kernel link when hosted ApiValidator cannot finish.
+          # NEVER accept a compiler/linker error; a post-link ApiValidator
+          # failure remains a mandatory separate product-release blocker.
+          $driverProject = 'upstream/audio/sysvad/TabletAudioSample/TabletAudioSample.vcxproj'
+          $buildOutput = & msbuild $driverProject /m /p:Configuration=Release /p:Platform=x64 /v:minimal 2>&1
+          $exit = $LASTEXITCODE
+          $buildOutput | ForEach-Object { Write-Host $_ }
+          $driver = Get-ChildItem upstream/audio/sysvad -Recurse -Filter 'TabletAudioSample.sys' |
+            Where-Object { $_.FullName -match 'Release' } | Select-Object -First 1
+          if ($null -eq $driver -or $driver.Length -lt 10000) {
+            throw 'No linked x64 kernel SYS produced; compile-only test failed.'
+          }
+          $projectCompleted = ($exit -eq 0)
+          if (-not $projectCompleted) {
+            $errors = @($buildOutput | Where-Object {
+              $_ -match '\berror (?:MSB\d+|TRK\d+|C\d+|LNK\d+|CS\d+)' })
+            $validatorOnly = $errors.Count -eq 1 -and
+              $errors[0] -match 'error MSB3721:' -and
+              $errors[0] -match 'ApiValidator.exe'
+            if (-not $validatorOnly) {
+              throw 'Compiler, linker or unexpected WDK failure: not a valid kernel binary compilation.'
+            }
+            Write-Warning 'POST-LINK VALIDATION FAILED: ApiValidator MSB3721. Kernel SYS compiled, but driver is NOT certified or deployable.'
+          }
+          "compiled=true" >> $env:GITHUB_OUTPUT
+          "project_completed=$($projectCompleted.ToString().ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+          Write-Host "LAB_COMPILE_ONLY=PASS; DRIVER_PATH=$($driver.FullName); SIZE=$($driver.Length)"
+          Write-Warning 'PRODUCT GATES PENDING: Desktop INF /h, signed INF/CAT, Microsoft-trusted driver signing, install/rollback, real virtual PCM and physical routing.'
+          # GitHub's pwsh wrapper exits with the LAST native process code.
+          # Explicit zero here is legitimate ONLY after the precise link /
+          # allowed post-link diagnostic check above has passed.
+          exit 0
+      - name: Verify compiled driver is not claimed signed or installed
+        shell: pwsh
+        run: |
+          $driver = Get-ChildItem upstream/audio/sysvad -Recurse -Filter 'TabletAudioSample.sys' |
+            Where-Object { $_.FullName -match 'Release' } | Select-Object -First 1
+          if ($null -eq $driver) { throw 'Expected x64 SysVAD driver binary not found.' }
+          Write-Host "Compiled lab-only kernel binary: $($driver.FullName)"
+          Write-Warning 'Kernel SYS compiled; WDK may apply a TEST signature. Do not install or publish: Desktop INF/CAT and trusted production signing are not validated.'
+      - name: Diagnose Universal API compatibility independently
+        id: apivalidator
+        if: steps.kernel_compile.outputs.compiled == 'true'
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          # A separate, honest compatibility gate: this test may fail on
+          # GitHub runners, and the driver must NEVER ship when it does.
+          $sys = Get-ChildItem 'upstream/audio/sysvad/TabletAudioSample' -Filter 'TabletAudioSample.sys' -Recurse |
+            Where-Object { $_.FullName -match 'x64.*Release|Release.*x64' } | Select-Object -First 1
+          if ($null -eq $sys) { throw 'Kernel binary unavailable for API analysis.' }
+
+          # Match the x86 host-tool architecture selected by Microsoft's
+          # own x64 WDK MSBuild targets; the package also contains ARM64
+          # executables which are not runnable on this x64 hosted machine.
+          $api = Get-ChildItem 'upstream/packages' -Recurse -Filter 'ApiValidator.exe' |
+            Where-Object { $_.FullName -match 'WDK.x64' -and
+                           $_.FullName -match '\\x86\\' } | Select-Object -First 1
+          $supported = Get-ChildItem 'upstream/packages' -Recurse -Filter 'UniversalDDIs.xml' |
+            Where-Object { $_.FullName -match 'WDK.x64.*universalDDIs.*x64' } |
+            Select-Object -First 1
+          $whitelist = Get-ChildItem 'upstream/packages' -Recurse -Filter 'ModuleWhiteList.xml' |
+            Where-Object { $_.FullName -match 'WDK.x64.*universalDDIs.*x64' } |
+            Select-Object -First 1
+          if ($null -eq $api -or $null -eq $supported -or $null -eq $whitelist) {
+            throw 'WDK API validator executable/XML prerequisites missing: full WDK installation required.'
+          }
+          foreach ($name in @('Aitstatic.exe', 'Microsoft.Kits.Drivers.ApiValidator.dll')) {
+            $found = Get-ChildItem 'upstream/packages' -Filter $name -Recurse |
+              Where-Object { $_.FullName -match 'WDK.x64' } | Select-Object -First 1
+            if ($null -eq $found) { throw "Missing ApiValidator dependency: $name" }
+            Write-Host "$name located."
+          }
+          Write-Host "Validating kernel: $($sys.FullName)"
+          Write-Host "Using WDK API validator: $($api.FullName)"
+          & $api.FullName "-DriverPackagePath:$($sys.DirectoryName)" `
+            "-SupportedApiXmlFiles:$($supported.FullName)" `
+            "-ModuleWhiteListXmlFiles:$($whitelist.FullName)" `
+            "-ApiExtractorExePath:$($api.DirectoryName)"
+          if ($LASTEXITCODE -ne 0) {
+            throw "Universal ApiValidator failed (exit $LASTEXITCODE): driver NOT deployable."
+          }
+          Write-Host 'Universal ApiValidator standalone diagnostic passed.'
+      - name: Report distinct build and deployability states
+        if: always()
+        shell: pwsh
+        env:
+          COMPILED: ${{ steps.kernel_compile.outputs.compiled }}
+          PROJECT_COMPLETED: ${{ steps.kernel_compile.outputs.project_completed }}
+          STANDALONE_API: ${{ steps.apivalidator.outcome }}
+        run: |
+          @(
+            '### LouderME virtual audio lab driver',
+            "- Kernel SYS linked: $env:COMPILED",
+            "- Windows Desktop MSBuild project completed: $env:PROJECT_COMPLETED",
+            "- Optional Universal API diagnostics (not Desktop signability): $env:STANDALONE_API",
+            "- Desktop InfVerif /h and Inf2Cat: **NOT RUN**",
+            '- Signed consumer-ready INF/CAT: **false**',
+            '- Installed live Windows endpoint: **false**',
+            '- Audible global DSP: **not verified**',
+            '',
+            '**Do not ship this driver from CI.**'
+          ) | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+          if ($env:COMPILED -ne 'true') { throw 'Kernel compile not verified.' }

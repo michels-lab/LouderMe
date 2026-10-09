@@ -32,6 +32,9 @@ internal static class Program
                 return 0;
             }
 
+            if (args.Contains("--probe-virtual"))
+                return ProbeVirtualEndpoint(devices, args);
+
             // Never install a driver or change Windows' default endpoint.
             var sourceId = GetArg(args, "--source-id");
             var outputId = GetArg(args, "--output-id");
@@ -175,6 +178,90 @@ internal static class Program
             Console.Error.WriteLine($"{ex.GetType().Name}: {ex.Message}");
             return 1;
         }
+    }
+
+    private static int ProbeVirtualEndpoint(
+        IEnumerable<MMDevice> devices, string[] args)
+    {
+        // Sound proof only: locally generate a low-amplitude test tone on a
+        // specified virtual endpoint and measure its loopback. Does not alter
+        // the default playback device or play to a physical output.
+        if (!args.Contains("--confirm-experimental"))
+            throw new ArgumentException("Probe requires explicit --confirm-experimental.");
+        var sourceId = GetArg(args, "--source-id")
+            ?? throw new ArgumentException("Probe requires --source-id.");
+        var endpoint = devices.FirstOrDefault(d => d.ID == sourceId)
+            ?? throw new InvalidOperationException("Selected endpoint not available.");
+        if (!endpoint.FriendlyName.Contains("LouderMe Virtual", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Probe refuses non-LouderME source endpoints.");
+
+        using var capture = new WasapiLoopbackCapture(endpoint);
+        var format = capture.WaveFormat;
+        if (!IsFloat32(format) || format.Channels is < 1 or > 8 ||
+            format.SampleRate is < 8000 or > 192000)
+            throw new NotSupportedException("Probe needs a valid float32 virtual mix format.");
+        var frames = format.SampleRate * 2;
+        var audio = new byte[checked(frames * format.BlockAlign)];
+        for (var frame = 0; frame < frames; frame++)
+        {
+            var value = 0.025f * MathF.Sin(
+                2 * MathF.PI * 440f * frame / format.SampleRate);
+            for (var ch = 0; ch < format.Channels; ch++)
+                BinaryPrimitives.WriteSingleLittleEndian(
+                    audio.AsSpan((frame * format.Channels + ch) * sizeof(float)), value);
+        }
+
+        // Any nonzero capture demonstrates that the specific virtual endpoint
+        // produced loopback data. It does NOT prove audio reached speakers.
+        double energy = 0;
+        double peak = 0;
+        long receivedSamples = 0;
+        var sync = new object();
+        capture.DataAvailable += (_, e) =>
+        {
+            lock (sync)
+            {
+                for (int i = 0; i + sizeof(float) <= e.BytesRecorded; i += sizeof(float))
+                {
+                    var sample = BinaryPrimitives.ReadSingleLittleEndian(e.Buffer.AsSpan(i));
+                    if (!float.IsFinite(sample))
+                        throw new InvalidDataException("Nonfinite PCM from virtual loopback.");
+                    energy += sample * sample;
+                    peak = Math.Max(peak, Math.Abs(sample));
+                    receivedSamples++;
+                }
+            }
+        };
+        using var playback = new WasapiOut(endpoint, AudioClientShareMode.Shared, true, 75);
+        using var tone = new RawSourceWaveStream(new MemoryStream(audio, writable: false), format);
+        playback.Init(tone);
+        try
+        {
+            capture.StartRecording();
+            playback.Play();
+            Thread.Sleep(TimeSpan.FromSeconds(3));
+        }
+        finally
+        {
+            playback.Stop();
+            capture.StopRecording();
+            Thread.Sleep(150); // permit last loopback callback to complete
+        }
+        double rms;
+        lock (sync) rms = receivedSamples > 0
+            ? Math.Sqrt(energy / receivedSamples) : 0;
+        Console.WriteLine(
+            $"Virtual PCM probe: samples={receivedSamples} RMS={rms:F5} peak={peak:F5}");
+        if (receivedSamples < format.SampleRate / 4 || rms < 0.003 || peak < 0.01)
+        {
+            Console.Error.WriteLine(
+                "FAIL: virtual endpoint loopback silent/absent. No global processing claim.");
+            return 3;
+        }
+        Console.WriteLine(
+            "PASS: virtual endpoint loopback returned non-silent PCM. " +
+            "Actual physical-device DSP routing remains separately unverified.");
+        return 0;
     }
 
     private static string? GetArg(string[] args, string name)

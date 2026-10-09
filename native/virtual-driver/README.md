@@ -29,6 +29,12 @@ repository. It does not publish a signed driver or install an audio device.
   allowing the existing WASAPI bridge to investigate its actual PCM stream.
   **This flag is not evidence that virtual SysVAD supplies non-silent PCM to
   loopback. Test on real Windows hardware before claiming it works.**
+- The WDK project now explicitly targets **Windows Desktop**, rather than
+  the reference sample's Universal driver model. This is a deliberate
+  product-scope decision: LouderME targets Windows desktop PCs, not IoT/Core
+  or other Universal platforms. The required Desktop/WHQL INF validation
+  uses `InfVerif /h`; package signing, runtime functionality and applicable
+  Microsoft signing requirements are still mandatory.
 - The sample extension INF remains in source for upstream build consistency
   but **must not be installed**: it contains Microsoft's demo APOs.
 
@@ -68,13 +74,18 @@ nuget restore upstream/packages.config -PackagesDirectory upstream/packages
 msbuild upstream/audio/sysvad/sysvad.sln /m /p:Configuration=Release /p:Platform=x64
 ```
 
-**Current hosted WDK limitation:** the code builds and links a kernel
-`.sys`, but Microsoft's post-link `ApiValidator` fails with MSB3721
-in the hosted runner. CI records this as a **release validation failure**
-while assessing kernel compilation separately. API validation must pass
-before distribution. INF stamping is also unavailable because the hosted
-environment lacks `StampInf.exe`. A build-generated **test** signature
-is not a trusted production driver signature.
+**WDK qualification status:** earlier Universal-target attempts compiled
+the `.sys` but failed the separate Universal `ApiValidator` stage.
+For this Windows-only product we now build the explicit **Desktop** target
+instead. Microsoft's Desktop classification does not require achieving
+Universal API compatibility; it does require its own `InfVerif /h`,
+compatible system APIs, proper INF/CAT packaging, Microsoft-trusted driver
+signing and real-device testing. Universal compatibility can be investigated
+later without mislabeling the consumer target.
+
+The hosted CI still does not have a full `StampInf.exe` environment, so it
+cannot certify an installable package. The full-WDK helper remains unverified
+until executed on a provisioned driver-lab machine.
 
 The workflow `native-virtual-device-ci.yml` prepares/checks actual
 Microsoft source in Ubuntu, and attempts to compile the modified SysVAD
@@ -109,7 +120,7 @@ LouderME hardware ID and checks the source manifest. It does not install
 the driver, touch defaults or sign it for distribution.
 
 **Not yet run on a fully configured driver lab.** This script alone does
-not satisfy Universal `ApiValidator`, Microsoft's driver signing,
+not satisfy applicable Windows driver API requirements, Microsoft's driver signing,
 installation, rollback or real PCM loopback acceptance.
 
 ## Device bring-up acceptance (pending, not yet passed)

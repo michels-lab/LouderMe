@@ -180,8 +180,12 @@ jobs:
             Where-Object { $_.FullName -match 'x64.*Release|Release.*x64' } | Select-Object -First 1
           if ($null -eq $sys) { throw 'Kernel binary unavailable for API analysis.' }
 
+          # Match the x86 host-tool architecture selected by Microsoft's
+          # own x64 WDK MSBuild targets; the package also contains ARM64
+          # executables which are not runnable on this x64 hosted machine.
           $api = Get-ChildItem 'upstream/packages' -Recurse -Filter 'ApiValidator.exe' |
-            Where-Object { $_.FullName -match 'WDK.x64' } | Select-Object -First 1
+            Where-Object { $_.FullName -match 'WDK.x64' -and
+                           $_.FullName -match '\\x86\\' } | Select-Object -First 1
           $supported = Get-ChildItem 'upstream/packages' -Recurse -Filter 'UniversalDDIs.xml' |
             Where-Object { $_.FullName -match 'WDK.x64.*universalDDIs.*x64' } |
             Select-Object -First 1

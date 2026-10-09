@@ -74,8 +74,8 @@ if ($infText -notmatch [regex]::Escape($meta.hardware_id) -or
   throw 'Generated INF hardware ID/provider failed identity assertions.'
 }
 
-& $infverif '/w' $destInf
-if ($LASTEXITCODE -ne 0) { throw "InfVerif Windows driver rules failed with exit $LASTEXITCODE." }
+& $infverif '/h' $destInf
+if ($LASTEXITCODE -ne 0) { throw "InfVerif Desktop/WHQL-signability rules failed with exit $LASTEXITCODE." }
 & $inf2cat "/driver:$out" '/os:10_GE_X64,10_25H2_X64' '/verbose'
 if ($LASTEXITCODE -ne 0) { throw "Inf2Cat signability failed with exit $LASTEXITCODE." }
 

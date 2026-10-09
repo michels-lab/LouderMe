@@ -19,11 +19,13 @@ function Require-Tool([string]$Name) {
     throw "Full WDK/SDK required; Windows Kits bin directory missing: $kitRoot"
   }
   $tool = Get-ChildItem $kitRoot -Recurse -File -Filter "$Name.exe" |
-    Where-Object { $_.FullName -match '\\x64\\' } |
-    Sort-Object FullName -Descending | Select-Object -First 1
+    Where-Object { $_.FullName -match '\\(x64|x86)\\' } |
+    Sort-Object -Property @{Expression={ if ($_.FullName -match '\\x64\\') { 1 } else { 0 } };Descending=$true},FullName -Descending |
+    Select-Object -First 1
   if ($null -eq $tool) {
     throw "$Name.exe missing. Install a matching full Windows SDK and WDK before packaging."
   }
+  Write-Host "WDK tool selected: $($tool.FullName)"
   return $tool.FullName
 }
 

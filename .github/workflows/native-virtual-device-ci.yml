@@ -43,6 +43,9 @@ jobs:
           info = json.loads(p.read_text())
           assert info['render_endpoints'] == 1
           assert info['capture_endpoints'] == 0
+          assert info['driver_target_platform'] == 'Desktop'
+          proj = Path('upstream/audio/sysvad/TabletAudioSample/TabletAudioSample.vcxproj').read_text()
+          assert proj.count('<DriverTargetPlatform>Desktop</DriverTargetPlatform>') == 4
           assert info['recording_to_file_enabled'] is False
           assert info['sample_tone_generator_enabled'] is False
           assert info['hardware_id'] == r'Root\LouderMe_VirtualRender_Lab'

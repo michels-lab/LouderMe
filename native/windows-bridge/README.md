@@ -53,6 +53,7 @@ dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll
 dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --check-formats
 dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --check-pipeline
 dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --check-loopback
+dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --check-route-tone
 ```
 
 When an independently **installed, signed and verified** LouderME virtual
@@ -120,3 +121,64 @@ does not send the tone to physical speakers, and is **not** a production
 driver install/certification, app-origin sound capture proof or global
 processed-sound test. Driver signing, safe installation, physical routing,
 latency, crash/rollback and device testing remain pending.
+
+## NEW: Isolated virtual → physical loopback route proof (not yet run on hardware)
+
+The CI-only `--check-route-tone` builds and decodes a quiet, known 440 Hz
+signal at PCM16/float32 mono/stereo 44.1, 48 and 96 kHz. Its PASS result
+**does not mean a real speaker played anything**.
+
+To test real Windows routing, use a **disposable Windows lab VM or dedicated
+audio workstation that can be restored from a snapshot**, and only after the
+virtual render driver is installed with a legally valid **lab/test** signing
+path. Hosted CI cannot provide a physical speaker, trustworthy app-origin
+PCM, kernel install/reboot test or an acoustic measurement.
+
+First run `--probe-virtual` successfully on the installed device. Then list
+actual endpoint IDs and verify the physical endpoint is separate, audio is
+connected, Windows system playback volume is set low, and *all other media
+is paused*:
+
+```powershell
+dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --list-devices
+dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --probe-route --source-id "<LOUDEME_VIRTUAL_ID>" --output-id "<PHYSICAL_SPEAKER_ID>" --boost 150 --confirm-experimental
+```
+
+The probe **does not install drivers or switch Windows defaults**. It
+explicitly selects two active render endpoints: the first **must** be a
+LouderME-named virtual endpoint; the second **must not** be one. It starts
+the existing native DSP bridge, emits a low-level 2-second stimulus *only
+into the virtual device*, and measures 4 seconds of the independently chosen
+physical endpoint's WASAPI loopback. It requires correctly aligned, finite
+PCM, a matching 440 Hz peak/coherence and at least one second of actual
+virtual-capture processing. A signal from a different frequency, silence
+or insufficient virtual capture **fails closed** (exit code 4).
+
+The test currently supports physical and virtual mono/stereo PCM16/float32
+mix formats and **boost 100–150%** (higher output is intentionally disallowed
+for this test). A PASS is stronger than synthetic DSP CI: it shows that
+the 440 Hz virtual stimulus reached the *physical playback stream through
+the bridge in this isolated environment*. It is **not** a microphone
+recording, calibrated speaker SPL measurement, third-party application
+audio proof, absence-of-echo proof or evidence of 150% output gain over
+100%. Repeat a controlled 100 vs 150 comparison only after safety/volume
+checks; dedicated output amplitude/latency analysis remains pending.
+
+**If there is no real Windows audio endpoint, no successfully installed
+virtual driver, or no non-silent loopback:** the probe fails. Do not
+simulate a PASS or add a generic nonzero workaround. Capture console
+metrics and real hardware details in the lab issue; restore the VM snapshot
+after testing. Never distribute the unsigned lab driver, and leave
+production Windows v0.1.11/Equalizer APO untouched.
+
+## Disposable Windows VM automated test wrapper
+
+See `native/virtual-driver/run_disposable_lab.ps1` for strict, opt-in
+PowerShell orchestration of a *separately signed* lab-only SYS/INF/CAT
+device installation, `--probe-virtual`, `--probe-route` and root-device
+cleanup. It refuses non-VM hosts, unauthenticated catalogs, missing bridge
+DLLs and unselected physical sinks. This is **not** run by hosted GitHub CI;
+a dedicated disposable VM snapshot and real audio endpoints are prerequisites.
+The helper never turns on test signing or disables Secure Boot, and it does
+not restore Windows default output selection automatically. Recover from
+the VM snapshot when necessary. CI only syntax-checks the script.

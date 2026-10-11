@@ -1,0 +1,66 @@
+name: LouderME physical Windows audio lab (manual VM only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      vm_consent:
+        description: "Exact text I_ACCEPT_DISPOSABLE_WINDOWS_VM_DRIVER_TEST (requires isolated VM snapshot)"
+        required: true
+        type: string
+      signed_driver_package_dir:
+        description: "ABSOLUTE path to already locally trusted LAB-signed INF/CAT/SYS on VM"
+        required: true
+        type: string
+      devcon_exe:
+        description: "ABSOLUTE path to Microsoft WDK devcon.exe on VM"
+        required: true
+        type: string
+      bridge_dll:
+        description: "ABSOLUTE path to built .NET bridge + neighboring native DLL on VM"
+        required: true
+        type: string
+      physical_endpoint_id:
+        description: "Exact physical playback ID from --list-devices INSIDE that VM"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: louderme-disposable-windows-audio-lab
+  cancel-in-progress: false
+
+jobs:
+  physical_route:
+    if: >-
+      github.repository == 'michels-lab/LouderMe' &&
+      inputs.vm_consent == 'I_ACCEPT_DISPOSABLE_WINDOWS_VM_DRIVER_TEST'
+    # NEVER add windows-latest or GitHub-hosted labels: hosted runners do
+    # not offer valid physical sound evidence and this task installs a kernel
+    # test driver. Label must be assigned only to an isolated snapshot VM.
+    runs-on: [self-hosted, Windows, X64, louderme-isolated-audio-lab]
+    timeout-minutes: 25
+    steps:
+      - name: Checkout signed-lab runner only
+        uses: actions/checkout@v4
+      - name: Verify VM identity, install signed lab device, test and remove
+        shell: pwsh
+        env:
+          LAB_CONSENT: ${{ inputs.vm_consent }}
+          LAB_PACKAGE: ${{ inputs.signed_driver_package_dir }}
+          LAB_DEVCON: ${{ inputs.devcon_exe }}
+          LAB_BRIDGE: ${{ inputs.bridge_dll }}
+          LAB_PHYSICAL: ${{ inputs.physical_endpoint_id }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          pwsh -NoProfile -File native/virtual-driver/run_disposable_lab.ps1 -PackageDir $env:LAB_PACKAGE -DevconExe $env:LAB_DEVCON -BridgeDll $env:LAB_BRIDGE -PhysicalEndpointId $env:LAB_PHYSICAL -LabConsent $env:LAB_CONSENT -EvidenceDir "$env:RUNNER_TEMP/louderme-lab-evidence"
+          if ($LASTEXITCODE -ne 0) { throw "Lab physical audio proof FAILED; revert VM snapshot." }
+      - name: Archive metadata-only lab evidence even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: louderme-disposable-vm-physical-loopback-evidence
+          path: ${{ runner.temp }}/louderme-lab-evidence/
+          if-no-files-found: warn
+          retention-days: 7

@@ -26,6 +26,11 @@ internal sealed record DesktopUpdateCheck(
 internal sealed class DesktopUpdateService
 {
     private const string FeedUrl =
+        "https://raw.githubusercontent.com/michels-lab/LouderMe-releases/main/louderme-desktop/latest.json";
+
+    // Existing shipped versions still read the legacy endpoint. New
+    // LouderMe builds prefer their own repo, falling back during migration.
+    private const string LegacyFeedUrl =
         "https://raw.githubusercontent.com/michels-lab/michel-s-life-releases/main/louderme-desktop/latest.json";
 
     private readonly HttpClient _http = new()
@@ -49,13 +54,7 @@ internal sealed class DesktopUpdateService
     {
         var current = ParseVersion(CurrentVersionText);
 
-        using var response = await _http.GetAsync(FeedUrl, cancellationToken);
-        response.EnsureSuccessStatusCode();
-        var json = await response.Content.ReadAsStringAsync(cancellationToken);
-        var manifest = JsonSerializer.Deserialize<DesktopUpdateManifest>(
-            json,
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
-            ?? throw new InvalidDataException("Desktop update feed is empty.");
+        var manifest = await FetchUpdateManifestAsync(cancellationToken);
 
         if (!manifest.channel.Equals("stable", StringComparison.OrdinalIgnoreCase))
             throw new InvalidDataException("Desktop update feed is not on the stable channel.");
@@ -74,6 +73,31 @@ internal sealed class DesktopUpdateService
             available
                 ? $"LouderMe Desktop v{latest} is available."
                 : $"LouderMe Desktop v{current} is current.");
+    }
+
+    private async Task<DesktopUpdateManifest> FetchUpdateManifestAsync(
+        CancellationToken cancellationToken)
+    {
+        Exception? lastFailure = null;
+        foreach (var url in new[] { FeedUrl, LegacyFeedUrl })
+        {
+            try
+            {
+                using var response = await _http.GetAsync(url, cancellationToken);
+                response.EnsureSuccessStatusCode();
+                var json = await response.Content.ReadAsStringAsync(cancellationToken);
+                return JsonSerializer.Deserialize<DesktopUpdateManifest>(
+                    json,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+                    ?? throw new InvalidDataException("Desktop update feed is empty.");
+            }
+            catch (Exception error) when (error is not OperationCanceledException)
+            {
+                lastFailure = error;
+            }
+        }
+        throw new InvalidOperationException(
+            "Neither LouderMe Desktop update feed is available.", lastFailure);
     }
 
     public async Task<string> DownloadInstallerAsync(

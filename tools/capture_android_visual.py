@@ -66,6 +66,42 @@ def hierarchy() -> ET.Element:
     return ET.fromstring(adb("exec-out", "cat", "/sdcard/louderme-qa.xml"))
 
 
+def has_label(root: ET.Element, label: str) -> bool:
+    # Compose accessibility merges child text into a parent content-desc on
+    # some emulator/device versions; both are actual native UI semantics.
+    return any(
+        node.get("text") == label or node.get("content-desc") == label
+        for node in root.iter("node")
+    )
+
+
+def wait_for_labels(required: tuple[str, ...], timeout: int = 24) -> ET.Element:
+    # On cold AVD launches a fixed 3-second delay is not a UI-ready signal.
+    # Retry only actual uiautomator hierarchy reads and fail closed at a bound.
+    deadline = time.monotonic() + timeout
+    last_error = None
+    last_root = None
+    while time.monotonic() < deadline:
+        try:
+            last_root = hierarchy()
+            if all(has_label(last_root, label) for label in required):
+                return last_root
+        except RuntimeError as error:
+            last_error = str(error)
+        time.sleep(1)
+
+    visible = []
+    if last_root is not None:
+        for node in last_root.iter("node"):
+            value = node.get("text") or node.get("content-desc")
+            if value and value not in visible:
+                visible.append(value[:120])
+    raise RuntimeError(
+        f"Installed LouderMe did not expose {required!r} after {timeout}s; "
+        f"visible native labels={visible[:30]!r}; hierarchy error={last_error!r}"
+    )
+
+
 def click_labeled(root: ET.Element, label: str) -> None:
     for node in root.iter("node"):
         if node.get("text") == label or node.get("content-desc") == label:
@@ -108,17 +144,17 @@ def capture(apk: Path, source: str, out: Path):
             adb("shell", "wm", "density", "320")
             adb("shell", "am", "force-stop", PACKAGE)
             adb("shell", "am", "start", "-W", "-n", PACKAGE + "/.MainActivity")
-            time.sleep(3)
-            home = hierarchy()
-            if not any(n.get("text") == "About" for n in home.iter("node")):
-                raise RuntimeError("Installed LouderMe Home has no labeled About action")
+            try:
+                home = wait_for_labels(("About",))
+            except RuntimeError:
+                # Preserve real native pixels for diagnosis, but do not add
+                # unqualified failed captures to the passing manifest.
+                (out / f"diagnostic-home-{viewport}.png").write_bytes(
+                    adb("exec-out", "screencap", "-p", binary=True))
+                raise
             shots.append(snapshot(out, viewport, "home", digest, size))
             click_labeled(home, "About")
-            time.sleep(2)
-            about = hierarchy()
-            texts = [n.get("text", "") for n in about.iter("node")]
-            if "Back" not in texts or "About" not in texts:
-                raise RuntimeError("Native About screen did not open after real About tap")
+            about = wait_for_labels(("Back", "About"))
             shots.append(snapshot(out, viewport, "about", digest, size))
             adb("shell", "input", "keyevent", "KEYCODE_BACK")
     finally:

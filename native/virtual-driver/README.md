@@ -229,6 +229,17 @@ there is no simulated audio-pass mode. After collection, verify that Windows
 still uses the intended physical default device, then restore the **VM
 snapshot**. If PnP cleanup reports an error, snapshot restore is mandatory.
 
+For remote repeatability there is a **manual-only** workflow:
+`.github/workflows/native-physical-lab-manual.yml`. It deliberately runs
+**exclusively** on a self-hosted Windows runner with the
+`louderme-isolated-audio-lab` label assigned to a genuinely disposable
+snapshot-backed Windows VM. It requires explicit consent and absolute paths
+to the VM's **pre-signed** LAB driver package, WDK devcon.exe, .NET bridge
+and physical endpoint ID. Nothing executes on a GitHub-hosted Windows runner;
+a missing lab runner leaves the manual workflow unstarted/queued, **not
+passed**. Credentials or private code-signing keys are never workflow inputs;
+test audio is not uploaded.
+
 **Execution status: NOT RUN.** Neither a signed package installed on a real
 lab VM nor actual physical playback evidence is currently available through
 connected tools. PowerShell *syntax* is checked in CI without executing any

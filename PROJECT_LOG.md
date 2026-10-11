@@ -1760,9 +1760,20 @@ Historical platform-specific releases were intentionally retained for compatibil
 - Changed the full-WDK lab INF validation helper to run `InfVerif /h` (Desktop/WHQL eligibility rules) instead of treating Universal-driver API checks as automatically required for the desktop-only product. This does **not** waive platform-specific driver signing, package compliance, runtime tests or privileges.
 - **Awaiting CI** to confirm whether the desktop-target kernel build runs without the former post-link Universal `ApiValidator` error; WDK full INF/CAT toolchain and actual installed loopback/acoustic tests remain unverified, and no driver/release has shipped.
 
+## 2026-10-11 — Cross-app rendered UI gate candidate
+
+The master audit identified missing automated visual evidence checks in LouderMe. This branch adds the canonical validator, real Android installed-emulator Home/About screenshots, real running WinForms Home/About screenshots, artifact/source hashing, and fail-closed Android/Windows release workflow checks. Android captured APK is a debug build, not production-signed or a physical-device pass. Windows captures come from an installed executable rendered by WinForms, not physical-user acceptance. CI and merge status remain to be verified; no version bump or release. The separate pending v0.2.0 device-volume PR remains untouched.
+
 ## 2026-10-11 — M2 virtual render lab KMDF INF qualification follow-up
 
 - Run [38126085761](https://github.com/michels-lab/LouderMe/actions/runs/38126085761) against PR #51 commit `e258f1db7b828205263df30ca9aec6e4e25e9c1b`: source/guard derivation, linked x64 kernel SYS and full Windows WDK provisioning passed. Required `InfVerif /h` failed with **ERROR(1081): KmdfLibraryVersion invalid value "$KMDFVERSION$"** (line 123); `Inf2Cat` did not execute. The optional standalone Universal API diagnostic also failed on missing dependencies and does not qualify or invalidate the separate Desktop target.
 - Root cause: the lab packaging helper called `StampInf` without its `-k` KMDF version argument. Microsoft documents `-k` as the expansion mechanism for this exact variable; the pinned INF targets Windows 11 build 22621 or later, compatible with KMDF 1.33.
 - On PR #51 branch added `StampInf -k 1.33`, explicit checks for the unresolved marker and the expected stamped value, preserving strict `InfVerif` and `Inf2Cat` failure gates. Follow-up commits `1b37b9e8ee01ac2fe9bddadc67faf08706318ba1` and `d6fedab772b4c9c322a73add63b1e5ae9fee54c0`. This source change alone is **NOT** a validation pass.
 - Still pending: new exact-HEAD Windows package CI result, actual INF/CAT signability, Microsoft-trusted consumer driver signing, isolated Windows VM installation/uninstallation and non-silent virtual endpoint PCM, native DSP audible routing, crash/rollback, format/latency/peripheral tests. Production Windows remains Equalizer APO-backed. No release, signed lab driver publication, physical driver installation, default audio device modification or integration into `main` authorized by this step.
+
+## 2026-10-11 — WDK INF/CAT automated qualification: PASS
+
+- Run [38126776635](https://github.com/michels-lab/LouderMe/actions/runs/38126776635) passed source derivation, kernel compile, actual StampInf, InfVerif /h and Inf2Cat package validation at commit `d6fedab772b4c9c322a73add63b1e5ae9fee54c0`; Android CI run [38126776661](https://github.com/michels-lab/LouderMe/actions/runs/38126776661) passed on the same commit.
+- This is an **unsigned lab-package** qualification, not a Microsoft-signed production driver. A Windows lab VM with driver installation/uninstallation, actual non-silent virtual PCM loopback, audible physical endpoint DSP, reboot/hotplug and rollback testing remains mandatory before enabling or distributing native global audio. Existing shipped Windows app still depends on Equalizer APO.
+- PR #51 branch merged the current `main` history in its resolution of the PROJECT_LOG overlap, keeping newer Android onboarding and cross-app rendered UI gates. Revalidate the merge commit. No stable release authorized by this change.
+

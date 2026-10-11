@@ -147,9 +147,52 @@ jobs:
           name: LouderMe-Android-v${{ steps.version.outputs.version }}
           path: artifacts/
 
+  visual_qa:
+    name: Install Android APK and validate Home/About screenshot evidence
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install exact image-integrity validator dependency
+        run: python3 -m pip install Pillow==11.3.0
+      - uses: actions/download-artifact@v4
+        with:
+          name: LouderMe-Android-v${{ needs.validate.outputs.version }}
+          path: visual-input
+      - name: Enable hardware-assisted Android emulator acceleration
+        run: |
+          if [ -e /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
+      - name: Install actual Android Debug candidate; screenshot real Home/About
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_6
+          script: bash tools/run_android_visual_ci.sh
+      - name: Enforce Michel's Lab exact-candidate Android rendered UI gate
+        run: |
+          python3 tools/visual_release_gate.py \
+            --manifest artifacts/visual/android/manifest.json \
+            --source-sha "$GITHUB_SHA" --platforms android --surfaces home,about
+      - name: Retain immutable screenshot evidence for post-release human review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LouderMe-Android-Rendered-UI-${{ github.sha }}
+          path: artifacts/visual/android/
+          if-no-files-found: warn
+          retention-days: 30
+
   release_guard:
     name: Check stable Android release uniqueness
-    needs: validate
+    needs: [validate, visual_qa]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     outputs:

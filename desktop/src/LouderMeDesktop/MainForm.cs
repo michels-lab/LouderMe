@@ -188,6 +188,54 @@ internal sealed class MainForm : Form
         Shown += (_, _) => viewport.Focus();
     }
 
+    internal void CaptureVisualEvidence(string destination)
+    {
+        // Called only by the running WinForms test process, after Shown.
+        // Real controls are measured and rasterized, not replaced by mock screens.
+        Directory.CreateDirectory(destination);
+        foreach (var (viewport, width, height) in new[]
+        {
+            ("compact", 600, 520),
+            ("wide", 900, 700),
+        })
+        {
+            Size = new Size(width, height);
+            PerformLayout();
+            Application.DoEvents();
+            var action = _aboutAction.RectangleToScreen(_aboutAction.ClientRectangle);
+            var window = RectangleToScreen(ClientRectangle);
+            if (!_aboutAction.Visible || !_aboutAction.Enabled || action.IsEmpty ||
+                !window.Contains(action))
+                throw new InvalidOperationException("About action is clipped in the rendered Home window.");
+
+            SaveRenderedForm(this, Path.Combine(destination, $"home-{viewport}.png"));
+
+            using var about = new AboutForm(_updates)
+            {
+                StartPosition = FormStartPosition.CenterParent,
+                Size = new Size(width, height),
+            };
+            about.Show(this);
+            about.PerformLayout();
+            Application.DoEvents();
+            if (!about.Visible || !about.IsHandleCreated)
+                throw new InvalidOperationException("Real WinForms About could not be shown.");
+            SaveRenderedForm(about, Path.Combine(destination, $"about-{viewport}.png"));
+            about.Close();
+        }
+    }
+
+    private static void SaveRenderedForm(Form form, string path)
+    {
+        if (form.Width < 320 || form.Height < 320)
+            throw new InvalidOperationException("Rendered UI viewport is implausibly small.");
+        using var shot = new Bitmap(form.Width, form.Height);
+        // WinForms DrawToBitmap rasterizes the actual running live form/control tree.
+        // It is not a physical desktop screen capture; device evidence remains separate.
+        form.DrawToBitmap(shot, new Rectangle(Point.Empty, form.Size));
+        shot.Save(path, System.Drawing.Imaging.ImageFormat.Png);
+    }
+
     private void OpenAbout()
     {
         using var form = new AboutForm(_updates);

@@ -83,24 +83,10 @@ $infText = Get-Content $destInf -Raw
 if ($infText -notmatch [regex]::Escape($meta.hardware_id) -or
     $infText -match 'Root\\sysvad_ComponentizedAudioSample' -or
     $infText -match 'TODO-Set-Provider' -or
-    $infText -match [regex]::Escape('$KMDFVERSION
-  throw 'Generated INF hardware ID/provider failed identity assertions.'
-}
 
-& $infverif '/h' $destInf
-if ($LASTEXITCODE -ne 0) { throw "InfVerif Desktop/WHQL-signability rules failed with exit $LASTEXITCODE." }
-& $inf2cat "/driver:$out" '/os:10_GE_X64,10_25H2_X64' '/verbose'
-if ($LASTEXITCODE -ne 0) { throw "Inf2Cat signability failed with exit $LASTEXITCODE." }
-
-$cat = Join-Path $out 'LouderMeVirtualRenderLab.cat'
-if (-not (Test-Path $cat)) { throw 'Inf2Cat did not produce a catalog.' }
-$sum = (Get-FileHash $destSys -Algorithm SHA256).Hash.ToLowerInvariant()
-Write-Host "LAB INF/CAT validation passed; unsigned SYS SHA-256: $sum"
-Write-Warning 'Unsigned/WDK-test-signed lab files. Installed virtual audio playback and physical routing remain unverified.'
-Write-Warning 'Do not ship or install on a primary workstation.'
-) -or
+    $infText -match [regex]::Escape('$KMDFVERSION$') -or
     $infText -notmatch 'KmdfLibraryVersion\s*=\s*1\.33\b') {
-  throw 'Generated INF hardware ID/provider failed identity assertions.'
+  throw 'Generated INF hardware ID/provider/KMDF version failed identity assertions.'
 }
 
 & $infverif '/h' $destInf

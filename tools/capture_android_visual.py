@@ -63,7 +63,20 @@ def sha(file: Path):
 
 def hierarchy() -> ET.Element:
     adb("shell", "uiautomator", "dump", "/sdcard/louderme-qa.xml")
-    return ET.fromstring(adb("exec-out", "cat", "/sdcard/louderme-qa.xml"))
+    raw = adb("exec-out", "cat", "/sdcard/louderme-qa.xml")
+    payload = raw.lstrip("\ufeff\r\n\t ")
+    # Fresh Android emulators sometimes return empty/truncated hierarchy
+    # files even after uiautomator reports success. Retry from the caller;
+    # never accept an invalid hierarchy as proof that About is present.
+    if not payload.startswith(("<?xml", "<hierarchy")):
+        raise RuntimeError(
+            "Native UI dump is not XML yet; prefix=" + repr(payload[:120]))
+    try:
+        return ET.fromstring(payload)
+    except ET.ParseError as error:
+        raise RuntimeError(
+            "Native UI dump is temporarily incomplete; prefix=" +
+            repr(payload[:120])) from error
 
 
 def has_label(root: ET.Element, label: str) -> bool:

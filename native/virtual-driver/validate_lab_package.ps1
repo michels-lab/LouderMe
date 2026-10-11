@@ -73,12 +73,33 @@ Copy-Item $inx $destInf
 Copy-Item $sys.FullName $destSys
 
 # Genuine WDK tools: stamp architecture, date, version and catalog name.
-& $stamp '-f' $destInf '-d' '*' '-v' '1.0.0.0' '-c' 'LouderMeVirtualRenderLab.cat'
+# The pinned INF targets Windows 11 22H2+ (build 22621), whose inbox KMDF
+# supports 1.33. StampInf -k expands the upstream $KMDFVERSION$ token;
+# without it InfVerif rejects an unresolved KmdfLibraryVersion.
+& $stamp '-f' $destInf '-d' '*' '-v' '1.0.0.0' '-k' '1.33' '-c' 'LouderMeVirtualRenderLab.cat'
 if ($LASTEXITCODE -ne 0) { throw "StampInf failed with exit $LASTEXITCODE." }
+if (-not (Test-Path $destInf)) { throw 'StampInf did not produce the INF file.' }
 $infText = Get-Content $destInf -Raw
 if ($infText -notmatch [regex]::Escape($meta.hardware_id) -or
     $infText -match 'Root\\sysvad_ComponentizedAudioSample' -or
-    $infText -match 'TODO-Set-Provider') {
+    $infText -match 'TODO-Set-Provider' -or
+    $infText -match [regex]::Escape('$KMDFVERSION
+  throw 'Generated INF hardware ID/provider failed identity assertions.'
+}
+
+& $infverif '/h' $destInf
+if ($LASTEXITCODE -ne 0) { throw "InfVerif Desktop/WHQL-signability rules failed with exit $LASTEXITCODE." }
+& $inf2cat "/driver:$out" '/os:10_GE_X64,10_25H2_X64' '/verbose'
+if ($LASTEXITCODE -ne 0) { throw "Inf2Cat signability failed with exit $LASTEXITCODE." }
+
+$cat = Join-Path $out 'LouderMeVirtualRenderLab.cat'
+if (-not (Test-Path $cat)) { throw 'Inf2Cat did not produce a catalog.' }
+$sum = (Get-FileHash $destSys -Algorithm SHA256).Hash.ToLowerInvariant()
+Write-Host "LAB INF/CAT validation passed; unsigned SYS SHA-256: $sum"
+Write-Warning 'Unsigned/WDK-test-signed lab files. Installed virtual audio playback and physical routing remain unverified.'
+Write-Warning 'Do not ship or install on a primary workstation.'
+) -or
+    $infText -notmatch 'KmdfLibraryVersion\s*=\s*1\.33\b') {
   throw 'Generated INF hardware ID/provider failed identity assertions.'
 }
 

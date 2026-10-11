@@ -160,9 +160,20 @@ must validate these conditions with properly signed test binaries:
    bridge CI. This is stronger than a generic nonzero RMS, but still **not
    proof** that processed audio from another application reached speakers.
 
-5. Start the experimental `native/windows-bridge` with a distinct physical
-   output. Confirm transformed PCM reaches actual headphones/speakers exactly
-   once, with 100–250% gain and 7-band EQ.
+5. **New device-lab route instrument (2026-10-11):** first pass the
+   virtual 440 Hz identity probe, then use `--probe-route` with a
+   **different named physical endpoint** in a disposable Windows VM,
+   low physical volume and no unrelated media. It emits a quiet virtual
+   stimulus, runs the actual native C++ DSP, measures the independent
+   physical WASAPI loopback and reports matched-440 amplitude/coherence.
+   In-memory CI for the new stimulus is mandatory, but cannot substitute
+   for an installed driver, physical sink or audible routing.
+   ```powershell
+   dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --probe-route --source-id "<VIRTUAL_ID>" --output-id "<PHYSICAL_ID>" --boost 150 --confirm-experimental
+   ```
+   Confirm native gain ratios, real Windows-app-origin PCM, no echo/double
+   playback and physical listening using separately controlled test
+   evidence; the route probe alone does not prove all of these.
 6. Test crash/unplug/reboot recovery, physical device switching,
    buffer underruns, playback latency, CPU, 44.1/48/96 kHz sample rates,
    and format conversion. Restore original defaults on uninstall.

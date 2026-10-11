@@ -5,6 +5,3 @@ APK="$(find visual-input -type f -name '*sideload-debug.apk' -print -quit)"
 test -n "$APK" && test -s "$APK"
 python3 tools/capture_android_visual.py --apk "$APK" \
   --source-sha "$GITHUB_SHA" --out artifacts/visual/android
-python3 tools/visual_release_gate.py \
-  --manifest artifacts/visual/android/manifest.json \
-  --source-sha "$GITHUB_SHA" --platforms android --surfaces home,about

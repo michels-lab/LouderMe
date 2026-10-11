@@ -22,8 +22,39 @@ RECT = re.compile(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]")
 
 
 def adb(*arguments: str, binary: bool = False):
-    result = subprocess.run(["adb", *arguments], check=True, capture_output=True)
+    try:
+        result = subprocess.run(["adb", *arguments], check=True, capture_output=True,
+                                timeout=90)
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
+        stdout = getattr(exc, "stdout", b"") or b""
+        stderr = getattr(exc, "stderr", b"") or b""
+        raise RuntimeError(
+            f"ADB {arguments!r} failed: stdout={stdout.decode(errors='replace')!r} "
+            f"stderr={stderr.decode(errors='replace')!r}"
+        ) from exc
     return result.stdout if binary else result.stdout.decode(errors="replace")
+
+
+def install_when_package_manager_ready(apk: Path) -> None:
+    # sys.boot_completed can precede a usable package manager on a cold CI AVD.
+    last_error = None
+    for attempt in range(1, 5):
+        try:
+            adb("wait-for-device")
+            packages = adb("shell", "cmd", "package", "list", "packages")
+            if "package:" not in packages:
+                raise RuntimeError("Android package manager has not initialized")
+            print(f"Android package manager ready; install attempt {attempt}/4", flush=True)
+            result = adb("install", "-r", str(apk.resolve()))
+            if "Success" not in result:
+                raise RuntimeError(f"Unexpected installer output: {result!r}")
+            return
+        except RuntimeError as error:
+            last_error = error
+            print(f"Install attempt {attempt}/4 failed: {error}", flush=True)
+            if attempt < 4:
+                time.sleep(5)
+    raise RuntimeError(f"Cannot install real built APK after retries: {last_error}")
 
 
 def sha(file: Path):
@@ -69,7 +100,7 @@ def capture(apk: Path, source: str, out: Path):
         raise ValueError("Real built APK is missing or too small")
     out.mkdir(parents=True, exist_ok=True)
     digest = sha(apk)
-    adb("install", "-r", str(apk.resolve()))
+    install_when_package_manager_ready(apk)
     shots = []
     try:
         for viewport, size in SIZES.items():

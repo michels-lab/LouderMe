@@ -173,6 +173,11 @@ jobs:
           target: google_apis
           profile: pixel_6
           script: bash tools/run_android_visual_ci.sh
+      - name: Enforce Michel's Lab exact-candidate Android rendered UI gate
+        run: |
+          python3 tools/visual_release_gate.py \
+            --manifest artifacts/visual/android/manifest.json \
+            --source-sha "$GITHUB_SHA" --platforms android --surfaces home,about
       - name: Retain immutable screenshot evidence for post-release human review
         if: always()
         uses: actions/upload-artifact@v4

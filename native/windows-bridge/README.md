@@ -38,8 +38,24 @@ or create the virtual endpoint; that WDK/SysVAD work is a separate milestone.
   are also supported. All other channel-count changes still fail closed.
   Packet-boundary interpolation now waits for the next capture frame rather
   than throwing when a short packet ends between two interpolated samples.
+- The experimental bridge now detects selected endpoint deactivation,
+  stops on interrupted capture/playback, and never silently substitutes a new
+  Windows default sink after Bluetooth, USB or HDMI hotplug. Optional
+  `--auto-reconnect` (combined with `--confirm-experimental`) allows
+  **at most two fresh reconnect attempts**, separated by two seconds,
+  re-enumerating only the previously selected exact source/output IDs.
+  The finite 440 Hz lab probes never reconnect or repeat their stimulus.
+- The output queue detects repeated overflow, drops at most two initial
+  consecutive incoming callbacks, then may clear stale queued PCM at most
+  twice per 30-second window. Continued storms stop the session safely and
+  may trigger the explicit bounded reconnect mechanism. Playback starvation
+  is counted by a queue monitor (queued PCM estimate, **not** proof of an OS
+  WASAPI/xrun event). Queue clear may cause a discontinuity; crossfade,
+  startup prebuffering and measured uninterrupted physical audio are still
+  pending. Neither the recovery counters nor a synthetic test proves
+  glitch-free listening.
 - No microphone access, no disk recording or networking. Console reports
-  processed/dropped frames, not PCM content.
+  processed/dropped/flushed frames and queue-health counters, not PCM content.
 - This is a proof of managed/native interop, not safe for regular unattended
   daily use; the physical bridge still needs real hardware evaluation,
   underrun/latency/format tests and driver lifecycle/rollback support.
@@ -68,6 +84,7 @@ dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll
 dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --check-loopback
 dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --check-route-tone
 dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --check-timing
+dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --check-recovery
 ```
 
 When an independently **installed, signed and verified** LouderME virtual
@@ -82,7 +99,7 @@ strings returned above. This prototype does not make the virtual device the
 Windows default; doing so remains an explicit manual test-lab operation.
 
 ```powershell
-dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --source-id "<VIRTUAL_RENDER_ID>" --output-id "<PHYSICAL_RENDER_ID>" --boost 150 --confirm-experimental
+dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --source-id "<VIRTUAL_RENDER_ID>" --output-id "<PHYSICAL_RENDER_ID>" --boost 150 --confirm-experimental --auto-reconnect
 ```
 
 Ctrl+C stops the bridge. Optional experimental seven-band EQ gains are available at startup through
@@ -199,3 +216,29 @@ a dedicated disposable VM snapshot and real audio endpoints are prerequisites.
 The helper never turns on test signing or disables Secure Boot, and it does
 not restore Windows default output selection automatically. Recover from
 the VM snapshot when necessary. CI only syntax-checks the script.
+
+## Experimental recovery limits (no physical driver needed for numeric CI)
+
+`--check-recovery` is a device-free test of overflow-burst escalation,
+bounded stale-queue flushes, 30-second recovery window and NAudio3 float PCM
+starvation detection. It **does not** install a virtual driver or hear sound.
+
+Optional `--auto-reconnect` is reserved for a user-selected experimental
+continuous route. It preserves **the exact virtual source and physical output
+endpoint IDs** supplied at startup and caps retries at two after the original
+attempt. Missing/replaced endpoints or unsupported format changes cause
+the route to stop; the operator must choose new endpoints manually.
+A physically observed queue flush may click; do not present it as seamless
+or zero-latency failover. The proof modes `--probe-virtual` and `--probe-route`
+never auto-repeat audio measurements. Neither this flag nor any part of the
+bridge is enabled in the shipping v0.1.11 desktop application.
+
+To test a real route (only with a properly signed virtual device already
+installed in an isolated approved Windows audio LAB):
+
+```powershell
+dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --source-id "<EXACT_VIRTUAL_ENDPOINT_ID>" --output-id "<EXACT_PHYSICAL_ENDPOINT_ID>" --boost 150 --confirm-experimental --auto-reconnect
+```
+
+The 250 ms provider queue is intentionally unchanged; queue recovery is
+**bounded and observable**, not a claim that 250 ms is actual render latency.

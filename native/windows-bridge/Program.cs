@@ -18,6 +18,27 @@ internal static class Program
 
     private static int Main(string[] args)
     {
+        // Explicit opt-in only. Probe runs never retry: repeating a tone
+        // invalidates their bounded four-second physical-route evidence.
+        bool retry = args.Contains("--auto-reconnect") &&
+                     args.Contains("--confirm-experimental") &&
+                     !args.Contains("--probe-route") &&
+                     !args.Contains("--probe-virtual");
+        int attempts = retry ? 3 : 1;
+        for (int attempt = 1; attempt <= attempts; attempt++)
+        {
+            int exit = RunSingleSession(args);
+            if (exit != 75 || attempt == attempts) return exit;
+            Console.Error.WriteLine(
+                $"Experimental route interrupted. Same endpoint IDs only; " +
+                $"retry {attempt}/{attempts - 1} after 2 seconds.");
+            Thread.Sleep(TimeSpan.FromSeconds(2));
+        }
+        return 75;
+    }
+
+    private static int RunSingleSession(string[] args)
+    {
         try
         {
             if (args.Contains("--check-native"))
@@ -38,6 +59,11 @@ internal static class Program
             {
                 AdaptiveBufferClock.RunSelfTests();
                 AudioProcessingTelemetry.RunSelfTests();
+                return 0;
+            }
+            if (args.Contains("--check-recovery"))
+            {
+                AudioQueueRecovery.RunSelfTests();
                 return 0;
             }
             if (args.Contains("--check-formats"))
@@ -84,10 +110,14 @@ internal static class Program
                 throw new ArgumentException(
                     "Physical-route lab proof requires --boost 100..150 to limit test output.");
 
+            // Never fall back to the new Windows default device after a
+            // Bluetooth/USB/HDMI hot-swap. Retry ONLY the exact supplied IDs.
             var source = devices.FirstOrDefault(x => x.ID == sourceId)
-                ?? throw new InvalidOperationException("Selected virtual capture endpoint not active.");
+                ?? throw new AudioRouteRecoverableException(
+                    "Selected virtual source ID is unavailable; no alternate device selected.");
             var physical = devices.FirstOrDefault(x => x.ID == outputId)
-                ?? throw new InvalidOperationException("Selected physical output endpoint not active.");
+                ?? throw new AudioRouteRecoverableException(
+                    "Selected physical output ID is unavailable; no alternate device selected.");
 
             // Fail closed: capturing arbitrary physical output would cause doubled sound/feedback.
             if (!source.FriendlyName.Contains("LouderMe Virtual", StringComparison.OrdinalIgnoreCase) ||
@@ -135,7 +165,9 @@ internal static class Program
                 DiscardOnBufferOverflow = false,
                 ReadFully = true
             };
-            playback.Init(buffer);
+            var playbackReader = new MonitoredRenderBuffer(buffer);
+            var queueRecovery = new AudioQueueRecovery();
+            playback.Init(playbackReader);
 
             // Optional LAB-only end-to-end observable. A second WASAPI
             // loopback reads the *physical* playback endpoint, never an
@@ -194,6 +226,9 @@ internal static class Program
             long processedFrames = 0;
             long outputFrames = 0;
             long droppedFrames = 0;
+            long flushedOutputFrames = 0;
+            long queueResets = 0;
+            long overflowPackets = 0;
             var recordingStopped = new ManualResetEventSlim(false);
             Exception? recordingError = null;
             Exception? callbackError = null;
@@ -216,12 +251,34 @@ internal static class Program
                     byte[] converted = adapter.Encode(decoded, decoded.Length);
                     if (converted.Length == 0) return;
                     var sourceFrames = e.BytesRecorded / inputFormat.BlockAlign;
+                    if (converted.Length > buffer.BufferLength)
+                        throw new InvalidDataException(
+                            "One PCM packet is larger than the entire output queue.");
                     if (buffer.BufferLength - buffer.BufferedBytes < converted.Length)
                     {
-                        Interlocked.Add(ref droppedFrames, sourceFrames);
-                        return;
+                        Interlocked.Increment(ref overflowPackets);
+                        switch (queueRecovery.OnOverflow(Stopwatch.GetTimestamp()))
+                        {
+                            case AudioQueueRecovery.Action.DropNewest:
+                                Interlocked.Add(ref droppedFrames, sourceFrames);
+                                return;
+                            case AudioQueueRecovery.Action.FlushStaleAndAccept:
+                                // Discard stale PCM only after repeated loss,
+                                // never let a full queue delay sound forever.
+                                // Flushes are bounded; further storms stop
+                                // the session and optionally reconnect.
+                                Interlocked.Add(ref flushedOutputFrames,
+                                    buffer.BufferedBytes / outputFormat.BlockAlign);
+                                buffer.ClearBuffer();
+                                Interlocked.Increment(ref queueResets);
+                                break;
+                            case AudioQueueRecovery.Action.AbortRoute:
+                                throw new AudioRouteRecoverableException(
+                                    "Output queue overflow persisted despite bounded resets.");
+                        }
                     }
                     buffer.AddSamples(converted, 0, converted.Length);
+                    queueRecovery.OnHealthyWrite();
                     Interlocked.Add(ref processedFrames, sourceFrames);
                     Interlocked.Add(ref outputFrames, converted.Length / outputFormat.BlockAlign);
                 }
@@ -271,6 +328,7 @@ internal static class Program
                 sourceToneOutput?.Play();
                 var routeStarted = Stopwatch.GetTimestamp();
                 long lastStats = routeStarted;
+                long lastObservedQueueResets = 0;
                 while (!shutdown.Wait(250))
                 {
                     if (monitorError is not null)
@@ -280,19 +338,42 @@ internal static class Program
                         break;
                     if (recordingStopped.IsSet)
                     {
+                        if (callbackError is AudioRouteRecoverableException recoverable)
+                            throw recoverable;
                         if (callbackError is not null)
                             throw new IOException("PCM bridge callback failed.", callbackError);
-                        if (recordingError is not null) throw recordingError;
-                        throw new IOException("Virtual capture stopped unexpectedly.");
+                        throw new AudioRouteRecoverableException(
+                            "Virtual capture interrupted: " +
+                            (recordingError?.Message ?? "capture stopped without error."));
                     }
                     if (playback.PlaybackState != PlaybackState.Playing)
-                        throw new IOException("Physical audio playback stopped.");
+                        throw new AudioRouteRecoverableException(
+                            "Selected physical audio playback stopped.");
+                    try
+                    {
+                        if (source.State != DeviceState.Active ||
+                            physical.State != DeviceState.Active)
+                            throw new AudioRouteRecoverableException(
+                                "Selected source or physical output was deactivated/hot-unplugged.");
+                    }
+                    catch (System.Runtime.InteropServices.COMException)
+                    {
+                        throw new AudioRouteRecoverableException(
+                            "Windows invalidated one of the selected audio endpoints.");
+                    }
                     // A render device's real clock can run tens/hundreds of
                     // ppm faster/slower than the capture endpoint. Steer the
                     // output frame count gradually based on queue occupancy.
                     // Allow startup to settle before applying feedback.
                     double queuedMs = buffer.BufferedDuration.TotalMilliseconds;
                     double correctionPpm = 0;
+                    long currentResets = Interlocked.Read(ref queueResets);
+                    if (currentResets != lastObservedQueueResets)
+                    {
+                        clockController.Reset();
+                        adapter.SetRateAdjustmentPpm(0);
+                        lastObservedQueueResets = currentResets;
+                    }
                     if (Interlocked.Read(ref processedFrames) >=
                         2L * inputFormat.SampleRate)
                     {
@@ -310,7 +391,11 @@ internal static class Program
                             $"clockCorrection={correctionPpm:+0.0;-0.0;0.0}ppm " +
                             $"callbackWorkToAudio={timing.WorkToAudioPercent:F1}% " +
                             $"worstCallback={timing.WorstWorkMs:F2}ms " +
-                            $"overBudgetCallbacks={timing.OverBudgetChunks}");
+                            $"overBudgetCallbacks={timing.OverBudgetChunks} " +
+                            $"starvedRenderReads={playbackReader.ReadsWithInsufficientPcm} " +
+                            $"overflows={Interlocked.Read(ref overflowPackets)} " +
+                            $"queueResets={currentResets} " +
+                            $"flushedOutputFrames={Interlocked.Read(ref flushedOutputFrames)}");
                         if (queuedMs > 160)
                             Console.Error.WriteLine(
                                 "WARNING: experimental render queue above 160 ms; " +
@@ -344,7 +429,9 @@ internal static class Program
                     $"physicalEmitted={Interlocked.Read(ref outputFrames)} " +
                     $"dropped={Interlocked.Read(ref droppedFrames)}");
                 if (!physicalProof.Passed ||
-                    Interlocked.Read(ref processedFrames) < inputFormat.SampleRate)
+                    Interlocked.Read(ref processedFrames) < inputFormat.SampleRate ||
+                    Interlocked.Read(ref droppedFrames) != 0 ||
+                    Interlocked.Read(ref queueResets) != 0)
                 {
                     Console.Error.WriteLine(
                         "FAIL: no matching lab tone reached the physical render loopback " +
@@ -359,6 +446,11 @@ internal static class Program
             }
             Console.WriteLine("Audio bridge stopped and endpoints released.");
             return 0;
+        }
+        catch (AudioRouteRecoverableException ex)
+        {
+            Console.Error.WriteLine("Recoverable LAB route interruption: " + ex.Message);
+            return 75; // outer loop may retry, strictly bounded/opt-in
         }
         catch (Exception ex)
         {

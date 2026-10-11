@@ -1759,3 +1759,7 @@ Historical platform-specific releases were intentionally retained for compatibil
 - Added a strict source derivation transformation for the four project configurations to `<DriverTargetPlatform>Desktop</DriverTargetPlatform>`, captured in the machine-readable manifest and regression-tested in CI.
 - Changed the full-WDK lab INF validation helper to run `InfVerif /h` (Desktop/WHQL eligibility rules) instead of treating Universal-driver API checks as automatically required for the desktop-only product. This does **not** waive platform-specific driver signing, package compliance, runtime tests or privileges.
 - **Awaiting CI** to confirm whether the desktop-target kernel build runs without the former post-link Universal `ApiValidator` error; WDK full INF/CAT toolchain and actual installed loopback/acoustic tests remain unverified, and no driver/release has shipped.
+
+## 2026-10-11 — Cross-app rendered UI gate candidate
+
+The master audit identified missing automated visual evidence checks in LouderMe. This branch adds the canonical validator, real Android installed-emulator Home/About screenshots, real running WinForms Home/About screenshots, artifact/source hashing, and fail-closed Android/Windows release workflow checks. Android captured APK is a debug build, not production-signed or a physical-device pass. Windows captures come from an installed executable rendered by WinForms, not physical-user acceptance. CI and merge status remain to be verified; no version bump or release. The separate pending v0.2.0 device-volume PR remains untouched.

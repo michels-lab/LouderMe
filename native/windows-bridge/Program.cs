@@ -22,6 +22,8 @@ internal static class Program
         {
             if (args.Contains("--check-native"))
                 return CheckNative();
+            if (args.Contains("--check-pipeline"))
+                return CheckPipeline();
             if (args.Contains("--check-formats"))
             {
                 PcmFormatAdapter.RunSelfTests();
@@ -288,6 +290,64 @@ internal static class Program
     {
         var i = Array.IndexOf(args, name);
         return i < 0 || i >= args.Length - 1 ? null : args[i + 1];
+    }
+
+    // In-memory, hardware-free proof that real PCM16 packets can flow through
+    // our native C++ DSP into the physical output's independent float32 rate.
+    // This does NOT prove that an installed virtual driver supplies OS PCM.
+    private static int CheckPipeline()
+    {
+        const int sourceRate = 44100;
+        const int outputRate = 48000;
+        const int channels = 2;
+        const int framesPerPacket = 441;
+        const int packetCount = 10;
+        var adapter = new PcmFormatAdapter(
+            new WaveFormat(sourceRate, 16, channels),
+            WaveFormat.CreateIeeeFloatWaveFormat(outputRate, channels));
+        using var engine = new NativeDsp(sourceRate, channels, 150);
+        long framesOut = 0;
+        double power = 0;
+        long measuredSamples = 0;
+        for (int packet = 0; packet < packetCount; packet++)
+        {
+            var input = new byte[framesPerPacket * channels * sizeof(short)];
+            for (int i = 0; i < framesPerPacket; i++)
+            {
+                var frame = packet * framesPerPacket + i;
+                var sample = (short)MathF.Round(0.1f * 32767f *
+                    MathF.Sin(2f * MathF.PI * 440f * frame / sourceRate));
+                for (int channel = 0; channel < channels; channel++)
+                    BinaryPrimitives.WriteInt16LittleEndian(
+                        input.AsSpan((i * channels + channel) * sizeof(short)),
+                        sample);
+            }
+
+            byte[] dspInput = adapter.Decode(input, input.Length);
+            engine.Process(dspInput, dspInput.Length, channels);
+            byte[] physicalPcm = adapter.Encode(dspInput, dspInput.Length);
+            if (physicalPcm.Length % (channels * sizeof(float)) != 0)
+                throw new InvalidOperationException("Native pipeline lost output frame alignment.");
+            framesOut += physicalPcm.Length / (channels * sizeof(float));
+            if (packet < 2) continue; // Skip gain-smoother startup for RMS check.
+            for (int offset = 0; offset < physicalPcm.Length; offset += sizeof(float))
+            {
+                float value = BinaryPrimitives.ReadSingleLittleEndian(
+                    physicalPcm.AsSpan(offset));
+                if (!float.IsFinite(value) || Math.Abs(value) > 1f)
+                    throw new InvalidOperationException("Invalid native pipeline output sample.");
+                power += value * value;
+                measuredSamples++;
+            }
+        }
+        double rms = Math.Sqrt(power / Math.Max(1, measuredSamples));
+        if (Math.Abs(framesOut - outputRate / 10) > 2 || rms is < 0.095 or > 0.12)
+            throw new InvalidOperationException(
+                $"Native PCM16→DSP→48k float pipeline failed: frames={framesOut}, RMS={rms:F5}");
+        Console.WriteLine(
+            $"PASS: own native 150% DSP on PCM16 44.1k stereo → float32 48k; " +
+            $"frames={framesOut}, RMS={rms:F5}; no Windows devices accessed.");
+        return 0;
     }
 
     private static int CheckNative()

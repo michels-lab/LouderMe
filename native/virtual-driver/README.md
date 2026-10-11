@@ -189,4 +189,50 @@ separately launched experimental Windows WASAPI bridge can attempt audio
 capture/replay, with explicit source/output IDs. Normal stable LouderME
 continues using the documented Equalizer APO fallback.
 
+
+### Reproducible disposable VM bring-up and removal helper (new)
+
+The repository includes `native/virtual-driver/run_disposable_lab.ps1`. The
+script is deliberately **not** invoked by hosted CI. It can install the
+already prepared **locally trusted lab-signed** INF package via WDK
+`devcon.exe`, wait for the one new root device, run both the virtual and
+physical 440 Hz WAV/PCM probes, save console-only proof (no raw audio) and
+remove all newly created LAB device instances in a `finally` block.
+
+Hard preconditions: a snapshot-backed **disposable Windows VM** with audio
+pass-through, elevated PowerShell 7, actual physical playback endpoint
+visible to that VM, locally trusted test-signed `LouderMeVirtualRenderLab.cat`,
+`TabletAudioSample.sys`, `LouderMeVirtualRenderLab.inf`, WDK
+`devcon.exe`, the published `.NET 10` lab bridge DLL and
+`louderme_audio_c.dll` placed beside it. The script does **not** generate,
+sign or install an unsigned package, enable Windows test mode, disable
+Secure Boot, switch default devices, remove other drivers or run on hardware
+it cannot identify as a VM. Administrators must establish a trusted lab
+signing/test policy themselves; production release will require its own
+Microsoft trust/certification path.
+
+Example **only inside that VM** after reviewing actual local paths:
+
+```powershell
+pwsh -NoProfile -File native/virtual-driver/run_disposable_lab.ps1 `
+  -PackageDir "C:\lab\louderme-lab-package" `
+  -DevconExe "C:\lab\devcon.exe" `
+  -BridgeDll "C:\lab\LouderMeAudioBridge.dll" `
+  -PhysicalEndpointId "<PHYSICAL_RENDER_ID_FROM_LIST_DEVICES>" `
+  -LabConsent I_ACCEPT_DISPOSABLE_WINDOWS_VM_DRIVER_TEST
+```
+
+`-PhysicalEndpointId` comes from the bridge's `--list-devices` command
+executed **inside the VM**. First run `--probe-virtual`, then
+`--probe-route` automatically. A real installed LAB device is required;
+there is no simulated audio-pass mode. After collection, verify that Windows
+still uses the intended physical default device, then restore the **VM
+snapshot**. If PnP cleanup reports an error, snapshot restore is mandatory.
+
+**Execution status: NOT RUN.** Neither a signed package installed on a real
+lab VM nor actual physical playback evidence is currently available through
+connected tools. PowerShell *syntax* is checked in CI without executing any
+privileged installer step. A failed or missing physical test is never reported
+as a working driver.
+
 **Never report “native global audio works” until physical proof is recorded.**

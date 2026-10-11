@@ -170,3 +170,15 @@ simulate a PASS or add a generic nonzero workaround. Capture console
 metrics and real hardware details in the lab issue; restore the VM snapshot
 after testing. Never distribute the unsigned lab driver, and leave
 production Windows v0.1.11/Equalizer APO untouched.
+
+## Disposable Windows VM automated test wrapper
+
+See `native/virtual-driver/run_disposable_lab.ps1` for strict, opt-in
+PowerShell orchestration of a *separately signed* lab-only SYS/INF/CAT
+device installation, `--probe-virtual`, `--probe-route` and root-device
+cleanup. It refuses non-VM hosts, unauthenticated catalogs, missing bridge
+DLLs and unselected physical sinks. This is **not** run by hosted GitHub CI;
+a dedicated disposable VM snapshot and real audio endpoints are prerequisites.
+The helper never turns on test signing or disables Secure Boot, and it does
+not restore Windows default output selection automatically. Recover from
+the VM snapshot when necessary. CI only syntax-checks the script.

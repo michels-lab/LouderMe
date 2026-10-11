@@ -57,3 +57,8 @@ jobs:
           Copy-Item $dll.FullName -Destination "$outDir/louderme_audio_c.dll"
           dotnet "$outDir/LouderMeAudioBridge.dll" --check-native
           if ($LASTEXITCODE -ne 0) { throw 'Native managed bridge DSP test failed.' }
+      - name: Validate PCM16/float32 and streaming rate adaptation without audio devices
+        shell: pwsh
+        run: |
+          dotnet "native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll" --check-formats
+          if ($LASTEXITCODE -ne 0) { throw 'Windows PCM adapter numeric tests failed.' }

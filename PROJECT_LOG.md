@@ -1869,3 +1869,8 @@ The master audit identified missing automated visual evidence checks in LouderMe
 - **Diagnostics:** once-per-second summary includes queue starvation reads, overflow packets, flush resets and separately tracked stale output frames. Source/output count and processing work metrics preserved. Queue-flush discontinuity, source silence, real hotplug, suspend/resume, fault handling in real drivers and audible latency are still untested without an isolated Windows hardware/audio endpoint.
 - **Numeric CI:** `--check-recovery` enforces exact drop/flush/abort sequencing and 30-second reset, plus NAudio read instrumentation with/without queued PCM; existing C++ Linux/Windows and managed bridge timing, DSP, sample-rate and device-free tests remain. Final PR SHA checks and Android installed emulator regressions must pass before merge.
 - **Release:** no driver installer, no VM, no new production version. Android/Windows stable v0.1.11 remains APO-backed.
+
+## 2026-10-11 — Installer welcome, full EULA acceptance and user shortcuts
+- Inno Setup desktop installer now shows Welcome and requires interactive acceptance of root `LICENSE` (full LouderMe proprietary terms), instead of relying on the desktop two-line license stub.
+- Existing optional unchecked desktop shortcut and separate startup preference preserved. Added an unchecked user-requested postinstall bilingual taskbar-pinning guide via Notepad; no unsupported silent automatic taskbar pins.
+- Exact-head desktop Windows installer CI and interactive wizard evidence pending; release/version unchanged. Shared contract authority: `michels-lab/Michel-Software-Standards/standards/WINDOWS_INSTALLER_EXPERIENCE_STANDARD.md`.

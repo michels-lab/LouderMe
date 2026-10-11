@@ -245,10 +245,9 @@ jobs:
           name: LouderMe-Android-v${{ needs.validate.outputs.version }}
           path: validated
 
-      - name: Prepare stable sideload signing identity
+      - name: Prepare permanent LouderMe v0.1.11+ sideload signing identity
         id: key_config
         env:
-          GH_TOKEN: ${{ github.token }}
           SECRET_KEYSTORE_BASE64: ${{ secrets.LOUDERME_SIDELOAD_KEYSTORE_BASE64 }}
           SECRET_STORE_PASS: ${{ secrets.LOUDERME_SIDELOAD_STORE_PASSWORD }}
           SECRET_KEY_ALIAS: ${{ secrets.LOUDERME_SIDELOAD_KEY_ALIAS }}
@@ -256,97 +255,46 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          umask 077
           mkdir -p signing
-          READY=false
+          # Owner-approved one-time signing-identity migration for v0.1.11.
+          # The certificate below is PUBLIC metadata; the private key and
+          # credentials must only be supplied by protected GitHub Secrets.
+          EXPECTED_CERT_SHA256="4a5bb9d9456a656821c3c1105854bda17e24273fd0d09e9495edd5b01e783aa3"
 
-          if [ -n "$SECRET_KEYSTORE_BASE64" ] && \
-             [ -n "$SECRET_STORE_PASS" ] && \
-             [ -n "$SECRET_KEY_ALIAS" ] && \
-             [ -n "$SECRET_KEY_PASS" ]; then
-            printf '%s' "$SECRET_KEYSTORE_BASE64" | base64 --decode \
-              > signing/louderme-sideload.jks
-
-            if keytool -list \
-              -keystore signing/louderme-sideload.jks \
-              -storepass "$SECRET_STORE_PASS" \
-              -alias "$SECRET_KEY_ALIAS" >/dev/null 2>&1; then
-              STORE_PASS="$SECRET_STORE_PASS"
-              KEY_ALIAS="$SECRET_KEY_ALIAS"
-              KEY_PASS="$SECRET_KEY_PASS"
-              READY=true
-              echo "Using validated GitHub Secrets signing identity."
-            else
-              echo "::warning::Configured signing Secrets are invalid; falling back to the private signing vault."
-              rm -f signing/louderme-sideload.jks
-            fi
-          fi
-
-          if [ "$READY" != "true" ]; then
-            # ONE-TIME RECOVERY: original signer from an existing successful v0.1.9 run.
-            # No signing credentials are printed, committed or uploaded as artifacts.
-            if [ "${{ needs.validate.outputs.version }}" != "0.1.10" ] || [ "$GITHUB_REF" != "refs/heads/main" ]; then
-              echo "::error::Stable signing Secrets invalid. One-time signer recovery only supports main v0.1.10."
-              exit 1
-            fi
-            echo "::warning::Recovering the existing v0.1.9 signing identity for one-time v0.1.10 continuity. Configure GitHub Secrets for future releases."
-            curl --fail --location --silent --show-error --retry 3 \
-              -H "Authorization: Bearer $GH_TOKEN" \
-              -H "Accept: application/vnd.github+json" \
-              "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/artifacts/11459101203/zip" \
-              --output signing/legacy-vault.zip
-            mkdir -p signing/legacy-vault
-            unzip -q signing/legacy-vault.zip -d signing/legacy-vault
-            KEYSTORE_FILE="$(find signing/legacy-vault -type f -name 'louderme-sideload.jks' -print -quit)"
-            HANDOFF_FILE="$(find signing/legacy-vault -type f -name 'github-actions-secrets.txt' -print -quit)"
-            test -n "$KEYSTORE_FILE"
-            test -n "$HANDOFF_FILE"
-            cp "$KEYSTORE_FILE" signing/louderme-sideload.jks
-            STORE_PASS="$(grep -m1 '^LOUDERME_SIDELOAD_STORE_PASSWORD=' "$HANDOFF_FILE" | cut -d= -f2-)"
-            KEY_ALIAS="$(grep -m1 '^LOUDERME_SIDELOAD_KEY_ALIAS=' "$HANDOFF_FILE" | cut -d= -f2-)"
-            KEY_PASS="$(grep -m1 '^LOUDERME_SIDELOAD_KEY_PASSWORD=' "$HANDOFF_FILE" | cut -d= -f2-)"
-            test -n "$STORE_PASS"
-            test -n "$KEY_ALIAS"
-            test -n "$KEY_PASS"
-            echo "::add-mask::$STORE_PASS"
-            echo "::add-mask::$KEY_ALIAS"
-            echo "::add-mask::$KEY_PASS"
-            keytool -list -keystore signing/louderme-sideload.jks \
-              -storepass "$STORE_PASS" -alias "$KEY_ALIAS" >/dev/null
-            rm -rf signing/legacy-vault signing/legacy-vault.zip
-            READY=true
-          fi
-
-          # Verify certificate continuity with the published v0.1.9 APK, regardless
-          # of which credential source supplied the signing identity.
-          curl --fail --location --silent --show-error --retry 3 \
-            "https://github.com/michels-lab/LouderMe/releases/download/v0.1.9/LouderMe-v0.1.9-sideload.apk" \
-            --output signing/stable-v0.1.9.apk
-          BUILD_TOOLS="${ANDROID_HOME:-/usr/local/lib/android/sdk}/build-tools/36.0.0"
-          REFERENCE_CERT="$("$BUILD_TOOLS/apksigner" verify --print-certs signing/stable-v0.1.9.apk | \
-            grep -m1 'Signer #1 certificate SHA-256 digest:' | awk '{print $NF}')"
-          SELECTED_CERT="$(keytool -exportcert \
-            -keystore signing/louderme-sideload.jks -storepass "$STORE_PASS" -alias "$KEY_ALIAS" \
-            | openssl dgst -sha256 | awk '{print $NF}')"
-          test -n "$REFERENCE_CERT"
-          test -n "$SELECTED_CERT"
-          if [ "$REFERENCE_CERT" != "$SELECTED_CERT" ]; then
-            echo "::error::Android signer fingerprint differs from published v0.1.9. Refusing update."
+          if [ -z "$SECRET_KEYSTORE_BASE64" ] || [ -z "$SECRET_STORE_PASS" ] || \
+             [ -z "$SECRET_KEY_ALIAS" ] || [ -z "$SECRET_KEY_PASS" ]; then
+            echo "::error::All four LOUDERME_SIDELOAD_* repository Secrets must be configured."
             exit 1
           fi
-          echo "Stable signing certificate matches v0.1.9."
+          echo "::add-mask::$SECRET_STORE_PASS"
+          echo "::add-mask::$SECRET_KEY_ALIAS"
+          echo "::add-mask::$SECRET_KEY_PASS"
 
-          echo "::add-mask::$STORE_PASS"
-          echo "::add-mask::$KEY_ALIAS"
-          echo "::add-mask::$KEY_PASS"
+          if ! printf '%s' "$SECRET_KEYSTORE_BASE64" | tr -d '\r\n' | base64 --decode > signing/louderme-sideload.jks; then
+            echo "::error::Invalid Base64 keystore Secret; use the full keystore.base64.txt content."
+            exit 1
+          fi
+          if ! keytool -list -keystore signing/louderme-sideload.jks \
+            -storepass "$SECRET_STORE_PASS" -alias "$SECRET_KEY_ALIAS" >/dev/null 2>&1; then
+            echo "::error::Keystore could not be opened with the configured password and alias."
+            exit 1
+          fi
+          SELECTED_CERT="$(keytool -exportcert \
+            -keystore signing/louderme-sideload.jks -storepass "$SECRET_STORE_PASS" \
+            -alias "$SECRET_KEY_ALIAS" | openssl dgst -sha256 | awk '{print $NF}')"
+          if [ "$SELECTED_CERT" != "$EXPECTED_CERT_SHA256" ]; then
+            echo "::error::Certificate does not match the owner-approved v0.1.11+ signer."
+            exit 1
+          fi
+          echo "Permanent LouderMe v0.1.11+ signing certificate verified."
 
           {
-            echo "STORE_PASS=$STORE_PASS"
-            echo "KEY_ALIAS=$KEY_ALIAS"
-            echo "KEY_PASS=$KEY_PASS"
+            printf 'STORE_PASS=%s\n' "$SECRET_STORE_PASS"
+            printf 'KEY_ALIAS=%s\n' "$SECRET_KEY_ALIAS"
+            printf 'KEY_PASS=%s\n' "$SECRET_KEY_PASS"
           } >> "$GITHUB_ENV"
-
-          echo "ready=$READY" >> "$GITHUB_OUTPUT"
-
+          echo "ready=true" >> "$GITHUB_OUTPUT"
       - name: Sign and verify sideload APK
         if: steps.key_config.outputs.ready == 'true'
         id: sign
@@ -375,6 +323,16 @@ jobs:
             --print-certs \
             "$FINAL" | tee validated/sideload-signature.txt
 
+          # Check the final signed APK, not just the input keystore.
+          APK_CERT="$("$BUILD_TOOLS/apksigner" verify --print-certs "$FINAL" |
+            grep -m1 'Signer #1 certificate SHA-256 digest:' | awk '{print $NF}')"
+          EXPECTED_CERT_SHA256="4a5bb9d9456a656821c3c1105854bda17e24273fd0d09e9495edd5b01e783aa3"
+          if [ "$APK_CERT" != "$EXPECTED_CERT_SHA256" ]; then
+            echo "::error::Signed APK certificate does not match permanent LouderMe identity."
+            exit 1
+          fi
+          echo "Signed APK matches permanent LouderMe certificate."
+
           sha256sum "$FINAL" | tee "$FINAL.sha256"
 
           echo "signed_ready=true" >> "$GITHUB_OUTPUT"
@@ -389,6 +347,11 @@ jobs:
             validated/LouderMe-v${{ needs.validate.outputs.version }}-sideload.apk.sha256
             validated/sideload-signature.txt
 
+      - name: Erase ephemeral keystore after signing
+        if: always()
+        shell: bash
+        run: |
+          rm -f signing/louderme-sideload.jks
   publish_private_release:
     name: Publish validated private release
     needs:

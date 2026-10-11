@@ -21,10 +21,17 @@ or create the virtual endpoint; that WDK/SysVAD work is a separate milestone.
   8–192 kHz and ratios between 1:4 and 4:1. Native C++ DSP continues to
   operate on private interleaved float32 samples; the physical WASAPI buffer
   receives its own negotiated PCM16/float32 encoding and sample rate.
-- Uses **stateful linear interpolation** across capture callbacks, bounded
-  buffering and fail-closed callback errors. This is a functional prototype,
-  **not** production-quality anti-aliased resampling or a measured latency
-  guarantee. Equal source/physical channel counts (1–8) are supported;
+- Uses **stateful linear interpolation** across capture callbacks and
+  an additional causal, stateful **windowed-sinc FIR anti-aliasing filter**
+  for downsampling only. Filter length is selected at construction
+  (47/63/127 taps depending on the rate ratio), with a conservative
+  cutoff below output Nyquist, coefficients normalized to unity DC gain
+  and independent channel history across callbacks. Coefficients/history
+  allocate once; in-place filtering adds no separate packet allocation.
+  This is a measured **synthetic anti-alias improvement**, not
+  production-certified transparent resampling: the causal filter adds
+  group delay, passband/stopband and CPU/latency need hardware evaluation.
+  Equal source/physical channel counts (1–8) are supported;
   explicit **mono → stereo duplication** and **stereo → mono averaging**
   are also supported. All other channel-count changes still fail closed.
   Packet-boundary interpolation now waits for the next capture frame rather
@@ -91,8 +98,9 @@ does not prove that the virtual bridge is processing it.**
    applications; Microsoft SysVAD sample alone does not prove this.
 3. **PCM16/float32 conversion and basic streaming sample-rate adaptation are
    implemented but require hardware proof.** Add production-quality anti-alias
-   resampling, full multichannel speaker-layout negotiation beyond
-   explicit mono/stereo rules, measured latency and underrun handling,
+   resampling beyond the newly added basic windowed-sinc anti-alias FIR,
+   full multichannel speaker-layout negotiation beyond mono/stereo,
+   measured latency and underrun handling,
    hotplug/default-device recovery, click-free EQ updates and a thread-safe
    control channel.
 4. Verify no doubled output, echo feedback, loss of physical audio or

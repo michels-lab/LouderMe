@@ -21,6 +21,8 @@ or create the virtual endpoint; that WDK/SysVAD work is a separate milestone.
   8–192 kHz and ratios between 1:4 and 4:1. Native C++ DSP continues to
   operate on private interleaved float32 samples; the physical WASAPI buffer
   receives its own negotiated PCM16/float32 encoding and sample rate.
+- Experimental output queue feedback now uses a **bounded ±250 ppm** slowly smoothed correction to the PCM adapter's frame step to compensate modest capture/render clock mismatch without altering Windows device clocks. This is not hardware clock synchronization.
+- The bridge reports **queued audio milliseconds (not audible end-to-end latency)**, packet-processing work relative to nominal audio time (not OS CPU utilization), worst callback and over-budget callback counts in 1-second summaries. Independent callback counters use atomic updates. The same-rate/no-correction output fast path avoids a redundant per-packet array resize/copy, reducing managed allocation overhead.
 - Uses **stateful linear interpolation** across capture callbacks and
   an additional causal, stateful **windowed-sinc FIR anti-aliasing filter**
   for downsampling only. Filter length is selected at construction
@@ -65,6 +67,7 @@ dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll
 dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --check-pipeline
 dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --check-loopback
 dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --check-route-tone
+dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --check-timing
 ```
 
 When an independently **installed, signed and verified** LouderME virtual
@@ -100,7 +103,8 @@ does not prove that the virtual bridge is processing it.**
    implemented but require hardware proof.** Add production-quality anti-alias
    resampling beyond the newly added basic windowed-sinc anti-alias FIR,
    full multichannel speaker-layout negotiation beyond mono/stereo,
-   measured latency and underrun handling,
+   measured end-to-end speaker latency/CPU on hardware, true underflow
+   handling and jitter/clock drift beyond ±250 ppm,
    hotplug/default-device recovery, click-free EQ updates and a thread-safe
    control channel.
 4. Verify no doubled output, echo feedback, loss of physical audio or

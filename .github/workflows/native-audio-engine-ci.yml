@@ -77,6 +77,11 @@ jobs:
         run: |
           dotnet "native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll" --check-route-tone
           if ($LASTEXITCODE -ne 0) { throw 'Lab physical-route tone format/regression failed.' }
+      - name: Verify bounded clock drift and callback CPU telemetry without hardware
+        shell: pwsh
+        run: |
+          dotnet "native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll" --check-timing
+          if ($LASTEXITCODE -ne 0) { throw 'Clock-drift controller or audio-workload metering numeric regression failed.' }
       - name: Parse isolated Windows LAB install/rollback script without executing it
         shell: pwsh
         run: |

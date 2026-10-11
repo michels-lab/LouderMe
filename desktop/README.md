@@ -90,7 +90,7 @@ The executable/shortcut/taskbar icon remains derived from the official LouderMe 
 
 LouderMe Desktop reads the public stable manifest:
 
-`https://raw.githubusercontent.com/realmichelduarte/michel-s-life-releases/main/louderme-desktop/latest.json`
+`https://raw.githubusercontent.com/michels-lab/LouderME-Releases/main/louderme-desktop/latest.json` (legacy builds continue to use the old manifest URL until updated)
 
 Update behavior:
 1. compare the published stable version against the running assembly/product version;

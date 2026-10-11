@@ -209,13 +209,33 @@ class DirectUpdateController(
         executor.shutdownNow()
     }
 
-    private fun fetchManifest():
-        DirectUpdateManifest {
+    private fun fetchManifest(): DirectUpdateManifest {
+        // The dedicated LouderMe channel is preferred. During migration,
+        // existing customers and network failures can still use the old
+        // public feed, which will be kept live as a compatibility endpoint.
+        var lastFailure: Exception? = null
+        for (feedUrl in listOf(
+            DirectUpdateConfig.MANIFEST_URL,
+            DirectUpdateConfig.LEGACY_MANIFEST_URL,
+        )) {
+            try {
+                return fetchManifestAt(feedUrl)
+            } catch (error: Exception) {
+                lastFailure = error
+            }
+        }
+        error(
+            "Neither official LouderMe update feed is available: " +
+                (lastFailure?.message ?: "unknown error")
+        )
+    }
+
+    private fun fetchManifestAt(
+        feedUrl: String,
+    ): DirectUpdateManifest {
         val connection =
             (
-                URL(
-                    DirectUpdateConfig.MANIFEST_URL
-                ).openConnection()
+                URL(feedUrl).openConnection()
                     as HttpURLConnection
                 ).apply {
                     requestMethod = "GET"

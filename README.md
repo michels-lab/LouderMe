@@ -46,7 +46,7 @@ The `sideload` flavor:
 Android still requires system/user confirmation for APK installation.
 
 Public feed:
-`michels-lab/michel-s-life-releases/louderme/latest.json`
+`michels-lab/LouderME-Releases/louderme/latest.json` (legacy installations keep using the old Michel's Life release repo manifest until their binaries migrate)
 
 The LouderMe source repository remains private.
 

@@ -50,3 +50,7 @@ Actual boost above 100% is implemented through the Windows system-effects/APO pa
 Audio processing remains local. No account, telemetry, cloud database, audio capture upload, or new application secret is introduced.
 
 Compatibility note: applications using ASIO or WASAPI exclusive mode can bypass Windows system effects. Endpoint attachment and audible behavior therefore remain physical-Windows validation items.
+
+## 2026-10-11 — Rendered UI evidence candidate
+
+The cross-app P0 is being addressed with exact-commit Android emulator screenshot evidence and installed Windows WinForms screenshots at two viewports. Both channels now call the canonical master integrity and coverage verifier before publication, with stored image artifacts for post-release owner review. Android debug emulator evidence does not certify the separately signed release APK; WinForms render captures do not certify hardware audio or end-user acceptance. Work is confined to a separate branch from the older open device-volume PR, without version or release changes. Source implementation awaits CI validation.

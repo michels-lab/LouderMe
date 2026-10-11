@@ -1,5 +1,19 @@
 # Changelog
 
+## Android + Desktop v0.1.11 — 2026-10-11
+
+### Release scope
+- Align both platform version identifiers for the next coordinated Michel's Lab stable release.
+- Android: retain media device volume, session-zero compatibility boost, seven-band EQ, Play/Direct distribution split, updater, and fixed Home/About navigation; cold-emulator UI evidence now has bounded real-hierarchy retries.
+- Windows Desktop: retain Equalizer APO-backed stable Global Boost, endpoint volume and mute, seven-band EQ, in-app updater, fixed-header About and clean Inno Setup installer.
+- Keep native C++ DSP, experimental PCM16/float32 streaming WASAPI bridge and unsigned lab-only SysVAD driver *out of the user-facing release*. A successful synthetic PCM test is not audible hardware routing proof.
+
+### Validation boundary
+- Exact-release SHA CI, Android emulator and installed WinForms Home/About render, Windows installer launch/uninstall and signing-certificate continuity must pass independently before declaring either binary published.
+- The Android Direct stable APK must be signed by the existing signing identity, not CI debug signing. Authenticode signing for Windows remains unverified.
+- A unified public Michel's Lab release/feed is the final coordinated delivery; no Play Store publication is implied.
+
+
 ## Desktop v0.1.4 — 2026-10-06
 
 ### Fixed

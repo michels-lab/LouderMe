@@ -29,6 +29,11 @@ internal static class Program
                 LoopbackToneVerifier.RunSelfTests();
                 return 0;
             }
+            if (args.Contains("--check-route-tone"))
+            {
+                PhysicalRouteTone.RunSelfTests();
+                return 0;
+            }
             if (args.Contains("--check-formats"))
             {
                 PcmFormatAdapter.RunSelfTests();
@@ -51,6 +56,7 @@ internal static class Program
             var sourceId = GetArg(args, "--source-id");
             var outputId = GetArg(args, "--output-id");
             var percentText = GetArg(args, "--boost");
+            bool provePhysicalRoute = args.Contains("--probe-route");
             if (!args.Contains("--confirm-experimental") ||
                 string.IsNullOrWhiteSpace(sourceId) ||
                 string.IsNullOrWhiteSpace(outputId) ||
@@ -65,6 +71,12 @@ internal static class Program
 
             if (sourceId == outputId)
                 throw new InvalidOperationException("Capture and physical output endpoints must differ.");
+            // This probe intentionally emits audible sound through the chosen
+            // physical sink. Keep lab signal quiet even if product boost
+            // normally allows 250%. No default-device modifications.
+            if (provePhysicalRoute && boost is < 100 or > 150)
+                throw new ArgumentException(
+                    "Physical-route lab proof requires --boost 100..150 to limit test output.");
 
             var source = devices.FirstOrDefault(x => x.ID == sourceId)
                 ?? throw new InvalidOperationException("Selected virtual capture endpoint not active.");
@@ -85,6 +97,9 @@ internal static class Program
             // actual physical mix format; channel layouts are still required
             // to match until a measured channel-mapping policy exists.
             var adapter = new PcmFormatAdapter(inputFormat, outputFormat);
+            if (provePhysicalRoute && inputFormat.Channels is < 1 or > 2)
+                throw new NotSupportedException(
+                    "Physical-route lab proof requires a mono or stereo virtual mix.");
 
             using var engine = new NativeDsp(
                 inputFormat.SampleRate, inputFormat.Channels, boost);
@@ -113,6 +128,60 @@ internal static class Program
                 ReadFully = true
             };
             playback.Init(buffer);
+
+            // Optional LAB-only end-to-end observable. A second WASAPI
+            // loopback reads the *physical* playback endpoint, never an
+            // arbitrary microphone or remote stream.
+            using var monitor = provePhysicalRoute
+                ? new WasapiLoopbackCapture(physical) : null;
+            using var toneStream = provePhysicalRoute
+                ? new RawSourceWaveStream(
+                    new MemoryStream(PhysicalRouteTone.Create(inputFormat), writable: false),
+                    inputFormat) : null;
+            using var sourceToneOutput = provePhysicalRoute
+                ? new WasapiOut(source, AudioClientShareMode.Shared, true, 75) : null;
+            var monitorGate = new object();
+            LoopbackToneVerifier? monitorVerifier = null;
+            PcmFormatAdapter? monitorDecoder = null;
+            Exception? monitorError = null;
+            if (provePhysicalRoute)
+            {
+                if (monitor is null || toneStream is null || sourceToneOutput is null)
+                    throw new InvalidOperationException("Lab physical-route initialization failed.");
+                var recordedFormat = monitor.WaveFormat;
+                if (!PcmFormatAdapter.IsSupported(recordedFormat) ||
+                    recordedFormat.Channels is < 1 or > 2)
+                    throw new NotSupportedException(
+                        "Physical LAB monitor requires PCM16/float32 mono or stereo.");
+                var floatMonitor = WaveFormat.CreateIeeeFloatWaveFormat(
+                    recordedFormat.SampleRate, recordedFormat.Channels);
+                monitorDecoder = new PcmFormatAdapter(recordedFormat, floatMonitor);
+                monitorVerifier = new LoopbackToneVerifier(floatMonitor);
+                monitor.RecordingStopped += (_, e) =>
+                {
+                    if (e.Exception is not null)
+                        Interlocked.CompareExchange(ref monitorError, e.Exception, null);
+                };
+                monitor.DataAvailable += (_, e) =>
+                {
+                    lock (monitorGate)
+                    {
+                        try
+                        {
+                            if (e.BytesRecorded > 0)
+                            {
+                                byte[] samples = monitorDecoder.Decode(e.Buffer, e.BytesRecorded);
+                                monitorVerifier.Add(samples);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Interlocked.CompareExchange(ref monitorError, ex, null);
+                        }
+                    }
+                };
+                sourceToneOutput.Init(toneStream);
+            }
 
             long processedFrames = 0;
             long outputFrames = 0;
@@ -173,11 +242,23 @@ internal static class Program
                 Console.WriteLine($"Formats: virtual {inputFormat}; physical {outputFormat}");
                 Console.WriteLine("PCM16/float32 conversion + linear rate adaptation; matching channel count required.");
                 Console.WriteLine("Press Ctrl+C to stop; this is not a shipped system driver.");
+                if (provePhysicalRoute)
+                    Console.WriteLine(
+                        "LAB physical proof: 2-second quiet 440 Hz tone routed to virtual speaker; " +
+                        "physical speaker loopback measured for 4 seconds. Other media must be silent.");
 
                 playback.Play();
                 capture.StartRecording();
-                while (!shutdown.Wait(1000))
+                monitor?.StartRecording();
+                sourceToneOutput?.Play();
+                var routeStarted = Stopwatch.GetTimestamp();
+                while (!shutdown.Wait(250))
                 {
+                    if (monitorError is not null)
+                        throw new IOException("Physical PCM loopback observer failed.", monitorError);
+                    if (provePhysicalRoute &&
+                        Stopwatch.GetElapsedTime(routeStarted) >= TimeSpan.FromSeconds(4))
+                        break;
                     if (recordingStopped.IsSet)
                     {
                         if (callbackError is not null)
@@ -196,9 +277,40 @@ internal static class Program
             finally
             {
                 Console.CancelKeyPress -= cancel;
+                sourceToneOutput?.Stop();
+                monitor?.StopRecording();
                 capture.StopRecording();
                 recordingStopped.Wait(TimeSpan.FromSeconds(5));
                 playback.Stop();
+            }
+            if (provePhysicalRoute)
+            {
+                if (monitorError is not null)
+                    throw new IOException("Physical LAB observer failed.", monitorError);
+                LoopbackToneVerifier.ToneEvidence physicalProof;
+                lock (monitorGate)
+                    physicalProof = monitorVerifier!.Evaluate();
+                Console.WriteLine(
+                    $"Physical LAB proof: frames={physicalProof.Frames} " +
+                    $"RMS={physicalProof.Rms:F5} peak={physicalProof.Peak:F5} " +
+                    $"matched440={physicalProof.Matched440Amplitude:F5} " +
+                    $"coherence={physicalProof.Coherence:F3} " +
+                    $"virtualProcessed={Interlocked.Read(ref processedFrames)} " +
+                    $"physicalEmitted={Interlocked.Read(ref outputFrames)} " +
+                    $"dropped={Interlocked.Read(ref droppedFrames)}");
+                if (!physicalProof.Passed ||
+                    Interlocked.Read(ref processedFrames) < inputFormat.SampleRate)
+                {
+                    Console.Error.WriteLine(
+                        "FAIL: no matching lab tone reached the physical render loopback " +
+                        "through the bridge, or virtual source PCM was insufficient. " +
+                        "No native global sound proof.");
+                    return 4;
+                }
+                Console.WriteLine(
+                    "PASS: isolated LAB 440 Hz virtual→native DSP→physical loopback route. " +
+                    "This does NOT certify sound pressure, end-user audibility, " +
+                    "other apps' routing, gain calibration or driver installation.");
             }
             Console.WriteLine("Audio bridge stopped and endpoints released.");
             return 0;

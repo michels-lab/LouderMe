@@ -83,14 +83,18 @@ compatible system APIs, proper INF/CAT packaging, Microsoft-trusted driver
 signing and real-device testing. Universal compatibility can be investigated
 later without mislabeling the consumer target.
 
-The hosted CI still does not have a full `StampInf.exe` environment, so it
-cannot certify an installable package. The full-WDK helper remains unverified
-until executed on a provisioned driver-lab machine.
+**Updated qualification (2026-10-11):** the full WDK helper has now passed
+on a provisioned GitHub Windows lab runner (example run
+[38127383524](https://github.com/michels-lab/LouderMe/actions/runs/38127383524)):
+compiled x64 kernel SYS; officially stamped INF; completed `InfVerif /h`
+and `Inf2Cat` on the unsigned lab package. This proves packaging and
+build reproducibility, **not** signing, installation, a usable audio endpoint,
+non-silent PCM from other applications, or physical speaker processing.
 
-The workflow `native-virtual-device-ci.yml` prepares/checks actual
-Microsoft source in Ubuntu, and attempts to compile the modified SysVAD
-solution on the Windows 2025/VS2026 runner using Microsoft's WDK NuGet
-layout. Source verification is distinct from successful driver compilation.
+The workflow `native-virtual-device-ci.yml` validates pinned Microsoft
+source derivation in Ubuntu, x64 WDK compile and full INF/CAT validation
+on Windows. Separate manually provisioned Windows lab machine/VM evidence
+remains mandatory for driver installation and real audio acceptance.
 
 **Do not install, publish or add the unsigned/test-signed driver to stable
 LouderME installers.** Building the WDK solution may generate unsigned or
@@ -148,9 +152,13 @@ must validate these conditions with properly signed test binaries:
    dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --probe-virtual --source-id "<LOUDEME_VIRTUAL_ENDPOINT_ID>" --confirm-experimental
    ```
 
-   A passing measurement reports a nonzero sample count, RMS and peak;
-   silence, unsupported format or absent endpoint returns a failure. This
-   is **not proof** that processed audio reached physical speakers.
+   A passing measurement now requires **440 Hz tone identity** using both
+   sine/cosine projections (unknown loopback phase) and minimum matched
+   amplitude/coherence. It rejects 880 Hz, DC offsets, silence, short
+   captures, nonfinite/misaligned float PCM and unrelated energy.
+   Device-free `--check-loopback` regression tests run in Windows native
+   bridge CI. This is stronger than a generic nonzero RMS, but still **not
+   proof** that processed audio from another application reached speakers.
 
 5. Start the experimental `native/windows-bridge` with a distinct physical
    output. Confirm transformed PCM reaches actual headphones/speakers exactly

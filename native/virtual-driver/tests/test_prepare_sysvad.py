@@ -90,6 +90,14 @@ SYSVAD.TopologySpeaker.szPname="SYSVAD Topology Speaker"
         with self.assertRaises(ValueError):
             MODULE.patch_project_for_desktop(sample[:-1])
 
+    def test_reference_inf_removed_unshipped_demo_components(self):
+        # Keep the structural contract covered even without WDK tooling.
+        src = (HERE.parent / "prepare_sysvad.py").read_text()
+        self.assertIn("prune_reference_inf", src)
+        self.assertIn('"package_file_references": ["tabletaudiosample.sys"]', src)
+        self.assertIn("keyworddetectorcontosoadapter.dll", src.lower())
+        self.assertIn("required_interface_count = 5", src)
+
     def test_mspl_text_is_required(self):
         source = (HERE.parent / "prepare_sysvad.py").read_text()
         self.assertIn("The Microsoft Public License (MS-PL)", source)

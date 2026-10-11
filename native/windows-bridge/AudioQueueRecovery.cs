@@ -70,10 +70,10 @@ internal sealed class AudioQueueRecovery
         catch (ArgumentOutOfRangeException) { }
 
         var format = WaveFormat.CreateIeeeFloatWaveFormat(48000, 2);
-        var queued = new BufferedWaveProvider(format)
+        var queued = new BufferedWaveProvider(
+            format, TimeSpan.FromMilliseconds(250))
         {
-            ReadFully = true,
-            BufferDuration = TimeSpan.FromMilliseconds(250)
+            ReadFully = true
         };
         var monitor = new MonitoredRenderBuffer(queued);
         byte[] read = new byte[format.BlockAlign * 10];
@@ -108,7 +108,7 @@ internal sealed class MonitoredRenderBuffer : IWaveProvider
     public int Read(byte[] data, int offset, int count)
     {
         int available = _source.BufferedBytes;
-        int read = _source.Read(data, offset, count);
+        int read = _source.Read(data.AsSpan(offset, count));
         if (available < count)
             Interlocked.Increment(ref _readsWithInsufficientPcm);
         return read;

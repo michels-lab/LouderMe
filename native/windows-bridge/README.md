@@ -24,7 +24,11 @@ or create the virtual endpoint; that WDK/SysVAD work is a separate milestone.
 - Uses **stateful linear interpolation** across capture callbacks, bounded
   buffering and fail-closed callback errors. This is a functional prototype,
   **not** production-quality anti-aliased resampling or a measured latency
-  guarantee. Source/physical channel counts must still match (1–8).
+  guarantee. Equal source/physical channel counts (1–8) are supported;
+  explicit **mono → stereo duplication** and **stereo → mono averaging**
+  are also supported. All other channel-count changes still fail closed.
+  Packet-boundary interpolation now waits for the next capture frame rather
+  than throwing when a short packet ends between two interpolated samples.
 - No microphone access, no disk recording or networking. Console reports
   processed/dropped frames, not PCM content.
 - This is a proof of managed/native interop, not safe for regular unattended
@@ -87,9 +91,10 @@ does not prove that the virtual bridge is processing it.**
    applications; Microsoft SysVAD sample alone does not prove this.
 3. **PCM16/float32 conversion and basic streaming sample-rate adaptation are
    implemented but require hardware proof.** Add production-quality anti-alias
-   resampling, channel-layout negotiation, measured latency and underrun
-   handling, hotplug/default-device recovery, click-free EQ updates and a
-   thread-safe control channel.
+   resampling, full multichannel speaker-layout negotiation beyond
+   explicit mono/stereo rules, measured latency and underrun handling,
+   hotplug/default-device recovery, click-free EQ updates and a thread-safe
+   control channel.
 4. Verify no doubled output, echo feedback, loss of physical audio or
    failure to restore previous default routes on restart/uninstall/crash.
 5. Add real Windows device tests (Bluetooth, HDMI, Realtek, headphones),

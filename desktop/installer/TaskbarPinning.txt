@@ -1,0 +1,15 @@
+LouderMe — Pin to Windows taskbar / Anclar a la barra de tareas
+
+ENGLISH
+These are instructions only. Setup does not automatically pin LouderMe.
+1. Open LouderMe from the Windows Start menu.
+2. While LouderMe is running, right-click its icon in the Windows taskbar.
+3. Select "Pin to taskbar". Managed devices may prevent taskbar pinning.
+4. To remove it later, right-click > Unpin from taskbar.
+
+ESPAÑOL
+Estas instrucciones no anclan la aplicación automáticamente.
+1. Abre LouderMe desde el menú Inicio de Windows.
+2. Mientras LouderMe esté abierto, haz clic derecho sobre el icono en la barra de tareas.
+3. Selecciona "Anclar a la barra de tareas". Algunas políticas de Windows pueden impedirlo.
+4. Para quitarlo después, haz clic derecho > Desanclar de la barra de tareas.

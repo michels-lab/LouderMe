@@ -26,6 +26,8 @@ OutputBaseFilename=LouderMe-Setup-v{#MyAppVersion}
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
+DisableWelcomePage=no
+LicenseFile=..\..\LICENSE
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequired=admin
@@ -49,8 +51,11 @@ english.AdditionalOptions=Additional options:
 spanish.AdditionalOptions=Opciones adicionales:
 english.LaunchApp=Launch LouderMe
 spanish.LaunchApp=Abrir LouderMe
+english.PinTaskbarHelp=Show how to pin LouderMe to the taskbar
+spanish.PinTaskbarHelp=Ver cómo anclar LouderMe a la barra de tareas
 
 [Files]
+Source: "TaskbarPinning.txt"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#PublishDir}\LouderMe.exe"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
@@ -66,3 +71,4 @@ Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: 
 
 [Run]
 Filename: "{app}\LouderMe.exe"; Description: "{cm:LaunchApp}"; Flags: nowait postinstall skipifsilent
+Filename: "{sys}\notepad.exe"; Parameters: """{app}\TaskbarPinning.txt"""; Description: "{cm:PinTaskbarHelp}"; Flags: nowait postinstall skipifsilent unchecked

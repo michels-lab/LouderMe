@@ -52,6 +52,7 @@ PCM16 44.1 kHz → native 150% DSP → float32 48 kHz end-to-end pipeline
 dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --check-native
 dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --check-formats
 dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --check-pipeline
+dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --check-loopback
 ```
 
 When an independently **installed, signed and verified** LouderME virtual
@@ -108,8 +109,14 @@ dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll
 ```
 
 This opt-in probe sends a quiet 440 Hz tone to the specified *virtual* output
-and uses WASAPI loopback of that same endpoint to calculate RMS/peak; it
-fails if PCM is silent or missing. It does not set any system default or
-send the tone to a physical speaker. A positive result alone is not a
-system-wide processed-sound test. Driver signing, safe installation and
-physical output measurements remain pending.
+and uses WASAPI loopback of that same endpoint to calculate RMS, peak,
+440 Hz amplitude and phase-independent signal coherence. It rejects
+nonzero **unrelated audio**, 880 Hz, DC offset, silence, malformed PCM and
+short captures instead of treating any noise as proof.
+
+The evidence is limited to a controlled lab virtual render endpoint and
+the specific generated tone. It does not set the default playback device,
+does not send the tone to physical speakers, and is **not** a production
+driver install/certification, app-origin sound capture proof or global
+processed-sound test. Driver signing, safe installation, physical routing,
+latency, crash/rollback and device testing remain pending.

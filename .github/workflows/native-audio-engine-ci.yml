@@ -67,3 +67,8 @@ jobs:
         run: |
           dotnet "native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll" --check-pipeline
           if ($LASTEXITCODE -ne 0) { throw 'Native PCM16 end-to-end pipeline numerical test failed.' }
+      - name: Reject false-positive virtual loopback and verify exact 440 Hz tone in memory
+        shell: pwsh
+        run: |
+          dotnet "native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll" --check-loopback
+          if ($LASTEXITCODE -ne 0) { throw 'Virtual loopback signal-identity verification regression failed.' }

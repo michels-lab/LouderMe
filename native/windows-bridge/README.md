@@ -44,11 +44,14 @@ dotnet build native/windows-bridge/LouderMeAudioBridge.csproj -c Release
 Copy the compiled `louderme_audio_c.dll` beside the bridge executable in
 `native/windows-bridge/bin/Release/net10.0-windows`.
 
-Test real DLL interop **without any audio hardware**:
+Test the real C++ DLL interop, PCM format conversion and a synthetic
+PCM16 44.1 kHz → native 150% DSP → float32 48 kHz end-to-end pipeline
+**without any audio hardware**:
 
 ```powershell
 dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --check-native
 dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --check-formats
+dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --check-pipeline
 ```
 
 When an independently **installed, signed and verified** LouderME virtual

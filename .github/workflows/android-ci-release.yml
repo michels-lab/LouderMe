@@ -159,6 +159,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Syntax-check real Android UI capture helper
+        run: python3 -m py_compile tools/capture_android_visual.py tools/visual_release_gate.py
       - name: Install exact image-integrity validator dependency
         run: python3 -m pip install Pillow==11.3.0
       - uses: actions/download-artifact@v4

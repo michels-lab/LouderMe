@@ -22,6 +22,13 @@ internal static class Program
         {
             if (args.Contains("--check-native"))
                 return CheckNative();
+            if (args.Contains("--check-pipeline"))
+                return CheckPipeline();
+            if (args.Contains("--check-formats"))
+            {
+                PcmFormatAdapter.RunSelfTests();
+                return 0;
+            }
 
             using var enumerator = new MMDeviceEnumerator();
             var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
@@ -69,15 +76,10 @@ internal static class Program
             using var capture = new WasapiLoopbackCapture(source);
             var inputFormat = capture.WaveFormat;
             var outputFormat = physical.AudioClient.MixFormat;
-            if (!IsFloat32(inputFormat) || !IsFloat32(outputFormat) ||
-                inputFormat.SampleRate != outputFormat.SampleRate ||
-                inputFormat.Channels != outputFormat.Channels ||
-                inputFormat.Channels is < 1 or > 8)
-            {
-                throw new NotSupportedException(
-                    $"No automatic conversion yet. Require matching float32 mix format. " +
-                    $"Virtual: {inputFormat}; Physical: {outputFormat}");
-            }
+            // Decode to native float32 and adapt the processed stream to the
+            // actual physical mix format; channel layouts are still required
+            // to match until a measured channel-mapping policy exists.
+            var adapter = new PcmFormatAdapter(inputFormat, outputFormat);
 
             using var engine = new NativeDsp(
                 inputFormat.SampleRate, inputFormat.Channels, boost);
@@ -100,7 +102,7 @@ internal static class Program
             }
             engine.ConfigureEqualizer(eqText is not null, eqGains);
             using var playback = new WasapiOut(physical, AudioClientShareMode.Shared, true, 75);
-            var buffer = new BufferedWaveProvider(inputFormat, TimeSpan.FromMilliseconds(250))
+            var buffer = new BufferedWaveProvider(outputFormat, TimeSpan.FromMilliseconds(250))
             {
                 DiscardOnBufferOverflow = false,
                 ReadFully = true
@@ -108,9 +110,11 @@ internal static class Program
             playback.Init(buffer);
 
             long processedFrames = 0;
+            long outputFrames = 0;
             long droppedFrames = 0;
             var recordingStopped = new ManualResetEventSlim(false);
             Exception? recordingError = null;
+            Exception? callbackError = null;
             capture.RecordingStopped += (_, e) =>
             {
                 recordingError = e.Exception;
@@ -118,17 +122,33 @@ internal static class Program
             };
             capture.DataAvailable += (_, e) =>
             {
-                var frameBytes = inputFormat.BlockAlign;
-                if (frameBytes == 0 || e.BytesRecorded % frameBytes != 0) return;
-                var frameCount = e.BytesRecorded / frameBytes;
-                if (buffer.BufferLength - buffer.BufferedBytes < e.BytesRecorded)
+                if (recordingStopped.IsSet) return;
+                try
                 {
-                    Interlocked.Add(ref droppedFrames, frameCount);
-                    return;
+                    if (e.BytesRecorded == 0) return;
+                    // Never mutate NAudio's recycled event buffer. Native DSP
+                    // receives an independent float32 copy even for PCM16 input.
+                    byte[] decoded = adapter.Decode(e.Buffer, e.BytesRecorded);
+                    engine.Process(decoded, decoded.Length, inputFormat.Channels);
+                    byte[] converted = adapter.Encode(decoded, decoded.Length);
+                    if (converted.Length == 0) return;
+                    var sourceFrames = e.BytesRecorded / inputFormat.BlockAlign;
+                    if (buffer.BufferLength - buffer.BufferedBytes < converted.Length)
+                    {
+                        Interlocked.Add(ref droppedFrames, sourceFrames);
+                        return;
+                    }
+                    buffer.AddSamples(converted, 0, converted.Length);
+                    Interlocked.Add(ref processedFrames, sourceFrames);
+                    Interlocked.Add(ref outputFrames, converted.Length / outputFormat.BlockAlign);
                 }
-                engine.Process(e.Buffer, e.BytesRecorded, inputFormat.Channels);
-                buffer.AddSamples(e.Buffer, 0, e.BytesRecorded);
-                Interlocked.Add(ref processedFrames, frameCount);
+                catch (Exception error)
+                {
+                    // Managed exceptions must not escape a WASAPI callback;
+                    // fail closed on the console thread and release endpoints.
+                    Interlocked.CompareExchange(ref callbackError, error, null);
+                    recordingStopped.Set();
+                }
             };
 
             using var shutdown = new ManualResetEventSlim(false);
@@ -145,6 +165,8 @@ internal static class Program
                 Console.WriteLine($"Output: {physical.FriendlyName}");
                 Console.WriteLine($"DSP: {boost}% gain, own C++ engine, EQ " +
                     (eqText is null ? "disabled" : $"enabled ({eqText} dB)"));
+                Console.WriteLine($"Formats: virtual {inputFormat}; physical {outputFormat}");
+                Console.WriteLine("PCM16/float32 conversion + linear rate adaptation; matching channel count required.");
                 Console.WriteLine("Press Ctrl+C to stop; this is not a shipped system driver.");
 
                 playback.Play();
@@ -153,13 +175,16 @@ internal static class Program
                 {
                     if (recordingStopped.IsSet)
                     {
+                        if (callbackError is not null)
+                            throw new IOException("PCM bridge callback failed.", callbackError);
                         if (recordingError is not null) throw recordingError;
                         throw new IOException("Virtual capture stopped unexpectedly.");
                     }
                     if (playback.PlaybackState != PlaybackState.Playing)
                         throw new IOException("Physical audio playback stopped.");
-                    Console.WriteLine($"frames={Interlocked.Read(ref processedFrames)} " +
-                        $"dropped={Interlocked.Read(ref droppedFrames)} " +
+                    Console.WriteLine($"sourceFrames={Interlocked.Read(ref processedFrames)} " +
+                        $"physicalFrames={Interlocked.Read(ref outputFrames)} " +
+                        $"droppedSourceFrames={Interlocked.Read(ref droppedFrames)} " +
                         $"buffered={buffer.BufferedDuration.TotalMilliseconds:F0}ms");
                 }
             }
@@ -268,6 +293,64 @@ internal static class Program
     {
         var i = Array.IndexOf(args, name);
         return i < 0 || i >= args.Length - 1 ? null : args[i + 1];
+    }
+
+    // In-memory, hardware-free proof that real PCM16 packets can flow through
+    // our native C++ DSP into the physical output's independent float32 rate.
+    // This does NOT prove that an installed virtual driver supplies OS PCM.
+    private static int CheckPipeline()
+    {
+        const int sourceRate = 44100;
+        const int outputRate = 48000;
+        const int channels = 2;
+        const int framesPerPacket = 441;
+        const int packetCount = 10;
+        var adapter = new PcmFormatAdapter(
+            new WaveFormat(sourceRate, 16, channels),
+            WaveFormat.CreateIeeeFloatWaveFormat(outputRate, channels));
+        using var engine = new NativeDsp(sourceRate, channels, 150);
+        long framesOut = 0;
+        double power = 0;
+        long measuredSamples = 0;
+        for (int packet = 0; packet < packetCount; packet++)
+        {
+            var input = new byte[framesPerPacket * channels * sizeof(short)];
+            for (int i = 0; i < framesPerPacket; i++)
+            {
+                var frame = packet * framesPerPacket + i;
+                var sample = (short)MathF.Round(0.1f * 32767f *
+                    MathF.Sin(2f * MathF.PI * 440f * frame / sourceRate));
+                for (int channel = 0; channel < channels; channel++)
+                    BinaryPrimitives.WriteInt16LittleEndian(
+                        input.AsSpan((i * channels + channel) * sizeof(short)),
+                        sample);
+            }
+
+            byte[] dspInput = adapter.Decode(input, input.Length);
+            engine.Process(dspInput, dspInput.Length, channels);
+            byte[] physicalPcm = adapter.Encode(dspInput, dspInput.Length);
+            if (physicalPcm.Length % (channels * sizeof(float)) != 0)
+                throw new InvalidOperationException("Native pipeline lost output frame alignment.");
+            framesOut += physicalPcm.Length / (channels * sizeof(float));
+            if (packet < 2) continue; // Skip gain-smoother startup for RMS check.
+            for (int offset = 0; offset < physicalPcm.Length; offset += sizeof(float))
+            {
+                float value = BinaryPrimitives.ReadSingleLittleEndian(
+                    physicalPcm.AsSpan(offset));
+                if (!float.IsFinite(value) || Math.Abs(value) > 1f)
+                    throw new InvalidOperationException("Invalid native pipeline output sample.");
+                power += value * value;
+                measuredSamples++;
+            }
+        }
+        double rms = Math.Sqrt(power / Math.Max(1, measuredSamples));
+        if (Math.Abs(framesOut - outputRate / 10) > 2 || rms is < 0.095 or > 0.12)
+            throw new InvalidOperationException(
+                $"Native PCM16→DSP→48k float pipeline failed: frames={framesOut}, RMS={rms:F5}");
+        Console.WriteLine(
+            $"PASS: own native 150% DSP on PCM16 44.1k stereo → float32 48k; " +
+            $"frames={framesOut}, RMS={rms:F5}; no Windows devices accessed.");
+        return 0;
     }
 
     private static int CheckNative()

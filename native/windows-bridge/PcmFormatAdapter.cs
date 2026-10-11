@@ -18,6 +18,7 @@ internal sealed class PcmFormatAdapter
     private readonly WaveFormat _input;
     private readonly WaveFormat _output;
     private readonly int _channels;
+    private readonly int _outputChannels;
     private readonly bool _inputFloat;
     private readonly bool _outputFloat;
     private readonly double _inputFramesPerOutputFrame;
@@ -31,9 +32,11 @@ internal sealed class PcmFormatAdapter
         _output = output ?? throw new ArgumentNullException(nameof(output));
         ValidateFormat(input);
         ValidateFormat(output);
-        if (input.Channels != output.Channels)
+        if (input.Channels != output.Channels &&
+            !(input.Channels == 1 && output.Channels == 2) &&
+            !(input.Channels == 2 && output.Channels == 1))
             throw new NotSupportedException(
-                "Channel mapping is not implemented; virtual and physical channel counts must match.");
+                "Only matching channel layouts or explicit mono/stereo conversions are supported.");
         if (input.SampleRate is < 8000 or > 192000 ||
             output.SampleRate is < 8000 or > 192000)
             throw new NotSupportedException("Sample rates must be between 8 kHz and 192 kHz.");
@@ -42,6 +45,7 @@ internal sealed class PcmFormatAdapter
             throw new NotSupportedException(
                 "Only source/output rate ratios between 1:4 and 4:1 are supported.");
         _channels = input.Channels;
+        _outputChannels = output.Channels;
         _inputFloat = IsFloat(input);
         _outputFloat = IsFloat(output);
         _inputFramesPerOutputFrame = (double)input.SampleRate / output.SampleRate;
@@ -120,17 +124,19 @@ internal sealed class PcmFormatAdapter
             if (leftIndex < -1 || (leftIndex < 0 && !_hasLastFrame))
                 throw new InvalidOperationException("PCM resampler history is incomplete.");
             float fraction = (float)(_nextPosition - leftIndex);
-            for (int channel = 0; channel < _channels; channel++)
+            // A fractional last-frame sample needs the *next* capture
+            // packet's first frame. Defer it instead of throwing or making
+            // up padding; _lastFrame bridges the packet boundary.
+            if (leftIndex + 1 >= frames && fraction > 0f)
+                break;
+            for (int channel = 0; channel < _outputChannels; channel++)
             {
                 float left = leftIndex < 0
-                    ? _lastFrame[channel]
-                    : ReadFloat(floatPcm, leftIndex, channel);
+                    ? ReadMappedHistory(channel)
+                    : ReadMappedFloat(floatPcm, leftIndex, channel);
                 float right = leftIndex + 1 >= frames
                     ? left
-                    : ReadFloat(floatPcm, leftIndex + 1, channel);
-                // An exact final-sample position may be written immediately.
-                if (leftIndex + 1 >= frames && fraction > 0)
-                    throw new InvalidOperationException("Resampler crossed an unreceived input frame.");
+                    : ReadMappedFloat(floatPcm, leftIndex + 1, channel);
                 float value = left + (right - left) * fraction;
                 if (!float.IsFinite(value))
                     throw new InvalidDataException("Nonfinite native DSP output.");
@@ -168,6 +174,24 @@ internal sealed class PcmFormatAdapter
         BinaryPrimitives.ReadSingleLittleEndian(
             pcm.AsSpan((frame * _channels + channel) * sizeof(float)));
 
+    private float ReadMappedHistory(int sinkChannel)
+    {
+        // Equal-weight stereo → mono preserves symmetric signals and
+        // avoids summing two full-scale samples above the valid range.
+        if (_channels == 2 && _outputChannels == 1)
+            return (_lastFrame[0] + _lastFrame[1]) * 0.5f;
+        // Mono → stereo duplicates the signal identically in both ears.
+        return _lastFrame[_channels == 1 ? 0 : sinkChannel];
+    }
+
+    private float ReadMappedFloat(byte[] pcm, int frame, int sinkChannel)
+    {
+        if (_channels == 2 && _outputChannels == 1)
+            return (ReadFloat(pcm, frame, 0) +
+                    ReadFloat(pcm, frame, 1)) * 0.5f;
+        return ReadFloat(pcm, frame, _channels == 1 ? 0 : sinkChannel);
+    }
+
     // Deterministic device-free regression tests, exercised by Windows CI.
     public static void RunSelfTests()
     {
@@ -203,18 +227,107 @@ internal sealed class PcmFormatAdapter
         TestStreamingResample(48000, 96000, 480, 2);
         TestStreamingResample(96000, 48000, 960, 2);
 
+        TestMonoStereoMapping();
+        TestShortPacketBoundaries(44100, 48000);
+        TestShortPacketBoundaries(48000, 44100);
+        TestShortPacketBoundaries(48000, 96000);
+
         try
         {
             _ = new PcmFormatAdapter(
-                WaveFormat.CreateIeeeFloatWaveFormat(48000, 2),
-                WaveFormat.CreateIeeeFloatWaveFormat(48000, 1));
-            throw new InvalidOperationException("Channel mismatch did not fail closed.");
+                WaveFormat.CreateIeeeFloatWaveFormat(48000, 6),
+                WaveFormat.CreateIeeeFloatWaveFormat(48000, 2));
+            throw new InvalidOperationException("Unsupported 5.1 to stereo mapping was accepted.");
         }
         catch (NotSupportedException) { }
 
         Console.WriteLine(
-            "PASS: PCM16/float32 decode+encode, saturation, streaming 44.1/48/96 kHz " +
-            "rate conversion, channel mismatch.");
+            "PASS: PCM16/float32 conversion, saturation, 44.1/48/96 kHz " +
+            "streaming, short-packet interpolation, explicit mono/stereo mapping " +
+            "and unsupported 5.1 mapping rejection.");
+    }
+
+    private static void TestMonoStereoMapping()
+    {
+        var one = WaveFormat.CreateIeeeFloatWaveFormat(48000, 1);
+        var two = WaveFormat.CreateIeeeFloatWaveFormat(48000, 2);
+        var mono = new byte[3 * sizeof(float)];
+        float[] values = [0.25f, -0.5f, 0.75f];
+        for (int f = 0; f < values.Length; f++)
+            BinaryPrimitives.WriteSingleLittleEndian(mono.AsSpan(f * 4), values[f]);
+
+        var up = new PcmFormatAdapter(one, two);
+        byte[] stereo = up.Encode(mono, mono.Length);
+        if (stereo.Length != 3 * 2 * sizeof(float))
+            throw new InvalidOperationException("Mono/stereo upmix lost output frames.");
+        for (int f = 0; f < values.Length; f++)
+        {
+            AssertClose(BinaryPrimitives.ReadSingleLittleEndian(stereo.AsSpan((f * 2) * 4)), values[f]);
+            AssertClose(BinaryPrimitives.ReadSingleLittleEndian(stereo.AsSpan((f * 2 + 1) * 4)), values[f]);
+        }
+
+        // Opposite-phase stereo should cancel on explicitly selected mono
+        // output; no undocumented per-channel selection or overflow.
+        var outMono = new PcmFormatAdapter(two, one);
+        var input = new byte[4 * 2 * sizeof(float)];
+        float[] pairs = [0.8f, -0.2f, -0.5f, 0.5f, 0.75f, -0.75f, 1f, 1f];
+        for (int i = 0; i < pairs.Length; i++)
+            BinaryPrimitives.WriteSingleLittleEndian(input.AsSpan(i * 4), pairs[i]);
+        byte[] down = outMono.Encode(input, input.Length);
+        if (down.Length != 4 * sizeof(float))
+            throw new InvalidOperationException("Stereo-to-mono lost output frames.");
+        float[] expected = [0.3f, 0f, 0f, 1f];
+        for (int f = 0; f < expected.Length; f++)
+            AssertClose(BinaryPrimitives.ReadSingleLittleEndian(down.AsSpan(f * 4)), expected[f]);
+    }
+
+    private static void TestShortPacketBoundaries(int sourceRate, int outputRate)
+    {
+        var adapter = new PcmFormatAdapter(
+            WaveFormat.CreateIeeeFloatWaveFormat(sourceRate, 2),
+            WaveFormat.CreateIeeeFloatWaveFormat(outputRate, 2));
+        const int totalFrames = 4000;
+        int[] fragments = [1, 3, 7, 2, 511, 1, 89, 4, 32, 1, 1001, 13];
+        int current = 0;
+        int packet = 0;
+        long emitted = 0;
+        float previous = 0;
+        bool hasPrevious = false;
+        while (current < totalFrames)
+        {
+            int count = Math.Min(fragments[packet++ % fragments.Length], totalFrames - current);
+            var pcm = new byte[count * 2 * sizeof(float)];
+            for (int frame = 0; frame < count; frame++)
+            {
+                float signal = 0.2f * MathF.Sin(2f * MathF.PI * 1000 *
+                    (current + frame) / sourceRate);
+                for (int ch = 0; ch < 2; ch++)
+                    BinaryPrimitives.WriteSingleLittleEndian(
+                        pcm.AsSpan((frame * 2 + ch) * sizeof(float)), signal);
+            }
+            var output = adapter.Encode(pcm, pcm.Length);
+            if (output.Length % (2 * sizeof(float)) != 0)
+                throw new InvalidOperationException("Short-packet output misaligned.");
+            emitted += output.Length / (2 * sizeof(float));
+            for (int index = 0; index < output.Length; index += 2 * sizeof(float))
+            {
+                float value = BinaryPrimitives.ReadSingleLittleEndian(output.AsSpan(index));
+                float other = BinaryPrimitives.ReadSingleLittleEndian(output.AsSpan(index + 4));
+                if (!float.IsFinite(value) || Math.Abs(value) > 0.201f)
+                    throw new InvalidOperationException("Short-packet resampling created invalid signal.");
+                AssertClose(other, value);
+                if (hasPrevious && Math.Abs(value - previous) > 0.065f)
+                    throw new InvalidOperationException("Short-packet resampling introduced a PCM discontinuity.");
+                hasPrevious = true;
+                previous = value;
+            }
+            current += count;
+        }
+
+        double expectedFrames = (double)totalFrames * outputRate / sourceRate;
+        if (Math.Abs(emitted - expectedFrames) > 2)
+            throw new InvalidOperationException(
+                $"Short-packet rate conversion lost frames: {emitted} vs {expectedFrames:F1}.");
     }
 
     private static void TestStreamingResample(int sourceRate, int outputRate,

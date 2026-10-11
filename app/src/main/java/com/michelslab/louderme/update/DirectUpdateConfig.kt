@@ -2,7 +2,7 @@ package com.michelslab.louderme.update
 
 object DirectUpdateConfig {
     const val MANIFEST_URL =
-        "https://raw.githubusercontent.com/michels-lab/LouderMe-releases/main/louderme/latest.json"
+        "https://raw.githubusercontent.com/michels-lab/LouderME-Releases/main/louderme/latest.json"
 
     // Updater compatibility: previously installed clients still query this
     // legacy feed. Retain as read-only network fallback during migration.

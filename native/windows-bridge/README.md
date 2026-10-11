@@ -16,9 +16,15 @@ or create the virtual endpoint; that WDK/SysVAD work is a separate milestone.
 - Requires active virtual endpoint named `LouderMe Virtual` and a distinct
   physical render endpoint. If there is no working signed virtual device,
   the bridge cannot process any actual system audio.
-- Currently **float32 only**, identical sample rate/channel count for both
-  endpoints, 1–8 channels. No resampling or rate adaptation; mismatch fails
-  before playback starts.
+- Experimental streaming converter now accepts PCM16 or IEEE float32 on
+  **either** endpoint, with independently selected mix sample rates of
+  8–192 kHz and ratios between 1:4 and 4:1. Native C++ DSP continues to
+  operate on private interleaved float32 samples; the physical WASAPI buffer
+  receives its own negotiated PCM16/float32 encoding and sample rate.
+- Uses **stateful linear interpolation** across capture callbacks, bounded
+  buffering and fail-closed callback errors. This is a functional prototype,
+  **not** production-quality anti-aliased resampling or a measured latency
+  guarantee. Source/physical channel counts must still match (1–8).
 - No microphone access, no disk recording or networking. Console reports
   processed/dropped frames, not PCM content.
 - This is a proof of managed/native interop, not safe for regular unattended
@@ -42,6 +48,7 @@ Test real DLL interop **without any audio hardware**:
 
 ```powershell
 dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --check-native
+dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --check-formats
 ```
 
 When an independently **installed, signed and verified** LouderME virtual
@@ -68,14 +75,16 @@ does not prove that the virtual bridge is processing it.**
 
 ## Remaining work before any production release
 
-1. Implement/build/test a real SysVAD-derived, licensed, installable and
-   appropriately signed LouderME virtual render device (current repo has
-   neither binary nor INF).
+1. Complete **production-signable, installable and audited** SysVAD-derived
+   LouderME virtual render driver (the repo has WDK-validated unsigned lab
+   INF/CAT/SYS generation only; no production signed or installed driver).
 2. Verify that its loopback stream exposes the PCM actually sent by Windows
    applications; Microsoft SysVAD sample alone does not prove this.
-3. Add float32/PCM16 conversion, safe sample-rate adaptation, backpressure,
-   stable performance, hotplug/default-device recovery, click-free EQ updates,
-   and a thread-safe control channel.
+3. **PCM16/float32 conversion and basic streaming sample-rate adaptation are
+   implemented but require hardware proof.** Add production-quality anti-alias
+   resampling, channel-layout negotiation, measured latency and underrun
+   handling, hotplug/default-device recovery, click-free EQ updates and a
+   thread-safe control channel.
 4. Verify no doubled output, echo feedback, loss of physical audio or
    failure to restore previous default routes on restart/uninstall/crash.
 5. Add real Windows device tests (Bluetooth, HDMI, Realtek, headphones),

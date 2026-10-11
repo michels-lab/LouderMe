@@ -165,6 +165,9 @@ jobs:
         with:
           name: LouderMe-Android-v${{ needs.validate.outputs.version }}
           path: visual-input
+      - name: Enable hardware-assisted Android emulator acceleration
+        run: |
+          if [ -e /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
       - name: Install actual Android Debug candidate; screenshot real Home/About
         uses: reactivecircus/android-emulator-runner@v2
         with:

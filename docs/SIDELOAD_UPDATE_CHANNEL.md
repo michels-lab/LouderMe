@@ -19,7 +19,7 @@ The source repository remains private.
 
 The public feed is:
 
-`michels-lab/michel-s-life-releases/louderme/latest.json`
+`michels-lab/LouderME-Releases/louderme/latest.json`
 
 The feed contains only distribution metadata:
 - package ID;
@@ -109,7 +109,7 @@ Losing all copies of the canonical key would break in-place Michel's Lab Direct 
 
 ## Public/private release boundary
 
-The private source repo can publish its own validated release asset, while the public `michel-s-life-releases` repository hosts the anonymous-download APK and `latest.json` used by installed sideload clients.
+The private source repo can publish its own validated release asset, while the public **LouderME-Releases** repository hosts the anonymous-download APK and `latest.json`. Older installed binaries still query `michels-lab/michel-s-life-releases/louderme/latest.json`; that legacy endpoint remains available for backward-compatible migrations.
 
 This separation keeps:
 - source private;

@@ -22,6 +22,11 @@ internal static class Program
         {
             if (args.Contains("--check-native"))
                 return CheckNative();
+            if (args.Contains("--check-formats"))
+            {
+                PcmFormatAdapter.RunSelfTests();
+                return 0;
+            }
 
             using var enumerator = new MMDeviceEnumerator();
             var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
@@ -69,15 +74,10 @@ internal static class Program
             using var capture = new WasapiLoopbackCapture(source);
             var inputFormat = capture.WaveFormat;
             var outputFormat = physical.AudioClient.MixFormat;
-            if (!IsFloat32(inputFormat) || !IsFloat32(outputFormat) ||
-                inputFormat.SampleRate != outputFormat.SampleRate ||
-                inputFormat.Channels != outputFormat.Channels ||
-                inputFormat.Channels is < 1 or > 8)
-            {
-                throw new NotSupportedException(
-                    $"No automatic conversion yet. Require matching float32 mix format. " +
-                    $"Virtual: {inputFormat}; Physical: {outputFormat}");
-            }
+            // Decode to native float32 and adapt the processed stream to the
+            // actual physical mix format; channel layouts are still required
+            // to match until a measured channel-mapping policy exists.
+            var adapter = new PcmFormatAdapter(inputFormat, outputFormat);
 
             using var engine = new NativeDsp(
                 inputFormat.SampleRate, inputFormat.Channels, boost);
@@ -100,7 +100,7 @@ internal static class Program
             }
             engine.ConfigureEqualizer(eqText is not null, eqGains);
             using var playback = new WasapiOut(physical, AudioClientShareMode.Shared, true, 75);
-            var buffer = new BufferedWaveProvider(inputFormat, TimeSpan.FromMilliseconds(250))
+            var buffer = new BufferedWaveProvider(outputFormat, TimeSpan.FromMilliseconds(250))
             {
                 DiscardOnBufferOverflow = false,
                 ReadFully = true
@@ -111,6 +111,7 @@ internal static class Program
             long droppedFrames = 0;
             var recordingStopped = new ManualResetEventSlim(false);
             Exception? recordingError = null;
+            Exception? callbackError = null;
             capture.RecordingStopped += (_, e) =>
             {
                 recordingError = e.Exception;
@@ -118,17 +119,32 @@ internal static class Program
             };
             capture.DataAvailable += (_, e) =>
             {
-                var frameBytes = inputFormat.BlockAlign;
-                if (frameBytes == 0 || e.BytesRecorded % frameBytes != 0) return;
-                var frameCount = e.BytesRecorded / frameBytes;
-                if (buffer.BufferLength - buffer.BufferedBytes < e.BytesRecorded)
+                if (recordingStopped.IsSet) return;
+                try
                 {
-                    Interlocked.Add(ref droppedFrames, frameCount);
-                    return;
+                    if (e.BytesRecorded == 0) return;
+                    // Never mutate NAudio's recycled event buffer. Native DSP
+                    // receives an independent float32 copy even for PCM16 input.
+                    byte[] decoded = adapter.Decode(e.Buffer, e.BytesRecorded);
+                    engine.Process(decoded, decoded.Length, inputFormat.Channels);
+                    byte[] converted = adapter.Encode(decoded, decoded.Length);
+                    if (converted.Length == 0) return;
+                    var sourceFrames = e.BytesRecorded / inputFormat.BlockAlign;
+                    if (buffer.BufferLength - buffer.BufferedBytes < converted.Length)
+                    {
+                        Interlocked.Add(ref droppedFrames, sourceFrames);
+                        return;
+                    }
+                    buffer.AddSamples(converted, 0, converted.Length);
+                    Interlocked.Add(ref processedFrames, sourceFrames);
                 }
-                engine.Process(e.Buffer, e.BytesRecorded, inputFormat.Channels);
-                buffer.AddSamples(e.Buffer, 0, e.BytesRecorded);
-                Interlocked.Add(ref processedFrames, frameCount);
+                catch (Exception error)
+                {
+                    // Managed exceptions must not escape a WASAPI callback;
+                    // fail closed on the console thread and release endpoints.
+                    Interlocked.CompareExchange(ref callbackError, error, null);
+                    recordingStopped.Set();
+                }
             };
 
             using var shutdown = new ManualResetEventSlim(false);
@@ -145,6 +161,8 @@ internal static class Program
                 Console.WriteLine($"Output: {physical.FriendlyName}");
                 Console.WriteLine($"DSP: {boost}% gain, own C++ engine, EQ " +
                     (eqText is null ? "disabled" : $"enabled ({eqText} dB)"));
+                Console.WriteLine($"Formats: virtual {inputFormat}; physical {outputFormat}");
+                Console.WriteLine("PCM16/float32 conversion + linear rate adaptation; matching channel count required.");
                 Console.WriteLine("Press Ctrl+C to stop; this is not a shipped system driver.");
 
                 playback.Play();
@@ -153,6 +171,8 @@ internal static class Program
                 {
                     if (recordingStopped.IsSet)
                     {
+                        if (callbackError is not null)
+                            throw new IOException("PCM bridge callback failed.", callbackError);
                         if (recordingError is not null) throw recordingError;
                         throw new IOException("Virtual capture stopped unexpectedly.");
                     }

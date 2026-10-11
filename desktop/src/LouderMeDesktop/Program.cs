@@ -18,7 +18,10 @@ internal static class Program
     {
         var layoutSmokeTest = args.Any(arg =>
             arg.Equals("--layout-smoke-test", StringComparison.OrdinalIgnoreCase));
-        var smokeTest = layoutSmokeTest || args.Any(arg =>
+        var visualArgument = Array.FindIndex(args, arg =>
+            arg.Equals("--visual-evidence", StringComparison.OrdinalIgnoreCase));
+        var visualEvidence = visualArgument >= 0;
+        var smokeTest = layoutSmokeTest || visualEvidence || args.Any(arg =>
             arg.Equals("--smoke-test", StringComparison.OrdinalIgnoreCase));
 
         try
@@ -53,6 +56,30 @@ internal static class Program
             }
 
             splash.Close();
+            if (visualEvidence)
+            {
+                if (visualArgument + 1 >= args.Length ||
+                    string.IsNullOrWhiteSpace(args[visualArgument + 1]))
+                    throw new ArgumentException("--visual-evidence requires a destination directory.");
+
+                var visualResult = 0;
+                var destination = Path.GetFullPath(args[visualArgument + 1]);
+                main.Shown += (_, _) => main.BeginInvoke((Action)(() =>
+                {
+                    try
+                    {
+                        main.CaptureVisualEvidence(destination);
+                    }
+                    catch (Exception ex)
+                    {
+                        WriteStartupCrash(ex);
+                        visualResult = 1;
+                    }
+                    finally { main.Close(); }
+                }));
+                Application.Run(main);
+                return visualResult;
+            }
             if (layoutSmokeTest)
             {
                 var layoutResult = 0;

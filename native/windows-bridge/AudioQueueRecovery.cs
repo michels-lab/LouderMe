@@ -113,6 +113,16 @@ internal sealed class MonitoredRenderBuffer : IWaveProvider
             Interlocked.Increment(ref _readsWithInsufficientPcm);
         return read;
     }
+
+    // NAudio 3 IWaveProvider additionally requires Span<byte> reads.
+    public int Read(Span<byte> data)
+    {
+        int available = _source.BufferedBytes;
+        int read = _source.Read(data);
+        if (available < data.Length)
+            Interlocked.Increment(ref _readsWithInsufficientPcm);
+        return read;
+    }
 }
 
 internal sealed class AudioRouteRecoverableException : IOException

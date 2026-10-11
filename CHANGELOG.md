@@ -10,7 +10,8 @@
 
 ### Validation boundary
 - Exact-release SHA CI, Android emulator and installed WinForms Home/About render, Windows installer launch/uninstall and signing-certificate continuity must pass independently before declaring either binary published.
-- The Android Direct stable APK must be signed by the existing signing identity, not CI debug signing. Authenticode signing for Windows remains unverified.
+- The owner authorized a **one-time Android signer migration** from v0.1.10 to v0.1.11. Android users must uninstall older Direct APKs before installing v0.1.11 (possible local data loss). From v0.1.11 onward, all Direct updates must retain the newly pinned certificate; GitHub Secrets supply the private key.
+- No release without validated signer/real installed UI checks; Android Direct APK must never be signed by the CI debug identity. Authenticode signing for Windows remains unverified.
 - A unified public Michel's Lab release/feed is the final coordinated delivery; no Play Store publication is implied.
 
 

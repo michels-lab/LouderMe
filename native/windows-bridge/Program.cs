@@ -94,8 +94,8 @@ internal static class Program
             var inputFormat = capture.WaveFormat;
             var outputFormat = physical.AudioClient.MixFormat;
             // Decode to native float32 and adapt the processed stream to the
-            // actual physical mix format; channel layouts are still required
-            // to match until a measured channel-mapping policy exists.
+            // actual physical mix format; explicit mono/stereo mapping is
+            // supported. Multichannel conversion still fails closed.
             var adapter = new PcmFormatAdapter(inputFormat, outputFormat);
             if (provePhysicalRoute && inputFormat.Channels is < 1 or > 2)
                 throw new NotSupportedException(
@@ -240,7 +240,7 @@ internal static class Program
                 Console.WriteLine($"DSP: {boost}% gain, own C++ engine, EQ " +
                     (eqText is null ? "disabled" : $"enabled ({eqText} dB)"));
                 Console.WriteLine($"Formats: virtual {inputFormat}; physical {outputFormat}");
-                Console.WriteLine("PCM16/float32 conversion + linear rate adaptation; matching channel count required.");
+                Console.WriteLine("PCM16/float32 conversion + linear rate adaptation; matching channels or mono/stereo map.");
                 Console.WriteLine("Press Ctrl+C to stop; this is not a shipped system driver.");
                 if (provePhysicalRoute)
                     Console.WriteLine(

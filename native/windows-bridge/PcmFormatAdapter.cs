@@ -136,14 +136,19 @@ internal sealed class PcmFormatAdapter
         if (frames == 0) return Array.Empty<byte>();
         _antiAlias?.ProcessInPlace(floatPcm, byteCount);
 
-        int capacityFrames = checked((int)Math.Ceiling(
-            (frames + 2.0) * _output.SampleRate / _input.SampleRate) + 8);
-        var output = new byte[checked(capacityFrames * _output.BlockAlign)];
-        int emitted = 0;
         // Capture side is the sole owner of Encode; the control loop
         // updates only the atomic correction once per 250 ms.
         double packetStep = _inputFramesPerOutputFrame *
             (1.0 + Volatile.Read(ref _rateAdjustmentPpm) * 0.000001);
+        // A frequent production case is matching virtual/physical rates,
+        // with no clock correction. Allocate precisely once rather than
+        // resizing/copying an over-provisioned PCM buffer per callback.
+        bool sameRateFastPath = packetStep == 1.0 && _nextPosition == 0.0;
+        int capacityFrames = sameRateFastPath ? frames :
+            checked((int)Math.Ceiling(
+                (frames + 2.0) * _output.SampleRate / _input.SampleRate) + 8);
+        var output = new byte[checked(capacityFrames * _output.BlockAlign)];
+        int emitted = 0;
         while (_nextPosition <= frames - 1)
         {
             int leftIndex = (int)Math.Floor(_nextPosition);
@@ -192,7 +197,9 @@ internal sealed class PcmFormatAdapter
         _hasLastFrame = true;
         _nextPosition -= frames;
 
-        Array.Resize(ref output, emitted * _output.BlockAlign);
+        int bytesEmitted = emitted * _output.BlockAlign;
+        if (bytesEmitted != output.Length)
+            Array.Resize(ref output, bytesEmitted);
         return output;
     }
 
@@ -261,6 +268,7 @@ internal sealed class PcmFormatAdapter
         TestDownsampleAntiAlias(48000, 44100, 23500);
         TestDownsampleChannelIsolation();
         TestAdjustableRateContinuity();
+        TestSameRateFastPath();
 
         try
         {
@@ -275,7 +283,8 @@ internal sealed class PcmFormatAdapter
             "PASS: PCM16/float32 conversion, saturation, 44.1/48/96 kHz " +
             "streaming, short-packet interpolation, mono/stereo mapping, " +
             "windowed-sinc anti-alias rejection at 96->48 and 48->44.1 kHz, " +
-            "channel isolation, bounded clock adjustment and unsupported 5.1 rejection.");
+            "channel isolation, same-rate allocation fast path, bounded clock " +
+            "adjustment and unsupported 5.1 rejection.");
     }
 
     private static void TestMonoStereoMapping()
@@ -463,6 +472,23 @@ internal sealed class PcmFormatAdapter
         if (leftPower < 1 || rightPower > 1e-10)
             throw new InvalidOperationException(
                 "Streaming anti-alias filter leaked audio across channels.");
+    }
+
+    private static void TestSameRateFastPath()
+    {
+        var format = WaveFormat.CreateIeeeFloatWaveFormat(48000, 2);
+        var adapter = new PcmFormatAdapter(format, format);
+        for (int size = 1; size <= 1000; size += 17)
+        {
+            byte[] input = new byte[size * format.BlockAlign];
+            for (int i = 0; i < size * 2; i++)
+                BinaryPrimitives.WriteSingleLittleEndian(
+                    input.AsSpan(i * sizeof(float)), 0.0625f);
+            var output = adapter.Encode(input, input.Length);
+            if (output.Length != input.Length || !input.AsSpan().SequenceEqual(output))
+                throw new InvalidOperationException(
+                    "Same-rate fast path changed PCM content or frame count.");
+        }
     }
 
     private static void TestAdjustableRateContinuity()

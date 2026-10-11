@@ -23,6 +23,7 @@ internal sealed class PcmFormatAdapter
     private readonly bool _outputFloat;
     private readonly double _inputFramesPerOutputFrame;
     private readonly float[] _lastFrame;
+    private readonly StreamingDownsampleLowPass? _antiAlias;
     private double _nextPosition;
     private bool _hasLastFrame;
 
@@ -50,6 +51,9 @@ internal sealed class PcmFormatAdapter
         _outputFloat = IsFloat(output);
         _inputFramesPerOutputFrame = (double)input.SampleRate / output.SampleRate;
         _lastFrame = new float[_channels];
+        _antiAlias = output.SampleRate < input.SampleRate
+            ? new StreamingDownsampleLowPass(input.SampleRate, output.SampleRate, _channels)
+            : null;
     }
 
     public static bool IsSupported(WaveFormat f)
@@ -103,7 +107,9 @@ internal sealed class PcmFormatAdapter
     /// Encode DSP output for the chosen physical mixer, retaining fractional
     /// sample position and the last source frame across callback boundaries.
     /// An unpaired final frame is deliberately not extrapolated during a rate
-    /// change; no click-prone artificial padding is inserted.
+    /// change; no click-prone artificial padding is inserted. Downsampling
+    /// applies a streaming anti-alias FIR in-place to the caller-owned PCM
+    /// buffer before interpolation; input buffers must not be reused afterward.
     /// </summary>
     public byte[] Encode(byte[] floatPcm, int byteCount)
     {
@@ -113,6 +119,7 @@ internal sealed class PcmFormatAdapter
             throw new ArgumentException("Invalid native DSP packet size.", nameof(byteCount));
         int frames = byteCount / floatFrameBytes;
         if (frames == 0) return Array.Empty<byte>();
+        _antiAlias?.ProcessInPlace(floatPcm, byteCount);
 
         int capacityFrames = checked((int)Math.Ceiling(
             (frames + 2.0) * _output.SampleRate / _input.SampleRate) + 8);
@@ -231,6 +238,9 @@ internal sealed class PcmFormatAdapter
         TestShortPacketBoundaries(44100, 48000);
         TestShortPacketBoundaries(48000, 44100);
         TestShortPacketBoundaries(48000, 96000);
+        TestDownsampleAntiAlias(96000, 48000, 30000);
+        TestDownsampleAntiAlias(48000, 44100, 23500);
+        TestDownsampleChannelIsolation();
 
         try
         {
@@ -243,8 +253,9 @@ internal sealed class PcmFormatAdapter
 
         Console.WriteLine(
             "PASS: PCM16/float32 conversion, saturation, 44.1/48/96 kHz " +
-            "streaming, short-packet interpolation, explicit mono/stereo mapping " +
-            "and unsupported 5.1 mapping rejection.");
+            "streaming, short-packet interpolation, mono/stereo mapping, " +
+            "windowed-sinc anti-alias rejection at 96->48 and 48->44.1 kHz, " +
+            "channel isolation and unsupported 5.1 rejection.");
     }
 
     private static void TestMonoStereoMapping()
@@ -328,6 +339,110 @@ internal sealed class PcmFormatAdapter
         if (Math.Abs(emitted - expectedFrames) > 2)
             throw new InvalidOperationException(
                 $"Short-packet rate conversion lost frames: {emitted} vs {expectedFrames:F1}.");
+    }
+
+    // Compare the same deterministic sample path at a preserved 1 kHz tone
+    // and a tone ABOVE the output Nyquist that would otherwise alias down.
+    // Exclude the FIR's start-up transient before computing input/output RMS.
+    private static void TestDownsampleAntiAlias(int inputRate, int outputRate,
+        int rejectedToneHz)
+    {
+        double preserved = MeasureDownsampleRms(inputRate, outputRate, 1000);
+        double rejected = MeasureDownsampleRms(inputRate, outputRate, rejectedToneHz);
+        if (preserved < 0.117 || preserved > 0.158)
+            throw new InvalidOperationException(
+                $"Anti-alias filter damaged 1 kHz passband {inputRate}->{outputRate}: RMS={preserved:F6}");
+        if (rejected > preserved * 0.08)
+            throw new InvalidOperationException(
+                $"Aliasing rejection too weak at {rejectedToneHz} Hz, " +
+                $"{inputRate}->{outputRate}: stop={rejected:F6}, pass={preserved:F6}.");
+    }
+
+    private static double MeasureDownsampleRms(int inputRate, int outputRate, int toneHz)
+    {
+        var adapter = new PcmFormatAdapter(
+            WaveFormat.CreateIeeeFloatWaveFormat(inputRate, 2),
+            WaveFormat.CreateIeeeFloatWaveFormat(outputRate, 2));
+        const int totalFrames = 14000;
+        long outputFrames = 0;
+        double sumSquares = 0;
+        long analyzedFrames = 0;
+        int sourceIndex = 0;
+        int[] packets = [1, 257, 5, 541, 7, 89, 1001, 3];
+        int packetIndex = 0;
+        while (sourceIndex < totalFrames)
+        {
+            int frames = Math.Min(
+                packets[packetIndex++ % packets.Length], totalFrames - sourceIndex);
+            byte[] source = new byte[frames * 2 * sizeof(float)];
+            for (int f = 0; f < frames; f++)
+            {
+                float x = 0.2f * MathF.Sin(2f * MathF.PI * toneHz *
+                    (sourceIndex + f) / inputRate);
+                for (int ch = 0; ch < 2; ch++)
+                    BinaryPrimitives.WriteSingleLittleEndian(
+                        source.AsSpan((f * 2 + ch) * sizeof(float)), x);
+            }
+            byte[] output = adapter.Encode(source, source.Length);
+            int outputCount = output.Length / (2 * sizeof(float));
+            for (int f = 0; f < outputCount; f++)
+            {
+                float x = BinaryPrimitives.ReadSingleLittleEndian(
+                    output.AsSpan((f * 2) * sizeof(float)));
+                if (!float.IsFinite(x))
+                    throw new InvalidOperationException("Anti-alias emitted nonfinite PCM.");
+                if (outputFrames + f > 1024)
+                {
+                    sumSquares += x * x;
+                    analyzedFrames++;
+                }
+            }
+            outputFrames += outputCount;
+            sourceIndex += frames;
+        }
+
+        double expected = (double)totalFrames * outputRate / inputRate;
+        if (Math.Abs(outputFrames - expected) > 2 || analyzedFrames < 500)
+            throw new InvalidOperationException("Anti-alias streaming frame count error.");
+        return Math.Sqrt(sumSquares / analyzedFrames);
+    }
+
+    private static void TestDownsampleChannelIsolation()
+    {
+        const int inputRate = 96000;
+        const int outputRate = 48000;
+        var adapter = new PcmFormatAdapter(
+            WaveFormat.CreateIeeeFloatWaveFormat(inputRate, 2),
+            WaveFormat.CreateIeeeFloatWaveFormat(outputRate, 2));
+        double leftPower = 0;
+        double rightPower = 0;
+        for (int packet = 0; packet < 50; packet++)
+        {
+            const int frames = 127;
+            byte[] pcm = new byte[frames * 2 * sizeof(float)];
+            for (int f = 0; f < frames; f++)
+            {
+                float tone = 0.2f * MathF.Sin(2f * MathF.PI * 1000 *
+                    (packet * frames + f) / inputRate);
+                BinaryPrimitives.WriteSingleLittleEndian(
+                    pcm.AsSpan(f * 2 * sizeof(float)), tone);
+                // Right channel stays exactly zero.
+            }
+            byte[] encoded = adapter.Encode(pcm, pcm.Length);
+            if (packet < 8) continue; // zero-padded FIR warmup
+            for (int byteOffset = 0; byteOffset < encoded.Length; byteOffset += 8)
+            {
+                float left = BinaryPrimitives.ReadSingleLittleEndian(
+                    encoded.AsSpan(byteOffset));
+                float right = BinaryPrimitives.ReadSingleLittleEndian(
+                    encoded.AsSpan(byteOffset + 4));
+                leftPower += left * left;
+                rightPower += right * right;
+            }
+        }
+        if (leftPower < 1 || rightPower > 1e-10)
+            throw new InvalidOperationException(
+                "Streaming anti-alias filter leaked audio across channels.");
     }
 
     private static void TestStreamingResample(int sourceRate, int outputRate,

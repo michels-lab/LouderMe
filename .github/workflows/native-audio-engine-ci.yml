@@ -72,3 +72,8 @@ jobs:
         run: |
           dotnet "native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll" --check-loopback
           if ($LASTEXITCODE -ne 0) { throw 'Virtual loopback signal-identity verification regression failed.' }
+      - name: Verify safe lab virtual tone and physical-monitor PCM test vectors
+        shell: pwsh
+        run: |
+          dotnet "native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll" --check-route-tone
+          if ($LASTEXITCODE -ne 0) { throw 'Lab physical-route tone format/regression failed.' }

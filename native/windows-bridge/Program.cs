@@ -34,6 +34,12 @@ internal static class Program
                 PhysicalRouteTone.RunSelfTests();
                 return 0;
             }
+            if (args.Contains("--check-timing"))
+            {
+                AdaptiveBufferClock.RunSelfTests();
+                AudioProcessingTelemetry.RunSelfTests();
+                return 0;
+            }
             if (args.Contains("--check-formats"))
             {
                 PcmFormatAdapter.RunSelfTests();
@@ -97,6 +103,8 @@ internal static class Program
             // actual physical mix format; explicit mono/stereo mapping is
             // supported. Multichannel conversion still fails closed.
             var adapter = new PcmFormatAdapter(inputFormat, outputFormat);
+            var clockController = new AdaptiveBufferClock();
+            var processingTelemetry = new AudioProcessingTelemetry();
             if (provePhysicalRoute && inputFormat.Channels is < 1 or > 2)
                 throw new NotSupportedException(
                     "Physical-route lab proof requires a mono or stereo virtual mix.");
@@ -197,6 +205,7 @@ internal static class Program
             capture.DataAvailable += (_, e) =>
             {
                 if (recordingStopped.IsSet) return;
+                long processingStart = Stopwatch.GetTimestamp();
                 try
                 {
                     if (e.BytesRecorded == 0) return;
@@ -222,6 +231,15 @@ internal static class Program
                     // fail closed on the console thread and release endpoints.
                     Interlocked.CompareExchange(ref callbackError, error, null);
                     recordingStopped.Set();
+                }
+                finally
+                {
+                    // This is actual callback work time, not an acoustic
+                    // end-to-end latency measurement or total process CPU.
+                    processingTelemetry.Record(
+                        Stopwatch.GetTimestamp() - processingStart,
+                        e.BytesRecorded / inputFormat.BlockAlign,
+                        inputFormat.SampleRate);
                 }
             };
 
@@ -252,6 +270,7 @@ internal static class Program
                 monitor?.StartRecording();
                 sourceToneOutput?.Play();
                 var routeStarted = Stopwatch.GetTimestamp();
+                long lastStats = routeStarted;
                 while (!shutdown.Wait(250))
                 {
                     if (monitorError is not null)
@@ -268,10 +287,36 @@ internal static class Program
                     }
                     if (playback.PlaybackState != PlaybackState.Playing)
                         throw new IOException("Physical audio playback stopped.");
-                    Console.WriteLine($"sourceFrames={Interlocked.Read(ref processedFrames)} " +
-                        $"physicalFrames={Interlocked.Read(ref outputFrames)} " +
-                        $"droppedSourceFrames={Interlocked.Read(ref droppedFrames)} " +
-                        $"buffered={buffer.BufferedDuration.TotalMilliseconds:F0}ms");
+                    // A render device's real clock can run tens/hundreds of
+                    // ppm faster/slower than the capture endpoint. Steer the
+                    // output frame count gradually based on queue occupancy.
+                    // Allow startup to settle before applying feedback.
+                    double queuedMs = buffer.BufferedDuration.TotalMilliseconds;
+                    double correctionPpm = 0;
+                    if (Interlocked.Read(ref processedFrames) >=
+                        2L * inputFormat.SampleRate)
+                    {
+                        correctionPpm = clockController.Update(queuedMs);
+                        adapter.SetRateAdjustmentPpm(correctionPpm);
+                    }
+                    if (Stopwatch.GetElapsedTime(lastStats) >= TimeSpan.FromSeconds(1))
+                    {
+                        var timing = processingTelemetry.Read();
+                        Console.WriteLine(
+                            $"sourceFrames={Interlocked.Read(ref processedFrames)} " +
+                            $"queuedPhysicalFrames={Interlocked.Read(ref outputFrames)} " +
+                            $"droppedSourceFrames={Interlocked.Read(ref droppedFrames)} " +
+                            $"queuedAudio={queuedMs:F1}ms (NOT acoustic latency) " +
+                            $"clockCorrection={correctionPpm:+0.0;-0.0;0.0}ppm " +
+                            $"callbackWorkToAudio={timing.WorkToAudioPercent:F1}% " +
+                            $"worstCallback={timing.WorstWorkMs:F2}ms " +
+                            $"overBudgetCallbacks={timing.OverBudgetChunks}");
+                        if (queuedMs > 160)
+                            Console.Error.WriteLine(
+                                "WARNING: experimental render queue above 160 ms; " +
+                                "clock compensation may be insufficient.");
+                        lastStats = Stopwatch.GetTimestamp();
+                    }
                 }
             }
             finally

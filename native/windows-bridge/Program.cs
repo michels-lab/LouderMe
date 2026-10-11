@@ -24,6 +24,11 @@ internal static class Program
                 return CheckNative();
             if (args.Contains("--check-pipeline"))
                 return CheckPipeline();
+            if (args.Contains("--check-loopback"))
+            {
+                LoopbackToneVerifier.RunSelfTests();
+                return 0;
+            }
             if (args.Contains("--check-formats"))
             {
                 PcmFormatAdapter.RunSelfTests();
@@ -236,24 +241,30 @@ internal static class Program
                     audio.AsSpan((frame * format.Channels + ch) * sizeof(float)), value);
         }
 
-        // Any nonzero capture demonstrates that the specific virtual endpoint
-        // produced loopback data. It does NOT prove audio reached speakers.
-        double energy = 0;
-        double peak = 0;
-        long receivedSamples = 0;
+        // A nonzero stream alone can be unrelated system audio or DC noise.
+        // Prove that captured PCM has the 440 Hz identity of OUR known tone,
+        // with continuous phase across callback packets and unknown start lag.
+        var verifier = new LoopbackToneVerifier(format);
         var sync = new object();
+        Exception? callbackError = null;
+        Exception? captureError = null;
+        capture.RecordingStopped += (_, e) =>
+        {
+            if (e.Exception is not null) captureError = e.Exception;
+        };
         capture.DataAvailable += (_, e) =>
         {
             lock (sync)
             {
-                for (int i = 0; i + sizeof(float) <= e.BytesRecorded; i += sizeof(float))
+                try
                 {
-                    var sample = BinaryPrimitives.ReadSingleLittleEndian(e.Buffer.AsSpan(i));
-                    if (!float.IsFinite(sample))
-                        throw new InvalidDataException("Nonfinite PCM from virtual loopback.");
-                    energy += sample * sample;
-                    peak = Math.Max(peak, Math.Abs(sample));
-                    receivedSamples++;
+                    verifier.Add(e.Buffer.AsSpan(0, e.BytesRecorded));
+                }
+                catch (Exception ex)
+                {
+                    // NAudio's event thread must not throw and bring down
+                    // the lab host. Report and fail closed on our main thread.
+                    callbackError ??= ex;
                 }
             }
         };
@@ -272,20 +283,28 @@ internal static class Program
             capture.StopRecording();
             Thread.Sleep(150); // permit last loopback callback to complete
         }
-        double rms;
-        lock (sync) rms = receivedSamples > 0
-            ? Math.Sqrt(energy / receivedSamples) : 0;
+        if (captureError is not null)
+            throw new IOException("Virtual endpoint capture stopped with an error.", captureError);
+        if (callbackError is not null)
+            throw new IOException("Invalid virtual endpoint PCM packet.", callbackError);
+        LoopbackToneVerifier.ToneEvidence evidence;
+        lock (sync) evidence = verifier.Evaluate();
         Console.WriteLine(
-            $"Virtual PCM probe: samples={receivedSamples} RMS={rms:F5} peak={peak:F5}");
-        if (receivedSamples < format.SampleRate / 4 || rms < 0.003 || peak < 0.01)
+            $"Virtual PCM proof: frames={evidence.Frames} RMS={evidence.Rms:F5} " +
+            $"peak={evidence.Peak:F5} matched440={evidence.Matched440Amplitude:F5} " +
+            $"coherence={evidence.Coherence:F3}");
+        if (!evidence.Passed)
         {
             Console.Error.WriteLine(
-                "FAIL: virtual endpoint loopback silent/absent. No global processing claim.");
+                "FAIL: no matching 440 Hz tone in the virtual endpoint loopback. " +
+                "Other non-silent audio/DC does not qualify as proof.");
             return 3;
         }
         Console.WriteLine(
-            "PASS: virtual endpoint loopback returned non-silent PCM. " +
-            "Actual physical-device DSP routing remains separately unverified.");
+            "PASS: loopback PCM contained the specific generated 440 Hz tone " +
+            "(frequency-matched, phase-insensitive). " +
+            "This proves only the isolated LAB virtual endpoint signal. " +
+            "Physical playback and other applications remain unverified.");
         return 0;
     }
 

@@ -77,3 +77,16 @@ jobs:
         run: |
           dotnet "native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll" --check-route-tone
           if ($LASTEXITCODE -ne 0) { throw 'Lab physical-route tone format/regression failed.' }
+      - name: Parse isolated Windows LAB install/rollback script without executing it
+        shell: pwsh
+        run: |
+          $t = $null
+          $errors = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile(
+            'native/virtual-driver/run_disposable_lab.ps1', [ref]$t, [ref]$errors)
+          if ($errors.Count -ne 0) {
+            $errors | ForEach-Object { Write-Error $_.ToString() }
+            throw 'Disposable Windows lab orchestration PowerShell syntax invalid.'
+          }
+          Write-Host 'Lab VM script parses; no driver install or sound hardware access in CI.'
+

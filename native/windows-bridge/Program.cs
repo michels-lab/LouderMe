@@ -110,6 +110,7 @@ internal static class Program
             playback.Init(buffer);
 
             long processedFrames = 0;
+            long outputFrames = 0;
             long droppedFrames = 0;
             var recordingStopped = new ManualResetEventSlim(false);
             Exception? recordingError = null;
@@ -139,6 +140,7 @@ internal static class Program
                     }
                     buffer.AddSamples(converted, 0, converted.Length);
                     Interlocked.Add(ref processedFrames, sourceFrames);
+                    Interlocked.Add(ref outputFrames, converted.Length / outputFormat.BlockAlign);
                 }
                 catch (Exception error)
                 {
@@ -180,8 +182,9 @@ internal static class Program
                     }
                     if (playback.PlaybackState != PlaybackState.Playing)
                         throw new IOException("Physical audio playback stopped.");
-                    Console.WriteLine($"frames={Interlocked.Read(ref processedFrames)} " +
-                        $"dropped={Interlocked.Read(ref droppedFrames)} " +
+                    Console.WriteLine($"sourceFrames={Interlocked.Read(ref processedFrames)} " +
+                        $"physicalFrames={Interlocked.Read(ref outputFrames)} " +
+                        $"droppedSourceFrames={Interlocked.Read(ref droppedFrames)} " +
                         $"buffered={buffer.BufferedDuration.TotalMilliseconds:F0}ms");
                 }
             }

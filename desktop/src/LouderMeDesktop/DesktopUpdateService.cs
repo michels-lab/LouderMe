@@ -26,7 +26,7 @@ internal sealed record DesktopUpdateCheck(
 internal sealed class DesktopUpdateService
 {
     private const string FeedUrl =
-        "https://raw.githubusercontent.com/michels-lab/LouderMe-releases/main/louderme-desktop/latest.json";
+        "https://raw.githubusercontent.com/michels-lab/LouderME-Releases/main/louderme-desktop/latest.json";
 
     // Existing shipped versions still read the legacy endpoint. New
     // LouderMe builds prefer their own repo, falling back during migration.

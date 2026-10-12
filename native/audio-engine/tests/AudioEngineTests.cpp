@@ -66,6 +66,56 @@ void equalizerFrequencyResponse() {
     engine.process(bypass.data(), bypass.size());
     check(std::abs(bypass.back() - 0.05f) < 0.0001f, "EQ bypass");
 }
+// An abrupt EQ bypass used to jump from a strongly boosted 1 kHz crest
+// to the unprocessed sample in a single frame (an audible click). The wet/dry
+// ramp must preserve the first frame and settle to exact dry output.
+void smoothEqBypassTransition() {
+    constexpr int sampleRate = 48000;
+    AudioEngine engine(sampleRate, 1);
+    std::array<float, AudioEngine::BandCount> eq{};
+    eq[4] = 10.0f;
+    engine.setEqBandsDb(eq);
+    engine.setEqEnabled(true);
+
+    // End one sample before the crest, then switch EQ off at the crest.
+    std::vector<float> warm(sampleRate + 12);
+    for (std::size_t frame = 0; frame < warm.size(); ++frame)
+        warm[frame] = 0.08f * static_cast<float>(std::sin(
+            2.0 * 3.14159265358979323846 * 1000.0 * frame / sampleRate));
+    engine.process(warm.data(), warm.size());
+    check(warm.back() > 0.18f, "EQ wet baseline not established");
+
+    engine.setEqEnabled(false);
+    float firstDry = 0.08f; // Next input frame: 1 kHz sine crest.
+    engine.process(&firstDry, 1);
+    check(firstDry > 0.14f && firstDry < 0.30f,
+          "EQ bypass jumped immediately instead of fading");
+
+    std::vector<float> settle(9600, 0.04f);
+    engine.process(settle.data(), settle.size());
+    check(std::abs(settle.back() - 0.04f) < 0.00001f,
+          "EQ bypass did not settle to exact dry PCM");
+
+    engine.setEqEnabled(true);
+    float firstWet = 0.08f;
+    engine.process(&firstWet, 1);
+    check(std::abs(firstWet - 0.08f) < 0.005f,
+          "EQ enable caused an abrupt gain jump");
+
+    // Multichannel bypass must not introduce bleed during a fade.
+    AudioEngine stereo(sampleRate, 2);
+    stereo.setEqBandsDb(eq);
+    stereo.setEqEnabled(true);
+    std::vector<float> interleaved(4096 * 2, 0.0f);
+    for (std::size_t i = 0; i < interleaved.size(); i += 2)
+        interleaved[i] = 0.06f;
+    stereo.process(interleaved.data(), 4096);
+    stereo.setEqEnabled(false);
+    stereo.process(interleaved.data(), 4096);
+    for (std::size_t i = 1; i < interleaved.size(); i += 2)
+        check(interleaved[i] == 0.0f, "EQ transition leaked into silent channel");
+}
+
 void invalidAndFormats() {
     bool failed = false;
     try { AudioEngine invalid(48000, 0); }
@@ -90,6 +140,7 @@ int main() {
         unityAndBoost();
         limiterAndChannels();
         equalizerFrequencyResponse();
+        smoothEqBypassTransition();
         invalidAndFormats();
         std::cout << "LouderME native DSP: tests passed\n";
         return 0;

@@ -401,6 +401,15 @@ internal sealed class MainForm : Form
             _boostWave.BoostPercent = _boost.Value;
             if (_loading) return;
             _settings.BoostPercent = _boost.Value;
+            // A nonzero Boost level selected by the user is an activation request,
+            // not merely a decorative target while the checkbox stays off.
+            if (_boost.Value > 100 && !_boostEnabled.Checked)
+            {
+                _loading = true;
+                try { _boostEnabled.Checked = true; }
+                finally { _loading = false; }
+                _settings.BoostEnabled = true;
+            }
         };
         _boost.MouseUp += (_, _) => ApplyProcessing();
         _boost.KeyUp += (_, _) => ApplyProcessing();
@@ -577,6 +586,13 @@ internal sealed class MainForm : Form
         {
             if (_loading || _preset.SelectedItem is not string name) return;
             _settings.Preset = name;
+            if (!_eqEnabled.Checked)
+            {
+                _loading = true;
+                try { _eqEnabled.Checked = true; }
+                finally { _loading = false; }
+                _settings.EqualizerEnabled = true;
+            }
             if (name.Equals("Custom", StringComparison.OrdinalIgnoreCase))
             {
                 ApplyProcessing();
@@ -648,8 +664,13 @@ internal sealed class MainForm : Form
                 if (_loading) return;
 
                 _settings.Preset = "Custom";
+                _settings.EqualizerEnabled = true;
                 _loading = true;
-                try { _preset.SelectedItem = "Custom"; }
+                try
+                {
+                    _preset.SelectedItem = "Custom";
+                    _eqEnabled.Checked = true;
+                }
                 finally { _loading = false; }
                 _settings.EqualizerGainsDb[index] = (float)value.Value;
                 _eqWave.Gains = _settings.EqualizerGainsDb;

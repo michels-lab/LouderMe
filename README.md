@@ -6,7 +6,7 @@ LouderMe is an Android audio utility by **Michel's Lab** for increasing quiet me
 
 ## Current public release bundle
 
-**Android v0.1.10 + Windows Desktop v0.1.5**
+**Android v0.1.11 + Windows Desktop v0.1.11** (last verified public bundle). Maintenance v0.1.12 is a new candidate until GitHub source releases, signatures, installed UI gates and unified public publisher all succeed.
 
 Michel's Lab publishes the current stable Android and Windows binaries together on one public GitHub release page. Platform versions remain explicit when their release lines differ.
 
@@ -46,21 +46,17 @@ The `sideload` flavor:
 Android still requires system/user confirmation for APK installation.
 
 Public feed:
-`michels-lab/LouderME-Releases/louderme/latest.json` (legacy installations keep using the old Michel's Life release repo manifest until their binaries migrate)
+`michels-lab/LouderME-Releases/louderme/latest.json` — current LouderMe Direct source accepts **only** the dedicated product feed. Previously installed old versions may still contain earlier fallback logic.
 
-The LouderMe source repository remains private.
+The LouderMe source is maintained separately from the **public binary-release repository** `michels-lab/LouderME-Releases`. Do not confuse the source repo's GitHub releases with the customer-facing unified release.
 
 ## One-time signing transition
 
 Versions through v0.1.3 were GitHub CI debug APKs. Hosted CI debug certificates are not a durable update identity.
 
-v0.1.4 establishes the first **stable Michel's Lab sideload signing key**. Because Android only allows in-place updates signed by an accepted signing identity, an existing v0.1.3 debug installation cannot be silently converted to the new stable key.
+v0.1.11 established the current permanent Michel's Lab Direct signer (SHA-256 certificate starts `4a5bb9d9`), different from prior v0.1.10 and earlier. Versions v0.1.11 and later must retain this signer for in-place Direct updates. Earlier signers cannot update into this line in place.
 
-The one-time migration is:
-1. install/save any desired settings manually;
-2. uninstall the old debug-signed LouderMe;
-3. install the stable-signed v0.1.4 sideload APK;
-4. from then on, the direct updater can perform future same-key updates.
+For Direct installations at v0.1.10 or earlier, back up settings, uninstall the old package (this may remove app-local data), then install v0.1.11 or later. Users already on v0.1.11 should be able to update to v0.1.12 with the SAME certificate if the signed release passes CI.
 
 ## Visual system
 
@@ -71,8 +67,8 @@ near-black workspace, layered blue-black surfaces, cyan/blue operational accents
 - Product: `LouderMe`
 - Studio: **Michel's Lab**
 - Android package: `com.michelslab.louderme`
-- Current Android version: `0.1.10`
-- Current Windows Desktop version: `0.1.5`
+- Current verified public Android version: `0.1.11`; candidate source version: `0.1.12`
+- Current verified public Windows Desktop version: `0.1.11`; candidate source version: `0.1.12`
 - Developer: Michel Duarte / Michel Armando Duarte Flores
 - License: Proprietary — All Rights Reserved
 
@@ -86,7 +82,7 @@ LouderMe now has two update channels:
 
 Direct updates verify SHA-256, package identity, version and signing identity before Android receives the package.
 
-v0.1.4 is the stable-signing migration baseline. Older CI-debug APKs require one uninstall/reinstall because Android will not accept a new signing identity as an in-place update. After the stable v0.1.4 baseline is installed, later direct releases can update in place.
+v0.1.11 is the current permanent-signing baseline for Direct updates. Versions signed with an older key cannot upgrade in place to this certificate. Future releases retain the v0.1.11 signing identity.
 
 Android still shows the required system installation confirmation.
 

@@ -352,13 +352,77 @@ jobs:
         shell: bash
         run: |
           rm -f signing/louderme-sideload.jks
+  signed_visual_qa:
+    name: Install FINAL signed APK and validate Home/About evidence
+    needs: [validate, release_guard, sign_sideload]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.release_guard.outputs.publish == 'true' && needs.sign_sideload.outputs.signed_ready == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate screenshot tool syntax and install image verifier
+        run: |
+          python3 -m py_compile tools/capture_android_visual.py tools/visual_release_gate.py
+          python3 -m pip install Pillow==11.3.0
+      - name: Fetch exact FINAL release-signed APK and its checksum
+        uses: actions/download-artifact@v4
+        with:
+          name: LouderMe-v${{ needs.validate.outputs.version }}-stable-sideload
+          path: signed-input
+      - name: Verify the signed candidate bytes before emulated installation
+        shell: bash
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          set -euo pipefail
+          APK="signed-input/LouderMe-v$VERSION-sideload.apk"
+          SUM="$APK.sha256"
+          test -s "$APK" && test -s "$SUM"
+          EXPECTED="$(awk 'NR==1 {print $1}' "$SUM")"
+          ACTUAL="$(sha256sum "$APK" | awk '{print $1}')"
+          test "$EXPECTED" = "$ACTUAL"
+          echo "Final signed release APK hash matches verified signing artifact."
+      - name: Enable Android emulator acceleration
+        run: |
+          if [ -e /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
+      - name: Install signed RELEASE APK, capture real Home/About on two viewports
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_6
+          script: bash tools/run_android_signed_visual_ci.sh
+      - name: Fail closed on real signed APK rendered-UI evidence mismatch
+        run: |
+          python3 tools/visual_release_gate.py \
+            --manifest artifacts/visual/android-signed/manifest.json \
+            --source-sha "$GITHUB_SHA" --platforms android --surfaces home,about
+          python3 tools/verify_signed_android_evidence.py \
+            --manifest artifacts/visual/android-signed/manifest.json \
+            --signed-apk "signed-input/LouderMe-v${{ needs.validate.outputs.version }}-sideload.apk"
+      - name: Retain signed-APK proof and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LouderMe-Android-Signed-Rendered-UI-${{ github.sha }}
+          path: artifacts/visual/android-signed/
+          if-no-files-found: warn
+          retention-days: 30
+
   publish_private_release:
     name: Publish validated private release
     needs:
       - validate
       - release_guard
       - sign_sideload
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.release_guard.outputs.publish == 'true' && needs.sign_sideload.outputs.signed_ready == 'true'
+      - signed_visual_qa
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.release_guard.outputs.publish == 'true' && needs.sign_sideload.outputs.signed_ready == 'true' && needs.signed_visual_qa.result == 'success'
     runs-on: ubuntu-latest
 
     steps:

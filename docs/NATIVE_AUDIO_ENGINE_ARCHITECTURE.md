@@ -1,6 +1,6 @@
 # Michel's Lab Audio Engine — native DSP and platform routing
 
-Status: **Milestone 1, portable DSP only. Windows global routing not implemented.**
+Status: **Portable native C++ DSP plus experimental Windows PCM bridge and unsigned lab driver source; stable Windows global routing remains unimplemented.**
 Decision date: 2026-10-08. Owner: LouderME / Michel's Lab.
 
 ## Product decision
@@ -51,7 +51,7 @@ Implementation: `native/audio-engine/include/louderme/AudioEngine.hpp` and `src/
 
 - Mono to eight-channel interleaved float32 PCM; 8–384 kHz; preallocated filter state.
 - Gain 100–250%, one scalar across channels with 5 ms exponential smoothing; gain disabled = unity.
-- Seven equalizer peaking bands (60/170/310/600/1000/3000/12000 Hz; Q=1.2; gains clamped to ±10 dB). When disabled, bypass. Band changes currently clear state (not pop-free at runtime).
+- Seven equalizer peaking bands (60/170/310/600/1000/3000/12000 Hz; Q=1.2; gains clamped to ±10 dB). When disabled, bypass. EQ on/off and live band changes now transition through preallocated 5 ms crossfades; rapid off/on events preserve active wet filter history. These are synthetic DSP guarantees, not proof of physical click-free sound.
 - Soft limiting begins at magnitude 0.88 and stays within ±1.0 PCM to mitigate hard digital clipping. This is **not** true-peak / lookahead limiting and can introduce distortion on high-level input; it does not guarantee hearing safety or prevent clipping after hardware gain.
 - `process()` does not allocate memory and accepts frames from a host; setters **are not safe for concurrent use** with the audio thread. Add lock-free state transfer before connecting a real device backend.
 - All PCM remains local; core does not open devices, access networking, record audio or modify OS volume.

@@ -1912,3 +1912,7 @@ The master audit identified missing automated visual evidence checks in LouderMe
 - **Change:** Only reset the dormant filter bank when re-enabling from fully settled dry bypass (`currentEqMix_ == 0.0`). A rapid reactivation retains running filter history and reverses the existing wet/dry envelope. No changes to audio callback allocations or locks.
 - **Regression:** A deterministic test warms two equalized DSP engines, instantly off/on toggles one without intervening frames and requires sample-by-sample output equality with the untouched reference. Linux and Windows CTest, managed bridge and Android CI remain required before merge.
 - **Scope:** Synthetic evidence only; Windows native global endpoint routing, physical click tests and signed driver still pending under #48. No stable release authorized.
+
+## 2026-10-12 — Synchronize shared agent contract 2026-10-12.1
+
+Updated only the managed blocks in AGENTS.md and .github/copilot-instructions.md from the master canonical source; all local constraints remain unchanged. Body SHA256: 67279f7a0ea27a6212d58d81fe985537e830a974f4a9d73e2759f06177a2af6e. This brings shared installer and independent CI work policy to the current version. No product source, version or release changes. Master coordination reconciles expired reservations separately; ongoing native audio development and hardware validation remain independent. Exact-head Android CI is required before integration; desktop workflow excludes documentation-only changes.

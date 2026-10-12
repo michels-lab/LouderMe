@@ -119,6 +119,14 @@ jobs:
         shell: pwsh
         run: pwsh -File desktop/tools/verify_release_identity.ps1
 
+      - name: Verify Windows audio activation and attenuation restoration contracts
+        shell: pwsh
+        run: |
+          dotnet run --project desktop/src/LouderMeDesktop/LouderMeDesktop.csproj -c Release --no-build -- --check-apo-contract
+          if ($LASTEXITCODE -ne 0) {
+            throw "LouderMe APO setup, mismatch detection or audio-path attenuation restore failed."
+          }
+
       - name: Publish portable Windows executable
         shell: pwsh
         run: |
@@ -234,11 +242,9 @@ jobs:
 
           gh release view $tag *> $null
           if ($LASTEXITCODE -eq 0) {
-            gh release upload $tag @assets --clobber
-            gh release edit $tag --title "LouderMe Desktop v$v" --notes-file $notes --prerelease=false
-          } else {
-            gh release create $tag @assets --title "LouderMe Desktop v$v" --notes-file $notes --target "${{ github.sha }}"
+            throw "Desktop release tag $tag already exists. Refusing to overwrite signed/validated public binary identity."
           }
+          gh release create $tag @assets --title "LouderMe Desktop v$v" --notes-file $notes --target "${{ github.sha }}"
 
       - name: Upload release transfer artifact
         uses: actions/upload-artifact@v4

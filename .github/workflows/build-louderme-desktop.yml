@@ -65,6 +65,10 @@ jobs:
           dotnet restore desktop/src/LouderMeDesktop/LouderMeDesktop.csproj
           dotnet build desktop/src/LouderMeDesktop/LouderMeDesktop.csproj -c Release --no-restore
 
+      - name: Verify LouderMe-only installer and updater publisher
+        shell: pwsh
+        run: pwsh -File desktop/tools/verify_release_identity.ps1
+
       - name: Run real compact-window About and scroll smoke test
         shell: pwsh
         run: |

@@ -90,14 +90,17 @@ The executable/shortcut/taskbar icon remains derived from the official LouderMe 
 
 LouderMe Desktop reads the public stable manifest:
 
-`https://raw.githubusercontent.com/michels-lab/LouderME-Releases/main/louderme-desktop/latest.json` (legacy builds continue to use the old manifest URL until updated)
+`https://raw.githubusercontent.com/michels-lab/LouderME-Releases/main/louderme-desktop/latest.json`
+
+New builds **never fall back** to the Michel's Life release channel. Previously shipped binaries may still have their historical fallback until updated; this change cannot alter an already installed executable.
 
 Update behavior:
 1. compare the published stable version against the running assembly/product version;
 2. only expose install action when a newer version exists;
 3. download the published installer into the user's local LouderMe update folder;
-4. verify the installer SHA-256 from the manifest;
-5. ask Windows to launch the verified installer.
+4. reject feeds for other apps, unsupported schema/platform/channel, non-HTTPS or non-LouderME-Releases URLs, malformed version fields and malformed SHA-256 values;
+5. verify the installer SHA-256 from the trusted manifest;
+6. ask Windows to launch the verified installer.
 
 The updater never treats an unverified download as installable.
 

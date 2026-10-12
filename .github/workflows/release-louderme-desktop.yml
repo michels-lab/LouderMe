@@ -115,6 +115,10 @@ jobs:
             throw 'LouderMe installer must keep FoamLens-style clean wizard without custom banner images.'
           }
 
+      - name: Verify LouderMe-only installer and updater publisher
+        shell: pwsh
+        run: pwsh -File desktop/tools/verify_release_identity.ps1
+
       - name: Publish portable Windows executable
         shell: pwsh
         run: |

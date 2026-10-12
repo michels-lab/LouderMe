@@ -45,7 +45,9 @@ void AudioEngine::setBoostPercent(int percent) noexcept {
 void AudioEngine::setEqEnabled(bool enabled) noexcept {
     // Reset when engaging an idle EQ bank, never midway through fade-out.
     // The processing loop continues the filter while its wet mix fades.
-    if (enabled && !eqEnabled_) reset();
+    // Only clear stale histories after bypass has completely settled.
+    // A rapid off→on toggle during fade-out must preserve the wet bank.
+    if (enabled && !eqEnabled_ && currentEqMix_ == 0.0) reset();
     eqEnabled_ = enabled;
     targetEqMix_ = enabled ? 1.0 : 0.0;
 }

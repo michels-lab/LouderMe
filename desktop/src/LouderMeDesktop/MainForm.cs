@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Drawing.Drawing2D;
+using System.Security.Principal;
 
 namespace LouderMeDesktop;
 
@@ -21,6 +22,7 @@ internal sealed class MainForm : Form
     private readonly Label _boostValue = new();
     private readonly Label _boostDb = new();
     private readonly Label _engineStatus = new();
+    private readonly Button _connectEngineAction = new();
     private readonly CheckBox _eqEnabled = new();
     private readonly ComboBox _preset = new();
     private readonly NumericUpDown[] _eqBands = new NumericUpDown[7];
@@ -477,9 +479,38 @@ internal sealed class MainForm : Form
             if (_apo.GetStatus().Installed) ApplyProcessing();
             else RefreshEngineStatus();
         };
+        _connectEngineAction.Text = "Connect Boost/EQ (Windows setup)";
+        _connectEngineAction.AutoSize = true;
+        _connectEngineAction.FlatStyle = FlatStyle.Flat;
+        _connectEngineAction.ForeColor = Gold;
+        _connectEngineAction.BackColor = Surface;
+        _connectEngineAction.Padding = new Padding(8, 5, 8, 5);
+        _connectEngineAction.FlatAppearance.BorderColor = Line;
+        _connectEngineAction.Click += async (_, _) => await ConnectEngineAsync();
+        actions.Controls.Add(_connectEngineAction);
         actions.Controls.Add(getEngine);
         actions.Controls.Add(configure);
         actions.Controls.Add(refresh);
+
+        var copyDiagnostics = Button("Copy audio diagnostics", Cyan);
+        copyDiagnostics.Click += (_, _) =>
+        {
+            var status = _apo.GetStatus(_settings);
+            var report =
+                $"LouderMe Desktop v{_updates.CurrentVersionText}\\n" +
+                $"Output device: {_deviceValue.Text}\\n" +
+                $"Equalizer APO installed: {status.Installed}\\n" +
+                $"LouderMe APO include active: {status.Configured}\\n" +
+                $"Stored DSP config matches UI: {status.MatchesSettings}\\n" +
+                $"Boost target: {_settings.BoostPercent}%, enabled: {_settings.BoostEnabled}\\n" +
+                $"EQ enabled: {_settings.EqualizerEnabled}\\n" +
+                $"Status: {status.Message}\\n" +
+                "Audio audible effect: NOT automatically verified";
+            Clipboard.SetText(report.Replace("\\n", Environment.NewLine));
+            _engineStatus.ForeColor = Cyan;
+            _engineStatus.Text = "Audio diagnostic snapshot copied. This does not prove audible processing.";
+        };
+        actions.Controls.Add(copyDiagnostics);
         layout.SetColumnSpan(actions, 2);
         layout.Controls.Add(actions, 0, 6);
 
@@ -771,7 +802,7 @@ internal sealed class MainForm : Form
         if (_loading) return;
 
         DesktopSettingsStore.Save(_settings);
-        var status = _apo.GetStatus();
+        var status = _apo.GetStatus(_settings);
 
         if (!status.Installed)
         {
@@ -788,8 +819,8 @@ internal sealed class MainForm : Form
         {
             _engineStatus.ForeColor = Gold;
             _engineStatus.Text =
-                "Equalizer APO is installed, but Windows denied write access to its config folder. " +
-                "Run LouderMe as administrator once to link the managed configuration.";
+                "NOT APPLIED: Windows denied configuration access. Click Connect Boost/EQ " +
+                "and approve the one-time Windows prompt. No administrator mode is required for normal use.";
         }
         catch (Exception ex)
         {
@@ -797,32 +828,99 @@ internal sealed class MainForm : Form
         }
     }
 
+    private async Task ConnectEngineAsync()
+    {
+        if (!_apo.GetStatus().Installed)
+        {
+            MessageBox.Show(
+                "Install Equalizer APO first, attach it to the active playback " +
+                "device in Configurator, and restart Windows if requested.",
+                "LouderMe audio engine", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        var choice = MessageBox.Show(
+            "LouderMe needs one-time administrator permission to add its own " +
+            "include to Equalizer APO's configuration and grant your Windows " +
+            "account write access to LouderMe.txt ONLY. Existing APO settings " +
+            "are backed up; other audio settings are not replaced.\\n\\n" +
+            "Windows will ask for approval. Continue?",
+            "Connect LouderMe audio processing",
+            MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+        if (choice != DialogResult.Yes) return;
+
+        _connectEngineAction.Enabled = false;
+        try
+        {
+            var sid = WindowsIdentity.GetCurrent().User?.Value
+                ?? throw new InvalidOperationException("Current Windows SID unavailable.");
+            var start = new ProcessStartInfo
+            {
+                FileName = Environment.ProcessPath ?? Application.ExecutablePath,
+                Verb = "runas",
+                UseShellExecute = true,
+            };
+            start.ArgumentList.Add("--setup-apo");
+            start.ArgumentList.Add(sid);
+            using var process = Process.Start(start)
+                ?? throw new InvalidOperationException("Windows setup could not be started.");
+            await process.WaitForExitAsync();
+            if (process.ExitCode != 0)
+            {
+                _engineStatus.ForeColor = Red;
+                _engineStatus.Text = "Audio connection setup failed or was cancelled. " +
+                    "Check the Windows setup error; audio processing is not confirmed.";
+                return;
+            }
+
+            ApplyProcessing();
+            RefreshEngineStatus();
+        }
+        catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223)
+        {
+            _engineStatus.ForeColor = Gold;
+            _engineStatus.Text = "One-time audio activation was cancelled. Boost/EQ not verified.";
+        }
+        catch (Exception ex)
+        {
+            ShowEngineError(ex);
+        }
+        finally
+        {
+            _connectEngineAction.Enabled = true;
+        }
+    }
+
     private void RefreshEngineStatus()
     {
-        var status = _apo.GetStatus();
+        var status = _apo.GetStatus(_settings);
+        _connectEngineAction.Enabled = status.Installed;
 
         if (!status.Installed)
         {
             _engineStatus.ForeColor = Gold;
             _engineStatus.Text =
-                "Boost/EQ unavailable: Equalizer APO is not detected. Install Equalizer APO, " +
-                "select your playback device in Configurator and restart Windows if required. " +
-                "Then click Refresh engine. Device volume works without APO.";
+                "NOT ACTIVE · Boost/EQ unavailable until Equalizer APO is installed, " +
+                "the output is selected in Configurator and Windows is restarted if required. " +
+                "The Windows 0–100% volume control remains independent.";
             return;
         }
 
-        if (!status.Configured)
+        if (!status.Configured || !status.MatchesSettings)
         {
             _engineStatus.ForeColor = Gold;
-            _engineStatus.Text =
-                status.Message + " Change any LouderMe boost/EQ control to link it.";
+            _engineStatus.Text = status.Message +
+                " Click Connect Boost/EQ for one-time access setup if Windows denies writes.";
             return;
         }
 
-        _engineStatus.ForeColor = Cyan;
+        _engineStatus.ForeColor = Gold;
         _engineStatus.Text =
-            $"{status.Message} Target boost: {_settings.BoostPercent}% " +
-            $"({BoostMath.PercentToDb(_settings.BoostPercent):+0.00;-0.00;0.00} dB).";
+            $"APO CONFIG WRITTEN, SOUND NOT VERIFIED · Target: " +
+            $"{(_settings.BoostEnabled ? _settings.BoostPercent : 100)}% " +
+            $"({(_settings.BoostEnabled ? BoostMath.PercentToDb(_settings.BoostPercent) : 0):+0.00;-0.00;0.00} dB). " +
+            "If sound is unchanged, attach Equalizer APO to the selected playback device " +
+            "in Configurator, check Windows audio enhancements and restart if requested.";
     }
 
     private void UpdateEqValueLabels()

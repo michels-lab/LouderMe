@@ -39,6 +39,9 @@ private:
     int boostPercent_{100};
     double currentGain_{1.0};
     double targetGain_{1.0};
+    // Crossfade between dry and seven-band EQ to avoid abrupt bypass clicks.
+    double currentEqMix_{0.0};
+    double targetEqMix_{0.0};
     double smoothingCoefficient_;
     std::array<float, BandCount> bandGainsDb_{};
     std::vector<std::array<Biquad, BandCount>> filters_;

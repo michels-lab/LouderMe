@@ -1874,3 +1874,12 @@ The master audit identified missing automated visual evidence checks in LouderMe
 - Inno Setup desktop installer now shows Welcome and requires interactive acceptance of root `LICENSE` (full LouderMe proprietary terms), instead of relying on the desktop two-line license stub.
 - Existing optional unchecked desktop shortcut and separate startup preference preserved. Added an unchecked user-requested postinstall bilingual taskbar-pinning guide via Notepad; no unsupported silent automatic taskbar pins.
 - Exact-head desktop Windows installer CI and interactive wizard evidence pending; release/version unchanged. Shared contract authority: `michels-lab/Michel-Software-Standards/standards/WINDOWS_INSTALLER_EXPERIENCE_STANDARD.md`.
+
+
+## 2026-10-11 — Native DSP EQ bypass de-click regression candidate
+
+- **Found:** EQ enable/disable in the portable C++ audio engine previously switched between fully wet/dry signal in one PCM frame. With a boosted 1 kHz band this can create a sudden amplitude discontinuity even if the separate Boost gain is smoothed.
+- **Candidate change:** AudioEngine now mixes dry and filtered PCM using a 5 ms exponential crossfade (existing gain smoothing coefficient), with no allocation or locks in process(). Filters continue updating through fade-out; a fully bypassed path skips biquads and snaps to exact dry output once the residual mix is <1e-7. Stereo/channel processing remains separate.
+- **Regression:** New deterministic C++ test exercises wet baseline at a tone crest, first frame after EQ bypass, fully settled dry level, first frame of re-enable and silent right-channel isolation. Existing DSP gain/limiter/EQ/frequency tests remain mandatory in Linux and Windows CTest jobs.
+- **Validation status:** PR candidate; current-head GitHub Actions CTest must pass before integration. This is synthetic DSP evidence, NOT real virtual-driver audio routing, physical click measurement, true-peak limiter validation or dynamic seven-band gain-change smoothing. Those remain open in #48.
+- **Release:** no installer/APK/update channel changes and no release authorization; stable LouderME v0.1.11 stays unchanged.

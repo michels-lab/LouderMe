@@ -42,9 +42,15 @@ internal static class EqualizerApoConfigBuilder
         return sb.ToString();
     }
 
+    // Equalizer APO ignores commented lines. A commented sample include must
+    // never be mistaken for a working LouderMe connection.
+    public static bool HasActiveInclude(string existingConfig) =>
+        existingConfig.Split('\n').Any(line =>
+            line.Trim().Equals(IncludeLine, StringComparison.OrdinalIgnoreCase));
+
     public static string EnsureInclude(string existingConfig)
     {
-        if (existingConfig.Contains(IncludeLine, StringComparison.OrdinalIgnoreCase))
+        if (HasActiveInclude(existingConfig))
             return existingConfig;
 
         var prefix = existingConfig.EndsWith(Environment.NewLine, StringComparison.Ordinal)

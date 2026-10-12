@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Drawing.Drawing2D;
+using System.Security.Principal;
 
 namespace LouderMeDesktop;
 
@@ -21,6 +22,11 @@ internal sealed class MainForm : Form
     private readonly Label _boostValue = new();
     private readonly Label _boostDb = new();
     private readonly Label _engineStatus = new();
+    private readonly Button _connectEngineAction = new();
+    private readonly Button _audioPathTestAction = new();
+    private FlowLayoutPanel? _boostQuickActions;
+    private bool _diagnosticRunning;
+    private bool? _lastAudioTestHeard;
     private readonly CheckBox _eqEnabled = new();
     private readonly ComboBox _preset = new();
     private readonly NumericUpDown[] _eqBands = new NumericUpDown[7];
@@ -396,6 +402,15 @@ internal sealed class MainForm : Form
             _boostWave.BoostPercent = _boost.Value;
             if (_loading) return;
             _settings.BoostPercent = _boost.Value;
+            // A nonzero Boost level selected by the user is an activation request,
+            // not merely a decorative target while the checkbox stays off.
+            if (_boost.Value > 100 && !_boostEnabled.Checked)
+            {
+                _loading = true;
+                try { _boostEnabled.Checked = true; }
+                finally { _loading = false; }
+                _settings.BoostEnabled = true;
+            }
         };
         _boost.MouseUp += (_, _) => ApplyProcessing();
         _boost.KeyUp += (_, _) => ApplyProcessing();
@@ -415,6 +430,7 @@ internal sealed class MainForm : Form
             WrapContents = true,
             Margin = new Padding(0, 4, 0, 8),
         };
+        _boostQuickActions = quick;
         foreach (var level in new[] { 100, 125, 150, 175, 200, 225, 250 })
         {
             var button = Button($"{level}%", Cyan);
@@ -477,9 +493,49 @@ internal sealed class MainForm : Form
             if (_apo.GetStatus().Installed) ApplyProcessing();
             else RefreshEngineStatus();
         };
+        _connectEngineAction.Text = "Connect Boost/EQ (Windows setup)";
+        _connectEngineAction.AutoSize = true;
+        _connectEngineAction.FlatStyle = FlatStyle.Flat;
+        _connectEngineAction.ForeColor = Gold;
+        _connectEngineAction.BackColor = Surface;
+        _connectEngineAction.Padding = new Padding(8, 5, 8, 5);
+        _connectEngineAction.FlatAppearance.BorderColor = Line;
+        _connectEngineAction.Click += async (_, _) => await ConnectEngineAsync();
+        actions.Controls.Add(_connectEngineAction);
         actions.Controls.Add(getEngine);
         actions.Controls.Add(configure);
         actions.Controls.Add(refresh);
+
+        _audioPathTestAction.AutoSize = true;
+        _audioPathTestAction.Text = "Test audio path (-18 dB temporarily)";
+        _audioPathTestAction.FlatStyle = FlatStyle.Flat;
+        _audioPathTestAction.ForeColor = Cyan;
+        _audioPathTestAction.BackColor = Surface;
+        _audioPathTestAction.Padding = new Padding(8, 5, 8, 5);
+        _audioPathTestAction.FlatAppearance.BorderColor = Line;
+        _audioPathTestAction.Click += async (_, _) => await TestAudioPathAsync();
+        actions.Controls.Add(_audioPathTestAction);
+
+        var copyDiagnostics = Button("Copy audio diagnostics", Cyan);
+        copyDiagnostics.Click += (_, _) =>
+        {
+            var status = _apo.GetStatus(_settings);
+            var report =
+                $"LouderMe Desktop v{_updates.CurrentVersionText}\\n" +
+                $"Output device: {_deviceValue.Text}\\n" +
+                $"Equalizer APO installed: {status.Installed}\\n" +
+                $"LouderMe APO include active: {status.Configured}\\n" +
+                $"Stored DSP config matches UI: {status.MatchesSettings}\\n" +
+                $"Boost target: {_settings.BoostPercent}%, enabled: {_settings.BoostEnabled}\\n" +
+                $"EQ enabled: {_settings.EqualizerEnabled}\\n" +
+                $"Audio path test audible attenuation: {(_lastAudioTestHeard is null ? "Not tested" : _lastAudioTestHeard.Value ? "Yes (user-reported)" : "No (user-reported)")}\\n" +
+                $"Status: {status.Message}\\n" +
+                "Audio audible effect: NOT automatically verified";
+            Clipboard.SetText(report.Replace("\\n", Environment.NewLine));
+            _engineStatus.ForeColor = Cyan;
+            _engineStatus.Text = "Audio diagnostic snapshot copied. This does not prove audible processing.";
+        };
+        actions.Controls.Add(copyDiagnostics);
         layout.SetColumnSpan(actions, 2);
         layout.Controls.Add(actions, 0, 6);
 
@@ -532,6 +588,13 @@ internal sealed class MainForm : Form
         {
             if (_loading || _preset.SelectedItem is not string name) return;
             _settings.Preset = name;
+            if (!_eqEnabled.Checked)
+            {
+                _loading = true;
+                try { _eqEnabled.Checked = true; }
+                finally { _loading = false; }
+                _settings.EqualizerEnabled = true;
+            }
             if (name.Equals("Custom", StringComparison.OrdinalIgnoreCase))
             {
                 ApplyProcessing();
@@ -603,8 +666,13 @@ internal sealed class MainForm : Form
                 if (_loading) return;
 
                 _settings.Preset = "Custom";
+                _settings.EqualizerEnabled = true;
                 _loading = true;
-                try { _preset.SelectedItem = "Custom"; }
+                try
+                {
+                    _preset.SelectedItem = "Custom";
+                    _eqEnabled.Checked = true;
+                }
                 finally { _loading = false; }
                 _settings.EqualizerGainsDb[index] = (float)value.Value;
                 _eqWave.Gains = _settings.EqualizerGainsDb;
@@ -771,7 +839,8 @@ internal sealed class MainForm : Form
         if (_loading) return;
 
         DesktopSettingsStore.Save(_settings);
-        var status = _apo.GetStatus();
+        if (_diagnosticRunning) return;
+        var status = _apo.GetStatus(_settings);
 
         if (!status.Installed)
         {
@@ -788,8 +857,8 @@ internal sealed class MainForm : Form
         {
             _engineStatus.ForeColor = Gold;
             _engineStatus.Text =
-                "Equalizer APO is installed, but Windows denied write access to its config folder. " +
-                "Run LouderMe as administrator once to link the managed configuration.";
+                "NOT APPLIED: Windows denied configuration access. Click Connect Boost/EQ " +
+                "and approve the one-time Windows prompt. No administrator mode is required for normal use.";
         }
         catch (Exception ex)
         {
@@ -797,32 +866,178 @@ internal sealed class MainForm : Form
         }
     }
 
+    private async Task TestAudioPathAsync()
+    {
+        if (_diagnosticRunning) return;
+        var status = _apo.GetStatus(_settings);
+        if (!status.Configured || !status.MatchesSettings)
+        {
+            RefreshEngineStatus();
+            MessageBox.Show(
+                "Connect LouderMe to Equalizer APO first. The current " +
+                "Boost/EQ settings are not present in an active configuration.",
+                "Audio processing not active", MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+            return;
+        }
+        if (MessageBox.Show(
+            "Play music or speech at a comfortable level on the output " +
+            "shown in LouderMe. This test will temporarily make the sound " +
+            "QUIETER by 18 dB for four seconds, then restore your original settings. " +
+            "No microphone or recording is used.\\n\\nStart test?",
+            "Test Windows audio processing", MessageBoxButtons.YesNo,
+            MessageBoxIcon.Question) != DialogResult.Yes)
+            return;
+
+        _diagnosticRunning = true;
+        _audioPathTestAction.Enabled = false;
+        var performed = false;
+        try
+        {
+            _apo.ApplyDiagnosticAttenuation(_settings);
+            performed = true;
+            _engineStatus.ForeColor = Gold;
+            _engineStatus.Text = "TESTING -18 dB ATTENUATION · Your playing audio should " +
+                "be much quieter for four seconds if Equalizer APO is really attached.";
+            await Task.Delay(4000);
+        }
+        catch (Exception ex)
+        {
+            ShowEngineError(ex);
+        }
+        finally
+        {
+            try { _apo.Apply(_settings); }
+            catch (Exception ex) { ShowEngineError(ex); performed = false; }
+            _diagnosticRunning = false;
+            _audioPathTestAction.Enabled = true;
+            RefreshEngineStatus();
+        }
+
+        if (performed)
+        {
+            _lastAudioTestHeard = MessageBox.Show(
+                "Did the sound become clearly QUIETER during the four-second test? " +
+                "If not, Equalizer APO may not be attached to your actual Windows " +
+                "playback output, or the app uses exclusive mode.",
+                "Did LouderMe change your sound?",
+                MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes;
+
+            _engineStatus.ForeColor = _lastAudioTestHeard.Value ? Cyan : Red;
+            _engineStatus.Text = _lastAudioTestHeard.Value
+                ? "You confirmed audible -18 dB attenuation. " +
+                  "The current APO output path appears active; boost is still " +
+                  "a requested gain and may clip/compress loud recordings."
+                : "NO AUDIBLE EFFECT REPORTED. LouderMe did not demonstrate audio " +
+                  "processing on your selected output. Open APO Configurator, " +
+                  "select that device and restart Windows if required.";
+        }
+    }
+
+    private async Task ConnectEngineAsync()
+    {
+        if (!_apo.GetStatus().Installed)
+        {
+            MessageBox.Show(
+                "Install Equalizer APO first, attach it to the active playback " +
+                "device in Configurator, and restart Windows if requested.",
+                "LouderMe audio engine", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        var choice = MessageBox.Show(
+            "LouderMe needs one-time administrator permission to add its own " +
+            "include to Equalizer APO's configuration and grant your Windows " +
+            "account write access to LouderMe.txt ONLY. Existing APO settings " +
+            "are backed up; other audio settings are not replaced.\\n\\n" +
+            "Windows will ask for approval. Continue?",
+            "Connect LouderMe audio processing",
+            MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+        if (choice != DialogResult.Yes) return;
+
+        _connectEngineAction.Enabled = false;
+        try
+        {
+            var sid = WindowsIdentity.GetCurrent().User?.Value
+                ?? throw new InvalidOperationException("Current Windows SID unavailable.");
+            var start = new ProcessStartInfo
+            {
+                FileName = Environment.ProcessPath ?? Application.ExecutablePath,
+                Verb = "runas",
+                UseShellExecute = true,
+            };
+            start.ArgumentList.Add("--setup-apo");
+            start.ArgumentList.Add(sid);
+            using var process = Process.Start(start)
+                ?? throw new InvalidOperationException("Windows setup could not be started.");
+            await process.WaitForExitAsync();
+            if (process.ExitCode != 0)
+            {
+                _engineStatus.ForeColor = Red;
+                _engineStatus.Text = "Audio connection setup failed or was cancelled. " +
+                    "Check the Windows setup error; audio processing is not confirmed.";
+                return;
+            }
+
+            ApplyProcessing();
+            RefreshEngineStatus();
+        }
+        catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode == 1223)
+        {
+            _engineStatus.ForeColor = Gold;
+            _engineStatus.Text = "One-time audio activation was cancelled. Boost/EQ not verified.";
+        }
+        catch (Exception ex)
+        {
+            ShowEngineError(ex);
+        }
+        finally
+        {
+            _connectEngineAction.Enabled = true;
+        }
+    }
+
     private void RefreshEngineStatus()
     {
-        var status = _apo.GetStatus();
+        var status = _apo.GetStatus(_settings);
+        _connectEngineAction.Enabled = status.Installed;
+        _audioPathTestAction.Enabled = status.Configured && status.MatchesSettings
+            && !_diagnosticRunning;
+        // Do not offer apparently functional effect controls when no processing
+        // backend exists. Endpoint volume remains usable.
+        _boostEnabled.Enabled = status.Installed;
+        _boost.Enabled = status.Installed;
+        if (_boostQuickActions is not null) _boostQuickActions.Enabled = status.Installed;
+        _eqEnabled.Enabled = status.Installed;
+        _preset.Enabled = status.Installed;
+        foreach (var band in _eqBands)
+            if (band is not null) band.Enabled = status.Installed;
 
         if (!status.Installed)
         {
             _engineStatus.ForeColor = Gold;
             _engineStatus.Text =
-                "Boost/EQ unavailable: Equalizer APO is not detected. Install Equalizer APO, " +
-                "select your playback device in Configurator and restart Windows if required. " +
-                "Then click Refresh engine. Device volume works without APO.";
+                "NOT ACTIVE · Boost/EQ unavailable until Equalizer APO is installed, " +
+                "the output is selected in Configurator and Windows is restarted if required. " +
+                "The Windows 0–100% volume control remains independent.";
             return;
         }
 
-        if (!status.Configured)
+        if (!status.Configured || !status.MatchesSettings)
         {
             _engineStatus.ForeColor = Gold;
-            _engineStatus.Text =
-                status.Message + " Change any LouderMe boost/EQ control to link it.";
+            _engineStatus.Text = status.Message +
+                " Click Connect Boost/EQ for one-time access setup if Windows denies writes.";
             return;
         }
 
-        _engineStatus.ForeColor = Cyan;
+        _engineStatus.ForeColor = Gold;
         _engineStatus.Text =
-            $"{status.Message} Target boost: {_settings.BoostPercent}% " +
-            $"({BoostMath.PercentToDb(_settings.BoostPercent):+0.00;-0.00;0.00} dB).";
+            $"APO CONFIG WRITTEN, SOUND NOT VERIFIED · Target: " +
+            $"{(_settings.BoostEnabled ? _settings.BoostPercent : 100)}% " +
+            $"({(_settings.BoostEnabled ? BoostMath.PercentToDb(_settings.BoostPercent) : 0):+0.00;-0.00;0.00} dB). " +
+            "If sound is unchanged, attach Equalizer APO to the selected playback device " +
+            "in Configurator, check Windows audio enhancements and restart if requested.";
     }
 
     private void UpdateEqValueLabels()

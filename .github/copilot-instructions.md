@@ -37,7 +37,7 @@ For any tracked Michel's Lab task, return enough machine-readable continuation c
 
 Do not list planned tests/builds/device checks as completed validation. If required validation was not performed, the task must be released/handed back with that work pending rather than described as complete.
 
-<!-- MICHELSLAB_SHARED_CONTRACT_BEGIN id=child-agent-core version=2026-10-12.2 -->
+<!-- MICHELSLAB_SHARED_CONTRACT_BEGIN id=child-agent-core version=2026-10-12.3 -->
 # Michel's Lab shared child-agent contract
 
 This managed block is cross-project policy. Repository-specific instructions may add stricter local rules outside this block, but they must not weaken or contradict it.
@@ -135,6 +135,14 @@ After a merge, release, tag or provider mutation, re-read authoritative state be
 - Contract/regression tests must be portable across CI platforms. Normalize or tolerate CRLF/LF and path-separator differences and prefer structural/semantic assertions over exact whitespace or source-format matches.
 - Syntax-check executable test/validation scripts before relying on them as semantic gates (for example `node --check` or `python -m py_compile` where applicable).
 - When a channel is added or materially changed, update the app audit log and the master store/release gate. Do not describe the channel as published until provider evidence exists.
+
+## Owner-only testing and official release delivery (all governed applications)
+
+- **Owner-only default:** Until Michel explicitly says this particular app was shared with another person, assume Michel is its sole tester/user. Do not infer an external user base from a public GitHub release. This does not make public assets private. A sharing announcement about a different app never changes this app's status.
+- **Explicit release order:** Only Michel's explicit instruction to publish this app authorizes each new release. 'Continue', 'finish', CI green, a PR merge or feature completion is NOT authorization. Keep implementing/integrating tested changes without repeatedly asking him to say 'continue'; never auto-publish/tag/activate release workflows merely because main advanced.
+- **Owner download rule:** Do NOT direct Michel to install or download from a PR, branch ZIP, GitHub Actions build/artifact or preview as the normal testing/update path. You can report the CI evidence without treating it as a downloadable release. Discuss a developer preview download only if Michel expressly asks for it.
+- **Official release delivery:** When Michel orders a release, first satisfy existing automated same-commit signing, build, launch, functional, rendered UI and artifact checks. Publish via the product's official GitHub Releases/designated distribution channel, verify the real downloadable assets, and provide their official release links. Never describe a newer main or PR build as already installed or released.
+- **Separate gates:** Owner release permission and his post-release visual review are different. Do not reintroduce a manual pre-release approval gate, or claim physical-device/provider acceptance from CI.
 
 ## Release and evidence boundary
 

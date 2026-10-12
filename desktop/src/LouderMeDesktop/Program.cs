@@ -23,7 +23,28 @@ internal static class Program
         var visualEvidence = visualArgument >= 0;
         var updaterContractTest = args.Any(arg =>
             arg.Equals("--check-update-contract", StringComparison.OrdinalIgnoreCase));
-        var smokeTest = layoutSmokeTest || visualEvidence || updaterContractTest || args.Any(arg =>
+        var apoContractTest = args.Any(arg =>
+            arg.Equals("--check-apo-contract", StringComparison.OrdinalIgnoreCase));
+        // Explicit one-time UAC setup, intentionally performed before the
+        // normal single-instance mutex and without starting the audio UI.
+        if (args.Length > 0 && args[0].Equals("--setup-apo", StringComparison.OrdinalIgnoreCase))
+        {
+            try
+            {
+                if (args.Length != 2)
+                    throw new ArgumentException("A Windows account SID is required.");
+                new EqualizerApoEngine().SetupForUser(args[1]);
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                WriteStartupCrash(ex);
+                MessageBox.Show(ex.Message, "LouderMe audio setup",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return 1;
+            }
+        }
+        var smokeTest = layoutSmokeTest || visualEvidence || updaterContractTest || apoContractTest || args.Any(arg =>
             arg.Equals("--smoke-test", StringComparison.OrdinalIgnoreCase));
 
         try
@@ -31,6 +52,11 @@ internal static class Program
             if (updaterContractTest)
             {
                 DesktopUpdateService.RunContractSelfTests();
+                return 0;
+            }
+            if (apoContractTest)
+            {
+                EqualizerApoEngine.RunContractSelfTests();
                 return 0;
             }
 

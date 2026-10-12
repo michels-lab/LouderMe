@@ -96,6 +96,16 @@ internal sealed class EqualizerApoEngine
         }
     }
 
+    // Temporary, exclusively attenuating probe. It cannot prove loopback
+    // audio itself; the owner listens for a volume decrease on their device.
+    // Caller MUST restore Apply(settings) in a finally block.
+    public void ApplyDiagnosticAttenuation(DesktopAudioSettings settings)
+    {
+        Apply(settings);
+        File.AppendAllText(LouderMeConfigPath,
+            "Preamp: -18.0 dB" + Environment.NewLine);
+    }
+
     // Run only after a user explicitly confirms a Windows UAC prompt.
     // The command accepts a user SID, NOT arbitrary file paths/commands.
     public void SetupForUser(string userSid)
@@ -179,6 +189,16 @@ internal sealed class EqualizerApoEngine
                 throw new InvalidOperationException("User APO config not preserved.");
             if (!File.Exists(engine.MainConfigPath + ".louderme.bak"))
                 throw new InvalidOperationException("Original APO config was not backed up.");
+
+            engine.ApplyDiagnosticAttenuation(settings);
+            if (!File.ReadAllText(engine.LouderMeConfigPath)
+                    .Contains("Preamp: -18.0 dB", StringComparison.Ordinal) ||
+                engine.GetStatus(settings).MatchesSettings)
+                throw new InvalidOperationException("Diagnostic attenuation was not applied.");
+            engine.Apply(settings);
+            if (File.ReadAllText(engine.LouderMeConfigPath)
+                    .Contains("Preamp: -18.0 dB", StringComparison.Ordinal))
+                throw new InvalidOperationException("Temporary attenuation was not restored.");
 
             settings.BoostPercent = 175;
             var stale = engine.GetStatus(settings);

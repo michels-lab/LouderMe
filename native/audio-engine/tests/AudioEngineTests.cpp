@@ -116,6 +116,54 @@ void smoothEqBypassTransition() {
         check(interleaved[i] == 0.0f, "EQ transition leaked into silent channel");
 }
 
+// Live EQ slider moves must fade between filter banks rather than resetting
+// the active biquads and abruptly swapping their gain.
+void smoothEqBandUpdate() {
+    constexpr int rate = 48000;
+    AudioEngine engine(rate, 1);
+    std::array<float, AudioEngine::BandCount> bands{};
+    bands[4] = 10.0f;
+    engine.setEqBandsDb(bands);
+    engine.setEqEnabled(true);
+
+    std::vector<float> warm(rate + 12);
+    for (std::size_t i = 0; i < warm.size(); ++i)
+        warm[i] = 0.05f * static_cast<float>(std::sin(
+            2.0 * 3.14159265358979323846 * 1000.0 * i / rate));
+    engine.process(warm.data(), warm.size());
+    check(warm.back() > 0.12f, "Live EQ baseline not established");
+
+    bands[4] = -10.0f;
+    engine.setEqBandsDb(bands);
+    float first = 0.05f; // Continue the same tone at its crest.
+    engine.process(&first, 1);
+    check(first > 0.10f && first < 0.19f,
+          "Live EQ band change jumped to new filter response in one sample");
+
+    std::vector<float> next(rate), original(rate);
+    for (int i = 0; i < rate; ++i)
+        next[i] = original[i] = 0.05f * static_cast<float>(std::sin(
+            2.0 * 3.14159265358979323846 * 1000.0 * (i + 13) / rate));
+    engine.process(next.data(), next.size());
+    check(rms(next, rate / 2) < 0.55 * rms(original, rate / 2),
+          "Live EQ attenuation did not settle to the new -10 dB band");
+
+    // The second channel must remain absolutely silent during dual-bank fade.
+    AudioEngine stereo(rate, 2);
+    bands[4] = 10.0f;
+    stereo.setEqBandsDb(bands);
+    stereo.setEqEnabled(true);
+    std::vector<float> interleaved(4096 * 2, 0.0f);
+    for (std::size_t i = 0; i < interleaved.size(); i += 2)
+        interleaved[i] = 0.04f;
+    stereo.process(interleaved.data(), 4096);
+    bands[4] = -10.0f;
+    stereo.setEqBandsDb(bands);
+    stereo.process(interleaved.data(), 4096);
+    for (std::size_t i = 1; i < interleaved.size(); i += 2)
+        check(interleaved[i] == 0.0f, "Live EQ change leaked to silent channel");
+}
+
 void invalidAndFormats() {
     bool failed = false;
     try { AudioEngine invalid(48000, 0); }
@@ -141,6 +189,7 @@ int main() {
         limiterAndChannels();
         equalizerFrequencyResponse();
         smoothEqBypassTransition();
+        smoothEqBandUpdate();
         invalidAndFormats();
         std::cout << "LouderME native DSP: tests passed\n";
         return 0;

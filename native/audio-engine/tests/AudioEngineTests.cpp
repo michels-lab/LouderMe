@@ -164,6 +164,37 @@ void smoothEqBandUpdate() {
         check(interleaved[i] == 0.0f, "Live EQ change leaked to silent channel");
 }
 
+// A user may toggle EQ off then on faster than one PCM callback. With no
+// processed audio between those commands the result must be identical to
+// uninterrupted EQ (filter history must not be reset).
+void rapidEqTogglePreservesHistory() {
+    AudioEngine steady(48000, 1), toggled(48000, 1);
+    std::array<float, AudioEngine::BandCount> bands{};
+    bands[4] = 10.0f;
+    for (auto* engine : {&steady, &toggled}) {
+        engine->setEqBandsDb(bands);
+        engine->setEqEnabled(true);
+    }
+    std::vector<float> warm(3000);
+    for (std::size_t i = 0; i < warm.size(); ++i)
+        warm[i] = 0.05f * static_cast<float>(std::sin(
+            2.0 * 3.14159265358979323846 * 1000.0 * i / 48000.0));
+    std::vector<float> copied = warm;
+    steady.process(warm.data(), warm.size());
+    toggled.process(copied.data(), copied.size());
+    toggled.setEqEnabled(false);
+    toggled.setEqEnabled(true);
+    std::vector<float> a(256), b(256);
+    for (std::size_t i = 0; i < a.size(); ++i)
+        a[i] = b[i] = 0.05f * static_cast<float>(std::sin(
+            2.0 * 3.14159265358979323846 * 1000.0 * (i + 3000) / 48000.0));
+    steady.process(a.data(), a.size());
+    toggled.process(b.data(), b.size());
+    for (std::size_t i = 0; i < a.size(); ++i)
+        check(std::abs(a[i] - b[i]) < 0.000001f,
+              "Rapid EQ off-on reset live filter history");
+}
+
 void invalidAndFormats() {
     bool failed = false;
     try { AudioEngine invalid(48000, 0); }
@@ -190,6 +221,7 @@ int main() {
         equalizerFrequencyResponse();
         smoothEqBypassTransition();
         smoothEqBandUpdate();
+        rapidEqTogglePreservesHistory();
         invalidAndFormats();
         std::cout << "LouderME native DSP: tests passed\n";
         return 0;

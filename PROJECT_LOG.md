@@ -1905,6 +1905,14 @@ The master audit identified missing automated visual evidence checks in LouderMe
 - **Regression:** new deterministic 1 kHz peak-transition test verifies that the first sample remains near the previous +10 dB response, eventual -10 dB settling and no stereo right-channel bleed. Windows/Linux native DSP and managed bridge tests plus Android regressions must remain green at exact PR SHA.
 - **Limitations:** only synthetic PCM; very rapid consecutive band changes while a previous 5 ms transition is unfinished can rebase its old bank and are not yet a measured click-free physical guarantee. No Windows system-wide driver/audio-routing claim, no release/installer change.
 
+
+## 2026-10-12 — Rapid EQ off/on toggle state regression
+
+- **Finding:** EQ bypass already crossfades over 5 ms, but the off→on path reset biquad history even when no audio frames elapsed between the two UI events. Resetting the wet bank while current EQ mix remains nonzero can introduce discontinuities.
+- **Change:** Only reset the dormant filter bank when re-enabling from fully settled dry bypass (`currentEqMix_ == 0.0`). A rapid reactivation retains running filter history and reverses the existing wet/dry envelope. No changes to audio callback allocations or locks.
+- **Regression:** A deterministic test warms two equalized DSP engines, instantly off/on toggles one without intervening frames and requires sample-by-sample output equality with the untouched reference. Linux and Windows CTest, managed bridge and Android CI remain required before merge.
+- **Scope:** Synthetic evidence only; Windows native global endpoint routing, physical click tests and signed driver still pending under #48. No stable release authorized.
+
 ## 2026-10-12 — Synchronize shared agent contract 2026-10-12.1
 
 Updated only the managed blocks in AGENTS.md and .github/copilot-instructions.md from the master canonical source; all local constraints remain unchanged. Body SHA256: 67279f7a0ea27a6212d58d81fe985537e830a974f4a9d73e2759f06177a2af6e. This brings shared installer and independent CI work policy to the current version. No product source, version or release changes. Master coordination reconciles expired reservations separately; ongoing native audio development and hardware validation remain independent. Exact-head Android CI is required before integration; desktop workflow excludes documentation-only changes.

@@ -23,6 +23,9 @@ internal sealed class MainForm : Form
     private readonly Label _boostDb = new();
     private readonly Label _engineStatus = new();
     private readonly Button _connectEngineAction = new();
+    private readonly Button _audioPathTestAction = new();
+    private bool _diagnosticRunning;
+    private bool? _lastAudioTestHeard;
     private readonly CheckBox _eqEnabled = new();
     private readonly ComboBox _preset = new();
     private readonly NumericUpDown[] _eqBands = new NumericUpDown[7];
@@ -492,6 +495,16 @@ internal sealed class MainForm : Form
         actions.Controls.Add(configure);
         actions.Controls.Add(refresh);
 
+        _audioPathTestAction.AutoSize = true;
+        _audioPathTestAction.Text = "Test audio path (-18 dB temporarily)";
+        _audioPathTestAction.FlatStyle = FlatStyle.Flat;
+        _audioPathTestAction.ForeColor = Cyan;
+        _audioPathTestAction.BackColor = Surface;
+        _audioPathTestAction.Padding = new Padding(8, 5, 8, 5);
+        _audioPathTestAction.FlatAppearance.BorderColor = Line;
+        _audioPathTestAction.Click += async (_, _) => await TestAudioPathAsync();
+        actions.Controls.Add(_audioPathTestAction);
+
         var copyDiagnostics = Button("Copy audio diagnostics", Cyan);
         copyDiagnostics.Click += (_, _) =>
         {
@@ -504,6 +517,7 @@ internal sealed class MainForm : Form
                 $"Stored DSP config matches UI: {status.MatchesSettings}\\n" +
                 $"Boost target: {_settings.BoostPercent}%, enabled: {_settings.BoostEnabled}\\n" +
                 $"EQ enabled: {_settings.EqualizerEnabled}\\n" +
+                $"Audio path test audible attenuation: {(_lastAudioTestHeard is null ? "Not tested" : _lastAudioTestHeard.Value ? "Yes (user-reported)" : "No (user-reported)")}\\n" +
                 $"Status: {status.Message}\\n" +
                 "Audio audible effect: NOT automatically verified";
             Clipboard.SetText(report.Replace("\\n", Environment.NewLine));
@@ -802,6 +816,7 @@ internal sealed class MainForm : Form
         if (_loading) return;
 
         DesktopSettingsStore.Save(_settings);
+        if (_diagnosticRunning) return;
         var status = _apo.GetStatus(_settings);
 
         if (!status.Installed)
@@ -825,6 +840,74 @@ internal sealed class MainForm : Form
         catch (Exception ex)
         {
             ShowEngineError(ex);
+        }
+    }
+
+    private async Task TestAudioPathAsync()
+    {
+        if (_diagnosticRunning) return;
+        var status = _apo.GetStatus(_settings);
+        if (!status.Configured || !status.MatchesSettings)
+        {
+            RefreshEngineStatus();
+            MessageBox.Show(
+                "Connect LouderMe to Equalizer APO first. The current " +
+                "Boost/EQ settings are not present in an active configuration.",
+                "Audio processing not active", MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+            return;
+        }
+        if (MessageBox.Show(
+            "Play music or speech at a comfortable level on the output " +
+            "shown in LouderMe. This test will temporarily make the sound " +
+            "QUIETER by 18 dB for four seconds, then restore your original settings. " +
+            "No microphone or recording is used.\\n\\nStart test?",
+            "Test Windows audio processing", MessageBoxButtons.YesNo,
+            MessageBoxIcon.Question) != DialogResult.Yes)
+            return;
+
+        _diagnosticRunning = true;
+        _audioPathTestAction.Enabled = false;
+        var performed = false;
+        try
+        {
+            _apo.ApplyDiagnosticAttenuation(_settings);
+            performed = true;
+            _engineStatus.ForeColor = Gold;
+            _engineStatus.Text = "TESTING -18 dB ATTENUATION · Your playing audio should " +
+                "be much quieter for four seconds if Equalizer APO is really attached.";
+            await Task.Delay(4000);
+        }
+        catch (Exception ex)
+        {
+            ShowEngineError(ex);
+        }
+        finally
+        {
+            try { _apo.Apply(_settings); }
+            catch (Exception ex) { ShowEngineError(ex); performed = false; }
+            _diagnosticRunning = false;
+            _audioPathTestAction.Enabled = true;
+            RefreshEngineStatus();
+        }
+
+        if (performed)
+        {
+            _lastAudioTestHeard = MessageBox.Show(
+                "Did the sound become clearly QUIETER during the four-second test? " +
+                "If not, Equalizer APO may not be attached to your actual Windows " +
+                "playback output, or the app uses exclusive mode.",
+                "Did LouderMe change your sound?",
+                MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes;
+
+            _engineStatus.ForeColor = _lastAudioTestHeard.Value ? Cyan : Red;
+            _engineStatus.Text = _lastAudioTestHeard.Value
+                ? "You confirmed audible -18 dB attenuation. " +
+                  "The current APO output path appears active; boost is still " +
+                  "a requested gain and may clip/compress loud recordings."
+                : "NO AUDIBLE EFFECT REPORTED. LouderMe did not demonstrate audio " +
+                  "processing on your selected output. Open APO Configurator, " +
+                  "select that device and restart Windows if required.";
         }
     }
 
@@ -895,6 +978,8 @@ internal sealed class MainForm : Form
     {
         var status = _apo.GetStatus(_settings);
         _connectEngineAction.Enabled = status.Installed;
+        _audioPathTestAction.Enabled = status.Configured && status.MatchesSettings
+            && !_diagnosticRunning;
 
         if (!status.Installed)
         {

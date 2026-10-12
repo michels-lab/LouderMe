@@ -24,6 +24,7 @@ internal sealed class MainForm : Form
     private readonly Label _engineStatus = new();
     private readonly Button _connectEngineAction = new();
     private readonly Button _audioPathTestAction = new();
+    private FlowLayoutPanel? _boostQuickActions;
     private bool _diagnosticRunning;
     private bool? _lastAudioTestHeard;
     private readonly CheckBox _eqEnabled = new();
@@ -429,6 +430,7 @@ internal sealed class MainForm : Form
             WrapContents = true,
             Margin = new Padding(0, 4, 0, 8),
         };
+        _boostQuickActions = quick;
         foreach (var level in new[] { 100, 125, 150, 175, 200, 225, 250 })
         {
             var button = Button($"{level}%", Cyan);
@@ -1001,6 +1003,15 @@ internal sealed class MainForm : Form
         _connectEngineAction.Enabled = status.Installed;
         _audioPathTestAction.Enabled = status.Configured && status.MatchesSettings
             && !_diagnosticRunning;
+        // Do not offer apparently functional effect controls when no processing
+        // backend exists. Endpoint volume remains usable.
+        _boostEnabled.Enabled = status.Installed;
+        _boost.Enabled = status.Installed;
+        if (_boostQuickActions is not null) _boostQuickActions.Enabled = status.Installed;
+        _eqEnabled.Enabled = status.Installed;
+        _preset.Enabled = status.Installed;
+        foreach (var band in _eqBands)
+            if (band is not null) band.Enabled = status.Installed;
 
         if (!status.Installed)
         {

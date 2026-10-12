@@ -37,7 +37,7 @@ For any tracked Michel's Lab task, return enough machine-readable continuation c
 
 Do not list planned tests/builds/device checks as completed validation. If required validation was not performed, the task must be released/handed back with that work pending rather than described as complete.
 
-<!-- MICHELSLAB_SHARED_CONTRACT_BEGIN id=child-agent-core version=2026-10-09.1 -->
+<!-- MICHELSLAB_SHARED_CONTRACT_BEGIN id=child-agent-core version=2026-10-12.1 -->
 # Michel's Lab shared child-agent contract
 
 This managed block is cross-project policy. Repository-specific instructions may add stricter local rules outside this block, but they must not weaken or contradict it.
@@ -172,4 +172,10 @@ After a merge, release, tag or provider mutation, re-read authoritative state be
 ## HTML Desktop delivery (conditional standard for local browser apps)
 
 If a child app's Desktop distribution is a local HTML browser application, its **primary GitHub Release Desktop asset MUST be a direct, self-contained, versioned `.html` file**, with embedded required imagery/branding so it works without the ZIP or an `assets/` directory. An additional ZIP is allowed but never sufficient by itself. Enforce via manifest + publisher + CI assertion + actual offline browser launch, verify SHA-256 for the standalone HTML, and check that GitHub actually exposes the HTML next to APK and other assets. See master `standards/REPOSITORY_DISTRIBUTION_STANDARD.md`. Native installer apps are unaffected.
+
+## Windows installer EULA + shortcuts (2026-10-11)
+Every native Windows app installer must show a Welcome page, a complete real product license requiring affirmative user acceptance, optional Desktop shortcut, and an honest optional route for taskbar pinning. Windows taskbar pinning requests must occur only from an eligible foreground app on explicit user action, with OS permission/availability and final user consent; **do not call the taskbar pin API from an installer**, force taskbar links or fake completion. A final-page unchecked "Show how to pin to taskbar" option plus installed bilingual instructions is an acceptable fallback while no OS API implementation exists. Inno Setup, MS Store, standalone HTML and Android follow distinct platform rules. See `standards/WINDOWS_INSTALLER_EXPERIENCE_STANDARD.md`.
+
+## Do useful independent work while CI runs (2026-10-11)
+After submitting a current-commit PR for CI, progress another independent unclaimed task rather than idly waiting; track per-task branch/SHA/status, respect active claims/same-file conflicts, and return to the exact-head build outcome before merging, closing gates or releasing. Pending CI is not a PASS.
 <!-- MICHELSLAB_SHARED_CONTRACT_END id=child-agent-core -->

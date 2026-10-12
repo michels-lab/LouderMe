@@ -37,7 +37,7 @@ For any tracked Michel's Lab task, return enough machine-readable continuation c
 
 Do not list planned tests/builds/device checks as completed validation. If required validation was not performed, the task must be released/handed back with that work pending rather than described as complete.
 
-<!-- MICHELSLAB_SHARED_CONTRACT_BEGIN id=child-agent-core version=2026-10-12.1 -->
+<!-- MICHELSLAB_SHARED_CONTRACT_BEGIN id=child-agent-core version=2026-10-12.2 -->
 # Michel's Lab shared child-agent contract
 
 This managed block is cross-project policy. Repository-specific instructions may add stricter local rules outside this block, but they must not weaken or contradict it.
@@ -176,6 +176,6 @@ If a child app's Desktop distribution is a local HTML browser application, its *
 ## Windows installer EULA + shortcuts (2026-10-11)
 Every native Windows app installer must show a Welcome page, a complete real product license requiring affirmative user acceptance, optional Desktop shortcut, and an honest optional route for taskbar pinning. Windows taskbar pinning requests must occur only from an eligible foreground app on explicit user action, with OS permission/availability and final user consent; **do not call the taskbar pin API from an installer**, force taskbar links or fake completion. A final-page unchecked "Show how to pin to taskbar" option plus installed bilingual instructions is an acceptable fallback while no OS API implementation exists. Inno Setup, MS Store, standalone HTML and Android follow distinct platform rules. See `standards/WINDOWS_INSTALLER_EXPERIENCE_STANDARD.md`.
 
-## Do useful independent work while CI runs (2026-10-11)
-After submitting a current-commit PR for CI, progress another independent unclaimed task rather than idly waiting; track per-task branch/SHA/status, respect active claims/same-file conflicts, and return to the exact-head build outcome before merging, closing gates or releasing. Pending CI is not a PASS.
+## Mandatory continuous independent work while CI runs (2026-10-12)
+Once a PR or current-commit build, GitHub Actions check, installer test, review or external verification is pending, **do not stop development or ask the owner to prompt "continue"**. Immediately progress another genuinely independent, eligible, unclaimed task in a separate branch/repository/scope, while preserving each pending task's repository, branch, exact SHA, workflow/run ID, outcome and next verification action. Prefer work in another repository while a current repository is claimed. Same-repository parallel work is permitted **only** when the master task coordinator explicitly declares `parallel_safe: true` and distinct `parallel_scope` values for all participants; never steal a non-stale claim, edit colliding files or bypass a reserved task. Return to the original exact-head CI result before merging, claiming a gate PASS, closing the tracked task or publishing. If no genuinely safe task exists, report the actual blocker rather than inventing work. Pending, skipped or missing CI is not PASS, and independent progress does not authorize a release.
 <!-- MICHELSLAB_SHARED_CONTRACT_END id=child-agent-core -->

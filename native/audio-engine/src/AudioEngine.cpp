@@ -42,10 +42,11 @@ void AudioEngine::setBoostPercent(int percent) noexcept {
 }
 
 void AudioEngine::setEqEnabled(bool enabled) noexcept {
-    if (eqEnabled_ != enabled) {
-        eqEnabled_ = enabled;
-        reset();
-    }
+    // Reset when engaging an idle EQ bank, never midway through fade-out.
+    // The processing loop continues the filter while its wet mix fades.
+    if (enabled && !eqEnabled_) reset();
+    eqEnabled_ = enabled;
+    targetEqMix_ = enabled ? 1.0 : 0.0;
 }
 
 void AudioEngine::setEqBandsDb(
@@ -99,14 +100,23 @@ void AudioEngine::process(float* samples, std::size_t frames) noexcept {
     if (!samples || frames == 0) return;
     for (std::size_t frame = 0; frame < frames; ++frame) {
         currentGain_ += smoothingCoefficient_ * (targetGain_ - currentGain_);
+        currentEqMix_ += smoothingCoefficient_ * (targetEqMix_ - currentEqMix_);
+        // Snap only when inaudibly close so a fully bypassed EQ uses no
+        // biquad work and never drifts from bit-exact dry samples.
+        if (std::abs(targetEqMix_ - currentEqMix_) < 1e-7)
+            currentEqMix_ = targetEqMix_;
         for (int channel = 0; channel < channels_; ++channel) {
             const auto index = frame * static_cast<std::size_t>(channels_) +
                 static_cast<std::size_t>(channel);
-            double value = std::isfinite(samples[index])
+            const double dry = std::isfinite(samples[index])
                 ? static_cast<double>(samples[index]) : 0.0;
-            if (eqEnabled_)
+            double value = dry;
+            if (currentEqMix_ > 0.0) {
+                double wet = dry;
                 for (auto& filter : filters_[channel])
-                    value = filter.tick(value);
+                    wet = filter.tick(wet);
+                value = dry + currentEqMix_ * (wet - dry);
+            }
             samples[index] = static_cast<float>(
                 limitOutput(value * currentGain_));
         }

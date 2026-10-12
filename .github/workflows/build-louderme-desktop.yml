@@ -69,6 +69,12 @@ jobs:
         shell: pwsh
         run: pwsh -File desktop/tools/verify_release_identity.ps1
 
+      - name: Test APO activation, honest status and per-user config isolation
+        shell: pwsh
+        run: |
+          dotnet run --project desktop/src/LouderMeDesktop/LouderMeDesktop.csproj -c Release --no-build -- --check-apo-contract
+          if ($LASTEXITCODE -ne 0) { throw 'LouderMe APO processing activation contract failed.' }
+
       - name: Run real compact-window About and scroll smoke test
         shell: pwsh
         run: |

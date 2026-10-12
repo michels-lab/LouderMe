@@ -209,26 +209,8 @@ class DirectUpdateController(
         executor.shutdownNow()
     }
 
-    private fun fetchManifest(): DirectUpdateManifest {
-        // The dedicated LouderMe channel is preferred. During migration,
-        // existing customers and network failures can still use the old
-        // public feed, which will be kept live as a compatibility endpoint.
-        var lastFailure: Exception? = null
-        for (feedUrl in listOf(
-            DirectUpdateConfig.MANIFEST_URL,
-            DirectUpdateConfig.LEGACY_MANIFEST_URL,
-        )) {
-            try {
-                return fetchManifestAt(feedUrl)
-            } catch (error: Exception) {
-                lastFailure = error
-            }
-        }
-        error(
-            "Neither official LouderMe update feed is available: " +
-                (lastFailure?.message ?: "unknown error")
-        )
-    }
+    private fun fetchManifest(): DirectUpdateManifest =
+        fetchManifestAt(DirectUpdateConfig.MANIFEST_URL)
 
     private fun fetchManifestAt(
         feedUrl: String,
@@ -277,6 +259,7 @@ class DirectUpdateController(
         manifest: DirectUpdateManifest,
         autoInstall: Boolean,
     ) {
+        manifest.requireTrustedPublisher()
         if (
             manifest.apkUrl.isBlank() ||
             manifest.sha256.isBlank()
@@ -429,6 +412,7 @@ class DirectUpdateController(
         manifest: DirectUpdateManifest,
         file: File,
     ) {
+        manifest.requireTrustedPublisher()
         val actualSha = sha256(file)
 
         if (

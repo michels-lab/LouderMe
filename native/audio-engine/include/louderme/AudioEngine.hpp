@@ -45,5 +45,8 @@ private:
     double smoothingCoefficient_;
     std::array<float, BandCount> bandGainsDb_{};
     std::vector<std::array<Biquad, BandCount>> filters_;
+    // Preallocated previous EQ bank permits click-safe in-flight band changes.
+    std::vector<std::array<Biquad, BandCount>> previousFilters_;
+    double currentBandTransition_{1.0};
 };
 } // namespace louderme::audio

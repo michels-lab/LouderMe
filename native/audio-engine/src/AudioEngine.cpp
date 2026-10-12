@@ -25,7 +25,8 @@ AudioEngine::AudioEngine(int rate, int channels)
       smoothingCoefficient_(rate > 0
           ? 1.0 - std::exp(-1.0 / (0.005 * rate)) : 1.0),
       filters_(channels >= 1 && channels <= 8
-          ? static_cast<std::size_t>(channels) : 0) {
+          ? static_cast<std::size_t>(channels) : 0),
+      previousFilters_(filters_.size()) {
     if (rate < 8000 || rate > 384000 || channels < 1 || channels > 8)
         throw std::invalid_argument("Unsupported sample rate or channels");
     configureFilters();
@@ -51,10 +52,21 @@ void AudioEngine::setEqEnabled(bool enabled) noexcept {
 
 void AudioEngine::setEqBandsDb(
     const std::array<float, BandCount>& gainsDb) noexcept {
-    for (std::size_t i = 0; i < BandCount; ++i) {
-        bandGainsDb_[i] = std::isfinite(gainsDb[i])
+    std::array<float, BandCount> next{};
+    for (std::size_t i = 0; i < BandCount; ++i)
+        next[i] = std::isfinite(gainsDb[i])
             ? std::clamp(gainsDb[i], -10.0f, 10.0f) : 0.0f;
+    if (next == bandGainsDb_) return;
+    if (currentEqMix_ > 0.0) {
+        // Copy current filter histories into the preallocated old bank.
+        // New coefficient configuration resets only the new bank. Blend
+        // outputs for 5 ms instead of dropping its state in a single frame.
+        std::copy(filters_.begin(), filters_.end(), previousFilters_.begin());
+        currentBandTransition_ = 0.0;
+    } else {
+        currentBandTransition_ = 1.0;
     }
+    bandGainsDb_ = next;
     configureFilters();
 }
 
@@ -94,6 +106,9 @@ void AudioEngine::configureFilters() noexcept {
 void AudioEngine::reset() noexcept {
     for (auto& channel : filters_)
         for (auto& band : channel) band.clear();
+    for (auto& channel : previousFilters_)
+        for (auto& band : channel) band.clear();
+    currentBandTransition_ = 1.0;
 }
 
 void AudioEngine::process(float* samples, std::size_t frames) noexcept {
@@ -105,6 +120,9 @@ void AudioEngine::process(float* samples, std::size_t frames) noexcept {
         // biquad work and never drifts from bit-exact dry samples.
         if (std::abs(targetEqMix_ - currentEqMix_) < 1e-7)
             currentEqMix_ = targetEqMix_;
+        currentBandTransition_ += smoothingCoefficient_ * (1.0 - currentBandTransition_);
+        if (1.0 - currentBandTransition_ < 1e-7)
+            currentBandTransition_ = 1.0;
         for (int channel = 0; channel < channels_; ++channel) {
             const auto index = frame * static_cast<std::size_t>(channels_) +
                 static_cast<std::size_t>(channel);
@@ -115,6 +133,12 @@ void AudioEngine::process(float* samples, std::size_t frames) noexcept {
                 double wet = dry;
                 for (auto& filter : filters_[channel])
                     wet = filter.tick(wet);
+                if (currentBandTransition_ < 1.0) {
+                    double previousWet = dry;
+                    for (auto& filter : previousFilters_[channel])
+                        previousWet = filter.tick(previousWet);
+                    wet = previousWet + currentBandTransition_ * (wet - previousWet);
+                }
                 value = dry + currentEqMix_ * (wet - dry);
             }
             samples[index] = static_cast<float>(

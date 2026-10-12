@@ -28,10 +28,11 @@ internal sealed class DesktopUpdateService
     private const string FeedUrl =
         "https://raw.githubusercontent.com/michels-lab/LouderME-Releases/main/louderme-desktop/latest.json";
 
-    // Existing shipped versions still read the legacy endpoint. New
-    // LouderMe builds prefer their own repo, falling back during migration.
-    private const string LegacyFeedUrl =
-        "https://raw.githubusercontent.com/michels-lab/michel-s-life-releases/main/louderme-desktop/latest.json";
+    // LouderMe must never read another application's release feed.
+    private const string OfficialDownloadPath =
+        "/michels-lab/LouderME-Releases/releases/download/";
+    private const string OfficialReleasePath =
+        "/michels-lab/LouderME-Releases/releases/tag/";
 
     private readonly HttpClient _http = new()
     {
@@ -56,11 +57,7 @@ internal sealed class DesktopUpdateService
 
         var manifest = await FetchUpdateManifestAsync(cancellationToken);
 
-        if (!manifest.channel.Equals("stable", StringComparison.OrdinalIgnoreCase))
-            throw new InvalidDataException("Desktop update feed is not on the stable channel.");
-
-        if (!manifest.platform.Equals("windows-x64", StringComparison.OrdinalIgnoreCase))
-            throw new InvalidDataException("Desktop update feed platform does not match Windows x64.");
+        ValidateManifest(manifest);
 
         var latest = ParseVersion(manifest.versionName);
         var available = latest > current;
@@ -78,26 +75,77 @@ internal sealed class DesktopUpdateService
     private async Task<DesktopUpdateManifest> FetchUpdateManifestAsync(
         CancellationToken cancellationToken)
     {
-        Exception? lastFailure = null;
-        foreach (var url in new[] { FeedUrl, LegacyFeedUrl })
+        using var response = await _http.GetAsync(FeedUrl, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        var json = await response.Content.ReadAsStringAsync(cancellationToken);
+        return JsonSerializer.Deserialize<DesktopUpdateManifest>(
+            json,
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+            ?? throw new InvalidDataException("LouderMe Desktop update feed is empty.");
+    }
+
+
+    private static bool IsOfficialUrl(string? candidate, string requiredPath)
+    {
+        return Uri.TryCreate(candidate, UriKind.Absolute, out var uri) &&
+            uri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) &&
+            uri.Host.Equals("github.com", StringComparison.OrdinalIgnoreCase) &&
+            uri.AbsolutePath.StartsWith(requiredPath, StringComparison.OrdinalIgnoreCase);
+    }
+
+    // Fail closed if the feed points at Michel's Life, a lookalike repository
+    // or another app. A SHA-256 alone is not a publisher identity check.
+    private static void ValidateManifest(DesktopUpdateManifest manifest)
+    {
+        if (manifest.schema != 1 ||
+            !string.Equals(manifest.product, "LouderMe Desktop", StringComparison.Ordinal) ||
+            !string.Equals(manifest.channel, "stable", StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(manifest.platform, "windows-x64", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidDataException("LouderMe update feed product, schema or channel mismatch.");
+
+        if (string.IsNullOrWhiteSpace(manifest.versionName))
+            throw new InvalidDataException("LouderMe update feed has no version.");
+        _ = ParseVersion(manifest.versionName);
+
+        if (!IsOfficialUrl(manifest.installerUrl, OfficialDownloadPath) ||
+            !IsOfficialUrl(manifest.portableUrl, OfficialDownloadPath) ||
+            !IsOfficialUrl(manifest.releaseUrl, OfficialReleasePath) ||
+            manifest.installerSha256 is null || manifest.installerSha256.Length != 64 ||
+            !manifest.installerSha256.All(Uri.IsHexDigit) ||
+            manifest.portableSha256 is null || manifest.portableSha256.Length != 64 ||
+            !manifest.portableSha256.All(Uri.IsHexDigit))
+            throw new InvalidDataException("LouderMe update feed contains an untrusted release URL or checksum.");
+    }
+
+    internal static void RunContractSelfTests()
+    {
+        const string assetRoot = "https://github.com/michels-lab/LouderME-Releases/releases/download/v-test/";
+        var good = new DesktopUpdateManifest(
+            1, "LouderMe Desktop", "windows-x64", "stable", "0.1.11",
+            assetRoot + "LouderMe-Setup.exe", new string('a', 64),
+            assetRoot + "LouderMe-Portable.exe", new string('b', 64),
+            "https://github.com/michels-lab/LouderME-Releases/releases/tag/v-test");
+        ValidateManifest(good);
+        var badFeeds = new[]
         {
-            try
-            {
-                using var response = await _http.GetAsync(url, cancellationToken);
-                response.EnsureSuccessStatusCode();
-                var json = await response.Content.ReadAsStringAsync(cancellationToken);
-                return JsonSerializer.Deserialize<DesktopUpdateManifest>(
-                    json,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
-                    ?? throw new InvalidDataException("Desktop update feed is empty.");
-            }
-            catch (Exception error) when (error is not OperationCanceledException)
-            {
-                lastFailure = error;
-            }
+            good with { product = "Michel's Life" },
+            good with { channel = "beta" },
+            good with { platform = "android" },
+            good with { installerUrl = "https://github.com/michels-lab/michel-s-life-releases/releases/download/v-test/LouderMe.exe" },
+            good with { installerUrl = "http://github.com/michels-lab/LouderME-Releases/releases/download/v-test/LouderMe.exe" },
+            good with { installerUrl = "https://evil.example/michels-lab/LouderME-Releases/releases/download/v-test/LouderMe.exe" },
+            good with { releaseUrl = "https://github.com/michels-lab/michel-s-life-releases/releases/tag/v-test" },
+            good with { installerSha256 = "wrong" },
+            good with { versionName = "../other-app" }
+        };
+        foreach (var bad in badFeeds)
+        {
+            bool rejected = false;
+            try { ValidateManifest(bad); }
+            catch (InvalidDataException) { rejected = true; }
+            if (!rejected) throw new InvalidOperationException("Cross-app or malformed update feed was accepted.");
         }
-        throw new InvalidOperationException(
-            "Neither LouderMe Desktop update feed is available.", lastFailure);
+        Console.WriteLine("PASS: official LouderMe feed, product, publisher URLs and SHA-256 validations.");
     }
 
     public async Task<string> DownloadInstallerAsync(
@@ -105,6 +153,7 @@ internal sealed class DesktopUpdateService
         IProgress<int>? progress = null,
         CancellationToken cancellationToken = default)
     {
+        ValidateManifest(manifest);
         var updateDirectory = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "Michel's Lab",
@@ -164,6 +213,7 @@ internal sealed class DesktopUpdateService
 
     public static void OpenReleasePage(DesktopUpdateManifest manifest)
     {
+        ValidateManifest(manifest);
         Process.Start(new ProcessStartInfo
         {
             FileName = manifest.releaseUrl,

@@ -21,11 +21,19 @@ internal static class Program
         var visualArgument = Array.FindIndex(args, arg =>
             arg.Equals("--visual-evidence", StringComparison.OrdinalIgnoreCase));
         var visualEvidence = visualArgument >= 0;
-        var smokeTest = layoutSmokeTest || visualEvidence || args.Any(arg =>
+        var updaterContractTest = args.Any(arg =>
+            arg.Equals("--check-update-contract", StringComparison.OrdinalIgnoreCase));
+        var smokeTest = layoutSmokeTest || visualEvidence || updaterContractTest || args.Any(arg =>
             arg.Equals("--smoke-test", StringComparison.OrdinalIgnoreCase));
 
         try
         {
+            if (updaterContractTest)
+            {
+                DesktopUpdateService.RunContractSelfTests();
+                return 0;
+            }
+
             using var mutex = new Mutex(true, @"Local\MichelsLab.LouderMeDesktop", out var firstInstance);
             if (!firstInstance)
             {

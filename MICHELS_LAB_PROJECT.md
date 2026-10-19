@@ -2,6 +2,10 @@
 
 This repository is part of the **Michel's Lab** software ecosystem.
 
+## Operación Granada — permanent workflow (2026-10-19)
+
+When Michel requests a **Granada**, inspect current issue/PR/branch/claim ownership and execute the next large, **independent** pending engineering block. **If an item is unfinished, owned or overlapping, skip it and move to the next noninterfering item without marking it complete.** Preserve bitácoras, code ownership, CI and release boundaries. Work in separate branches; never interpret "continue"/"Granada" as release permission. This local repository inherits the authoritative cross-app rule from `michels-lab/Michel-Software-Standards/standards/OPERACION_GRANADA_STANDARD.md`.
+
 ## Authority
 
 - Shared engineering rules, reusable implementation patterns, branding conventions, cloud/security standards and cross-app status live in `michels-lab/Michel-Software-Standards`.

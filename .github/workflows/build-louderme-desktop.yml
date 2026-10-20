@@ -75,6 +75,18 @@ jobs:
           dotnet run --project desktop/src/LouderMeDesktop/LouderMeDesktop.csproj -c Release --no-build -- --check-apo-contract
           if ($LASTEXITCODE -ne 0) { throw 'LouderMe APO processing activation contract failed.' }
 
+      - name: Verify Developer Edition settings separation, annotations and privacy-safe reports
+        shell: pwsh
+        run: |
+          dotnet run --project desktop/src/LouderMeDesktop/LouderMeDesktop.csproj -c Release --no-build -- --check-developer-contract
+          if ($LASTEXITCODE -ne 0) { throw "Developer Edition contract test failed." }
+
+      - name: Launch Developer Edition and audit live WinForms controls
+        shell: pwsh
+        run: |
+          dotnet run --project desktop/src/LouderMeDesktop/LouderMeDesktop.csproj -c Release --no-build -- --developer-smoke-test
+          if ($LASTEXITCODE -ne 0) { throw "Developer Edition WinForms runtime test failed." }
+
       - name: Run real compact-window About and scroll smoke test
         shell: pwsh
         run: |

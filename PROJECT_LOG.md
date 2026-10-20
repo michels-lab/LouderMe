@@ -1,3 +1,21 @@
+## 2026-10-20 — Operación Granada: Windows Developer Edition inspection + isolated diagnostics (candidate)
+
+**Large-block objective:** make the existing real Windows LouderMe UI inspectable by the owner without corrupting the public edition or falsely claiming that audio has been verified. Main reference: issue #77, Michel's Lab Developer Twin Standard and \`docs/DEVELOPER_EDITION_WINDOWS.md\`.
+
+**Implemented in branch \`feat/granada-20261020-desktop-developer-audit\`, NOT YET RELEASED:**
+- Launch \`--developer\` and dedicated Inno Setup Start Menu shortcut, with separate mutex, developer-only settings directory, annotations and diagnostics; preserves the public UI/engine.
+- Live pointer inspection of Home/About WinForms controls. Consumes inspection mouse clicks, captures stable target locator, screen, label, severity, exact owner comment, timestamps and status; provides edit/delete and persistent atomic JSON save.
+- Read-only audit of real UI tree, About visibility and Equalizer APO configuration readiness; unmatched anchored annotations remain unresolved. Does not claim audible processing.
+- Local export of structured audit JSON and AI-repair prompt with both automated findings and verbatim owner annotations. Manual editable review/redaction step; no network upload and no automatic stack, raw input or secret capture.
+- Developer mode cannot toggle public Windows startup or install over the customer edition via updater.
+- CI additions: contract test for storage isolation/export/persistence/corruption recovery, actual Windows Developer Edition launch and WinForms runtime audit smoke test.
+
+**Validation state:** source staged; remote PR/Windows workflow status to be recorded separately. No local Windows SDK available in this session. No physical-device UI or sound confirmation. Android Developer Edition remains separately pending. Owner Windows v0.1.13 functionality is already recorded in \`docs/WINDOWS_OWNER_AUDIO_VALIDATION_2026-10-12.md\`; native audio path #46/#48 and exact artifact QA #33 are still open. Stable public release must not be published without explicit authorization.
+
+**Granada campaign:** (A) Desktop Developer edition + live notes/export; (B) Android Developer edition (#77), separate platform; (C) native audio physical routing (#46/#48), blocked on signed virtual endpoint/test hardware; (D) final binary visual evidence (#33), independent QA; (E) physical APO and cross-device gain regression, pending owner machine. Skip conflicts/unverified blocks rather than calling them complete.
+
+---
+
 ## 2026-10-20 — GRANADA ambiciosa: macro-bloques multi-entregable (regla adoptada)
 
 **Orden del propietario:** evitar correcciones mínimas encadenadas; elegir campañas de desarrollo con aproximadamente **3–6 paquetes sustanciales relacionados y no interferentes**, cuando el backlog lo permita. Cada paquete debe entregar código/experiencia tangible, recuperar estados y bordes, añadir pruebas de regresión y documentar las verificaciones reales. El tamaño no justifica pisar ramas/claims, mezclar cuentas, omitir QA ni dar por concluida una aceptación física pendiente. Si algún paquete está bloqueado por login, hardware, CI o release, aparcarlo con issue/PR/SHA y continuar con otro trabajo seguro. El objetivo es hacer más, **no aparentarlo**. [Estándar maestro](https://github.com/michels-lab/Michel-Software-Standards/blob/main/standards/OPERACION_GRANADA_STANDARD.md).

@@ -60,6 +60,7 @@ Source: "{#PublishDir}\LouderMe.exe"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{autoprograms}\LouderMe"; Filename: "{app}\LouderMe.exe"; IconFilename: "{app}\LouderMe.exe"
+Name: "{autoprograms}\LouderMe Developer Edition"; Filename: "{app}\LouderMe.exe"; Parameters: "--developer"; IconFilename: "{app}\LouderMe.exe"
 Name: "{autodesktop}\LouderMe"; Filename: "{app}\LouderMe.exe"; IconFilename: "{app}\LouderMe.exe"; Tasks: desktopicon
 
 [Tasks]

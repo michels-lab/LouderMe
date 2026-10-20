@@ -71,7 +71,8 @@ internal sealed class MainForm : Form
         _deviceVolumeSyncTimer.Tick += (_, _) => SyncDeviceVolume();
         _deviceVolumeSyncTimer.Start();
 
-        Shown += async (_, _) => await CheckForUpdatesAsync(silent: true);
+        if (!DeveloperMode.Enabled)
+            Shown += async (_, _) => await CheckForUpdatesAsync(silent: true);
     }
 
     protected override void Dispose(bool disposing)
@@ -89,6 +90,17 @@ internal sealed class MainForm : Form
 
     private void BuildUi()
     {
+        Name = "main-window";
+        _aboutAction.Name = "about";
+        _volume.Name = "media-volume";
+        _mute.Name = "media-mute";
+        _boostEnabled.Name = "boost-toggle";
+        _boost.Name = "boost-level";
+        _eqEnabled.Name = "eq-toggle";
+        _preset.Name = "eq-preset";
+        _connectEngineAction.Name = "connect-engine";
+        _audioPathTestAction.Name = "audio-path-test";
+        _startWithWindows.Name = "start-with-windows";
         // Persistent header must remain visible independently of scroll position.
         var shell = new TableLayoutPanel
         {
@@ -307,6 +319,7 @@ internal sealed class MainForm : Form
     private void BuildOutputCard(TableLayoutPanel root)
     {
         var card = Card("DEVICE VOLUME · WINDOWS OUTPUT 0–100%");
+        card.Name = "output-card";
         var layout = (TableLayoutPanel)card.Controls[0];
 
         _deviceValue.AutoSize = true;
@@ -356,6 +369,7 @@ internal sealed class MainForm : Form
     private void BuildBoostCard(TableLayoutPanel root)
     {
         var card = Card("GLOBAL BOOST · SYSTEM-WIDE APO");
+        card.Name = "boost-card";
         var layout = (TableLayoutPanel)card.Controls[0];
         layout.RowCount = 9;
 
@@ -434,6 +448,7 @@ internal sealed class MainForm : Form
         foreach (var level in new[] { 100, 125, 150, 175, 200, 225, 250 })
         {
             var button = Button($"{level}%", Cyan);
+            button.Name = $"boost-quick-{level}";
             button.Click += (_, _) =>
             {
                 _boost.Value = level;
@@ -565,6 +580,7 @@ internal sealed class MainForm : Form
     private void BuildEqualizerCard(TableLayoutPanel root)
     {
         var card = Card("7-BAND EQUALIZER");
+        card.Name = "equalizer-card";
         var layout = (TableLayoutPanel)card.Controls[0];
         layout.RowCount = 12;
 
@@ -678,6 +694,7 @@ internal sealed class MainForm : Form
                 _eqWave.Gains = _settings.EqualizerGainsDb;
                 ApplyProcessing();
             };
+            value.Name = $"eq-band-{EqualizerPresets.FrequenciesHz[i]}";
             _eqBands[i] = value;
 
             var valueLabel = new Label
@@ -703,9 +720,11 @@ internal sealed class MainForm : Form
     private void BuildStartupCard(TableLayoutPanel root)
     {
         var card = Card("STARTUP");
+        card.Name = "startup-card";
         var layout = (TableLayoutPanel)card.Controls[0];
 
         _startWithWindows.Text = "Start LouderMe with Windows";
+        if (DeveloperMode.Enabled) _startWithWindows.Enabled = false; // Never alter public auto-start via Developer UI.
         _startWithWindows.AutoSize = true;
         _startWithWindows.ForeColor = TextPrimary;
         _startWithWindows.CheckedChanged += (_, _) =>
@@ -754,6 +773,11 @@ internal sealed class MainForm : Form
 
         _updateAction.AutoSize = true;
         _updateAction.Text = "Check updates";
+        if (DeveloperMode.Enabled)
+        {
+            _updateAction.Enabled = false;
+            _updateAction.Text = "Updates: public edition only";
+        }
         _updateAction.FlatStyle = FlatStyle.Flat;
         _updateAction.ForeColor = Cyan;
         _updateAction.BackColor = Surface;
@@ -1048,6 +1072,7 @@ internal sealed class MainForm : Form
 
     private async Task CheckForUpdatesAsync(bool silent)
     {
+        if (DeveloperMode.Enabled) return; // A developer test cannot install over the public app.
         try
         {
             if (!silent)

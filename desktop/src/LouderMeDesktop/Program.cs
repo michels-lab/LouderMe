@@ -4,11 +4,7 @@ namespace LouderMeDesktop;
 
 internal static class Program
 {
-    private static string DiagnosticsDirectory =>
-        Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "Michel's Lab",
-            "LouderMe");
+    private static string DiagnosticsDirectory => DeveloperMode.DataDirectory;
 
     internal static string StartupCrashLogPath =>
         Path.Combine(DiagnosticsDirectory, "startup-crash.log");
@@ -16,6 +12,11 @@ internal static class Program
     [STAThread]
     private static int Main(string[] args)
     {
+        var developerEdition = args.Any(arg => arg.Equals("--developer", StringComparison.OrdinalIgnoreCase));
+        DeveloperMode.Configure(developerEdition);
+        var developerContractTest = args.Any(arg => arg.Equals("--check-developer-contract", StringComparison.OrdinalIgnoreCase));
+        var developerSmokeTest = args.Any(arg => arg.Equals("--developer-smoke-test", StringComparison.OrdinalIgnoreCase));
+        if (developerSmokeTest) DeveloperMode.Configure(true);
         var layoutSmokeTest = args.Any(arg =>
             arg.Equals("--layout-smoke-test", StringComparison.OrdinalIgnoreCase));
         var visualArgument = Array.FindIndex(args, arg =>
@@ -44,11 +45,16 @@ internal static class Program
                 return 1;
             }
         }
-        var smokeTest = layoutSmokeTest || visualEvidence || updaterContractTest || apoContractTest || args.Any(arg =>
+        var smokeTest = layoutSmokeTest || visualEvidence || updaterContractTest || apoContractTest || developerContractTest || developerSmokeTest || args.Any(arg =>
             arg.Equals("--smoke-test", StringComparison.OrdinalIgnoreCase));
 
         try
         {
+            if (developerContractTest)
+            {
+                DeveloperAudit.RunContractSelfTests();
+                return 0;
+            }
             if (updaterContractTest)
             {
                 DesktopUpdateService.RunContractSelfTests();
@@ -60,7 +66,9 @@ internal static class Program
                 return 0;
             }
 
-            using var mutex = new Mutex(true, @"Local\MichelsLab.LouderMeDesktop", out var firstInstance);
+            using var mutex = new Mutex(true, DeveloperMode.Enabled
+                ? @"Local\MichelsLab.LouderMeDesktop.Developer"
+                : @"Local\MichelsLab.LouderMeDesktop", out var firstInstance);
             if (!firstInstance)
             {
                 if (!smokeTest)
@@ -80,7 +88,31 @@ internal static class Program
             splash.Show();
             Application.DoEvents();
 
+            var developerAuditExitCode = 0;
             using var main = new MainForm();
+            if (DeveloperMode.Enabled)
+            {
+                main.Text = "LouderMe — Developer Edition";
+                main.Shown += (_, _) => main.BeginInvoke((Action)(() =>
+                {
+                    var inspector = new DeveloperDiagnosticsForm(main);
+                    inspector.Show(main);
+                    if (developerSmokeTest)
+                    {
+                        try { inspector.AssertRuntimeAudit(); }
+                        catch (Exception ex)
+                        {
+                            developerAuditExitCode = 1;
+                            WriteStartupCrash(ex);
+                        }
+                        finally
+                        {
+                            inspector.Close();
+                            main.Close();
+                        }
+                    }
+                }));
+            }
 
             var start = Environment.TickCount64;
             while (Environment.TickCount64 - start < 520)
@@ -90,6 +122,11 @@ internal static class Program
             }
 
             splash.Close();
+            if (developerSmokeTest)
+            {
+                Application.Run(main);
+                return developerAuditExitCode;
+            }
             if (visualEvidence)
             {
                 if (visualArgument + 1 >= args.Length ||

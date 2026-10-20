@@ -18,11 +18,7 @@ internal static class DesktopSettingsStore
         WriteIndented = true,
     };
 
-    private static string DirectoryPath =>
-        Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "Michel's Lab",
-            "LouderMe");
+    private static string DirectoryPath => DeveloperMode.DataDirectory;
 
     internal static string SettingsPath => Path.Combine(DirectoryPath, "desktop-settings.json");
 

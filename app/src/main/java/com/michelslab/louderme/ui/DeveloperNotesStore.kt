@@ -26,6 +26,11 @@ internal data class OwnerNote(
         .put("createdUtcMs", createdUtcMs).put("updatedUtcMs", updatedUtcMs)
 }
 
+// Filtering changes only the inspector presentation; audit and exports always
+// retain every saved annotation, including resolved owner observations.
+internal fun visibleDeveloperNotes(notes: List<OwnerNote>, statusFilter: String): List<OwnerNote> =
+    if (statusFilter == "All") notes else notes.filter { it.status == statusFilter }
+
 internal data class TargetSelection(
     val screen: String, val locator: String, val label: String,
     val existing: OwnerNote? = null,

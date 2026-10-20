@@ -165,6 +165,16 @@ def run(apk: Path, sha: str, out: Path, public_apk: Path | None = None) -> None:
         root = wait_for_text(NOTE, contains=True)
         screenshots.append(screenshot(out, "developer-saved-note", digest))
 
+        # Prove filtering through installed Compose controls, not a mock.
+        # An Open note must disappear from the Resolved view, then return in All.
+        click(root, "Resolved")
+        root = wait_for_text("Showing 0 of 1 notes · Resolved")
+        if any(NOTE in element_text(node) for node in root.iter("node")):
+            raise RuntimeError("Resolved filter did not exclude the actual Open note")
+        screenshots.append(screenshot(out, "developer-filtered-resolved", digest))
+        click(root, "All")
+        wait_for_text(NOTE, contains=True)
+
         # Restart the ACTUAL installed application to prove persistence.
         adb("shell", "am", "force-stop", PACKAGE)
         adb("shell", "am", "start", "-W", "-n", PACKAGE + "/" + MAIN_ACTIVITY)
@@ -200,6 +210,7 @@ def run(apk: Path, sha: str, out: Path, public_apk: Path | None = None) -> None:
                   "independent developer package launched",
                   "real Compose inspector and section selection",
                   "verbatim owner annotation saved and displayed",
+                  "real Resolved status filter hides Open note; All restores it",
                   "annotation survived process restart",
                   "read-only audit launched",
                   "JSON review contained verbatim note"

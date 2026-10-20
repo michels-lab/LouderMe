@@ -7,6 +7,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -52,6 +53,7 @@ internal fun DeveloperInspectorUi(
     val context = LocalContext.current
     var audit by remember { mutableStateOf<JSONArray?>(null) }
     var pendingDelete by remember { mutableStateOf<OwnerNote?>(null) }
+    var statusFilter by remember { mutableStateOf("All") }
 
     BackHandler(enabled = owner.inspect) { owner.inspect = false }
 
@@ -90,7 +92,18 @@ internal fun DeveloperInspectorUi(
                     if (owner.error != null)
                         Text(owner.error ?: "", color = MaterialTheme.colorScheme.error)
                     Text("Saved section notes: " + owner.notes.size, fontWeight = FontWeight.Bold)
-                    owner.notes.forEach { note ->
+                    Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
+                        listOf("All", "Open", "Investigating", "Resolved").forEach { status ->
+                            TextButton(onClick = { statusFilter = status }) {
+                                Text(if (statusFilter == status) "✓ " + status else status)
+                            }
+                        }
+                    }
+                    val shown = visibleDeveloperNotes(owner.notes, statusFilter)
+                    Text("Showing " + shown.size + " of " + owner.notes.size +
+                        " notes · " + statusFilter,
+                        style = MaterialTheme.typography.bodySmall)
+                    shown.forEach { note ->
                         Column(Modifier.fillMaxWidth().padding(top = 10.dp)) {
                             Text("[" + note.severity + "] " + note.screen + " / " +
                                 note.label + ": " + note.comment.take(80))

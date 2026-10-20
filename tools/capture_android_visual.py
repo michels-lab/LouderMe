@@ -88,17 +88,25 @@ def has_label(root: ET.Element, label: str) -> bool:
     )
 
 
-def wait_for_labels(required: tuple[str, ...], timeout: int = 24) -> ET.Element:
+def wait_for_labels(required: tuple[str, ...], timeout: int = 45) -> ET.Element:
     # On cold AVD launches a fixed 3-second delay is not a UI-ready signal.
     # Retry only actual uiautomator hierarchy reads and fail closed at a bound.
     deadline = time.monotonic() + timeout
     last_error = None
     last_root = None
+    launcher_dialog_dismissed = False
     while time.monotonic() < deadline:
         try:
             last_root = hierarchy()
             if all(has_label(last_root, label) for label in required):
                 return last_root
+            # Disposable emulator can boot with the Pixel Launcher ANR over
+            # the correctly launched app. Dismiss ONLY this exact system dialog
+            # once; never ignore a LouderMe crash or treat dismissal as proof.
+            if not launcher_dialog_dismissed and dismiss_system_launcher_anr(last_root):
+                launcher_dialog_dismissed = True
+                time.sleep(2)
+                continue
         except RuntimeError as error:
             last_error = str(error)
         time.sleep(1)
@@ -143,6 +151,21 @@ def click_labeled(root: ET.Element, label: str) -> None:
     x, y = point_for_label(root, label)
     print(f"Tapping real native {label!r} control at ({x},{y})", flush=True)
     adb("shell", "input", "tap", str(x), str(y))
+
+
+def dismiss_system_launcher_anr(root: ET.Element) -> bool:
+    """Recover ONLY the known Pixel Launcher ANR on a disposable CI emulator.
+
+    This is not a general crash suppressor and does not excuse an ANR from the
+    LouderMe application. A subsequent real LouderMe hierarchy is mandatory.
+    """
+    if not has_label(root, "Pixel Launcher isn't responding"):
+        return False
+    if not has_label(root, "Close app"):
+        raise RuntimeError("Pixel Launcher ANR is present but the native Close app control is absent")
+    print("CI emulator system launcher ANR detected; closing Pixel Launcher only.", flush=True)
+    click_labeled(root, "Close app")
+    return True
 
 
 def navigate_to_about() -> ET.Element:

@@ -18,3 +18,13 @@ En **michels-lab/LouderMe**:
 **Estados diferentes:** pendiente → implementado → pruebas superadas → integrado → publicado → validado por el usuario. No presentar una fase como otra.
 
 **Punto de reentrada:** cualquier bloque aparcado conserva en el issue/bitácora su último paso seguro, SHA, dependencias y comprobaciones necesarias. Al siguiente comando **granada**, volver a buscar el siguiente bloque disponible que no interfiera.
+
+## Cambio del propietario — 2026-10-20: GRANADA GRANDE
+
+**Este repositorio hereda inmediatamente la escala obligatoria** del estándar maestro [GRANADA_CONTINUOUS_BLOCK_PROTOCOL.md](https://github.com/michels-lab/Michel-Software-Standards/blob/main/standards/GRANADA_CONTINUOUS_BLOCK_PROTOCOL.md#escala-obligatoria-desde-2026-10-20--granada-grande).
+
+- Priorizar **un paquete amplio y funcional**, normalmente 3 entregables sustanciales relacionados (flujo completo, casos límite, persistencia o seguridad, pruebas de regresión y evidencia), no un mini-PR, una prueba suelta o solamente documentación. Un único P0 grande puede bastar; no inventar relleno.
+- Revisar issues/PR/HEAD/claims antes de actuar; **la ambición no permite pisar trabajo de otros**, mezclar estados de usuario, arriesgar datos, reactivar plataformas pausadas ni publicar sin autorización. Sustituir subpartes bloqueadas por otras independientes.
+- Cada bloque debe dejar **código/capacidad real y QA ejecutada cuando sea posible**, con estado A/B/C, SHAs, resultados y próximos gates. Un plan o una bitácora **no es un bloque funcional completado**.
+- En repositorios de distribución, GRANADA GRANDE se traduce a paquetes de controles de integridad/procedencia/documentación o pruebas no destructivas; nunca crear versiones ni releases sin orden expresa.
+- Mantener las bitácoras locales, los límites de cada producto y su punto de reentrada; al siguiente “operación granada”, empezar con el paquete sustancial seguro de mayor impacto.

@@ -241,6 +241,11 @@ jobs:
             -EvidencePath $evidence `
             -CrashLogPath $crashLog
 
+          # Prove the installed package actually includes an independent Developer
+          # launcher and that the installed EXE audits live WinForms controls.
+          pwsh -File desktop/tools/check_developer_installed.ps1 -ExePath $installedExe
+          if ($LASTEXITCODE -ne 0) { throw 'Installed Developer Edition gate failed.' }
+
           # Block shipping when actual running installed Home/About lacks real screenshot proof.
           pwsh -File desktop/tools/capture_windows_visual.ps1 `
             -ExePath $installedExe `

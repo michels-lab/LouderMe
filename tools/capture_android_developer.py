@@ -210,6 +210,7 @@ def run(apk: Path, sha: str, out: Path, public_apk: Path | None = None) -> None:
                   "independent developer package launched",
                   "real Compose inspector and section selection",
                   "verbatim owner annotation saved and displayed",
+                  "real Resolved status filter hides Open note; All restores it",
                   "annotation survived process restart",
                   "read-only audit launched",
                   "JSON review contained verbatim note"

@@ -1,3 +1,12 @@
+## 2026-10-20 — Operación Granada: Developer Android integrated, pre-release quality gates (candidate)
+
+- PR #79 **merged** into `main` at `c3fdce0f12679855e8957f6606c4c5e8e35c69d8` after exact-head Android run `39402929535` (Play/Direct/Developer compile/unit, installed Home/About capture, actual Developer anchored note persisted across restart and reviewed JSON) and Windows run `39402918588` both **SUCCESS**. Windows Developer #78, Android navigation #80/#81 and Windows readiness audit #82 are also integrated. **Emulator evidence is not owner Samsung/Windows acoustic acceptance**.
+- Current pre-release branch `fix/granada-release-dev-smoke-gates-20261020` adds fail-closed Windows shipping checks for `--check-developer-contract`, live `--developer-smoke-test`, **installed** Developer shortcut identity and physically installed WinForms auditor. These checks must pass Windows CI before source merge; they do NOT create new publishing triggers.
+- Release preparedness and separate signed Android/Windows artifact gates: `desktop/docs/GRANADA_RELEASE_READINESS_2026-10-20.md`. Android Developer debug APK is not an official persistent signed Developer distribution. Native audio #46/#48, exact shipping artifact #33, owner Developer acceptance #77 and signing continuity #40 stay tracked.
+- **Distribution unchanged:** Android public v0.1.12, Desktop public v0.1.13; no version bump, new release notes, signed publication or public updater changes authorized.
+
+---
+
 ## 2026-10-20 — Operación Granada: Android Developer Edition independent workstream (candidate)
 
 **Objective:** establish a physically separate installable Android developer clone for actual Home/About inspection, owner-anchored notes, local audit, privacy-reviewed JSON/AI exports. Contract: master \`DEVELOPER_TWIN_AUDIT_STANDARD.md\`, issue #77, \`docs/DEVELOPER_EDITION_ANDROID.md\`.

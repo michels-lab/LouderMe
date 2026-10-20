@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -57,37 +58,52 @@ fun LouderMeApp(
     onEqBandChanged: (Int, Float) -> Unit,
 ) {
     var showAbout by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val owner = if (BuildConfig.DEVELOPER_EDITION) {
+        remember(context.applicationContext) { DeveloperNotesStore(context.applicationContext) }
+    } else null
+    // Activate the mounted screen BEFORE Compose measures section anchors;
+    // running this in SideEffect could clear bounds after onGloballyPositioned.
+    owner?.activateScreen(if (showAbout) "About" else "Home")
 
     LouderMeTheme {
-        BackHandler(enabled = showAbout) {
-            showAbout = false
-        }
-
-        if (showAbout) {
-            AboutScreen(
-                updateStatus = updateStatus,
-                onCheckForUpdates = onCheckForUpdates,
-                onInstallUpdate = onInstallUpdate,
-                startOnBoot = startOnBoot,
-                onStartOnBootChanged = onStartOnBootChanged,
-                onBack = { showAbout = false },
-            )
-        } else {
-            HomeScreen(
-                updateStatus = updateStatus,
-                audioState = audioState,
-                equalizerState = equalizerState,
-                deviceVolumePercent = deviceVolumePercent,
-                onDeviceVolumeChanged = onDeviceVolumeChanged,
-                onAbout = { showAbout = true },
-                onCheckForUpdates = onCheckForUpdates,
-                onInstallUpdate = onInstallUpdate,
-                onBoostToggle = onBoostToggle,
-                onBoostLevelSelected = onBoostLevelSelected,
-                onEqEnabledChanged = onEqEnabledChanged,
-                onEqPresetSelected = onEqPresetSelected,
-                onEqBandChanged = onEqBandChanged,
-            )
+        CompositionLocalProvider(LocalDeveloperNotes provides owner) {
+            BackHandler(enabled = showAbout && owner?.inspect != true) {
+                showAbout = false
+            }
+            Box(Modifier.fillMaxSize()) {
+                if (showAbout) {
+                    AboutScreen(
+                        updateStatus = updateStatus,
+                        onCheckForUpdates = onCheckForUpdates,
+                        onInstallUpdate = onInstallUpdate,
+                        startOnBoot = startOnBoot,
+                        onStartOnBootChanged = onStartOnBootChanged,
+                        onBack = { showAbout = false },
+                    )
+                } else {
+                    HomeScreen(
+                        updateStatus = updateStatus,
+                        audioState = audioState,
+                        equalizerState = equalizerState,
+                        deviceVolumePercent = deviceVolumePercent,
+                        onDeviceVolumeChanged = onDeviceVolumeChanged,
+                        onAbout = { showAbout = true },
+                        onCheckForUpdates = onCheckForUpdates,
+                        onInstallUpdate = onInstallUpdate,
+                        onBoostToggle = onBoostToggle,
+                        onBoostLevelSelected = onBoostLevelSelected,
+                        onEqEnabledChanged = onEqEnabledChanged,
+                        onEqPresetSelected = onEqPresetSelected,
+                        onEqBandChanged = onEqBandChanged,
+                    )
+                }
+                if (owner != null) {
+                    DeveloperInspectorUi(owner, audioState, equalizerState) {
+                        showAbout = it == "About"
+                    }
+                }
+            }
         }
     }
 }
@@ -118,11 +134,13 @@ private fun HomeScreen(
     Scaffold(
         containerColor = LouderMeColors.Bg,
         topBar = {
-            CommandBar(
-                eyebrow = "AUDIO WORKSPACE",
-                title = "LouderMe",
-                onAbout = onAbout,
-            )
+            Box(Modifier.fillMaxWidth().developerAnchor("Home", "home.header", "Main header")) {
+                CommandBar(
+                    eyebrow = "AUDIO WORKSPACE",
+                    title = "LouderMe",
+                    onAbout = onAbout,
+                )
+            }
         },
     ) { padding ->
         Column(
@@ -140,13 +158,15 @@ private fun HomeScreen(
                 subtitle = "General audio gain, equalizer and diagnostics in one workspace.",
             )
 
-            UpdateStrip(
-                status = updateStatus,
-                onCheckForUpdates = onCheckForUpdates,
-                onInstallUpdate = onInstallUpdate,
-            )
+            Box(Modifier.fillMaxWidth().developerAnchor("Home", "home.updates", "Update status")) {
+                UpdateStrip(
+                    status = updateStatus,
+                    onCheckForUpdates = onCheckForUpdates,
+                    onInstallUpdate = onInstallUpdate,
+                )
+            }
 
-            Panel {
+            Panel(modifier = Modifier.developerAnchor("Home", "home.volume", "Media volume")) {
                 PanelHeading(
                     eyebrow = "DEVICE VOLUME",
                     title = "Media volume · 0–100%",
@@ -160,12 +180,14 @@ private fun HomeScreen(
                 )
             }
 
-            BoostHero(
-                audioState = audioState,
-                onBoostToggle = onBoostToggle,
-            )
+            Box(Modifier.fillMaxWidth().developerAnchor("Home", "home.boost", "Global Boost")) {
+                BoostHero(
+                    audioState = audioState,
+                    onBoostToggle = onBoostToggle,
+                )
+            }
 
-            Panel {
+            Panel(modifier = Modifier.developerAnchor("Home", "home.quick-levels", "Quick levels")) {
                 PanelHeading(
                     eyebrow = "QUICK LEVELS",
                     title = "Choose a boost",
@@ -182,7 +204,8 @@ private fun HomeScreen(
                         ) {
                             rowLevels.forEach { level ->
                                 GainButton(
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.weight(1f)
+                                        .developerAnchor("Home", "home.quick-" + level, "Boost " + level + "%"),
                                     level = level,
                                     selected = audioState.percent == level,
                                     onClick = { onBoostLevelSelected(level) },
@@ -196,7 +219,7 @@ private fun HomeScreen(
                 }
             }
 
-            Panel {
+            Panel(modifier = Modifier.developerAnchor("Home", "home.fine-tune", "Manual gain")) {
                 PanelHeading(
                     eyebrow = "FINE TUNE",
                     title = "Manual gain",
@@ -262,7 +285,7 @@ private fun HomeScreen(
                 onBandChanged = onEqBandChanged,
             )
 
-            Panel {
+            Panel(modifier = Modifier.developerAnchor("Home", "home.diagnostics", "Engine diagnostics")) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -438,7 +461,7 @@ private fun EqualizerPanel(
     onPresetSelected: (EqualizerPreset) -> Unit,
     onBandChanged: (Int, Float) -> Unit,
 ) {
-    Panel {
+    Panel(modifier = Modifier.developerAnchor("Home", "home.equalizer", "Seven-band equalizer")) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -563,7 +586,7 @@ private fun EqBandControl(
 ) {
     var localValue by remember(gainDb) { mutableFloatStateOf(gainDb) }
 
-    Column {
+    Column(Modifier.developerAnchor("Home", "home.eq-band-" + label, label + " Hz band")) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -1142,10 +1165,11 @@ private fun FeatureCard(
 }
 
 @Composable
-private fun Panel(content: @Composable ColumnScope.() -> Unit) {
+private fun Panel(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .then(modifier)
             .clip(RoundedCornerShape(20.dp))
             .background(
                 Brush.verticalGradient(
@@ -1298,7 +1322,10 @@ private fun AboutScreen(
                         .padding(horizontal = 12.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    TextButton(onClick = onBack) {
+                    TextButton(
+                        onClick = onBack,
+                        modifier = Modifier.developerAnchor("About", "about.header", "Back to Home"),
+                    ) {
                         Text("Back", color = LouderMeColors.Cyan)
                     }
                     Column(modifier = Modifier.weight(1f)) {
@@ -1370,7 +1397,7 @@ private fun AboutScreen(
                 }
             }
 
-            Panel {
+            Panel(modifier = Modifier.developerAnchor("About", "about.profile", "Author and studio")) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(15.dp),
@@ -1437,7 +1464,7 @@ private fun AboutScreen(
                 }
             }
 
-            Panel {
+            Panel(modifier = Modifier.developerAnchor("About", "about.updates", "Build and updates")) {
                 PanelHeading(
                     eyebrow = "APP",
                     title = "Build information",

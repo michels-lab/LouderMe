@@ -12,6 +12,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.media.AudioManager
+import android.widget.Toast
 import kotlin.math.roundToInt
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -98,13 +99,16 @@ class MainActivity : ComponentActivity() {
         equalizerState.value = EqualizerStateStore.read(this)
         startOnBoot.value = StartupPreferences.isStartOnBootEnabled(this)
 
-        updateCoordinator = UpdateCoordinator(
-            activity = this,
-            updateLauncher = updateLauncher,
-            onStatusChanged = { updateStatus.value = it },
-        )
-
-        updateCoordinator.checkForUpdates(automatic = true)
+        if (BuildConfig.DEVELOPER_EDITION) {
+            updateStatus.value = UpdateStatus.UpToDate
+        } else {
+            updateCoordinator = UpdateCoordinator(
+                activity = this,
+                updateLauncher = updateLauncher,
+                onStatusChanged = { updateStatus.value = it },
+            )
+            updateCoordinator.checkForUpdates(automatic = true)
+        }
 
         setContent {
             LouderMeApp(
@@ -115,14 +119,22 @@ class MainActivity : ComponentActivity() {
                 deviceVolumePercent = deviceVolumePercent.value,
                 onDeviceVolumeChanged = ::setDeviceVolume,
                 onCheckForUpdates = {
-                    updateCoordinator.checkForUpdates(automatic = false)
+                    if (BuildConfig.DEVELOPER_EDITION) {
+                        Toast.makeText(this, "Updates are disabled in Developer Edition.", Toast.LENGTH_SHORT).show()
+                    } else updateCoordinator.checkForUpdates(automatic = false)
                 },
                 onInstallUpdate = {
-                    updateCoordinator.installAvailableUpdate()
+                    if (BuildConfig.DEVELOPER_EDITION) {
+                        Toast.makeText(this, "Use the public app to install updates.", Toast.LENGTH_SHORT).show()
+                    } else updateCoordinator.installAvailableUpdate()
                 },
                 onStartOnBootChanged = { enabled ->
-                    StartupPreferences.setStartOnBootEnabled(this, enabled)
-                    startOnBoot.value = enabled
+                    if (!BuildConfig.DEVELOPER_EDITION) {
+                        StartupPreferences.setStartOnBootEnabled(this, enabled)
+                        startOnBoot.value = enabled
+                    } else {
+                        Toast.makeText(this, "Auto-start is disabled in Developer Edition.", Toast.LENGTH_SHORT).show()
+                    }
                 },
                 onBoostToggle = { enabled ->
                     if (enabled) {

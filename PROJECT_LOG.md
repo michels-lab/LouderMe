@@ -1963,3 +1963,12 @@ Updated only the managed blocks in AGENTS.md and .github/copilot-instructions.md
 - **Gate:** Desktop source release workflow must pass installed launch/uninstall and final rendered evidence, exact APO contract checks and checksum generation, then create an immutable `desktop-v0.1.13` source release. Dedicated public publisher combines Android v0.1.12 unchanged with Desktop v0.1.13 and advances only the Desktop updater version.
 - **Limitations:** official installer remains dependent on separately installed/attached Equalizer APO. Actual physical audio A/B test requires the owner's PC after release. Mark the audible-audio bug #74 as open until proven; do not claim 250% effective without sound evidence.
 - **Status:** release candidate staged for CI; no source/public release claimed until verified links, release assets and manifests are present.
+
+
+## 2026-10-20 — Orden permanente GRANADA GRANDE (gobernanza; no release)
+
+- El propietario exige bloques **más grandes y ambiciosos**, con entregables relacionados y funcionamiento de extremo a extremo. Vigente el protocolo maestro en `michels-lab/Michel-Software-Standards/standards/GRANADA_CONTINUOUS_BLOCK_PROTOCOL.md` y la copia local `.michelslab/GRANADA.md`.
+- Para el siguiente comando GRANADA: leer HEAD, issues, PR abiertos, claims y este log; escoger un paquete de **tres o más entregables sustanciales relacionados cuando haya alcance real**, incluyendo implementación, prueba del flujo principal, errores/reintentos y validación. Un solo P0 indivisible puede ser suficiente; no inventar trabajo artificial.
+- Si cualquier parte está ocupada por otra rama, requiere equipo físico, una cuenta de proveedor, resultados científicos que solo existen en el portátil o autorización del propietario, **aparcar con evidencia y pasar a otra subparte independiente**. Conservar identidad visual, datos, credenciales y estándares de publicación.
+- Registro obligatorio: A/B/C con estados separados, ruta/PR/sha, QA **ejecutado** (no simplemente escrito), bloqueos, recuperación, reentrada. Esta actualización de política **no significa ninguna funcionalidad del producto implementada, probada ni publicada**.
+- Repositorio: `michels-lab/LouderMe`. En los siguientes bloques aplicar este alcance sin modificar los PR activos o trabajos no relacionados.

@@ -1,3 +1,9 @@
+## GRANADA AMBICIOSA — ampliación del propietario (2026-10-20)
+
+**Obligatorio para este repo y sus Developer Twins:** cada invocación GRANADA debe perseguir un macro-bloque de alto impacto y **varios entregables funcionales y comprobables** (normalmente 3–6 paquetes sustanciales relacionados, si son compatibles), en vez de un micro-PR aislado. Cubrir comportamiento completo, errores/recuperación, persistencia, UI y pruebas de integración donde corresponda. Si un elemento está bloqueado/ocupado, apartarlo con issue/PR/SHA y continuar con el siguiente independiente sin invadir sus archivos. Aceptación física, CI, merge y publicación son hitos distintos. Nunca fabricar datos, hacer clics inseguros ni publicar un release implícitamente.
+
+[Contrato vigente en el repositorio maestro](https://github.com/michels-lab/Michel-Software-Standards/blob/main/standards/OPERACION_GRANADA_STANDARD.md). No eliminar otros pendientes ni cambiar las prioridades originales del propietario.
+
 # GRANADA — continuidad sin interferencias
 
 **Regla permanente de Michel's Lab.** Comando del propietario: **GRANADA**.

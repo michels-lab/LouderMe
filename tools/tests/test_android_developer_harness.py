@@ -67,9 +67,9 @@ class DeveloperHarnessTests(unittest.TestCase):
             'bounds="[50,100][300,190]"/></hierarchy>'
         )
         with patch.object(dev, "wait_for_text", side_effect=[launcher, launcher]), \
-             patch.object(dev, "hierarchy", return_value=panel), \
+             patch.object(dev, "hierarchy", side_effect=[launcher, panel]), \
              patch.object(dev, "click") as click, \
-             patch.object(dev.time, "monotonic", side_effect=[0, 10, 20, 21]), \
+             patch.object(dev.time, "monotonic", side_effect=[0, 1, 8, 9, 10]), \
              patch.object(dev.time, "sleep"):
             actual = dev.open_inspector(attempts=2)
         self.assertIs(actual, panel)

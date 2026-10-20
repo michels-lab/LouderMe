@@ -1,3 +1,26 @@
+## 2026-10-20 — Operación Granada: Android Developer Edition independent workstream (candidate)
+
+**Objective:** establish a physically separate installable Android developer clone for actual Home/About inspection, owner-anchored notes, local audit, privacy-reviewed JSON/AI exports. Contract: master \`DEVELOPER_TWIN_AUDIT_STANDARD.md\`, issue #77, \`docs/DEVELOPER_EDITION_ANDROID.md\`.
+
+**Candidate changes in \`feat/granada-20261020-android-developer-twin\`, not a stable release:**
+- Third Gradle flavor \`developer\` with package suffix \`.developer\`, distinct launcher label, no Android app-data backup or boot startup. Retain existing Play and Direct flavors, updates, stable key and source versions unchanged. Disable real updater and auto-start from Developer; preserve actual audio engine and customer UI on its isolated variant.
+- Modeless Compose inspection overlay tied to dynamically measured bounds on real Home/About controls (including seven quick boost levels and seven EQ bands); consumes selection touches instead of activating Boost/EQ. Anchored notes preserve exact comments/locators/timestamps/severity/status and survive restarts with package-isolated local storage.
+- Developer-only Run Audit checks live state invariants without pretending it measured actual gain; unresolved anchors, corruption and hardware limitations surfaced. JSON and AI prompt include complete user-authored observations and offer owner redaction before ACTION_SEND.
+- Tests: developer/debug build plus unit contracts; Play/Direct compilation and package identity regression; actual emulator/owner-device verification still separate and NOT CLAIMED.
+
+**Status:** source candidate. CI exact-head, installed/real UI, touch safety, target Samsung physical audio and owner signoff must be confirmed before completion; Android release must not be published from this development request. Windows twin workstream remains PR #78. Independent native audio #46/#48, source-to-final-binary QA #33 remain open.
+
+### GRANADA continuation — 2026-10-20, recovery after Android emulator regression
+
+- Real CI prior to this block: three product flavors compiled and passed unit tests, but installed Developer workflow failed to reach app UI because Pixel Launcher ANR obscured both public and Developer apps (run 39396543973); **no false pass**.
+- Independent recovery PR #81 passed real Home/About installed emulator CI and merged as `d2833bc`. The Developer E2E harness now reuses the same exact single-time Pixel Launcher recovery while refusing to treat dismissal as proof of app readiness.
+- Developer CI now coinstalls real public and Developer APKs, checks distinct package identities, tests actual note workflow, and retains diagnostic pixels when E2E fails. Launcher class differs from Developer applicationId; launch uses actual qualified component.
+- Corrected Compose Home/About activation order so live bounds are not reset after rendering; added hermetic installed QA-harness tests.
+- Status: source candidate; latest full installed E2E acceptance and physical owner verification **pending**, no release.
+
+
+---
+
 ## 2026-10-20 — Operación Granada: Windows Developer audio readiness audit (candidate)
 
 **Implemented in separate branch `feat/granada-20261020-windows-audio-readiness-audit`, pending exact-head CI and integration.** Existing read-only Developer inspector now differentiates missing APO installation, inactive include, actual APO file/config mismatch with isolated Developer settings, and a matching file whose audible signal remains unverified. Adds read-only current default Windows multimedia render endpoint availability probe without leaking endpoint names or altering volume/mute. Pure self-test covers four APO status classifications, and pre-existing Windows runtime inspector checks still run. Product audio engine and public app unchanged. Documentation: `docs/WINDOWS_DEVELOPER_AUDIO_READINESS_2026-10-20.md`.

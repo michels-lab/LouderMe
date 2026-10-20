@@ -14,6 +14,7 @@ android {
         targetSdk = 36
         versionCode = 13
         versionName = "0.1.12"
+        buildConfigField("boolean", "DEVELOPER_EDITION", "false")
     }
 
     flavorDimensions += "distribution"
@@ -26,6 +27,15 @@ android {
                 "UPDATE_CHANNEL",
                 "\"play\"",
             )
+        }
+
+        create("developer") {
+            dimension = "distribution"
+            applicationIdSuffix = ".developer"
+            versionNameSuffix = "-developer"
+            buildConfigField("boolean", "DEVELOPER_EDITION", "true")
+            // Updater is explicitly disabled in the developer app.
+            buildConfigField("String", "UPDATE_CHANNEL", "\"play\"")
         }
 
         create("sideload") {

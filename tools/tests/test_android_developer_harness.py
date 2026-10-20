@@ -57,6 +57,54 @@ class DeveloperHarnessTests(unittest.TestCase):
         adb.assert_not_called()
         self.assertFalse(dev._launcher_recovered)
 
+    def test_inspector_opens_after_one_dropped_real_touch(self):
+        launcher = root(
+            '<hierarchy><node text="DEV &#183; Audit / Notes" '
+            'bounds="[20,20][210,80]" clickable="true"/></hierarchy>'
+        )
+        panel = root(
+            '<hierarchy><node text="Select section / Add note" '
+            'bounds="[50,100][300,190]"/></hierarchy>'
+        )
+        with patch.object(dev, "wait_for_text", side_effect=[launcher, launcher]), \
+             patch.object(dev, "hierarchy", side_effect=[launcher, panel]), \
+             patch.object(dev, "click") as click, \
+             patch.object(dev.time, "monotonic", side_effect=[0, 1, 8, 9, 10]), \
+             patch.object(dev.time, "sleep"):
+            actual = dev.open_inspector(attempts=2)
+        self.assertIs(actual, panel)
+        self.assertEqual(click.call_count, 2)
+        for call in click.call_args_list:
+            self.assertEqual(call.args, (launcher, "DEV · Audit / Notes"))
+
+    def test_inspector_fails_if_real_panel_never_opens(self):
+        launcher = root(
+            '<hierarchy><node text="DEV &#183; Audit / Notes" '
+            'bounds="[20,20][210,80]" clickable="true"/></hierarchy>'
+        )
+        with patch.object(dev, "wait_for_text", return_value=launcher), \
+             patch.object(dev, "click") as click, \
+             patch.object(dev.time, "monotonic", side_effect=[0, 10, 20, 30]), \
+             patch.object(dev.time, "sleep"):
+            with self.assertRaisesRegex(RuntimeError, "did not open"):
+                dev.open_inspector(attempts=2)
+        self.assertEqual(click.call_count, 2)
+
+    def test_inspector_fails_closed_on_unrecognized_screen(self):
+        launcher = root(
+            '<hierarchy><node text="DEV &#183; Audit / Notes" '
+            'bounds="[20,20][210,80]" clickable="true"/></hierarchy>'
+        )
+        unexpected = root('<hierarchy><node text="System error"/></hierarchy>')
+        with patch.object(dev, "wait_for_text", return_value=launcher), \
+             patch.object(dev, "hierarchy", return_value=unexpected), \
+             patch.object(dev, "click") as click, \
+             patch.object(dev.time, "monotonic", side_effect=[0, 1]), \
+             patch.object(dev.time, "sleep"):
+            with self.assertRaisesRegex(RuntimeError, "unexpected UI"):
+                dev.open_inspector(attempts=3)
+        click.assert_called_once()
+
     def test_real_installed_developer_activity_is_not_public_package_alias(self):
         self.assertEqual("com.michelslab.louderme.developer", dev.PACKAGE)
         self.assertNotEqual(dev.PACKAGE, dev.PUBLIC_PACKAGE)

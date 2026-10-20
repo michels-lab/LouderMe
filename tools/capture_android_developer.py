@@ -80,6 +80,39 @@ def click(root: ET.Element, label: str, *, contains: bool = False) -> None:
     raise RuntimeError(f"No physically tappable native label {label!r} was found")
 
 
+def is_visible_label(root: ET.Element, label: str) -> bool:
+    return any(label in ((node.get("text") or ""), (node.get("content-desc") or ""))
+               for node in root.iter("node"))
+
+
+def open_inspector(*, attempts: int = 3, panel_wait_s: float = 7.0) -> ET.Element:
+    """Open the real Developer panel with bounded, observed native taps.
+
+    Android occasionally drops the first touch during a cold Compose draw.
+    Only retry when the requested panel is genuinely absent AND the real
+    developer launch button is visible. Never interpret a tap as a pass.
+    """
+    expected = "Select section / Add note"
+    launcher = "DEV · Audit / Notes"
+    for _ in range(attempts):
+        root = wait_for_text(launcher)
+        if is_visible_label(root, expected):
+            return root
+        click(root, launcher)
+        deadline = time.monotonic() + panel_wait_s
+        while time.monotonic() < deadline:
+            root = hierarchy()
+            if is_visible_label(root, expected):
+                return root
+            if not is_visible_label(root, launcher):
+                # A different system UI or non-developer screen now covers it.
+                # Do not keep tapping blind on an unknown native surface.
+                raise RuntimeError("Developer inspector navigation covered by unexpected UI")
+            time.sleep(0.75)
+    raise RuntimeError(
+        "Actual Developer inspector did not open after bounded live UI taps")
+
+
 def screenshot(folder: Path, name: str, digest: str) -> dict:
     picture = folder / f"{name}.png"
     picture.write_bytes(adb("exec-out", "screencap", "-p", binary=True))
@@ -114,9 +147,7 @@ def run(apk: Path, sha: str, out: Path, public_apk: Path | None = None) -> None:
         # so querying that label AFTER activation is incorrect.
         volume_hit = point_for_label(root, "Media volume · 0–100%")
         screenshots.append(screenshot(out, "developer-home", digest))
-        click(root, "DEV · Audit / Notes")
-
-        root = wait_for_text("Select section / Add note")
+        root = open_inspector()
         screenshots.append(screenshot(out, "developer-audit", digest))
         click(root, "Select section / Add note")
         wait_for_text("INSPECT MODE · tap a real app section (Back cancels)")
@@ -130,8 +161,7 @@ def run(apk: Path, sha: str, out: Path, public_apk: Path | None = None) -> None:
         adb("shell", "input", "text", NOTE)
         root = wait_for_text("Save note")
         click(root, "Save note")
-        root = wait_for_text("DEV · Audit / Notes")
-        click(root, "DEV · Audit / Notes")
+        root = open_inspector()
         root = wait_for_text(NOTE, contains=True)
         screenshots.append(screenshot(out, "developer-saved-note", digest))
 

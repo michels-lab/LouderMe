@@ -127,6 +127,14 @@ jobs:
             throw "LouderMe APO setup, mismatch detection or audio-path attenuation restore failed."
           }
 
+      - name: Block release if real Windows Developer audit contract fails
+        shell: pwsh
+        run: |
+          dotnet run --project desktop/src/LouderMeDesktop/LouderMeDesktop.csproj -c Release --no-build -- --check-developer-contract
+          if ($LASTEXITCODE -ne 0) { throw "Developer Edition annotation, local-store isolation and privacy report contract failed." }
+          dotnet run --project desktop/src/LouderMeDesktop/LouderMeDesktop.csproj -c Release --no-build -- --developer-smoke-test
+          if ($LASTEXITCODE -ne 0) { throw "Developer Edition actual WinForms control/audit startup failed." }
+
       - name: Publish portable Windows executable
         shell: pwsh
         run: |
@@ -201,6 +209,10 @@ jobs:
           Write-Host "Installed LouderMe stayed alive after startup (PID $($app.Id))."
           Stop-Process -Id $app.Id -Force -ErrorAction SilentlyContinue
           $app.WaitForExit()
+
+          # Use the exact same on-disk Developer installer test as Windows CI.
+          pwsh -File desktop/tools/check_developer_installed.ps1 -ExePath $installedExe
+          if ($LASTEXITCODE -ne 0) { throw 'Installed Developer Edition shortcut/auditor gate failed.' }
 
           # Test actual installed WinForms bounds at 600x520 and scroll reachability.
           $layout=Start-Process -FilePath $installedExe -ArgumentList '--layout-smoke-test' -PassThru -Wait

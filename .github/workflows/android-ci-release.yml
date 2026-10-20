@@ -249,7 +249,9 @@ jobs:
 
   release_guard:
     name: Check stable Android release uniqueness
-    needs: [validate, visual_qa]
+    # No new stable Android build may be signed while the installed Developer
+    # Edition cannot actually open, annotate, persist and review its audit.
+    needs: [validate, visual_qa, developer_qa]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     outputs:

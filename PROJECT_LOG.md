@@ -1,7 +1,7 @@
 ## 2026-10-20 — Operación Granada: Android Developer notes UX follow-up (candidate)
 
 - Candidate branch `feat/granada-android-developer-note-filters-20261020`: filter real persisted owner annotations by All/Open/Investigating/Resolved inside the inspector, with visible/total counts and per-note Edit/Locate/Delete unchanged. Exports and automatic audit still include all underlying notes, irrespective of visual filtering.
-- Add pure unit regression tests for every status, verbatim comments, timestamps and no accidental data mutation. No public app/audio/version/release changes.
+- Add pure unit regression tests for every status, verbatim comments, timestamps and no accidental data mutation. The installed Developer emulator flow also exercises actual Resolved→All taps, verifies that the note disappears/returns without deletion, and retains a real filtered-screen PNG. No public app/audio/version/release changes.
 - Status: **source candidate**; compilation and installed QA required. This feature does NOT claim Android release or owner-device acceptance.
 
 ---

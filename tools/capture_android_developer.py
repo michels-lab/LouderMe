@@ -107,7 +107,7 @@ def open_inspector(*, attempts: int = 3, panel_wait_s: float = 7.0) -> ET.Elemen
             if not is_visible_label(root, launcher):
                 # A different system UI or non-developer screen now covers it.
                 # Do not keep tapping blind on an unknown native surface.
-                break
+                raise RuntimeError("Developer inspector navigation covered by unexpected UI")
             time.sleep(0.75)
     raise RuntimeError(
         "Actual Developer inspector did not open after bounded live UI taps")

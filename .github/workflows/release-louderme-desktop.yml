@@ -127,6 +127,14 @@ jobs:
             throw "LouderMe APO setup, mismatch detection or audio-path attenuation restore failed."
           }
 
+      - name: Block release if real Windows Developer audit contract fails
+        shell: pwsh
+        run: |
+          dotnet run --project desktop/src/LouderMeDesktop/LouderMeDesktop.csproj -c Release --no-build -- --check-developer-contract
+          if ($LASTEXITCODE -ne 0) { throw "Developer Edition annotation, local-store isolation and privacy report contract failed." }
+          dotnet run --project desktop/src/LouderMeDesktop/LouderMeDesktop.csproj -c Release --no-build -- --developer-smoke-test
+          if ($LASTEXITCODE -ne 0) { throw "Developer Edition actual WinForms control/audit startup failed." }
+
       - name: Publish portable Windows executable
         shell: pwsh
         run: |
@@ -201,6 +209,23 @@ jobs:
           Write-Host "Installed LouderMe stayed alive after startup (PID $($app.Id))."
           Stop-Process -Id $app.Id -Force -ErrorAction SilentlyContinue
           $app.WaitForExit()
+
+          # The separate Developer launcher must be shipped by the real installer.
+          # A surviving EXE alone does not prove the product has a usable twin.
+          $shortcut=Get-ChildItem -Path (Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs') -Filter 'LouderMe Developer Edition.lnk' -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $shortcut) { throw 'Installed LouderMe Developer Edition Start Menu shortcut missing.' }
+          $shell=New-Object -ComObject WScript.Shell
+          $link=$shell.CreateShortcut($shortcut.FullName)
+          if ($link.Arguments -ne '--developer') { throw 'Installed Developer shortcut does not activate isolated mode.' }
+          if ([IO.Path]::GetFullPath($link.TargetPath) -ne [IO.Path]::GetFullPath($installedExe)) {
+            throw 'Installed Developer shortcut does not point to the installed LouderMe executable.'
+          }
+
+          # Execute the Developer auditor from the physically installed EXE, not just source.
+          $installedDev=Start-Process -FilePath $installedExe -ArgumentList '--developer-smoke-test' -PassThru -Wait
+          if ($installedDev.ExitCode -ne 0) {
+            throw "Installed Developer WinForms audit smoke failed with code $($installedDev.ExitCode)."
+          }
 
           # Test actual installed WinForms bounds at 600x520 and scroll reachability.
           $layout=Start-Process -FilePath $installedExe -ArgumentList '--layout-smoke-test' -PassThru -Wait

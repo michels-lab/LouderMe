@@ -115,17 +115,54 @@ def wait_for_labels(required: tuple[str, ...], timeout: int = 24) -> ET.Element:
     )
 
 
-def click_labeled(root: ET.Element, label: str) -> None:
+def point_for_label(root: ET.Element, label: str) -> tuple[int, int]:
+    """Resolve a displayed native label to its *clickable* bounding box.
+
+    Jetpack Compose sometimes exposes a visible Text child inside a much larger
+    TextButton; tapping the text center need not reliably hit the actual
+    interaction target on the cold emulator. Choose a real clickable ancestor
+    when present. Never fabricate bounds or report navigation success here.
+    """
+    parents = {child: parent for parent in root.iter() for child in parent}
     for node in root.iter("node"):
-        if node.get("text") == label or node.get("content-desc") == label:
-            match = RECT.fullmatch(node.get("bounds", ""))
+        if node.get("text") != label and node.get("content-desc") != label:
+            continue
+        current = node
+        while current in parents and current.get("clickable") != "true":
+            current = parents[current]
+        for target in (current, node):
+            match = RECT.fullmatch(target.get("bounds", ""))
             if match:
                 left, top, right, bottom = map(int, match.groups())
                 if right > left and bottom > top:
-                    adb("shell", "input", "tap", str((left + right) // 2),
-                        str((top + bottom) // 2))
-                    return
-    raise RuntimeError(f"Cannot find a displayed '{label}' control in real UI hierarchy")
+                    return (left + right) // 2, (top + bottom) // 2
+    raise RuntimeError(f"Cannot find a real displayed '{label}' target in native hierarchy")
+
+
+def click_labeled(root: ET.Element, label: str) -> None:
+    x, y = point_for_label(root, label)
+    print(f"Tapping real native {label!r} control at ({x},{y})", flush=True)
+    adb("shell", "input", "tap", str(x), str(y))
+
+
+def navigate_to_about() -> ET.Element:
+    """Require actual About semantics, with bounded retry of *real* taps.
+
+    A retry is NOT evidence: the installed app must expose both Back and About
+    after the navigation; otherwise fail closed with real hierarchy context.
+    """
+    failures = []
+    for attempt in range(1, 4):
+        home = wait_for_labels(("About",), timeout=15)
+        click_labeled(home, "About")
+        try:
+            return wait_for_labels(("Back", "About"), timeout=10)
+        except RuntimeError as error:
+            failures.append(str(error))
+            print(f"About did not open on attempt {attempt}/3; retrying only after a fresh hierarchy.",
+                  flush=True)
+    raise RuntimeError("Real installed About navigation never completed after 3 taps. "
+                       + " | ".join(failures[-2:]))
 
 
 def snapshot(out: Path, viewport: str, surface: str, digest: str, size: tuple[int, int]):
@@ -166,8 +203,12 @@ def capture(apk: Path, source: str, out: Path):
                     adb("exec-out", "screencap", "-p", binary=True))
                 raise
             shots.append(snapshot(out, viewport, "home", digest, size))
-            click_labeled(home, "About")
-            about = wait_for_labels(("Back", "About"))
+            try:
+                about = navigate_to_about()
+            except RuntimeError:
+                (out / f"diagnostic-about-{viewport}.png").write_bytes(
+                    adb("exec-out", "screencap", "-p", binary=True))
+                raise
             shots.append(snapshot(out, viewport, "about", digest, size))
             adb("shell", "input", "keyevent", "KEYCODE_BACK")
     finally:

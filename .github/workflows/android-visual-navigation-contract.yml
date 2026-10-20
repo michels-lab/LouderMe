@@ -1,0 +1,33 @@
+name: Android real navigation runner contract
+
+on:
+  pull_request:
+    paths:
+      - tools/capture_android_visual.py
+      - tools/tests/test_android_visual_navigation.py
+      - .github/workflows/android-visual-navigation-contract.yml
+  push:
+    branches:
+      - main
+      - 'fix/**'
+    paths:
+      - tools/capture_android_visual.py
+      - tools/tests/test_android_visual_navigation.py
+      - .github/workflows/android-visual-navigation-contract.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  target-selection-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Syntax validation for installed UI helper
+        run: python3 -m py_compile tools/capture_android_visual.py tools/tests/test_android_visual_navigation.py
+      - name: Test native clickable target resolution and fail-closed behavior
+        run: python3 -m unittest discover -s tools/tests -p 'test_android_visual_navigation.py' -v

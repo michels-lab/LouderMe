@@ -103,6 +103,39 @@ internal static class DeveloperAudit
             yield return nested;
     }
 
+    // Pure read-only classification: a linked config file cannot prove audible
+    // playback, and an installed APO with mismatched LouderMe settings is NOT ready.
+    internal static List<DeveloperFinding> DiagnoseApo(ApoEngineStatus apo)
+    {
+        if (!apo.Installed)
+            return new()
+            {
+                new("APO_NOT_INSTALLED", "P1", "audio",
+                    "Equalizer APO is absent; Windows system-wide Boost/EQ cannot be confirmed.",
+                    "read-only installation check")
+            };
+        if (!apo.Configured)
+            return new()
+            {
+                new("APO_NOT_LINKED", "P1", "audio",
+                    "LouderMe's Equalizer APO configuration is not usable or accessible.",
+                    "read-only main-config include check")
+            };
+        if (!apo.MatchesSettings)
+            return new()
+            {
+                new("APO_SETTINGS_MISMATCH", "P1", "audio",
+                    "LouderMe's current Boost/EQ settings do not match the active APO file. Audio configuration is NOT applied.",
+                    "read-only file-to-settings comparison")
+            };
+        return new()
+        {
+            new("AUDIO_AUDIBILITY_UNVERIFIED", "P2", "audio",
+                "The on-disk LouderMe APO file matches this Developer profile, but actual endpoint attachment and audible gain have NOT been measured.",
+                "read-only file comparison; no playback capture")
+        };
+    }
+
     internal static DeveloperAuditReport Run(Form application, IReadOnlyList<DeveloperAnnotation> notes)
     {
         if (!DeveloperMode.Enabled)
@@ -120,20 +153,35 @@ internal static class DeveloperAudit
         if (about is null || !about.Visible || !about.Enabled || about.Width <= 0)
             findings.Add(new("UI_ABOUT_NOT_VISIBLE", "P1", "navigation", "Persistent About control is missing or unavailable.", "live WinForms tree"));
 
-        // Report the APC configuration honestly: disk config is NOT audible playback evidence.
+        // Read-only APO check must compare the isolated Developer profile's
+        // expected config with the actual disk file; never write or elevate.
         try
         {
-            var apo = new EqualizerApoEngine().GetStatus();
-            if (!apo.Installed)
-                findings.Add(new("APO_NOT_INSTALLED", "P1", "audio", "Equalizer APO is absent; Windows system-wide Boost/EQ cannot be confirmed.", "read-only installation check"));
-            else if (!apo.Configured)
-                findings.Add(new("APO_NOT_LINKED", "P1", "audio", "LouderMe's Equalizer APO include is not active.", "read-only config check"));
-            else
-                findings.Add(new("AUDIO_AUDIBILITY_UNVERIFIED", "P2", "audio", "Disk-level APO presence never proves audible processing on the current Windows endpoint.", "configuration only"));
+            var expectedSettings = DesktopSettingsStore.Load();
+            var apo = new EqualizerApoEngine().GetStatus(expectedSettings);
+            findings.AddRange(DiagnoseApo(apo));
         }
         catch (Exception)
         {
-            findings.Add(new("APO_DIAGNOSTIC_UNAVAILABLE", "P1", "audio", "Could not complete read-only APO configuration check.", "caught exception type only; no paths or stack trace exported"));
+            findings.Add(new("APO_DIAGNOSTIC_UNAVAILABLE", "P1", "audio",
+                "Could not complete read-only APO configuration check.",
+                "failure observed; no paths or stack traces exported"));
+        }
+
+        // This probe reads the current multimedia endpoint only. It cannot
+        // prove that the APO is attached to this device or that signal gain
+        // reaches speakers/headphones; it never changes volume or mute.
+        try
+        {
+            using var outputDevice = new AudioDeviceController();
+            outputDevice.Refresh();
+            _ = outputDevice.DeviceName;
+        }
+        catch (Exception)
+        {
+            findings.Add(new("DEFAULT_RENDER_ENDPOINT_UNAVAILABLE", "P1", "audio",
+                "Windows did not expose a usable default multimedia output for this read-only probe.",
+                "endpoint enumeration only; no device names exported"));
         }
 
         var forms = Application.OpenForms.Cast<Form>().Where(f => f is MainForm || f is AboutForm).ToArray();
@@ -187,6 +235,19 @@ internal static class DeveloperAudit
     internal static void RunContractSelfTests()
     {
         DeveloperMode.Configure(true);
+        var states = new[]
+        {
+            (new ApoEngineStatus(false, false, false, "absent"), "APO_NOT_INSTALLED"),
+            (new ApoEngineStatus(true, false, false, "not linked"), "APO_NOT_LINKED"),
+            (new ApoEngineStatus(true, true, false, "different"), "APO_SETTINGS_MISMATCH"),
+            (new ApoEngineStatus(true, true, true, "file matches"), "AUDIO_AUDIBILITY_UNVERIFIED"),
+        };
+        foreach (var (state, expectedCode) in states)
+        {
+            var findings = DiagnoseApo(state);
+            if (findings.Count != 1 || findings[0].Code != expectedCode)
+                throw new InvalidOperationException("The APO audit misclassified " + expectedCode);
+        }
         var publicPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "Michel's Lab", "LouderMe", "desktop-settings.json");
         if (DesktopSettingsStore.SettingsPath == publicPath)

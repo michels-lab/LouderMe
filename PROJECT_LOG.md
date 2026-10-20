@@ -1,3 +1,11 @@
+## 2026-10-20 — Operación Granada: Windows Developer audio readiness audit (candidate)
+
+**Implemented in separate branch `feat/granada-20261020-windows-audio-readiness-audit`, pending exact-head CI and integration.** Existing read-only Developer inspector now differentiates missing APO installation, inactive include, actual APO file/config mismatch with isolated Developer settings, and a matching file whose audible signal remains unverified. Adds read-only current default Windows multimedia render endpoint availability probe without leaking endpoint names or altering volume/mute. Pure self-test covers four APO status classifications, and pre-existing Windows runtime inspector checks still run. Product audio engine and public app unchanged. Documentation: `docs/WINDOWS_DEVELOPER_AUDIO_READINESS_2026-10-20.md`.
+
+**Unresolved:** real owner PC proof that APO is attached and affects outside-app music or speech, endpoint Bluetooth/wired checks, clipping/quality and native virtual endpoint driver #46/#48. This block must not claim physical DSP validation and does not authorize a new release.
+
+---
+
 ## 2026-10-20 — Operación Granada: Windows Developer Edition inspection + isolated diagnostics (candidate)
 
 **Large-block objective:** make the existing real Windows LouderMe UI inspectable by the owner without corrupting the public edition or falsely claiming that audio has been verified. Main reference: issue #77, Michel's Lab Developer Twin Standard and \`docs/DEVELOPER_EDITION_WINDOWS.md\`.

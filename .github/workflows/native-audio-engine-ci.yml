@@ -3,6 +3,9 @@ on:
   push:
     paths:
       - 'native/audio-engine/**'
+      - 'app/src/main/java/com/michelslab/louderme/audio/EqualizerModels.kt'
+      - 'desktop/src/LouderMeDesktop/EqualizerPresets.cs'
+      - 'tools/test_louderme_eq_band_contract.py'
       - 'native/windows-bridge/**'
       - 'native/independent-tone/**'
       - 'native/virtual-driver/LabEvidenceDirectory.ps1'
@@ -17,6 +20,9 @@ on:
   pull_request:
     paths:
       - 'native/audio-engine/**'
+      - 'app/src/main/java/com/michelslab/louderme/audio/EqualizerModels.kt'
+      - 'desktop/src/LouderMeDesktop/EqualizerPresets.cs'
+      - 'tools/test_louderme_eq_band_contract.py'
       - 'native/windows-bridge/**'
       - 'native/independent-tone/**'
       - 'native/virtual-driver/LabEvidenceDirectory.ps1'
@@ -43,6 +49,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Guard seven-band Android Desktop and native center frequency mapping
+        if: matrix.os == 'ubuntu-latest'
+        run: python3 tools/test_louderme_eq_band_contract.py
       - name: Configure DSP
         run: cmake -S native/audio-engine -B native/audio-engine/build -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON
       - name: Compile C++17 DSP

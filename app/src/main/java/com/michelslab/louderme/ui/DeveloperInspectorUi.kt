@@ -196,6 +196,9 @@ internal fun DeveloperInspectorUi(
                             owner.panel = false
                         }) { Text("AI repair prompt") }
                     }
+                    Text("Backups include every owner comment, possibly private data. " +
+                        "Choose a trusted folder; some storage providers synchronize files.",
+                        style = MaterialTheme.typography.bodySmall)
                     Row {
                         TextButton(onClick = {
                             owner.panel = false

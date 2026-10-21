@@ -4,6 +4,17 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+// Dedicated Developer APK releases use independently incremented Android
+// versionCodes. The public Play and Direct versions are never overridden.
+val developerVersionCodeOverride = providers.gradleProperty("developerVersionCode").orNull?.let { raw ->
+    val code = raw.toIntOrNull()
+        ?: throw GradleException("developerVersionCode must be a valid decimal integer.")
+    require(code in 10_000..2_099_999_999) {
+        "Developer release versionCode must be 10000..2099999999."
+    }
+    code
+}
+
 android {
     namespace = "com.michelslab.louderme"
     compileSdk = 36
@@ -32,7 +43,8 @@ android {
         create("developer") {
             dimension = "distribution"
             applicationIdSuffix = ".developer"
-            versionNameSuffix = "-developer"
+            versionCode = developerVersionCodeOverride ?: 13
+            versionNameSuffix = developerVersionCodeOverride?.let { "-developer.$it" } ?: "-developer"
             buildConfigField("boolean", "DEVELOPER_EDITION", "true")
             // Updater is explicitly disabled in the developer app.
             buildConfigField("String", "UPDATE_CHANNEL", "\"play\"")

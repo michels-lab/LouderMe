@@ -1,3 +1,13 @@
+## 2026-10-20 — Operación Granada: durable, independent Android Developer signing QA (source candidate)
+
+- Candidate branch `feat/granada-developer-android-persistent-signed-channel-20261020`: allow a strictly bounded **Developer-only** versionCode override (`-PdeveloperVersionCode=10001+`) while preserving public Android 0.1.12/code13 and existing release signing.
+- New owner-opt-in **manual PRIVATE signing workflow TEMPLATE** (stored outside runnable public `.github/workflows/`; must be deployed into a separate private signer repository) requires four dedicated Developer keystore Secrets and an owner-pinned certificate SHA-256 variable. Signing refuses unconfigured/changed signer; no auto key generation, no stable public release or updater feed mutation.
+- Build and independently sign Developer APKs N-1 and N, then verify same-signer **in-place** emulator update retains a real annotated Compose section, runs read-only audit and exports reviewed JSON. Only a passing result produces a seven-day signed owner-QA candidate artifact; unverified staging expires earlier.
+- Normal Android CI gains unsigned Developer-release compilation plus safety contract regression tests. `docs/DEVELOPER_ANDROID_SIGNED_CHANNEL.md` gives key setup/migration protocol and warns that debug-signed notes cannot be automatically migrated across signer changes.
+- **Current status: source PR candidate, not yet CI accepted or merged; Secrets not provisioned by this change, manual signing not run, no APK released, physical Samsung audio not tested.** Native Windows DSP/virtual endpoint #46/#48 and shipping artifact #33 remain separate.
+
+---
+
 ## 2026-10-20 — Operación Granada: Android Developer notes UX follow-up (candidate)
 
 - Candidate branch `feat/granada-android-developer-note-filters-20261020`: filter real persisted owner annotations by All/Open/Investigating/Resolved inside the inspector, with visible/total counts and per-note Edit/Locate/Delete unchanged. Exports and automatic audit still include all underlying notes, irrespective of visual filtering.

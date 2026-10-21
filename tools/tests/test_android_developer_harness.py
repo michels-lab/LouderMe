@@ -105,6 +105,22 @@ class DeveloperHarnessTests(unittest.TestCase):
                 dev.open_inspector(attempts=3)
         click.assert_called_once()
 
+    def test_installed_version_code_reads_actual_developer_package(self):
+        dump = (
+            "Packages:\n Package [com.michelslab.louderme.developer] (123):\n"
+            " versionCode=10002 minSdk=29 targetSdk=36\n"
+        )
+        with patch.object(dev, "adb", return_value=dump) as adb:
+            self.assertEqual(10002, dev.installed_developer_version_code())
+        adb.assert_called_once_with(
+            "shell", "dumpsys", "package", "com.michelslab.louderme.developer"
+        )
+
+    def test_installed_version_code_does_not_assume_apk_metadata(self):
+        with patch.object(dev, "adb", return_value="package not found"):
+            with self.assertRaisesRegex(RuntimeError, "installed Developer package"):
+                dev.installed_developer_version_code()
+
     def test_real_installed_developer_activity_is_not_public_package_alias(self):
         self.assertEqual("com.michelslab.louderme.developer", dev.PACKAGE)
         self.assertNotEqual(dev.PACKAGE, dev.PUBLIC_PACKAGE)

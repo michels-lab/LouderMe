@@ -113,6 +113,15 @@ def open_inspector(*, attempts: int = 3, panel_wait_s: float = 7.0) -> ET.Elemen
         "Actual Developer inspector did not open after bounded live UI taps")
 
 
+def installed_developer_version_code() -> int:
+    # Read the *actual installed* package, not the APK filename or build input.
+    output = adb("shell", "dumpsys", "package", PACKAGE)
+    match = re.search(r"\bversionCode=(\d+)\b", output)
+    if match is None:
+        raise RuntimeError("Android did not expose installed Developer package versionCode")
+    return int(match.group(1))
+
+
 def screenshot(folder: Path, name: str, digest: str) -> dict:
     picture = folder / f"{name}.png"
     picture.write_bytes(adb("exec-out", "screencap", "-p", binary=True))
@@ -123,11 +132,15 @@ def screenshot(folder: Path, name: str, digest: str) -> dict:
             "apk_sha256": digest, "evidence": "installed emulator real pixels"}
 
 
-def run(apk: Path, sha: str, out: Path, public_apk: Path | None = None) -> None:
+def run(apk: Path, sha: str, out: Path, public_apk: Path | None = None,
+        upgrade_apk: Path | None = None) -> None:
     if not re.fullmatch(r"[0-9a-f]{40}", sha, re.I):
         raise ValueError("Exact source SHA required")
     out.mkdir(parents=True, exist_ok=True)
     digest = hashlib.sha256(apk.read_bytes()).hexdigest()
+    # A signed version upgrade must be performed in place by Android; removing
+    # the package would delete the owner notes and invalidate this proof.
+    final_digest = hashlib.sha256(upgrade_apk.read_bytes()).hexdigest() if upgrade_apk else digest
     install_when_package_manager_ready(apk)
     if public_apk is not None:
         if not public_apk.is_file():
@@ -181,6 +194,20 @@ def run(apk: Path, sha: str, out: Path, public_apk: Path | None = None) -> None:
         root = wait_for_text("DEV · Audit / Notes")
         click(root, "DEV · Audit / Notes")
         root = wait_for_text(NOTE, contains=True)
+        if upgrade_apk is not None:
+            prior_code = installed_developer_version_code()
+            adb("shell", "am", "force-stop", PACKAGE)
+            result = adb("install", "-r", str(upgrade_apk.resolve()))
+            if "Success" not in result:
+                raise RuntimeError("Developer upgrade was not acknowledged by Android PackageManager")
+            upgraded_code = installed_developer_version_code()
+            if upgraded_code <= prior_code:
+                raise RuntimeError(
+                    f"Developer upgrade did not increase installed versionCode: {prior_code} -> {upgraded_code}")
+            adb("shell", "am", "start", "-W", "-n", PACKAGE + "/" + MAIN_ACTIVITY)
+            root = open_inspector()
+            wait_for_text(NOTE, contains=True)
+            screenshots.append(screenshot(out, "developer-note-after-signed-upgrade", final_digest))
         root = wait_for_text("Run Audit")
         click(root, "Run Audit")
         wait_for_text("Read-only findings:", contains=True)
@@ -188,7 +215,7 @@ def run(apk: Path, sha: str, out: Path, public_apk: Path | None = None) -> None:
         click(root, "Export JSON")
         wait_for_text("Review and redact export")
         wait_for_text(NOTE, contains=True)
-        screenshots.append(screenshot(out, "developer-reviewed-export", digest))
+        screenshots.append(screenshot(out, "developer-reviewed-export", final_digest))
         # Do not invoke ACTION_SEND: actual export remains deliberate user intent.
 
     except Exception:
@@ -203,7 +230,9 @@ def run(apk: Path, sha: str, out: Path, public_apk: Path | None = None) -> None:
         adb("shell", "am", "force-stop", PACKAGE)
 
     output = {"schema": "michelslab-developer-installed-v1", "source_commit": sha,
-              "developer_package": PACKAGE, "apk_sha256": digest,
+              "developer_package": PACKAGE, "apk_sha256": final_digest,
+              "initial_apk_sha256": digest,
+              "actual_inplace_upgrade": upgrade_apk is not None,
               "coinstalled_public_package": PUBLIC_PACKAGE if public_apk is not None else None,
               "device_evidence": "Android emulator, not owner physical phone",
               "verified_workflow": [
@@ -212,6 +241,8 @@ def run(apk: Path, sha: str, out: Path, public_apk: Path | None = None) -> None:
                   "verbatim owner annotation saved and displayed",
                   "real Resolved status filter hides Open note; All restores it",
                   "annotation survived process restart",
+                  *(["same-signer APK upgraded in place without losing annotation"]
+                    if upgrade_apk is not None else []),
                   "read-only audit launched",
                   "JSON review contained verbatim note"
               ],
@@ -228,5 +259,6 @@ if __name__ == "__main__":
     parser.add_argument("--source-sha", required=True)
     parser.add_argument("--out", required=True, type=Path)
     parser.add_argument("--public-apk", type=Path, default=None)
+    parser.add_argument("--upgrade-apk", type=Path, default=None)
     args = parser.parse_args()
-    run(args.apk, args.source_sha, args.out, args.public_apk)
+    run(args.apk, args.source_sha, args.out, args.public_apk, args.upgrade_apk)

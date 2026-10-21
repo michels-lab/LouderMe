@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 207,
-  "classified_files_total": 203,
-  "docs_content_inspected": 49,
+  "tracked_files_total": 208,
+  "classified_files_total": 204,
+  "docs_content_inspected": 50,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,7 +12,7 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 41,
+    "document": 42,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
@@ -25,7 +25,7 @@
     "POTENTIAL_UNLOGGED_CHANGES": 1
   },
   "finding_total": 1,
-  "inventory_fingerprint": "5db768fb023850d7c22080a3aee16086e1fe5759f32ecc54077d28e0f8252e78",
+  "inventory_fingerprint": "cafe891baed08e4871fd157bc98550fc59f901b8c3fc1d4a607b9b7d2e55cd07",
   "evidence_fingerprint": "032d19a6732369f14ecac0cef30c8a48ba1c8530a4fc3a461f99ac9ac809f5b2",
   "files": [
     {
@@ -236,7 +236,7 @@
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "6779fb18e250de78426918255ebfe4246d8ce416"
+      "blob": "3d1459bafe88fb164ec0f8799f92dde3c2eec3a3"
     },
     {
       "path": "app/build.gradle.kts",
@@ -951,6 +951,13 @@
       "purpose": "manual/decision/report/historical note",
       "certainty": "inferred",
       "blob": "0a7ac3c5745cf191013addeb92192299bebda229"
+    },
+    {
+      "path": "docs/GRANADA_APP_PLUGIN_AUDIT_2026-10-21.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "7807b7237ad00d33c42fb276cd0df01465848fdc"
     },
     {
       "path": "docs/INFRASTRUCTURE_AUDIT.md",

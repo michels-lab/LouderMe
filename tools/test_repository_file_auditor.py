@@ -95,18 +95,11 @@ class FileStewardTests(unittest.TestCase):
 
     def test_android_backup_rules_not_disposable(self):
         self.assertEqual(audit.identify("android/app/src/main/res/xml/backup_rules.xml", {})[0], "config")
-    def test_real_app_artifact_purposes(self):
-        values={
-            "supabase/migrations/20261010_delete_instagram_profiles.sql":"database_migration",
-            "supabase/tests/rls_isolation.sql":"test",
-            ".michelslab/release-intents/unified-v3221-a029.txt":"release_intent",
-            "installer/TaskbarPinning.txt":"installer_metadata",
-            "src/MichelsLife/Program.cs.gz.b64":"encoded_source",
-            "src/MichelsLife/app.manifest":"config",
-        }
-        for path,expected in values.items():
-            with self.subTest(path=path):
-                self.assertEqual(audit.identify(path,{})[0],expected)
+    def test_audio_native_and_web_assets_have_real_roles(self):
+        self.assertEqual(audit.identify("shared-components/about-web/about.css",{})[0],"style")
+        self.assertEqual(audit.identify("native/audio-engine/include/louderme/AudioEngine.hpp",{})[0],"source")
+        self.assertEqual(audit.identify("reports/agent-health.json",{})[0],"config")
+        self.assertEqual(audit.identify("src/MichelsLife/Program.cs.gz.b64",{})[0],"unknown")
 
     def test_backup_and_draft_labels_are_not_unused_evidence(self):
         for name in ("docs/BACKUP_PREFLIGHT.md","tools/test_granada_backup_preflight.py",

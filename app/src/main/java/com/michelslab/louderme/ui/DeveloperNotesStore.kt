@@ -53,6 +53,70 @@ internal data class DeveloperImportPreview(
     val staleLocators: Int,
 )
 
+internal fun parseDeveloperBackup(
+    raw: String, packageName: String, existing: List<OwnerNote>,
+): DeveloperImportPreview {
+        require(raw.toByteArray(Charsets.UTF_8).size <= 2_097_152) {
+            "Backup is larger than the 2 MB import limit."
+        }
+        val source = JSONObject(raw)
+        require(source.getString("product") == "LouderMe" &&
+            source.getString("edition") == "Developer Edition" &&
+            source.getString("platform") == "Android" &&
+            source.getString("package") == packageName) {
+            "Backup must be a LouderMe Android Developer Edition file."
+        }
+        if (source.has("schema")) {
+            require(source.getString("schema") == "michelslab-developer-note-backup-v1") {
+                "Unsupported Developer backup format."
+            }
+        }
+        val array = source.getJSONArray("ownerAnnotations")
+        require(array.length() in 1..250) { "Backup must contain 1–250 owner notes." }
+        val incoming = mutableListOf<OwnerNote>()
+        val ids = mutableSetOf<String>()
+        for (i in 0 until array.length()) {
+            val item = array.getJSONObject(i)
+            val id = item.getString("id")
+            val screen = item.getString("screen")
+            val locator = item.getString("locator")
+            val label = item.getString("label")
+            val comment = item.getString("comment")
+            val severity = item.getString("severity")
+            val status = item.getString("status")
+            val created = item.getLong("createdUtcMs")
+            val updated = item.getLong("updatedUtcMs")
+            require(id.length in 1..120 && ids.add(id)) { "Duplicate or invalid note identifier." }
+            require(screen == "Home" || screen == "About") { "Unknown note screen." }
+            require(locator.length in 1..160 && locator.all {
+                it.isLetterOrDigit() || it == '.' || it == '_' || it == '-'
+            }) { "Invalid saved section locator." }
+            require(label.length in 1..200 && label.isNotBlank()) { "Invalid section label." }
+            require(comment.isNotBlank() && comment.length <= 12000) {
+                "Saved owner comment exceeds the permitted length or is blank."
+            }
+            require(severity in setOf("P0", "P1", "P2") &&
+                status in setOf("Open", "Investigating", "Resolved")) {
+                "Unsupported annotation severity or status."
+            }
+            require(created >= 0L && updated >= created) { "Invalid annotation timestamps." }
+            incoming += OwnerNote(id, screen, locator, label, comment,
+                severity, status, created, updated)
+        }
+        val currentById = existing.associateBy { it.id }
+        return DeveloperImportPreview(
+            incoming = incoming,
+            newCount = incoming.count { it.id !in currentById },
+            exactDuplicates = incoming.count { currentById[it.id] == it },
+            conflicts = incoming.count {
+                val old = currentById[it.id]
+                old != null && old != it
+            },
+            staleLocators = incoming.count { it.locator !in DeveloperTargets.known },
+        )
+    }
+
+
 internal data class TargetSelection(
     val screen: String, val locator: String, val label: String,
     val existing: OwnerNote? = null,
@@ -138,64 +202,7 @@ internal class DeveloperNotesStore(context: Context) {
 
     fun previewImport(raw: String): DeveloperImportPreview {
         check(error == null) { "Existing developer notes cannot be safely read. Import disabled." }
-        require(raw.toByteArray(Charsets.UTF_8).size <= 2_097_152) {
-            "Backup is larger than the 2 MB import limit."
-        }
-        val source = JSONObject(raw)
-        require(source.getString("product") == "LouderMe" &&
-            source.getString("edition") == "Developer Edition" &&
-            source.getString("platform") == "Android" &&
-            source.getString("package") == BuildConfig.APPLICATION_ID) {
-            "Backup must be a LouderMe Android Developer Edition file."
-        }
-        if (source.has("schema")) {
-            require(source.getString("schema") == "michelslab-developer-note-backup-v1") {
-                "Unsupported Developer backup format."
-            }
-        }
-        val array = source.getJSONArray("ownerAnnotations")
-        require(array.length() in 1..250) { "Backup must contain 1–250 owner notes." }
-        val incoming = mutableListOf<OwnerNote>()
-        val ids = mutableSetOf<String>()
-        for (i in 0 until array.length()) {
-            val item = array.getJSONObject(i)
-            val id = item.getString("id")
-            val screen = item.getString("screen")
-            val locator = item.getString("locator")
-            val label = item.getString("label")
-            val comment = item.getString("comment")
-            val severity = item.getString("severity")
-            val status = item.getString("status")
-            val created = item.getLong("createdUtcMs")
-            val updated = item.getLong("updatedUtcMs")
-            require(id.length in 1..120 && ids.add(id)) { "Duplicate or invalid note identifier." }
-            require(screen == "Home" || screen == "About") { "Unknown note screen." }
-            require(locator.length in 1..160 && locator.all {
-                it.isLetterOrDigit() || it == '.' || it == '_' || it == '-'
-            }) { "Invalid saved section locator." }
-            require(label.length in 1..200 && label.isNotBlank()) { "Invalid section label." }
-            require(comment.isNotBlank() && comment.length <= 12000) {
-                "Saved owner comment exceeds the permitted length or is blank."
-            }
-            require(severity in setOf("P0", "P1", "P2") &&
-                status in setOf("Open", "Investigating", "Resolved")) {
-                "Unsupported annotation severity or status."
-            }
-            require(created >= 0L && updated >= created) { "Invalid annotation timestamps." }
-            incoming += OwnerNote(id, screen, locator, label, comment,
-                severity, status, created, updated)
-        }
-        val currentById = notes.associateBy { it.id }
-        return DeveloperImportPreview(
-            incoming = incoming,
-            newCount = incoming.count { it.id !in currentById },
-            exactDuplicates = incoming.count { currentById[it.id] == it },
-            conflicts = incoming.count {
-                val old = currentById[it.id]
-                old != null && old != it
-            },
-            staleLocators = incoming.count { it.locator !in DeveloperTargets.known },
-        )
+        return parseDeveloperBackup(raw, BuildConfig.APPLICATION_ID, notes)
     }
 
     fun applyImport(preview: DeveloperImportPreview, replaceConflicts: Boolean): Boolean {

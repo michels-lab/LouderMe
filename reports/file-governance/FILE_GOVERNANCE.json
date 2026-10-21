@@ -26,7 +26,7 @@
     "UNKNOWN_PURPOSE": 1
   },
   "finding_total": 1,
-  "inventory_fingerprint": "89af5285b601b434c0b7a710df492cc751e3260df194ee6cdd9bf681b42b5eb6",
+  "inventory_fingerprint": "5205e28850d5adb792cef788f750c0c004a60f7d35ac2dcf097013cd23e61579",
   "evidence_fingerprint": "cdda1598699f4c905f81830d83a6e4d9b248357cce864ac09d8b8ea77d2027c9",
   "files": [
     {
@@ -1364,7 +1364,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "50d28a76044b68d08461f77dca182750eaae8a92"
+      "blob": "0bf72f91e59ef91da61c95dd9586219583c02558"
     },
     {
       "path": "tools/run_android_signed_visual_ci.sh",
@@ -1385,7 +1385,7 @@
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "bbec7d5a91fc96ac4915b703dc31ea7c075475f3"
+      "blob": "b4831ec3831718ba9738f482654cf4dd6f524418"
     },
     {
       "path": "tools/tests/test_android_developer_harness.py",

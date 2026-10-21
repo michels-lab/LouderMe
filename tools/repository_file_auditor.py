@@ -2,7 +2,7 @@
 """Repo File Steward: full tracked-tree inventory and bounded document audit.
 
 Classifies every tracked file; reads text docs up to policy limit. No deletions,
-LLM executions, binary-content claims, solver runs, or cross-repository writes.
+LLM executions, binary-content inspection claims, audio-device tests, or cross-repository writes.
 """
 from __future__ import annotations
 import argparse
@@ -70,11 +70,11 @@ def identify(path, custom):
     if ext in SRC:
         return ("test" if re.search(r'(^|/)(tests?|__tests__)/|(^|/)test[_-]',p) else "source"),"code/test implementation","rule"
     if ext in ASSET: return "asset","visual/audio/font asset","rule"
-    if ext in DATA: return "data","structured/research data (semantics not validated)","rule"
+    if ext in DATA: return "data","structured/tabular data (semantics not validated)","rule"
     if ext in BINARY: return "binary","binary/archive (not parsed)","rule"
     if ext in {".json",".yaml",".yml",".toml",".xml",".ini",".properties",".gradle"} or name in {"dockerfile","makefile",".gitignore",".gitattributes"}:
         return "config","machine-readable configuration","rule"
-    # Audio/distribution repositories do not infer scientific solver files.
+    # Unknown extensionless paths remain unclassified: never guess a foreign product role.
     return "unknown","function unknown: owner classification required","unknown"
 
 def link_result(source, raw, paths):
@@ -210,7 +210,7 @@ def scan(root, policy=None, today=None):
             "finding_total":len(flags),"inventory_fingerprint":digest([(x["path"],x["blob"]) for x in listed]),
             "evidence_fingerprint":digest([(x["id"],x["severity"]) for x in flags]),
             "files":listed,"findings":flags,"untracked_audited":False,"ignored_audited":False,
-            "binary_contents_audited":False,"scientific_validation":"NOT_CHECKED",
+            "binary_contents_audited":False,"product_runtime_validation":"NOT_CHECKED",
             "app_installed_acceptance":"NOT_CHECKED","deletion_approved":False}
 
 def write_reports(root, report, policy):
@@ -223,7 +223,7 @@ def write_reports(root, report, policy):
     detail.write_text(json.dumps(report,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
     summary={k:v for k,v in report.items() if k not in {"files","findings"}}
     (out/"SUMMARY.json").write_text(json.dumps(summary,ensure_ascii=False,indent=2)+"\n",encoding="utf-8")
-    lines=["# File steward: repository file audit","","All tracked files classified; Markdown/text docs inspected with size cap. Binary/research-content validity and untracked files not assessed.",
+    lines=["# File steward: repository file audit","","All tracked files classified; Markdown/text docs inspected with size cap. Binary/media-content validity and untracked files not assessed.",
            "No file is auto-deleted or declared unused.","",
            "## Coverage","",
            "Tracked: "+str(report["tracked_files_total"])+"; classified: "+str(report["classified_files_total"])+

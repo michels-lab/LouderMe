@@ -9,6 +9,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 
 class SignedDeveloperContract(unittest.TestCase):
+    def test_public_source_can_never_dispatch_owner_signing(self):
+        self.assertFalse(
+            (ROOT / ".github/workflows/developer-android-signed-owner-qa.yml").exists(),
+            "Dedicated owner key must never be used from the PUBLIC LouderMe source repo",
+        )
+        self.assertTrue(
+            (ROOT / "infra/private-developer-signer/.github/workflows/developer-android-signed-owner-qa.yml").is_file()
+        )
+
     def test_signed_qa_is_manual_private_and_no_public_release(self):
         source = (ROOT / "infra/private-developer-signer/.github/workflows/developer-android-signed-owner-qa.yml").read_text()
         for required in (

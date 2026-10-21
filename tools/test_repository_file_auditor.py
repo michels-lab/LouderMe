@@ -57,6 +57,18 @@ class FileStewardTests(unittest.TestCase):
         summary=(self.root/"reports/file-governance/SUMMARY.json").read_text()
         self.assertNotIn("unsaved_personal_notes",summary)
         self.assertNotIn("README.md",summary)
+    def test_extensionless_openfoam_fields_and_timesteps(self):
+        samples = {
+            "cases_controlled_buoyancy/B14/0/metal/T": "simulation_input",
+            "cases_controlled_buoyancy/B14/system/controlDict": "simulation_input",
+            "cases_controlled_buoyancy/B14/10/metal/T": "simulation_output",
+            "cases_controlled_buoyancy/B14/postProcessing/metal/T": "simulation_output",
+            "cases_controlled_buoyancy/B14/logs/CourantMax_0": "simulation_log",
+            "analysis_results/v15_v16_postpush_20261015/output.dat": "scientific_analysis",
+        }
+        for path, role in samples.items():
+            with self.subTest(path=path):
+                self.assertEqual(audit.identify(path,{})[0], role)
     def test_historical_is_not_assumed_obsolete(self):
         self.assertIsNotNone(audit.HISTORY.search("docs/archive/2026-01-01-experiment.md"))
     def test_idempotent_digests(self):

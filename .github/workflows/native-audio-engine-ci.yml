@@ -61,6 +61,11 @@ jobs:
         run: |
           dotnet "native/independent-tone/bin/Release/net10.0-windows/LouderMeIndependentTone.dll" --check-tone
           if ($LASTEXITCODE -ne 0) { throw 'Independent source PCM16/float32 test vectors failed.' }
+      - name: Reject false Windows app physical gain proof with adversarial JSON fixtures
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File native/virtual-driver/test_IndependentGainCheck.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'Independent external app gain evidence validator accepted invalid data.' }
       - name: Validate native C ABI from managed code
         shell: pwsh
         run: |
@@ -111,7 +116,9 @@ jobs:
           $t = $null
           $errors = $null
           foreach ($path in @('native/virtual-driver/run_disposable_lab.ps1',
-                              'native/virtual-driver/probe_independent_app_route.ps1')) {
+                              'native/virtual-driver/probe_independent_app_route.ps1',
+                              'native/virtual-driver/IndependentGainCheck.ps1',
+                              'native/virtual-driver/test_IndependentGainCheck.ps1')) {
             $t = $null
             $errors = $null
             [void][System.Management.Automation.Language.Parser]::ParseFile(

@@ -98,7 +98,7 @@ jobs:
           python3 - <<'PY'
           import yaml
           from pathlib import Path
-          path = Path(".github/workflows/developer-android-signed-owner-qa.yml")
+          path = Path("infra/private-developer-signer/.github/workflows/developer-android-signed-owner-qa.yml")
           doc = yaml.safe_load(path.read_text(encoding="utf-8"))
           assert set(doc["jobs"]) == {"sign", "verify_installed_upgrade", "verified_candidate"}
           assert "github.event.repository.private == true" in doc["jobs"]["sign"]["if"]

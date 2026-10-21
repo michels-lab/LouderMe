@@ -45,11 +45,25 @@ internal sealed class NativeDsp : IDisposable
         }
     }
 
+    // Native state changes happen only from the capture audio callback,
+    // never from the UI/control-input thread.
+    public void ConfigureBoost(int percent)
+    {
+        if (_handle == IntPtr.Zero) throw new ObjectDisposedException(nameof(NativeDsp));
+        if (percent is < 100 or > 250)
+            throw new ArgumentOutOfRangeException(nameof(percent));
+        if (louderme_engine_set_boost(_handle, 1, percent) != 0)
+            throw new InvalidOperationException("Native boost configuration failed.");
+    }
+
     public void ConfigureEqualizer(bool enabled, float[] gainsDb)
     {
         if (_handle == IntPtr.Zero) throw new ObjectDisposedException(nameof(NativeDsp));
-        if (gainsDb.Length != 7 || gainsDb.Any(g => !float.IsFinite(g) || g < -10 || g > 10))
+        if (gainsDb.Length != 7)
             throw new ArgumentException("EQ needs exactly seven finite gains in [-10,+10] dB.");
+        foreach (var gain in gainsDb)
+            if (!float.IsFinite(gain) || gain is < -10 or > 10)
+                throw new ArgumentException("EQ needs exactly seven finite gains in [-10,+10] dB.");
         if (louderme_engine_set_eq(_handle, enabled ? 1 : 0, gainsDb) != 0)
             throw new InvalidOperationException("Native EQ configuration failed.");
     }

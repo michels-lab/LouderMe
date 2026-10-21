@@ -16,3 +16,7 @@ Este perfil permite que un asistente cuestione periódicamente **todos los archi
 - Los contenidos de binarios, gráficos, CAD, logs grandes y resultados CFD no se interpretan a partir del nombre o hash.
 - Prohibidas eliminación automática, renombres masivos, rescritura de experimentos o merges/releases sin QA independiente.
 - Un perfil de agente no demuestra ejecución de IA; el informe de Actions acredita solo la ejecución del script.
+
+## Límite de dominio — 2026-10-21
+
+El auditor común **solo comparte la mecánica de inventario**, no taxonomías ni ejemplos de pruebas de otros productos. Este repositorio debe clasificar según su finalidad (implementación y pruebas propias de la aplicación). No copiar reglas de carpetas de simulación científica ni términos de otros proyectos. Las rutas no reconocidas permanecen UNKNOWN_PURPOSE hasta recibir evidencia. Antes de registrar un commit, comprobar que su mensaje y los workflows activados describen realmente este repositorio. Conservar bitácoras, artefactos, backups y revisiones: este hallazgo jamás habilita borrado automático.

@@ -47,11 +47,13 @@ def identify(path, custom):
     p=path.lower(); name=PurePosixPath(path).name.lower(); ext=PurePosixPath(path).suffix.lower()
     if p.startswith(".github/workflows/"): return "workflow", "GitHub Actions automation", "rule"
     if p.startswith(".github/agents/") or "/agents/" in p or name=="agents.md": return "agent", "assistant role/instructions", "rule"
-    if name in {"license","license.md","copying","notice"}: return "license","licensing/notice", "rule"
+    if name in {"license","license.md","license.txt","copying","notice"}: return "license","licensing/notice", "rule"
     if name.startswith("readme") or name in {"index.md","documentation_index.md"}: return "index","navigation/onboarding", "rule"
     if name.endswith("log.md") or name.endswith("bitacora.md") or "audit_log" in name or "bitacora" in p or "changelog" in name:
         return "bitacora","technical/audit change history", "rule"
     if ext in {".md",".rst",".adoc"}: return "document","manual/decision/report/historical note","inferred"
+    if ext in {".html",".htm"}: return "web_ui","local HTML documentation or web interface", "inferred"
+    if ext in {".kts",".cmd",".bat",".iss",".sln",".slnx",".csproj",".props",".targets"}: return "build_script","platform build/project/installer script", "inferred"
     if ext in SRC:
         return ("test" if re.search(r'(^|/)(tests?|__tests__)/|(^|/)test[_-]',p) else "source"),"code/test implementation","rule"
     if ext in ASSET: return "asset","visual/audio/font asset","rule"
@@ -62,7 +64,7 @@ def identify(path, custom):
     # OpenFOAM is extensionless by design: classify *structure*, not unknown files.
     # This is an inferred functional group, NEVER a solver verification.
     parts=p.split("/")
-    if parts[0] in {"cases_controlled_buoyancy","cases_3d","cases","case"} and len(parts)>=3:
+    if (parts[0] in {"cases","case"} or parts[0].startswith("cases_")) and len(parts)>=3:
         below=parts[2:]
         if "postprocessing" in below or any(b.replace(".", "", 1).isdigit() for b in below):
             return "simulation_output","OpenFOAM solution time/postProcessing artifact (content unvalidated)","inferred"
@@ -73,6 +75,8 @@ def identify(path, custom):
         return "simulation_case_file","OpenFOAM case-specific support artifact","inferred"
     if parts[0] in {"analysis_results","postprocessing","experiment_results"}:
         return "scientific_analysis","research analysis/evidence artifact (not physically validated)","inferred"
+    if parts[0] == "analysis_tools":
+        return "analysis_tool","analysis helper/command (source must be inspected before executing)","inferred"
     return "unknown","function unknown: owner classification required","unknown"
 
 def link_result(source, raw, paths):
@@ -121,7 +125,7 @@ def scan(root, policy=None, today=None):
         if role in {"document","index","bitacora"}: duplicates[file["blob"]].append(path)
         if role=="unknown":
             add("UNKNOWN_PURPOSE","review",path,"No reliable purpose category from path","Declare role after reviewing usage")
-        if OLD.search(path) and not HISTORY.search(path):
+        if OLD.search(path) and not HISTORY.search(path) and PurePosixPath(path).name.lower() not in {"backup_rules.xml","data_extraction_rules.xml"}:
             add("POSSIBLY_REDUNDANT_NAME","review",path,"Backup/old/copy/draft name; may be intentional","Check references and history before archiving")
         if role not in {"document","index","bitacora"}: continue
         target=(root/path).resolve()

@@ -23,6 +23,7 @@ internal static class Program
         bool retry = args.Contains("--auto-reconnect") &&
                      args.Contains("--confirm-experimental") &&
                      !args.Contains("--probe-route") &&
+                     !args.Contains("--probe-app-route") &&
                      !args.Contains("--probe-virtual");
         int attempts = retry ? 3 : 1;
         for (int attempt = 1; attempt <= attempts; attempt++)
@@ -94,7 +95,11 @@ internal static class Program
             var sourceId = GetArg(args, "--source-id");
             var outputId = GetArg(args, "--output-id");
             var percentText = GetArg(args, "--boost");
-            bool provePhysicalRoute = args.Contains("--probe-route");
+            bool proveExternalAppRoute = args.Contains("--probe-app-route");
+            bool ownTone = args.Contains("--probe-route");
+            bool provePhysicalRoute = ownTone || proveExternalAppRoute;
+            if (ownTone && proveExternalAppRoute)
+                throw new ArgumentException("Select exactly one source stimulus for lab proof.");
             if (!args.Contains("--confirm-experimental") ||
                 string.IsNullOrWhiteSpace(sourceId) ||
                 string.IsNullOrWhiteSpace(outputId) ||
@@ -188,11 +193,11 @@ internal static class Program
             // arbitrary microphone or remote stream.
             using var monitor = provePhysicalRoute
                 ? new WasapiLoopbackCapture(physical) : null;
-            using var toneStream = provePhysicalRoute
+            using var toneStream = ownTone
                 ? new RawSourceWaveStream(
                     new MemoryStream(PhysicalRouteTone.Create(inputFormat), writable: false),
                     inputFormat) : null;
-            using var sourceToneOutput = provePhysicalRoute
+            using var sourceToneOutput = ownTone
                 ? new WasapiOut(source, AudioClientShareMode.Shared, true, 75) : null;
             var monitorGate = new object();
             LoopbackToneVerifier? monitorVerifier = null;
@@ -200,7 +205,8 @@ internal static class Program
             Exception? monitorError = null;
             if (provePhysicalRoute)
             {
-                if (monitor is null || toneStream is null || sourceToneOutput is null)
+                if (monitor is null || (ownTone &&
+                    (toneStream is null || sourceToneOutput is null)))
                     throw new InvalidOperationException("Lab physical-route initialization failed.");
                 var recordedFormat = monitor.WaveFormat;
                 if (!PcmFormatAdapter.IsSupported(recordedFormat) ||
@@ -358,14 +364,21 @@ internal static class Program
                     Console.WriteLine("Changes are applied on the next capture callback; no UI/console thread touches DSP.");
                 }
                 if (provePhysicalRoute)
-                    Console.WriteLine(
-                        "LAB physical proof: 2-second quiet 440 Hz tone routed to virtual speaker; " +
-                        "physical speaker loopback measured for 4 seconds. Other media must be silent.");
+                    Console.WriteLine(ownTone
+                        ? "LAB: internally generated 2-second 440 Hz tone; physical loopback, 4-second window."
+                        : "LAB: awaiting 2-second 440 Hz from SEPARATE Windows application. " +
+                          "Independent source app must start after EXTERNAL_SOURCE_READY; " +
+                          "physical monitor has a 5-second total measurement window.");
 
                 playback.Play();
                 capture.StartRecording();
                 monitor?.StartRecording();
                 sourceToneOutput?.Play();
+                // Flush readiness only AFTER both WASAPI captures are active.
+                // The disposable VM runner starts the separate process only
+                // after seeing this line; bridge NEVER synthesizes its tone.
+                if (proveExternalAppRoute)
+                    Console.WriteLine("EXTERNAL_SOURCE_READY");
                 var routeStarted = Stopwatch.GetTimestamp();
                 long lastStats = routeStarted;
                 long lastObservedQueueResets = 0;
@@ -374,7 +387,8 @@ internal static class Program
                     if (monitorError is not null)
                         throw new IOException("Physical PCM loopback observer failed.", monitorError);
                     if (provePhysicalRoute &&
-                        Stopwatch.GetElapsedTime(routeStarted) >= TimeSpan.FromSeconds(4))
+                        Stopwatch.GetElapsedTime(routeStarted) >=
+                            TimeSpan.FromSeconds(proveExternalAppRoute ? 5 : 4))
                         break;
                     if (recordingStopped.IsSet)
                     {
@@ -482,10 +496,13 @@ internal static class Program
                         "No native global sound proof.");
                     return 4;
                 }
-                Console.WriteLine(
-                    "PASS: isolated LAB 440 Hz virtual→native DSP→physical loopback route. " +
-                    "This does NOT certify sound pressure, end-user audibility, " +
-                    "other apps' routing, gain calibration or driver installation.");
+                Console.WriteLine(proveExternalAppRoute
+                    ? "PASS: LAB independent source Windows process -> selected virtual endpoint -> " +
+                      "own C++ DSP -> separate physical WASAPI loopback 440 Hz identity. " +
+                      "NOT general third-party/default-app audio proof or acoustic loudness."
+                    : "PASS: isolated LAB 440 Hz virtual→native DSP→physical loopback route. " +
+                      "This does NOT certify sound pressure, end-user audibility, " +
+                      "other apps' routing, gain calibration or driver installation.");
             }
             Console.WriteLine("Audio bridge stopped and endpoints released.");
             return 0;

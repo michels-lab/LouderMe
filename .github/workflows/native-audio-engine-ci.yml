@@ -4,11 +4,17 @@ on:
     paths:
       - 'native/audio-engine/**'
       - 'native/windows-bridge/**'
+      - 'native/independent-tone/**'
+      - 'native/virtual-driver/probe_independent_app_route.ps1'
+      - 'native/virtual-driver/run_disposable_lab.ps1'
       - '.github/workflows/native-audio-engine-ci.yml'
   pull_request:
     paths:
       - 'native/audio-engine/**'
       - 'native/windows-bridge/**'
+      - 'native/independent-tone/**'
+      - 'native/virtual-driver/probe_independent_app_route.ps1'
+      - 'native/virtual-driver/run_disposable_lab.ps1'
       - '.github/workflows/native-audio-engine-ci.yml'
 
 permissions:
@@ -46,8 +52,15 @@ jobs:
         run: cmake -S native/audio-engine -B native/audio-engine/build -DCMAKE_BUILD_TYPE=Release
       - name: Build native DSP DLL
         run: cmake --build native/audio-engine/build --config Release --target louderme_audio_c
-      - name: Build experimental bridge
-        run: dotnet build native/windows-bridge/LouderMeAudioBridge.csproj -c Release
+      - name: Build experimental bridge and independent Windows source application
+        run: |
+          dotnet build native/windows-bridge/LouderMeAudioBridge.csproj -c Release
+          dotnet build native/independent-tone/LouderMeIndependentTone.csproj -c Release
+      - name: Verify independent real Windows application tone without an audio device
+        shell: pwsh
+        run: |
+          dotnet "native/independent-tone/bin/Release/net10.0-windows/LouderMeIndependentTone.dll" --check-tone
+          if ($LASTEXITCODE -ne 0) { throw 'Independent source PCM16/float32 test vectors failed.' }
       - name: Validate native C ABI from managed code
         shell: pwsh
         run: |
@@ -97,11 +110,16 @@ jobs:
         run: |
           $t = $null
           $errors = $null
-          [void][System.Management.Automation.Language.Parser]::ParseFile(
-            'native/virtual-driver/run_disposable_lab.ps1', [ref]$t, [ref]$errors)
-          if ($errors.Count -ne 0) {
-            $errors | ForEach-Object { Write-Error $_.ToString() }
-            throw 'Disposable Windows lab orchestration PowerShell syntax invalid.'
+          foreach ($path in @('native/virtual-driver/run_disposable_lab.ps1',
+                              'native/virtual-driver/probe_independent_app_route.ps1')) {
+            $t = $null
+            $errors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile(
+              $path, [ref]$t, [ref]$errors)
+            if ($errors.Count -ne 0) {
+              $errors | ForEach-Object { Write-Error $_.ToString() }
+              throw "Disposable Windows LAB script PowerShell syntax invalid: $path"
+            }
           }
           Write-Host 'Lab VM script parses; no driver install or sound hardware access in CI.'
 

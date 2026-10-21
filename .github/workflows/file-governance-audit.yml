@@ -36,5 +36,18 @@ jobs:
           git add -- reports/file-governance/FILE_GOVERNANCE.json reports/file-governance/FILE_GOVERNANCE.md reports/file-governance/SUMMARY.json docs/audits/FILE_GOVERNANCE_LOG.md
           if ! git diff --cached --quiet; then
             git commit -m "chore(file-steward): refresh local audit findings [skip ci]"
-            git push
+            for attempt in 1 2 3; do
+              if git push; then
+                echo "Audit report committed and published."
+                exit 0
+              fi
+              git fetch origin main
+              if ! git rebase origin/main; then
+                git rebase --abort || true
+                echo "::error::Audit report conflicts with another writer; no force push"
+                exit 1
+              fi
+            done
+            echo "::error::Audit report push failed after safe retries"
+            exit 1
           fi

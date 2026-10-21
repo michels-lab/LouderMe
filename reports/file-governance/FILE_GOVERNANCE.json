@@ -1,0 +1,1509 @@
+{
+  "schema_version": 1,
+  "audit_kind": "deterministic_full_tracked_tree",
+  "tracked_files_total": 196,
+  "classified_files_total": 196,
+  "docs_content_inspected": 48,
+  "large_docs_skipped": 0,
+  "excluded_reports": 0,
+  "roles": {
+    "agent": 9,
+    "asset": 9,
+    "bitacora": 2,
+    "config": 20,
+    "document": 40,
+    "index": 6,
+    "license": 1,
+    "source": 75,
+    "test": 14,
+    "unknown": 11,
+    "workflow": 9
+  },
+  "finding_counts": {
+    "UNKNOWN_PURPOSE": 11
+  },
+  "finding_total": 11,
+  "inventory_fingerprint": "e071a24d0b71c6f5d15bb2bb065277fe7cb2380f03a048b1cb10cd04c8c3526b",
+  "evidence_fingerprint": "c408d6f0e96343c2c5fe9f9dd727bf970ca0b014950104f5ff1e5653ac296a36",
+  "files": [
+    {
+      "path": ".github/ISSUE_TEMPLATE/chatgpt-task.yml",
+      "role": "config",
+      "purpose": "machine-readable configuration",
+      "certainty": "rule",
+      "blob": "d270216ee576d05c597186139762d7054f3a44b6"
+    },
+    {
+      "path": ".github/agents/app-maintainer.agent.md",
+      "role": "agent",
+      "purpose": "assistant role/instructions",
+      "certainty": "rule",
+      "blob": "770a094416ce22ff61f216c34343f49fa675f494"
+    },
+    {
+      "path": ".github/agents/qa-regression.agent.md",
+      "role": "agent",
+      "purpose": "assistant role/instructions",
+      "certainty": "rule",
+      "blob": "d7a4d9aa7081b0d2b0679e6a4cb77ccb9124a79a"
+    },
+    {
+      "path": ".github/agents/release-manager.agent.md",
+      "role": "agent",
+      "purpose": "assistant role/instructions",
+      "certainty": "rule",
+      "blob": "06e479580fde47616fb4dacde3c4e4dbe1918a34"
+    },
+    {
+      "path": ".github/copilot-instructions.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "7940f82b07eacc6fb0331cd8366e2baa3c0de3e9"
+    },
+    {
+      "path": ".github/workflows/android-ci-release.yml",
+      "role": "workflow",
+      "purpose": "GitHub Actions automation",
+      "certainty": "rule",
+      "blob": "c107f3fcb68e493cf85d09ca4d2ff011e33520e7"
+    },
+    {
+      "path": ".github/workflows/android-visual-navigation-contract.yml",
+      "role": "workflow",
+      "purpose": "GitHub Actions automation",
+      "certainty": "rule",
+      "blob": "f2bd5477eb147b0f29d61579471cc451a6de6b72"
+    },
+    {
+      "path": ".github/workflows/build-louderme-desktop.yml",
+      "role": "workflow",
+      "purpose": "GitHub Actions automation",
+      "certainty": "rule",
+      "blob": "c3ba4abc6a036602e33f7f6e7e82d36fbd9aee14"
+    },
+    {
+      "path": ".github/workflows/file-governance-audit.yml",
+      "role": "workflow",
+      "purpose": "GitHub Actions automation",
+      "certainty": "rule",
+      "blob": "9db189f428a48494d14e93b630fa903d7ab58d95"
+    },
+    {
+      "path": ".github/workflows/native-audio-engine-ci.yml",
+      "role": "workflow",
+      "purpose": "GitHub Actions automation",
+      "certainty": "rule",
+      "blob": "160e03eb6dcf69a2a83714516fb91c3d77c9c464"
+    },
+    {
+      "path": ".github/workflows/native-physical-lab-manual.yml",
+      "role": "workflow",
+      "purpose": "GitHub Actions automation",
+      "certainty": "rule",
+      "blob": "c04b146b148fb42f07377e2b8d4b16313ae6256f"
+    },
+    {
+      "path": ".github/workflows/native-virtual-device-ci.yml",
+      "role": "workflow",
+      "purpose": "GitHub Actions automation",
+      "certainty": "rule",
+      "blob": "a044ddbdafb39b3fefaf64cef622ed2054810a2d"
+    },
+    {
+      "path": ".github/workflows/release-louderme-desktop.yml",
+      "role": "workflow",
+      "purpose": "GitHub Actions automation",
+      "certainty": "rule",
+      "blob": "143e8f936eddc7dd0c53612422cc25037258567c"
+    },
+    {
+      "path": ".github/workflows/restore-canonical-android-asset.yml",
+      "role": "workflow",
+      "purpose": "GitHub Actions automation",
+      "certainty": "rule",
+      "blob": "1808884f5b4cf595bc6fb16b3637b927bca3b930"
+    },
+    {
+      "path": ".gitignore",
+      "role": "config",
+      "purpose": "machine-readable configuration",
+      "certainty": "rule",
+      "blob": "b100642a67a2d52898be0521dae8ea46789660a0"
+    },
+    {
+      "path": ".michelslab/GRANADA.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "bff4a9349966c58139355a612b1c8c75989ec11f"
+    },
+    {
+      "path": ".michelslab/agents/contrarian.md",
+      "role": "agent",
+      "purpose": "assistant role/instructions",
+      "certainty": "rule",
+      "blob": "b33f883ca1f4c6260027a389c155574229f9d8a3"
+    },
+    {
+      "path": ".michelslab/agents/council.md",
+      "role": "agent",
+      "purpose": "assistant role/instructions",
+      "certainty": "rule",
+      "blob": "c280094c8682039d35bcd9a735660531a6a52808"
+    },
+    {
+      "path": ".michelslab/agents/file-steward.md",
+      "role": "agent",
+      "purpose": "assistant role/instructions",
+      "certainty": "rule",
+      "blob": "b1d01e48c04023ad108846e6f554987ed2fd56aa"
+    },
+    {
+      "path": ".michelslab/agents/intelligence-architect.md",
+      "role": "agent",
+      "purpose": "assistant role/instructions",
+      "certainty": "rule",
+      "blob": "83773b6e3f90c1c457936d21ec4d8fcd2f71b425"
+    },
+    {
+      "path": ".michelslab/agents/user-advocate.md",
+      "role": "agent",
+      "purpose": "assistant role/instructions",
+      "certainty": "rule",
+      "blob": "0010a908acb752d45815610b063ebdadd456c195"
+    },
+    {
+      "path": ".michelslab/file-audit-policy.json",
+      "role": "config",
+      "purpose": "machine-readable configuration",
+      "certainty": "rule",
+      "blob": "9e531b43c7a171c8ae733ded2f2106e2e8775766"
+    },
+    {
+      "path": ".michelslab/project.yml",
+      "role": "config",
+      "purpose": "machine-readable configuration",
+      "certainty": "rule",
+      "blob": "412269e3d3e949ef3580896115f13e44fae29441"
+    },
+    {
+      "path": "AGENTS.md",
+      "role": "agent",
+      "purpose": "assistant role/instructions",
+      "certainty": "rule",
+      "blob": "a68b5503baf5c8b7494d89f57bc10d3d43a24f7a"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "role": "bitacora",
+      "purpose": "technical/audit change history",
+      "certainty": "rule",
+      "blob": "fd0cc2c347ef97836f82b1b0df225127285b9431"
+    },
+    {
+      "path": "LICENSE",
+      "role": "license",
+      "purpose": "licensing/notice",
+      "certainty": "rule",
+      "blob": "d7365a28b8670672c63e8fa91e731cfd5da265c2"
+    },
+    {
+      "path": "MICHELS_LAB_PROJECT.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "903cfe23c310887f58cbb1f6d3389dbc775aa8a5"
+    },
+    {
+      "path": "PROJECT_LOG.md",
+      "role": "bitacora",
+      "purpose": "technical/audit change history",
+      "certainty": "rule",
+      "blob": "6a37f8aaed23000c101b767d144cd5a632f00945"
+    },
+    {
+      "path": "README.md",
+      "role": "index",
+      "purpose": "navigation/onboarding",
+      "certainty": "rule",
+      "blob": "6779fb18e250de78426918255ebfe4246d8ce416"
+    },
+    {
+      "path": "app/build.gradle.kts",
+      "role": "unknown",
+      "purpose": "function unknown: owner classification required",
+      "certainty": "unknown",
+      "blob": "e8f9f5f0efa8c35550acc2aba0402737ae96f516"
+    },
+    {
+      "path": "app/src/developer/AndroidManifest.xml",
+      "role": "config",
+      "purpose": "machine-readable configuration",
+      "certainty": "rule",
+      "blob": "59a30b4ad3ebf21808bafc4baa91ca2610dad196"
+    },
+    {
+      "path": "app/src/main/AndroidManifest.xml",
+      "role": "config",
+      "purpose": "machine-readable configuration",
+      "certainty": "rule",
+      "blob": "7f822762111648cbf44053351244ac131d7df7e0"
+    },
+    {
+      "path": "app/src/main/assets/branding/louderme/README.md",
+      "role": "index",
+      "purpose": "navigation/onboarding",
+      "certainty": "rule",
+      "blob": "7f10fa743c835a1ad20645cdb795900effae529f"
+    },
+    {
+      "path": "app/src/main/assets/branding/louderme/official-app-icon.svg",
+      "role": "asset",
+      "purpose": "visual/audio/font asset",
+      "certainty": "rule",
+      "blob": "caf8391e37a4662e6c6027215bd88a43bac1730c"
+    },
+    {
+      "path": "app/src/main/assets/branding/louderme/official-lockup.svg",
+      "role": "asset",
+      "purpose": "visual/audio/font asset",
+      "certainty": "rule",
+      "blob": "0fcb5b563a2d1adc5d7e08e8f9d46ef24b0f36c5"
+    },
+    {
+      "path": "app/src/main/assets/branding/louderme/official-mark.svg",
+      "role": "asset",
+      "purpose": "visual/audio/font asset",
+      "certainty": "rule",
+      "blob": "3163e1a2541c7f303e84744133f6e22e2acb00c0"
+    },
+    {
+      "path": "app/src/main/assets/branding/michels-lab/official-lockup.png",
+      "role": "asset",
+      "purpose": "visual/audio/font asset",
+      "certainty": "rule",
+      "blob": "7819ef5c7d1a5c338c67c9bbd517e5448724a5cf"
+    },
+    {
+      "path": "app/src/main/assets/branding/michels-lab/official-mark.png",
+      "role": "asset",
+      "purpose": "visual/audio/font asset",
+      "certainty": "rule",
+      "blob": "f205c15c3b6bd7fe676ced83fd1ea2ae24c25586"
+    },
+    {
+      "path": "app/src/main/java/com/michelslab/louderme/MainActivity.kt",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "ab5ded14974def73598e30d3e17e6cc35af2794d"
+    },
+    {
+      "path": "app/src/main/java/com/michelslab/louderme/audio/AudioBoostContract.kt",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "f54c14cd22d396e6a93fde977b85fc072b1c33d6"
+    },
+    {
+      "path": "app/src/main/java/com/michelslab/louderme/audio/AudioBoostService.kt",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "7cf30aa85daf2877aa022a8cc076863eb8744380"
+    },
+    {
+      "path": "app/src/main/java/com/michelslab/louderme/audio/AudioBoostStateStore.kt",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "e9a10f3d85282428f63c478af4eae4abd2f0d2bf"
+    },
+    {
+      "path": "app/src/main/java/com/michelslab/louderme/audio/AudioEngine.kt",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "a86a5b80233757178d83fcfe73e42feb4b7d6465"
+    },
+    {
+      "path": "app/src/main/java/com/michelslab/louderme/audio/AudioEngineUiState.kt",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "62ca5a4d1de3feeb00d24fe18863b70973f16b80"
+    },
+    {
+      "path": "app/src/main/java/com/michelslab/louderme/audio/BoostMath.kt",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "7ec3d2544d8715e0d4389d9a7fb8b265a08a52ca"
+    },
+    {
+      "path": "app/src/main/java/com/michelslab/louderme/audio/EqualizerModels.kt",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "cbd70fcf84922a48be312046a7f872d7c2c5566f"
+    },
+    {
+      "path": "app/src/main/java/com/michelslab/louderme/audio/EqualizerStateStore.kt",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "fae5dd8e5d1a97c07f1935af0639aae08a9871d4"
+    },
+    {
+      "path": "app/src/main/java/com/michelslab/louderme/audio/PeakProtectionPolicy.kt",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "5d1fd80d5db5d0a475d09479a8d227ae50c2bcad"
+    },
+    {
+      "path": "app/src/main/java/com/michelslab/louderme/audio/SessionZeroAudioEngine.kt",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "929f12a2d7ae8d9b4ecd379f9f1729937895ae04"
+    },
+    {
+      "path": "app/src/main/java/com/michelslab/louderme/audio/SessionZeroEqualizer.kt",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "f8ae0b2b69c57ee7499643f8fee590eaa8f1e552"
+    },
+    {
+      "path": "app/src/main/java/com/michelslab/louderme/startup/BootCompletedReceiver.kt",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "bc13e4df07b224ec3e1def9642936a82a9b00e30"
+    },
+    {
+      "path": "app/src/main/java/com/michelslab/louderme/startup/StartupPreferences.kt",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "1869fdf01d97a326198c48a4b9393d45456f0daf"
+    },
+    {
+      "path": "app/src/main/java/com/michelslab/louderme/ui/BrandComponents.kt",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "95c2666c3c206e559344ef5c0c8862b5cbb29a10"
+    },
+    {
+      "path": "app/src/main/java/com/michelslab/louderme/ui/DeveloperInspectorUi.kt",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "204d91ae3055147fa01eaba8603df3ad5d336383"
+    },
+    {
+      "path": "app/src/main/java/com/michelslab/louderme/ui/DeveloperNotesStore.kt",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "8e3a4264f585a50938b9be0750fffeca449b1c23"
+    },
+    {
+      "path": "app/src/main/java/com/michelslab/louderme/ui/DeveloperProfile.kt",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "ec8bdc13680e723edf6dfcfbd2cdf76d832ab1b4"
+    },
+    {
+      "path": "app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "775a505d2947426d47d642d2019a054c14d98e24"
+    },
+    {
+      "path": "app/src/main/java/com/michelslab/louderme/ui/LouderMeTheme.kt",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "815c165ad3b09d2d8eb3e92d91b41c1334b08efb"
+    },
+    {
+      "path": "app/src/main/java/com/michelslab/louderme/update/DirectUpdateConfig.kt",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "bdcf917feadf6d09ef665f178fec545336395725"
+    },
+    {
+      "path": "app/src/main/java/com/michelslab/louderme/update/DirectUpdateController.kt",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "010247788685c782f06aaaa3a208bff825b43840"
+    },
+    {
+      "path": "app/src/main/java/com/michelslab/louderme/update/DirectUpdateManifest.kt",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "247232fde23b25229785e697a84f78708026611e"
+    },
+    {
+      "path": "app/src/main/java/com/michelslab/louderme/update/PlayUpdateController.kt",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "4a20b11b0c629885048bc5831a4cd038c8536873"
+    },
+    {
+      "path": "app/src/main/java/com/michelslab/louderme/update/UpdateCoordinator.kt",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "bf247a80d3cd4b05df9903cdf730a7f8101ac48a"
+    },
+    {
+      "path": "app/src/main/java/com/michelslab/louderme/update/UpdateInstallReceiver.kt",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "14bd94624603b88e00f9d6b9ad2e7d48fbc8995a"
+    },
+    {
+      "path": "app/src/main/java/com/michelslab/louderme/update/UpdateStatus.kt",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "ce45ff4b49baac819e72385ab5e04441f86b9089"
+    },
+    {
+      "path": "app/src/main/res/drawable/louderme_app_icon_legacy.xml",
+      "role": "config",
+      "purpose": "machine-readable configuration",
+      "certainty": "rule",
+      "blob": "677396c7becc389a6a60e9cca10239aae7b97c71"
+    },
+    {
+      "path": "app/src/main/res/drawable/louderme_icon_background.xml",
+      "role": "config",
+      "purpose": "machine-readable configuration",
+      "certainty": "rule",
+      "blob": "0b937ea26c91e3d7fa486abc16fa396b5372b65f"
+    },
+    {
+      "path": "app/src/main/res/drawable/louderme_icon_foreground.xml",
+      "role": "config",
+      "purpose": "machine-readable configuration",
+      "certainty": "rule",
+      "blob": "053e6f5b96579a1c525252bcf9e3b4e4606807be"
+    },
+    {
+      "path": "app/src/main/res/drawable/louderme_launch_background.xml",
+      "role": "config",
+      "purpose": "machine-readable configuration",
+      "certainty": "rule",
+      "blob": "3f88c6a00d3fc23bb2f7795a5f6b6aba021212b6"
+    },
+    {
+      "path": "app/src/main/res/drawable/louderme_mark.xml",
+      "role": "config",
+      "purpose": "machine-readable configuration",
+      "certainty": "rule",
+      "blob": "d32ce595b6be1c8367c0fc7b6d65cfaeda5f2321"
+    },
+    {
+      "path": "app/src/main/res/drawable/michel_duarte_avatar.jpg",
+      "role": "asset",
+      "purpose": "visual/audio/font asset",
+      "certainty": "rule",
+      "blob": "18fe1a68722850c3d8f918dc0799f46ffeb6dbaf"
+    },
+    {
+      "path": "app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml",
+      "role": "config",
+      "purpose": "machine-readable configuration",
+      "certainty": "rule",
+      "blob": "dbf9205ad68a3c7026fb2f8e2e6c8226fe319221"
+    },
+    {
+      "path": "app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml",
+      "role": "config",
+      "purpose": "machine-readable configuration",
+      "certainty": "rule",
+      "blob": "dbf9205ad68a3c7026fb2f8e2e6c8226fe319221"
+    },
+    {
+      "path": "app/src/main/res/mipmap-anydpi/ic_launcher.xml",
+      "role": "config",
+      "purpose": "machine-readable configuration",
+      "certainty": "rule",
+      "blob": "a6f83fca1a7222c701c80ac64ab94ca10781d57a"
+    },
+    {
+      "path": "app/src/main/res/mipmap-anydpi/ic_launcher_round.xml",
+      "role": "config",
+      "purpose": "machine-readable configuration",
+      "certainty": "rule",
+      "blob": "a6f83fca1a7222c701c80ac64ab94ca10781d57a"
+    },
+    {
+      "path": "app/src/main/res/values-v31/themes.xml",
+      "role": "config",
+      "purpose": "machine-readable configuration",
+      "certainty": "rule",
+      "blob": "f8e5d3a7d01aef371119389f99db3037fc762eb0"
+    },
+    {
+      "path": "app/src/main/res/values/themes.xml",
+      "role": "config",
+      "purpose": "machine-readable configuration",
+      "certainty": "rule",
+      "blob": "bd8f6afd945eb5196a3c61fd268803a78b214ff7"
+    },
+    {
+      "path": "app/src/sideload/AndroidManifest.xml",
+      "role": "config",
+      "purpose": "machine-readable configuration",
+      "certainty": "rule",
+      "blob": "aa8c63f97b7e66ee5233701e45c16e4eb01e2fd0"
+    },
+    {
+      "path": "app/src/test/java/com/michelslab/louderme/audio/BoostMathTest.kt",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "0a3c9a92b7d98e71d08cadbaf510fc8b036bc44f"
+    },
+    {
+      "path": "app/src/test/java/com/michelslab/louderme/audio/EqualizerPresetsTest.kt",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "838e1a7a142064ca923e70bceb546376aaa7fe01"
+    },
+    {
+      "path": "app/src/test/java/com/michelslab/louderme/audio/PeakProtectionPolicyTest.kt",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "6fcc6452160e68cb06e45b40cae1190aa0519d66"
+    },
+    {
+      "path": "app/src/test/java/com/michelslab/louderme/ui/DeveloperNoteMigrationTest.kt",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "abc539494f394f5a1c556775468055e66a1f16cc"
+    },
+    {
+      "path": "app/src/test/java/com/michelslab/louderme/ui/DeveloperTargetContractTest.kt",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "f88046d19553d9368c4af0c429de9de7de8cda40"
+    },
+    {
+      "path": "app/src/test/java/com/michelslab/louderme/update/DirectUpdateManifestTest.kt",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "4c24806a70abcc96320fcec9224cdc4364614ae7"
+    },
+    {
+      "path": "build.gradle.kts",
+      "role": "unknown",
+      "purpose": "function unknown: owner classification required",
+      "certainty": "unknown",
+      "blob": "778547eae01b32a71458404ab3ce299d81f95511"
+    },
+    {
+      "path": "desktop/LICENSE.txt",
+      "role": "unknown",
+      "purpose": "function unknown: owner classification required",
+      "certainty": "unknown",
+      "blob": "0c78eafec277a8f3e2cada23623a541daa3b6586"
+    },
+    {
+      "path": "desktop/README.md",
+      "role": "index",
+      "purpose": "navigation/onboarding",
+      "certainty": "rule",
+      "blob": "e2c7d8b3816849df2dcfa21fb87753413e611230"
+    },
+    {
+      "path": "desktop/docs/GRANADA_RELEASE_READINESS_2026-10-20.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "2708f3a686777c69f068ea7d9aa765632e11af33"
+    },
+    {
+      "path": "desktop/installer/LouderMe.iss",
+      "role": "unknown",
+      "purpose": "function unknown: owner classification required",
+      "certainty": "unknown",
+      "blob": "3bc5c883f09082b70070f44b4a41fb53e5638d13"
+    },
+    {
+      "path": "desktop/installer/TaskbarPinning.txt",
+      "role": "unknown",
+      "purpose": "function unknown: owner classification required",
+      "certainty": "unknown",
+      "blob": "bb601b7d95ed2f656b0db7b4afe35d54c537be68"
+    },
+    {
+      "path": "desktop/installer/prepare-branding.ps1",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "92ce585f49fadd93d3b9e9db8b469e52bd728f3f"
+    },
+    {
+      "path": "desktop/releases/v0.1.0.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "f82fe5e0aa53d8c790d808ff87f10a023b8f2447"
+    },
+    {
+      "path": "desktop/releases/v0.1.1.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "5125bbbef7a830ec7142d230f20f70d2eb8cd76c"
+    },
+    {
+      "path": "desktop/releases/v0.1.11.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "e3e3653a3a71547d961e12bc3062674ca2007226"
+    },
+    {
+      "path": "desktop/releases/v0.1.12.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "c8a750fc1a0b201aa4a1ba4d7dc7c6339f5d55d1"
+    },
+    {
+      "path": "desktop/releases/v0.1.13.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "bb24fd7429db8a346cbc1b3d360b9a3d2a9c139b"
+    },
+    {
+      "path": "desktop/releases/v0.1.2.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "df53c1b6460235d5b48208a8330ef3341f3f2500"
+    },
+    {
+      "path": "desktop/releases/v0.1.3.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "3ad137106e945794fc51f7585cac14e108dcd774"
+    },
+    {
+      "path": "desktop/releases/v0.1.4.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "8701525d76ec49eef51e4e344c68253c5b1dcd94"
+    },
+    {
+      "path": "desktop/releases/v0.1.5.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "7f5440ca7d741bc9f587fedadb299f4826ea363c"
+    },
+    {
+      "path": "desktop/src/LouderMeDesktop/AboutForm.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "9d8093e9929665218334b690bab0315b9590409f"
+    },
+    {
+      "path": "desktop/src/LouderMeDesktop/Assets/MichelDuarte.jpg",
+      "role": "asset",
+      "purpose": "visual/audio/font asset",
+      "certainty": "rule",
+      "blob": "18fe1a68722850c3d8f918dc0799f46ffeb6dbaf"
+    },
+    {
+      "path": "desktop/src/LouderMeDesktop/Assets/MichelsLabLockup.png",
+      "role": "asset",
+      "purpose": "visual/audio/font asset",
+      "certainty": "rule",
+      "blob": "7819ef5c7d1a5c338c67c9bbd517e5448724a5cf"
+    },
+    {
+      "path": "desktop/src/LouderMeDesktop/Assets/MichelsLabMark.png",
+      "role": "asset",
+      "purpose": "visual/audio/font asset",
+      "certainty": "rule",
+      "blob": "f205c15c3b6bd7fe676ced83fd1ea2ae24c25586"
+    },
+    {
+      "path": "desktop/src/LouderMeDesktop/AudioDeviceController.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "40aca2a53e6884f5bf3a592c0727da5c70343383"
+    },
+    {
+      "path": "desktop/src/LouderMeDesktop/BoostMath.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "07acbd83f93c51a40b5a5d22974650549fdb4bf1"
+    },
+    {
+      "path": "desktop/src/LouderMeDesktop/BrandAssets.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "198b057fd829dde508dea795b3e83cf1a10805fb"
+    },
+    {
+      "path": "desktop/src/LouderMeDesktop/BrandingControls.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "65c6eb2c5c239ce43f2053c855479cce2ace7fa0"
+    },
+    {
+      "path": "desktop/src/LouderMeDesktop/DesktopAudioSettings.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "e387627dfc67d7d4c9b4f9ea6287974cda579f50"
+    },
+    {
+      "path": "desktop/src/LouderMeDesktop/DesktopUpdateService.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "48cf74c3cb1621d838ba26867bcfdd490e9258f6"
+    },
+    {
+      "path": "desktop/src/LouderMeDesktop/DeveloperAudit.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "22c9ecf75812617d5aea99e75eb8d55dd3646adc"
+    },
+    {
+      "path": "desktop/src/LouderMeDesktop/DeveloperDiagnosticsForm.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "390439a84a40992c727b0d1918936c614f9cfc4f"
+    },
+    {
+      "path": "desktop/src/LouderMeDesktop/DeveloperProfile.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "85513c2e4d91077f3f843ced291a372538c80692"
+    },
+    {
+      "path": "desktop/src/LouderMeDesktop/EqualizerApoConfigBuilder.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "b1767065ff48eb3882152565c3c8bdb8659d0af1"
+    },
+    {
+      "path": "desktop/src/LouderMeDesktop/EqualizerApoEngine.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "0e17226b5097c3ed3a10b41c15c6c01196b4fd67"
+    },
+    {
+      "path": "desktop/src/LouderMeDesktop/EqualizerPresets.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "fa0baa564a2bb82fbaefe10fc675810f0bd142a8"
+    },
+    {
+      "path": "desktop/src/LouderMeDesktop/LouderMeDesktop.csproj",
+      "role": "unknown",
+      "purpose": "function unknown: owner classification required",
+      "certainty": "unknown",
+      "blob": "179acfe6383414150b417b8b607c14164dbb1ce5"
+    },
+    {
+      "path": "desktop/src/LouderMeDesktop/MainForm.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "6dbc7cdc6f57c7ac70f0f003161507c69c124689"
+    },
+    {
+      "path": "desktop/src/LouderMeDesktop/Program.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "017d1be64524c13e0c792dfa6c743260dabf0e2d"
+    },
+    {
+      "path": "desktop/src/LouderMeDesktop/SplashForm.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "ee4f4576ab65cbc84cee32f77ccd3f2cf56e7eb8"
+    },
+    {
+      "path": "desktop/src/LouderMeDesktop/StartupManager.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "628569245789275704af30e4a9258b1425d39633"
+    },
+    {
+      "path": "desktop/tools/capture_windows_visual.ps1",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "071bc8a322c8f328e9ef83c08cfcce367c271cc0"
+    },
+    {
+      "path": "desktop/tools/check_developer_installed.ps1",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "b6cc5d3582e3024cd44bf52a9ee2a576944fd900"
+    },
+    {
+      "path": "desktop/tools/verify_release_identity.ps1",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "537826d28b032003a8b1223c36b59320f9129bf2"
+    },
+    {
+      "path": "desktop/tools/windows_launch_smoke.ps1",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "f03027b2fa868a86d96c3c03357169886991dcb6"
+    },
+    {
+      "path": "docs/ABOUT.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "d89bb033b7641bc21345f7941b2cc56a09b33491"
+    },
+    {
+      "path": "docs/ANDROID_VISUAL_NAVIGATION_QA.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "26ae5f5e74d6121773b6277fbd0e88037c8ce630"
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "82e8ff80b909e505040f7f70417a6af36f0b6a61"
+    },
+    {
+      "path": "docs/DEVELOPER_ANDROID_SIGNED_CHANNEL.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "141b95d6a32744641620e87add6e555e95b5c0b8"
+    },
+    {
+      "path": "docs/DEVELOPER_EDITION_ANDROID.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "e80a91e0f4510e123be57fe6c644b1ce2e935d01"
+    },
+    {
+      "path": "docs/DEVELOPER_EDITION_WINDOWS.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "0a7ac3c5745cf191013addeb92192299bebda229"
+    },
+    {
+      "path": "docs/INFRASTRUCTURE_AUDIT.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "320a74067065787280b9fe223b72f18638307523"
+    },
+    {
+      "path": "docs/NATIVE_AUDIO_ENGINE_ARCHITECTURE.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "17aff46d34ac46d5a10fcb70315a0d249720a7b9"
+    },
+    {
+      "path": "docs/PLAY_STORE_READINESS.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "93747516db4298ff1807e922ffd121fa445f0820"
+    },
+    {
+      "path": "docs/PRIVACY_POLICY.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "7655aaefd157298381e05b130f2c29acf6d440ef"
+    },
+    {
+      "path": "docs/PROJECT_PROTOCOL.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "b047a73ad8202adecfe3ffc0bc30fbbb1cc183b3"
+    },
+    {
+      "path": "docs/RELEASE_NOTES_v0.1.0.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "0d9f95b61306a9875c13169919454e6cb0049af1"
+    },
+    {
+      "path": "docs/RELEASE_NOTES_v0.1.1.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "25cb5b5c384e28907761ad72b435101fd1f6c88f"
+    },
+    {
+      "path": "docs/RELEASE_NOTES_v0.1.10.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "ca578e53ca0c77e3ee847418e4ff812fa7057eaa"
+    },
+    {
+      "path": "docs/RELEASE_NOTES_v0.1.11.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "2c149383e6766408a98718b1838339370a7dda8e"
+    },
+    {
+      "path": "docs/RELEASE_NOTES_v0.1.12.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "3183bfb5b39fc7662388862b8423afe323be221b"
+    },
+    {
+      "path": "docs/RELEASE_NOTES_v0.1.2.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "6340ec26c10c7ac991e5bdbc317d1c02c3ff6ec8"
+    },
+    {
+      "path": "docs/RELEASE_NOTES_v0.1.3.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "57109093360dd96d8767acbdad2c2c0700cbabbd"
+    },
+    {
+      "path": "docs/RELEASE_NOTES_v0.1.4.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "cd1a196a0cac67e5ffe27aecae652d2da5520372"
+    },
+    {
+      "path": "docs/RELEASE_NOTES_v0.1.5.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "678aa52465b8a720452bf1b6108f21c3a55a797b"
+    },
+    {
+      "path": "docs/RELEASE_NOTES_v0.1.6.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "cd54e6a279d50309e7ff87ee4f5bc184a2e2fa9c"
+    },
+    {
+      "path": "docs/RELEASE_NOTES_v0.1.7.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "927387face8811cca3e3c622bc7cf7925345f127"
+    },
+    {
+      "path": "docs/RELEASE_NOTES_v0.1.8.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "e4cf6ac22b8e1cca90be998b94ba89bec24dfcb4"
+    },
+    {
+      "path": "docs/RELEASE_NOTES_v0.1.9.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "ea821d541efda8be85fc84a9e76133ceeb2e3407"
+    },
+    {
+      "path": "docs/SIDELOAD_UPDATE_CHANNEL.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "bfdc1757c8b231db63edb1ec391e2ab9eca722a1"
+    },
+    {
+      "path": "docs/WINDOWS_DEVELOPER_AUDIO_READINESS_2026-10-20.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "c1b07e601ccb50cab45e22ad35fd558b58ec3754"
+    },
+    {
+      "path": "docs/WINDOWS_OWNER_AUDIO_VALIDATION_2026-10-12.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "e1145a56c9f5b5091a6e2a2807361d5e73f77124"
+    },
+    {
+      "path": "docs/product-reviews/README.md",
+      "role": "index",
+      "purpose": "navigation/onboarding",
+      "certainty": "rule",
+      "blob": "7aeaacd8cdbd0ff712d2bea3284ea9d66de9caf2"
+    },
+    {
+      "path": "gradle.properties",
+      "role": "config",
+      "purpose": "machine-readable configuration",
+      "certainty": "rule",
+      "blob": "3145cef41876740b847a33595b1ce21eac0977d0"
+    },
+    {
+      "path": "infra/private-developer-signer/.github/workflows/developer-android-signed-owner-qa.yml",
+      "role": "config",
+      "purpose": "machine-readable configuration",
+      "certainty": "rule",
+      "blob": "6b3a68b6c5dad48f8da1fa57b68cb854ffd76b49"
+    },
+    {
+      "path": "native/audio-engine/CMakeLists.txt",
+      "role": "unknown",
+      "purpose": "function unknown: owner classification required",
+      "certainty": "unknown",
+      "blob": "5564e0783c026b061461e09679e8dc47d92bfe0d"
+    },
+    {
+      "path": "native/audio-engine/include/louderme/AudioEngine.hpp",
+      "role": "unknown",
+      "purpose": "function unknown: owner classification required",
+      "certainty": "unknown",
+      "blob": "0e266d7a283fae70114997b29f22ecb751c43479"
+    },
+    {
+      "path": "native/audio-engine/include/louderme/AudioEngineC.h",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "17bc30eef473d9dbaaa4fec705cef3270a995de9"
+    },
+    {
+      "path": "native/audio-engine/src/AudioEngine.cpp",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "9c216ace51664a8585e8103c94e55686ab63422e"
+    },
+    {
+      "path": "native/audio-engine/src/AudioEngineC.cpp",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "25faee996ef58183daabffef0c6225798cb4ce39"
+    },
+    {
+      "path": "native/audio-engine/tests/AudioEngineCAbiTests.cpp",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "6b96ac5496cd9d0de19af2d76bf9c4efac639a4b"
+    },
+    {
+      "path": "native/audio-engine/tests/AudioEngineTests.cpp",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "409c513e9bea9601fe87e086807d7c98132c96a9"
+    },
+    {
+      "path": "native/independent-tone/LouderMeIndependentTone.csproj",
+      "role": "unknown",
+      "purpose": "function unknown: owner classification required",
+      "certainty": "unknown",
+      "blob": "906f436258c79af2ff7296155f6ec035a99c1f33"
+    },
+    {
+      "path": "native/independent-tone/Program.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "7586ead809d45665b6ec7786df20e8628c2b6c79"
+    },
+    {
+      "path": "native/virtual-driver/README.md",
+      "role": "index",
+      "purpose": "navigation/onboarding",
+      "certainty": "rule",
+      "blob": "b9b60434d28149631209eecc8c40f8c83260d741"
+    },
+    {
+      "path": "native/virtual-driver/prepare_sysvad.py",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "d552beeb483f1f3f4adfcdd09d39b1fd5478356c"
+    },
+    {
+      "path": "native/virtual-driver/probe_independent_app_route.ps1",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "e1e1ac8b396de850d150db1ece17fdd876278af0"
+    },
+    {
+      "path": "native/virtual-driver/run_disposable_lab.ps1",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "6aca1d90537a419779df990c2036195473451d9d"
+    },
+    {
+      "path": "native/virtual-driver/tests/test_independent_source_contract.py",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "8ff011ad4c2f3af930f0041591deebb89e092f2a"
+    },
+    {
+      "path": "native/virtual-driver/tests/test_prepare_sysvad.py",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "1c0438bd7b254e989d0aeebc0115c2a6d58d9983"
+    },
+    {
+      "path": "native/virtual-driver/validate_lab_package.ps1",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "1a42863fbb3431b5b78038e20d19786732c6162a"
+    },
+    {
+      "path": "native/windows-bridge/AdaptiveBufferClock.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "8bc8c932b8da542bdb49e9de05133e9cbc4c5c59"
+    },
+    {
+      "path": "native/windows-bridge/AudioProcessingTelemetry.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "ac50986c394b0a64c4687870559e69873fe7ed67"
+    },
+    {
+      "path": "native/windows-bridge/AudioQueueRecovery.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "644fdcf7472344049b3e93ed248d2e300eaf61b5"
+    },
+    {
+      "path": "native/windows-bridge/DspLiveControls.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "61528ce5d88e60d1369d0e97c27c0ce52efa8c5e"
+    },
+    {
+      "path": "native/windows-bridge/LoopbackToneVerifier.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "4d171d56c8fcd447c45d1d953cbb58c303eb9c3c"
+    },
+    {
+      "path": "native/windows-bridge/LouderMeAudioBridge.csproj",
+      "role": "unknown",
+      "purpose": "function unknown: owner classification required",
+      "certainty": "unknown",
+      "blob": "53ee4c7fedd075ec9566e479d74c0563fc542e05"
+    },
+    {
+      "path": "native/windows-bridge/NativeDsp.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "d028537fe8073a4592fd1cebe8a5cedd855ee7ad"
+    },
+    {
+      "path": "native/windows-bridge/PcmFormatAdapter.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "c2b9174195591817ceb799d0f511bf666f4ece73"
+    },
+    {
+      "path": "native/windows-bridge/PhysicalRouteTone.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "96ff8a272ae376f8c877df1004d126271ad6d857"
+    },
+    {
+      "path": "native/windows-bridge/Program.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "7bc1d5daab73ad2672b268aa298c23b6be33dba5"
+    },
+    {
+      "path": "native/windows-bridge/README.md",
+      "role": "index",
+      "purpose": "navigation/onboarding",
+      "certainty": "rule",
+      "blob": "5e83c0e5e4a59a86fc5ae3f34db9ae9c6cde90d9"
+    },
+    {
+      "path": "native/windows-bridge/StreamingDownsampleLowPass.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "e29834441947f2f105278f485c2d1b2cb536a17e"
+    },
+    {
+      "path": "settings.gradle.kts",
+      "role": "unknown",
+      "purpose": "function unknown: owner classification required",
+      "certainty": "unknown",
+      "blob": "fa3bf620e23eb2b2e5b5ef8e996c7bbd54b9fe55"
+    },
+    {
+      "path": "tools/build_windows_visual_manifest.py",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "15bf25872a979bf37cd25f2aee8450a5f136583f"
+    },
+    {
+      "path": "tools/capture_android_developer.py",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "78576e89626f066c755defe8f5719feb67123255"
+    },
+    {
+      "path": "tools/capture_android_visual.py",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "f7e7f6a04bb652d11c7e08904bd574162c6b2377"
+    },
+    {
+      "path": "tools/repository_file_auditor.py",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "fe0546a76c0cf308c99f0cc4f1c11aa0677496ec"
+    },
+    {
+      "path": "tools/run_android_signed_visual_ci.sh",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "94c1d0069be736ae424d6c6aef3c51265b853ffd"
+    },
+    {
+      "path": "tools/run_android_visual_ci.sh",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "0a491d091e0d07e781be85445a363d901db55e12"
+    },
+    {
+      "path": "tools/test_repository_file_auditor.py",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "b94da69cd18c8066756acba162bc66618261b522"
+    },
+    {
+      "path": "tools/tests/test_android_developer_harness.py",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "58b51b6587f14b76578573860f01c2d47e30f9db"
+    },
+    {
+      "path": "tools/tests/test_android_developer_signed_contract.py",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "7f7a92124ff322a4c05c97966bf1bd021576b2f3"
+    },
+    {
+      "path": "tools/tests/test_android_visual_navigation.py",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "62be9e9889f541ce4c61a1a6ec5346042091c1dd"
+    },
+    {
+      "path": "tools/verify_signed_android_evidence.py",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "878734448b75f2dcdcc0e040b5d75a490890090e"
+    },
+    {
+      "path": "tools/visual_release_gate.py",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "724f2c9b5eb8b069e266eb1619375c97628d9202"
+    }
+  ],
+  "findings": [
+    {
+      "id": "ed9bcbc50f7db070",
+      "code": "UNKNOWN_PURPOSE",
+      "severity": "review",
+      "path": "app/build.gradle.kts",
+      "observation": "No reliable purpose category from path",
+      "recommendation": "Declare role after reviewing usage",
+      "state": "REVIEW_REQUIRED"
+    },
+    {
+      "id": "f0d8bef90f42ef54",
+      "code": "UNKNOWN_PURPOSE",
+      "severity": "review",
+      "path": "build.gradle.kts",
+      "observation": "No reliable purpose category from path",
+      "recommendation": "Declare role after reviewing usage",
+      "state": "REVIEW_REQUIRED"
+    },
+    {
+      "id": "19eb98f6a377f33f",
+      "code": "UNKNOWN_PURPOSE",
+      "severity": "review",
+      "path": "desktop/LICENSE.txt",
+      "observation": "No reliable purpose category from path",
+      "recommendation": "Declare role after reviewing usage",
+      "state": "REVIEW_REQUIRED"
+    },
+    {
+      "id": "bc3340bb038d622a",
+      "code": "UNKNOWN_PURPOSE",
+      "severity": "review",
+      "path": "desktop/installer/LouderMe.iss",
+      "observation": "No reliable purpose category from path",
+      "recommendation": "Declare role after reviewing usage",
+      "state": "REVIEW_REQUIRED"
+    },
+    {
+      "id": "802201151e86f352",
+      "code": "UNKNOWN_PURPOSE",
+      "severity": "review",
+      "path": "desktop/installer/TaskbarPinning.txt",
+      "observation": "No reliable purpose category from path",
+      "recommendation": "Declare role after reviewing usage",
+      "state": "REVIEW_REQUIRED"
+    },
+    {
+      "id": "7b8c26f3b5542291",
+      "code": "UNKNOWN_PURPOSE",
+      "severity": "review",
+      "path": "desktop/src/LouderMeDesktop/LouderMeDesktop.csproj",
+      "observation": "No reliable purpose category from path",
+      "recommendation": "Declare role after reviewing usage",
+      "state": "REVIEW_REQUIRED"
+    },
+    {
+      "id": "dcbb59ac3c172b89",
+      "code": "UNKNOWN_PURPOSE",
+      "severity": "review",
+      "path": "native/audio-engine/CMakeLists.txt",
+      "observation": "No reliable purpose category from path",
+      "recommendation": "Declare role after reviewing usage",
+      "state": "REVIEW_REQUIRED"
+    },
+    {
+      "id": "e27ff08885a0e8fc",
+      "code": "UNKNOWN_PURPOSE",
+      "severity": "review",
+      "path": "native/audio-engine/include/louderme/AudioEngine.hpp",
+      "observation": "No reliable purpose category from path",
+      "recommendation": "Declare role after reviewing usage",
+      "state": "REVIEW_REQUIRED"
+    },
+    {
+      "id": "560f7a488670d0d9",
+      "code": "UNKNOWN_PURPOSE",
+      "severity": "review",
+      "path": "native/independent-tone/LouderMeIndependentTone.csproj",
+      "observation": "No reliable purpose category from path",
+      "recommendation": "Declare role after reviewing usage",
+      "state": "REVIEW_REQUIRED"
+    },
+    {
+      "id": "3a1bfcb51818737e",
+      "code": "UNKNOWN_PURPOSE",
+      "severity": "review",
+      "path": "native/windows-bridge/LouderMeAudioBridge.csproj",
+      "observation": "No reliable purpose category from path",
+      "recommendation": "Declare role after reviewing usage",
+      "state": "REVIEW_REQUIRED"
+    },
+    {
+      "id": "edf0bead68802955",
+      "code": "UNKNOWN_PURPOSE",
+      "severity": "review",
+      "path": "settings.gradle.kts",
+      "observation": "No reliable purpose category from path",
+      "recommendation": "Declare role after reviewing usage",
+      "state": "REVIEW_REQUIRED"
+    }
+  ],
+  "untracked_audited": false,
+  "ignored_audited": false,
+  "binary_contents_audited": false,
+  "scientific_validation": "NOT_CHECKED",
+  "app_installed_acceptance": "NOT_CHECKED",
+  "deletion_approved": false
+}

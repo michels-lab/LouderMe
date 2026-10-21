@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "canonical_logs": [
+    "PROJECT_LOG.md"
+  ],
+  "purpose_overrides": {},
+  "ignore_paths": [
+    "reports/file-governance/*",
+    "docs/audits/FILE_GOVERNANCE_LOG.md"
+  ],
+  "max_text_bytes": 262144,
+  "stale_days": 120,
+  "log_stale_days": 45,
+  "markdown_finding_limit": 120
+}

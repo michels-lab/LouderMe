@@ -1,0 +1,42 @@
+name: File Steward - tracked-tree audit
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '35 8 * * 2'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/repository_file_auditor.py'
+      - 'tools/test_repository_file_auditor.py'
+      - '.michelslab/file-audit-policy.json'
+      - '.github/workflows/file-governance-audit.yml'
+permissions:
+  contents: write
+concurrency:
+  group: file-steward-main
+  cancel-in-progress: false
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Prove audit safety on synthetic git fixture
+        run: python3 tools/test_repository_file_auditor.py
+      - name: Enumerate all tracked paths, inspect documents and write local delta log
+        run: python3 tools/repository_file_auditor.py --repo .
+      - name: Commit only generated audit reports in this repository
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- reports/file-governance/FILE_GOVERNANCE.json reports/file-governance/FILE_GOVERNANCE.md reports/file-governance/SUMMARY.json docs/audits/FILE_GOVERNANCE_LOG.md
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(file-steward): refresh local audit findings [skip ci]"
+            git push
+          fi

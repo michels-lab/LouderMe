@@ -61,7 +61,22 @@ try {
   if ((Get-Content -LiteralPath $lock -Raw).Trim() -cne $session) {
     throw 'Write-once session marker was overwritten.'
   }
-  Write-Host 'PASS: fresh LAB evidence ownership, immutable JSON/log files, collision refusal and data preservation (device-free).'
+  $privatePhysical = '{0.0.0.00000000}.{PRIVATE_PHYSICAL_ENDPOINT}'
+  $privateVirtual = '{0.0.0.00000000}.{PRIVATE_VIRTUAL_ENDPOINT}'
+  $listLine = Protect-LouderMeLabLogLine -Line "[Speakers] $privatePhysical" -ListDevices
+  if ($listLine -cne '[Speakers] [REDACTED_ENDPOINT_ID]') {
+    throw 'WASAPI device list disclosure was not redacted.'
+  }
+  $routeLine = Protect-LouderMeLabLogLine -Line "from=$privateVirtual to=$privatePhysical" -KnownEndpointIds @($privatePhysical, $privateVirtual)
+  if ($routeLine.Contains($privatePhysical) -or $routeLine.Contains($privateVirtual) -or
+      $routeLine -cne 'from=[REDACTED_ENDPOINT_ID] to=[REDACTED_ENDPOINT_ID]') {
+    throw 'Route trace persisted raw Windows endpoint IDs.'
+  }
+  $safeMarker = Protect-LouderMeLabLogLine -Line 'PASS: physical matched440=0.020 coherence=0.81' -KnownEndpointIds @($privatePhysical)
+  if ($safeMarker -cne 'PASS: physical matched440=0.020 coherence=0.81') {
+    throw 'Numeric nonprivate audio evidence was changed by redaction.'
+  }
+  Write-Host 'PASS: fresh LAB evidence ownership, write-once files, collision refusal and redacted endpoint logs (device-free).'
 } finally {
   Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
 }

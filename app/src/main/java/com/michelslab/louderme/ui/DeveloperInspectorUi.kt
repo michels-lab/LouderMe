@@ -99,8 +99,10 @@ internal fun DeveloperInspectorUi(
                     bounded.toString("UTF-8")
                 }
                 importedPreview = owner.previewImport(content)
+            } catch (problem: IllegalArgumentException) {
+                importError = problem.message ?: "Unsupported note backup. Nothing was imported."
             } catch (_: Exception) {
-                importError = "This is not a valid, supported Developer notes backup (2 MB maximum). Nothing was imported."
+                importError = "This is not a valid Developer notes backup. Nothing was imported."
             }
         }
     }
@@ -254,6 +256,8 @@ internal fun DeveloperInspectorUi(
                     TextButton(onClick = {
                         if (owner.applyImport(preview, replaceConflicts = false)) {
                             importedPreview = null
+                            statusFilter = "All"
+                            audit = null
                             owner.panel = true
                         } else {
                             importedPreview = null
@@ -264,6 +268,8 @@ internal fun DeveloperInspectorUi(
                         TextButton(onClick = {
                             if (owner.applyImport(preview, replaceConflicts = true)) {
                                 importedPreview = null
+                                statusFilter = "All"
+                                audit = null
                                 owner.panel = true
                             } else {
                                 importedPreview = null

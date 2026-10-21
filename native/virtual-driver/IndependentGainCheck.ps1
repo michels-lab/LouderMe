@@ -26,7 +26,7 @@ function Test-LouderMeIndependentGain {
     }
     if ($record.boost_percent -is [bool] -or
         $record.boost_percent -isnot [ValueType] -or
-        [int]$record.boost_percent -ne $boost) {
+        [double]$record.boost_percent -ne [double]$boost) {
       throw "Invalid or swapped recorded boost value at $boost percent."
     }
     foreach ($field in @('physical_matched440_amplitude', 'physical_coherence')) {

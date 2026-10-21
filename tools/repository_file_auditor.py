@@ -66,10 +66,10 @@ def identify(path, custom):
     parts=p.split("/")
     if (parts[0] in {"cases","case"} or parts[0].startswith("cases_")) and len(parts)>=3:
         below=parts[2:]
-        if "postprocessing" in below or any(b.replace(".", "", 1).isdigit() for b in below):
-            return "simulation_output","OpenFOAM solution time/postProcessing artifact (content unvalidated)","inferred"
         if below[0] in {"0","constant","system"}:
             return "simulation_input","OpenFOAM case field/dictionary input (content unvalidated)","inferred"
+        if "postprocessing" in below or any(b.replace(".", "", 1).isdigit() for b in below):
+            return "simulation_output","OpenFOAM solution time/postProcessing artifact (content unvalidated)","inferred"
         if "logs" in below or name.startswith("log."):
             return "simulation_log","OpenFOAM solver/run log (not proof of run quality)","inferred"
         return "simulation_case_file","OpenFOAM case-specific support artifact","inferred"

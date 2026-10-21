@@ -2112,3 +2112,12 @@ Updated only the managed blocks in AGENTS.md and .github/copilot-instructions.md
 - Si cualquier parte está ocupada por otra rama, requiere equipo físico, una cuenta de proveedor, resultados científicos que solo existen en el portátil o autorización del propietario, **aparcar con evidencia y pasar a otra subparte independiente**. Conservar identidad visual, datos, credenciales y estándares de publicación.
 - Registro obligatorio: A/B/C con estados separados, ruta/PR/sha, QA **ejecutado** (no simplemente escrito), bloqueos, recuperación, reentrada. Esta actualización de política **no significa ninguna funcionalidad del producto implementada, probada ni publicada**.
 - Repositorio: `michels-lab/LouderMe`. En los siguientes bloques aplicar este alcance sin modificar los PR activos o trabajos no relacionados.
+
+## 2026-10-21 — Operación Granada: LAB single-use evidence (source change, not released)
+
+- A. Evidence freshness: require previously nonexistent evidence directory and fresh GUID lock before privileged installation; manual VM workflow uses distinct run ID / attempt folder.
+- B. Write-once proof: replace overwritable positive/negative, log, metadata and ratio output with atomic FileMode.CreateNew. Probe rejects inconsistent lock or preexisting phase artifact.
+- C. Privacy and negative tests: redact WASAPI endpoint IDs from archived/printed runner traces, retain raw IDs in memory for routing; add pure no-device fixture for reuse, collisions, file preservation and redaction.
+- Scope: LouderMe Windows audio only; no other app or OpenFOAM research rules. Branch: granada/lab-evidence-single-use-20261021.
+- Exact-head CI: pending at writing; do not claim runtime/signed driver hardware PASS. Signed VM, physical audio and universal third-party integration still unverified (#46/#48).
+- Public release unchanged: Android v0.1.12 + Windows v0.1.13; no release candidate. PR #95 previously merged at fad832a9af0a3fedde1f72e052d03625a74a5496.

@@ -60,6 +60,8 @@ class FileStewardTests(unittest.TestCase):
     def test_extensionless_openfoam_fields_and_timesteps(self):
         samples = {
             "cases_controlled_buoyancy/B14/0/metal/T": "simulation_input",
+            "cases_buoyancy/B1/0/metal/T": "simulation_input",
+            "cases_buoyancy/B1/10/metal/T": "simulation_output",
             "cases_controlled_buoyancy/B14/system/controlDict": "simulation_input",
             "cases_controlled_buoyancy/B14/10/metal/T": "simulation_output",
             "cases_controlled_buoyancy/B14/postProcessing/metal/T": "simulation_output",
@@ -69,6 +71,8 @@ class FileStewardTests(unittest.TestCase):
         for path, role in samples.items():
             with self.subTest(path=path):
                 self.assertEqual(audit.identify(path,{})[0], role)
+    def test_android_backup_rules_not_disposable(self):
+        self.assertEqual(audit.identify("android/app/src/main/res/xml/backup_rules.xml", {})[0], "config")
     def test_historical_is_not_assumed_obsolete(self):
         self.assertIsNotNone(audit.HISTORY.search("docs/archive/2026-01-01-experiment.md"))
     def test_idempotent_digests(self):

@@ -109,6 +109,31 @@ class FileStewardTests(unittest.TestCase):
             with self.subTest(token=token):
                 self.assertNotIn(token,source)
 
+    def test_agent_contract_is_app_specific_and_synced(self):
+        # Read only local sources; no network or cross-repository checkout.
+        agents=(HERE.parent/"AGENTS.md").read_text(encoding="utf-8")
+        copilot=(HERE.parent/".github/copilot-instructions.md").read_text(encoding="utf-8")
+        begin="<!-- MICHELSLAB_SHARED_CONTRACT_BEGIN id=child-agent-core version=2026-10-21.1 -->"
+        end="<!-- MICHELSLAB_SHARED_CONTRACT_END id=child-agent-core -->"
+        contents=[]
+        for text in (agents,copilot):
+            self.assertEqual(text.count(begin),1)
+            self.assertEqual(text.count(end),1)
+            body=text.split(begin,1)[1].split(end,1)[0].strip()
+            self.assertIn("Mandatory cross-product isolation",body)
+            self.assertIn("Each product owns its functionality",body)
+            for foreign in ("Data shows only data ingestion/catalog/filter controls",
+                            "Field only 3D tools", "scientific canvas",
+                            "scientific functional checks and human review"):
+                with self.subTest(foreign=foreign):
+                    self.assertNotIn(foreign,body)
+            contents.append(body)
+        self.assertEqual(contents[0],contents[1])
+        self.assertIn("installed/device/runtime/audio/privacy gates",agents)
+        source=(HERE/"repository_file_auditor.py").read_text(encoding="utf-8")
+        self.assertIn('"product_runtime_validation":"NOT_CHECKED"',source)
+        self.assertNotIn('"scientific_validation":"NOT_CHECKED"',source)
+
     def test_android_backup_rules_not_disposable(self):
         self.assertEqual(audit.identify("android/app/src/main/res/xml/backup_rules.xml", {})[0], "config")
     def test_audio_native_and_web_assets_have_real_roles(self):

@@ -176,6 +176,10 @@ def run(apk: Path, sha: str, out: Path, public_apk: Path | None = None,
         click(root, "Save note")
         root = open_inspector()
         root = wait_for_text(NOTE, contains=True)
+        # The actual installed Developer inspector must expose migration
+        # controls before owner switches away from an ephemeral debug signer.
+        wait_for_text("Save notes backup")
+        wait_for_text("Restore notes backup")
         screenshots.append(screenshot(out, "developer-saved-note", digest))
 
         # Prove filtering through installed Compose controls, not a mock.
@@ -241,6 +245,7 @@ def run(apk: Path, sha: str, out: Path, public_apk: Path | None = None,
                   "verbatim owner annotation saved and displayed",
                   "real Resolved status filter hides Open note; All restores it",
                   "annotation survived process restart",
+                  "real Developer notes backup and restore controls visible",
                   *(["same-signer APK upgraded in place without losing annotation"]
                     if upgrade_apk is not None else []),
                   "read-only audit launched",

@@ -87,5 +87,7 @@ dependencies {
     implementation("com.google.android.play:app-update-ktx:2.1.0")
 
     testImplementation("junit:junit:4.13.2")
+    // JVM backup parser tests use a real JSON implementation, not android.jar mocks.
+    testImplementation("org.json:json:20240303")
     debugImplementation("androidx.compose.ui:ui-tooling")
 }

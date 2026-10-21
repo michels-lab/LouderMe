@@ -1,10 +1,8 @@
 #requires -Version 7.0
 <#
-Fail-closed no-stimulus negative control for the SAME installed VM route.
-The bridge must begin real WASAPI capture, run its complete measurement
-window, and reject the absence of externally generated 440 Hz PCM.
-Do not treat a missing driver, an aborted process, or no capture as PASS.
-No audio recordings, endpoints, or system state changes occur here.
+Fail-closed silence causality verifier for a real installed Windows VM route.
+This module only validates observed process logs; it does not access audio
+devices, create PCM, generate fake sound or install virtual endpoints.
 #>
 Set-StrictMode -Version Latest
 
@@ -15,18 +13,19 @@ function Test-LouderMeNoSourceControl {
     [Parameter(Mandatory)][AllowEmptyString()][string]$StdOut,
     [Parameter(Mandatory)][AllowEmptyString()][string]$StdErr
   )
-  if ($ExitCode -ne 4 -or
-      [regex]::Matches($StdOut, '(?m)^EXTERNAL_SOURCE_READY\r?) {
-    throw 'No-source control did not reach the real listeners and expected evidence failure.'
+  $readyCount = [regex]::Matches(
+    $StdOut, '(?m)^EXTERNAL_SOURCE_READY\r?$').Count
+  if ($ExitCode -ne 4 -or $readyCount -ne 1) {
+    throw 'No-source control never completed its real listener window with documented tone rejection.'
   }
   if ($StdOut -match 'PASS: LAB independent source' -or
       $StdErr -notmatch 'FAIL: no matching lab tone reached the physical render loopback') {
-    throw 'No-source route was accepted or did not fail for missing audio.'
+    throw 'No-source capture was accepted or did not fail specifically for missing source tone.'
   }
-  $metrics = [regex]::Matches($StdOut,
-    '(?m)^Physical LAB proof: frames=(?<frames>\d+) RMS=(?<rms>\d+(?:\.\d+)?) peak=(?<peak>\d+(?:\.\d+)?) matched440=(?<tone>\d+(?:\.\d+)?) coherence=(?<coherence>\d+(?:\.\d+)?) virtualProcessed=(?<virtual>\d+) physicalEmitted=(?<physical>\d+) dropped=(?<drops>\d+)\r?
+  $pattern = '(?m)^Physical LAB proof: frames=(?<frames>\d+) RMS=(?<rms>\d+(?:\.\d+)?) peak=(?<peak>\d+(?:\.\d+)?) matched440=(?<tone>\d+(?:\.\d+)?) coherence=(?<coherence>\d+(?:\.\d+)?) virtualProcessed=(?<virtual>\d+) physicalEmitted=(?<physical>\d+) dropped=(?<drops>\d+)\r?$'
+  $metrics = [regex]::Matches($StdOut, $pattern)
   if ($metrics.Count -ne 1) {
-    throw 'No-source control requires exactly one complete actual physical WASAPI measurement.'
+    throw 'No-source control requires exactly one complete physical WASAPI monitor measurement.'
   }
   $m = $metrics[0]
   $culture = [Globalization.CultureInfo]::InvariantCulture
@@ -34,104 +33,10 @@ function Test-LouderMeNoSourceControl {
   $coherence = [double]::Parse($m.Groups['coherence'].Value, $culture)
   $frames = [long]::Parse($m.Groups['frames'].Value, $culture)
   $drops = [long]::Parse($m.Groups['drops'].Value, $culture)
-  if (-not [double]::IsFinite($tone) -or $tone -lt 0 -or $tone -gt .003 -or
+  if (-not [double]::IsFinite($tone) -or $tone -lt 0 -or $tone -gt 0.003 -or
       -not [double]::IsFinite($coherence) -or $coherence -lt 0 -or $coherence -gt 1.05 -or
       $frames -le 0 -or $drops -ne 0) {
-    throw 'Physical listener missing, contaminated by 440 Hz sound, or audio packets lost.'
-  }
-  return [ordered]@{
-    status = 'PASS'
-    control = 'negative: virtual bridge capture active, independent source absent'
-    stimulus_launched = $false
-    bridge_failed_for_missing_tone = $true
-    matched440_amplitude = $tone
-    physical_monitor_frames = $frames
-    general_third_party_audio_proven = $false
-    acoustic_spl_proven = $false
-  }
-}
-).Count -ne 1) {
-    throw 'No-source control did not reach the real listeners and expected evidence failure.'
-  }
-  if ($StdOut -match 'PASS: LAB independent source' -or
-      $StdErr -notmatch 'FAIL: no matching lab tone reached the physical render loopback') {
-    throw 'No-source route was accepted or did not fail for missing audio.'
-  }
-  $metrics = [regex]::Matches($StdOut,
-    '(?m)^Physical LAB proof: frames=(?<frames>\d+) RMS=(?<rms>\d+(?:\.\d+)?) peak=(?<peak>\d+(?:\.\d+)?) matched440=(?<tone>\d+(?:\.\d+)?) coherence=(?<coherence>\d+(?:\.\d+)?) virtualProcessed=(?<virtual>\d+) physicalEmitted=(?<physical>\d+) dropped=(?<drops>\d+)$')
-  if ($metrics.Count -ne 1) {
-    throw 'No-source control requires exactly one complete actual physical WASAPI measurement.'
-  }
-  $m = $metrics[0]
-  $culture = [Globalization.CultureInfo]::InvariantCulture
-  $tone = [double]::Parse($m.Groups['tone'].Value, $culture)
-  $coherence = [double]::Parse($m.Groups['coherence'].Value, $culture)
-  $frames = [long]::Parse($m.Groups['frames'].Value, $culture)
-  $drops = [long]::Parse($m.Groups['drops'].Value, $culture)
-  if (-not [double]::IsFinite($tone) -or $tone -lt 0 -or $tone -gt .003 -or
-      -not [double]::IsFinite($coherence) -or $coherence -lt 0 -or $coherence -gt 1.05 -or
-      $frames -le 0 -or $drops -ne 0) {
-    throw 'Physical listener missing, contaminated by 440 Hz sound, or audio packets lost.'
-  }
-  return [ordered]@{
-    status = 'PASS'
-    control = 'negative: virtual bridge capture active, independent source absent'
-    stimulus_launched = $false
-    bridge_failed_for_missing_tone = $true
-    matched440_amplitude = $tone
-    physical_monitor_frames = $frames
-    general_third_party_audio_proven = $false
-    acoustic_spl_proven = $false
-  }
-}
-)
-  if ($metrics.Count -ne 1) {
-    throw 'No-source control requires exactly one complete actual physical WASAPI measurement.'
-  }
-  $m = $metrics[0]
-  $culture = [Globalization.CultureInfo]::InvariantCulture
-  $tone = [double]::Parse($m.Groups['tone'].Value, $culture)
-  $coherence = [double]::Parse($m.Groups['coherence'].Value, $culture)
-  $frames = [long]::Parse($m.Groups['frames'].Value, $culture)
-  $drops = [long]::Parse($m.Groups['drops'].Value, $culture)
-  if (-not [double]::IsFinite($tone) -or $tone -lt 0 -or $tone -gt .003 -or
-      -not [double]::IsFinite($coherence) -or $coherence -lt 0 -or $coherence -gt 1.05 -or
-      $frames -le 0 -or $drops -ne 0) {
-    throw 'Physical listener missing, contaminated by 440 Hz sound, or audio packets lost.'
-  }
-  return [ordered]@{
-    status = 'PASS'
-    control = 'negative: virtual bridge capture active, independent source absent'
-    stimulus_launched = $false
-    bridge_failed_for_missing_tone = $true
-    matched440_amplitude = $tone
-    physical_monitor_frames = $frames
-    general_third_party_audio_proven = $false
-    acoustic_spl_proven = $false
-  }
-}
-).Count -ne 1) {
-    throw 'No-source control did not reach the real listeners and expected evidence failure.'
-  }
-  if ($StdOut -match 'PASS: LAB independent source' -or
-      $StdErr -notmatch 'FAIL: no matching lab tone reached the physical render loopback') {
-    throw 'No-source route was accepted or did not fail for missing audio.'
-  }
-  $metrics = [regex]::Matches($StdOut,
-    '(?m)^Physical LAB proof: frames=(?<frames>\d+) RMS=(?<rms>\d+(?:\.\d+)?) peak=(?<peak>\d+(?:\.\d+)?) matched440=(?<tone>\d+(?:\.\d+)?) coherence=(?<coherence>\d+(?:\.\d+)?) virtualProcessed=(?<virtual>\d+) physicalEmitted=(?<physical>\d+) dropped=(?<drops>\d+)$')
-  if ($metrics.Count -ne 1) {
-    throw 'No-source control requires exactly one complete actual physical WASAPI measurement.'
-  }
-  $m = $metrics[0]
-  $culture = [Globalization.CultureInfo]::InvariantCulture
-  $tone = [double]::Parse($m.Groups['tone'].Value, $culture)
-  $coherence = [double]::Parse($m.Groups['coherence'].Value, $culture)
-  $frames = [long]::Parse($m.Groups['frames'].Value, $culture)
-  $drops = [long]::Parse($m.Groups['drops'].Value, $culture)
-  if (-not [double]::IsFinite($tone) -or $tone -lt 0 -or $tone -gt .003 -or
-      -not [double]::IsFinite($coherence) -or $coherence -lt 0 -or $coherence -gt 1.05 -or
-      $frames -le 0 -or $drops -ne 0) {
-    throw 'Physical listener missing, contaminated by 440 Hz sound, or audio packets lost.'
+    throw 'No physical monitor data, lost packets, or external 440 Hz contamination detected.'
   }
   return [ordered]@{
     status = 'PASS'

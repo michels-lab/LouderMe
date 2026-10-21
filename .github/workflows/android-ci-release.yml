@@ -92,6 +92,11 @@ jobs:
           grep -q 'create("developer")' app/build.gradle.kts
           grep -q 'applicationIdSuffix = ".developer"' app/build.gradle.kts
 
+      - name: Validate manual Developer signing boundaries without using signing secrets
+        run: |
+          python3 -m unittest discover -s tools/tests -p 'test_android_developer_signed_contract.py' -v
+          python3 -m unittest discover -s tools/tests -p 'test_android_developer_harness.py' -v
+
       - name: Run tests and build distribution flavors
         run: |
           gradle \
@@ -99,6 +104,7 @@ jobs:
             :app:testSideloadDebugUnitTest \
             :app:testDeveloperDebugUnitTest \
             :app:assembleDeveloperDebug \
+            :app:assembleDeveloperRelease \
             :app:assemblePlayDebug \
             :app:assembleSideloadDebug \
             :app:assembleSideloadRelease \
@@ -113,14 +119,17 @@ jobs:
           PLAY_APK="app/build/outputs/apk/play/debug/app-play-debug.apk"
           SIDELOAD_APK="app/build/outputs/apk/sideload/debug/app-sideload-debug.apk"
           DEV_APK="app/build/outputs/apk/developer/debug/app-developer-debug.apk"
+          DEV_RELEASE="app/build/outputs/apk/developer/release/app-developer-release-unsigned.apk"
 
           "$AAPT" dump badging "$PLAY_APK" | tee artifacts/play-apk-badging.txt
           "$AAPT" dump badging "$SIDELOAD_APK" | tee artifacts/sideload-apk-badging.txt
           "$AAPT" dump badging "$DEV_APK" | tee artifacts/developer-apk-badging.txt
+          "$AAPT" dump badging "$DEV_RELEASE" | tee artifacts/developer-release-apk-badging.txt
 
           grep -q "package: name='com.michelslab.louderme'" artifacts/play-apk-badging.txt
           grep -q "package: name='com.michelslab.louderme'" artifacts/sideload-apk-badging.txt
           grep -q "package: name='com.michelslab.louderme.developer'" artifacts/developer-apk-badging.txt
+          grep -q "package: name='com.michelslab.louderme.developer'" artifacts/developer-release-apk-badging.txt
 
           "$AAPT" dump permissions "$PLAY_APK" | tee artifacts/play-permissions.txt
           "$AAPT" dump permissions "$SIDELOAD_APK" | tee artifacts/sideload-permissions.txt
@@ -150,6 +159,9 @@ jobs:
 
           cp app/build/outputs/apk/developer/debug/app-developer-debug.apk \
             "artifacts/LouderMe-v$VERSION-developer-debug.apk"
+
+          cp app/build/outputs/apk/developer/release/app-developer-release-unsigned.apk \
+            "artifacts/LouderMe-v$VERSION-developer-release-unsigned.apk"
 
           cp app/build/outputs/apk/sideload/release/app-sideload-release-unsigned.apk \
             "artifacts/LouderMe-v$VERSION-sideload-release-unsigned.apk"

@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 203,
-  "classified_files_total": 199,
+  "tracked_files_total": 207,
+  "classified_files_total": 203,
   "docs_content_inspected": 49,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
@@ -16,18 +16,17 @@
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
-    "source": 76,
-    "test": 15,
+    "source": 78,
+    "test": 17,
     "text_metadata": 2,
-    "unknown": 1,
-    "workflow": 9
+    "workflow": 10
   },
   "finding_counts": {
-    "UNKNOWN_PURPOSE": 1
+    "POTENTIAL_UNLOGGED_CHANGES": 1
   },
   "finding_total": 1,
-  "inventory_fingerprint": "5205e28850d5adb792cef788f750c0c004a60f7d35ac2dcf097013cd23e61579",
-  "evidence_fingerprint": "cdda1598699f4c905f81830d83a6e4d9b248357cce864ac09d8b8ea77d2027c9",
+  "inventory_fingerprint": "af82747922d782dc847ab733a4860655d58a553101709406627097162ce25485",
+  "evidence_fingerprint": "032d19a6732369f14ecac0cef30c8a48ba1c8530a4fc3a461f99ac9ac809f5b2",
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/chatgpt-task.yml",
@@ -69,7 +68,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "c107f3fcb68e493cf85d09ca4d2ff011e33520e7"
+      "blob": "0e7336479866254f2e8621dac9eb3fece313e43e"
     },
     {
       "path": ".github/workflows/android-visual-navigation-contract.yml",
@@ -90,14 +89,21 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "9db189f428a48494d14e93b630fa903d7ab58d95"
+      "blob": "319fbeb2c53d3e1e8d827111368e2b27a1651b45"
+    },
+    {
+      "path": ".github/workflows/file-steward-pr-validation.yml",
+      "role": "workflow",
+      "purpose": "GitHub Actions automation",
+      "certainty": "rule",
+      "blob": "5aa9ad9449b3dd4e50808a9f8808b2dd2a6f9f6c"
     },
     {
       "path": ".github/workflows/native-audio-engine-ci.yml",
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "bbc7c0a0c789bc48bd7ef8fb969cdde3fbbec876"
+      "blob": "c2bbf77e14dfab6bca0015564abab18294e1ac56"
     },
     {
       "path": ".github/workflows/native-physical-lab-manual.yml",
@@ -160,7 +166,7 @@
       "role": "agent",
       "purpose": "assistant role/instructions",
       "certainty": "rule",
-      "blob": "b1d01e48c04023ad108846e6f554987ed2fd56aa"
+      "blob": "e2194612f641fd0208c08894619c59a6b314e8a4"
     },
     {
       "path": ".michelslab/agents/intelligence-architect.md",
@@ -223,7 +229,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "7119bd307196921a319d22c4921a9a44182658fc"
+      "blob": "1f8b8ed95ec188af7046028da28cc9ff46dccd0e"
     },
     {
       "path": "README.md",
@@ -1130,9 +1136,9 @@
     },
     {
       "path": "native/audio-engine/include/louderme/AudioEngine.hpp",
-      "role": "unknown",
-      "purpose": "function unknown: owner classification required",
-      "certainty": "unknown",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
       "blob": "0e266d7a283fae70114997b29f22ecb751c43479"
     },
     {
@@ -1192,11 +1198,18 @@
       "blob": "787cdb12f47847d67479fc051c02c91180d5dd0e"
     },
     {
+      "path": "native/virtual-driver/NoSourceControlCheck.ps1",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "1d2c8df01acc21e768ea9d7bcf6f43dd7a8ce63e"
+    },
+    {
       "path": "native/virtual-driver/README.md",
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "42da496cc932a4c71e12f842e213ff40e0d9f82c"
+      "blob": "210c8b09d8a06b0d1e84d35ed7540c8d74cfc8c5"
     },
     {
       "path": "native/virtual-driver/prepare_sysvad.py",
@@ -1210,14 +1223,14 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "e1e1ac8b396de850d150db1ece17fdd876278af0"
+      "blob": "02be59f3060e0e5e2a0e299bc0485e5773c19b98"
     },
     {
       "path": "native/virtual-driver/run_disposable_lab.ps1",
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "b105de4a18dd172c3a22416ed09c28f050dc88b2"
+      "blob": "1f176c93fc6d7c8557dbea72f94e8318721a597d"
     },
     {
       "path": "native/virtual-driver/test_IndependentGainCheck.ps1",
@@ -1227,11 +1240,18 @@
       "blob": "b51886b943be500d392d341a58d7854074f9bbd9"
     },
     {
+      "path": "native/virtual-driver/test_NoSourceControlCheck.ps1",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "142b36e04fc54dcd701bf895895b27fe707c658a"
+    },
+    {
       "path": "native/virtual-driver/tests/test_independent_source_contract.py",
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "b0218ece5e02c909018a4e6b043887ad9a7b3000"
+      "blob": "07953eb7e552d40a94e54bd6e5704d628b7d9dad"
     },
     {
       "path": "native/virtual-driver/tests/test_prepare_sysvad.py",
@@ -1322,7 +1342,7 @@
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "5e83c0e5e4a59a86fc5ae3f34db9ae9c6cde90d9"
+      "blob": "0a4f31c8527705406896bda4bfe2b46d8e50242e"
     },
     {
       "path": "native/windows-bridge/StreamingDownsampleLowPass.cs",
@@ -1364,7 +1384,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "0bf72f91e59ef91da61c95dd9586219583c02558"
+      "blob": "de1273570527156298abef4e688d148b971b92b8"
     },
     {
       "path": "tools/run_android_signed_visual_ci.sh",
@@ -1381,11 +1401,18 @@
       "blob": "0a491d091e0d07e781be85445a363d901db55e12"
     },
     {
+      "path": "tools/test_android_release_trigger_guard.py",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "679780ed68099972820d6c6af55e784578cc98c8"
+    },
+    {
       "path": "tools/test_repository_file_auditor.py",
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "b4831ec3831718ba9738f482654cf4dd6f524418"
+      "blob": "bc74f6ac9fa0a9d322d1e92fa94a64b35b082177"
     },
     {
       "path": "tools/tests/test_android_developer_harness.py",
@@ -1425,12 +1452,12 @@
   ],
   "findings": [
     {
-      "id": "e27ff08885a0e8fc",
-      "code": "UNKNOWN_PURPOSE",
+      "id": "f088c905c97b6749",
+      "code": "POTENTIAL_UNLOGGED_CHANGES",
       "severity": "review",
-      "path": "native/audio-engine/include/louderme/AudioEngine.hpp",
-      "observation": "No reliable purpose category from path",
-      "recommendation": "Declare role after reviewing usage",
+      "path": "PROJECT_LOG.md",
+      "observation": "4 implementation/config paths changed since this log's last commit; examples: .github/workflows/android-ci-release.yml, .github/workflows/file-steward-pr-validation.yml, .github/workflows/native-audio-engine-ci.yml, tools/test_android_release_trigger_guard.py",
+      "recommendation": "Inspect diffs and reconcile only meaningful decisions/results in the canonical log",
       "state": "REVIEW_REQUIRED"
     }
   ],

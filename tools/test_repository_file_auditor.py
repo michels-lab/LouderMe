@@ -57,6 +57,20 @@ class FileStewardTests(unittest.TestCase):
         summary=(self.root/"reports/file-governance/SUMMARY.json").read_text()
         self.assertNotIn("unsaved_personal_notes",summary)
         self.assertNotIn("README.md",summary)
+    def test_log_records_new_and_no_longer_detected_findings(self):
+        initial=audit.scan(self.root,self.policy,dt.date(2026,10,21))
+        audit.write_reports(self.root,initial,self.policy)
+        (self.root/"missing.md").write_text("Restored index target.",encoding="utf-8")
+        subprocess.run(["git","-C",str(self.root),"add","missing.md"],check=True)
+        subprocess.run(["git","-C",str(self.root),"commit","-qm","restore document"],check=True)
+        later=audit.scan(self.root,self.policy,dt.date(2026,10,21))
+        audit.write_reports(self.root,later,self.policy)
+        history=(self.root/"docs/audits/FILE_GOVERNANCE_LOG.md").read_text(encoding="utf-8")
+        self.assertIn("NO_LONGER_DETECTED — BROKEN_RELATIVE_LINK",history)
+        self.assertIn("1 new paths",history)
+        audit.write_reports(self.root,later,self.policy)
+        self.assertEqual((self.root/"docs/audits/FILE_GOVERNANCE_LOG.md").read_text(encoding="utf-8"),history)
+
     def test_extensionless_openfoam_fields_and_timesteps(self):
         samples = {
             "cases_controlled_buoyancy/B14/0/metal/T": "simulation_input",

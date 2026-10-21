@@ -103,7 +103,7 @@ dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll
 ```
 
 Ctrl+C stops the bridge. Optional experimental seven-band EQ gains are available at startup through
-`--eq-db 0,0,0,0,8,0,0` (comma-separated dB for 60/170/310/600/1000/3000/12000 Hz; -10 to +10). They are applied before capture begins; live UI updates are not yet implemented.
+`--eq-db 0,0,0,8,0,0,0` (comma-separated dB for 60/150/400/1000/2500/6000/12000 Hz; -10 to +10). They are applied before capture begins; live UI updates are not yet implemented.
 
 The DSP is connected only to the chosen virtual
 endpoint capture stream. **Listening to audio on an ordinary physical output
@@ -274,3 +274,9 @@ Only in a **disposable VM with a previously signed and installed lab-only virtua
 ### No-stimulus causality controls before shipping the independent-route claim
 
 The physical route test is intentionally **not** accepted if a 440 Hz tone is present when the external source executable is absent. The disposable driver laboratory now runs a full `--probe-app-route` capture with **no external stimulus** before and after the 100%/150% separate-app gain measurements. `NoSourceControlCheck.ps1` validates actual capture readiness, one real monitor result, silent matched440 below the contamination threshold, explicit missing-tone exit 4 and no driver/capture failures. `test_NoSourceControlCheck.ps1` contains 11 negative hardware-free regression cases. No-source passes are controls, **not evidence that sound enhancement works**; those require the separate external-process source and actual physical loopback evidence as before.
+
+## Granada — shared seven-band response contract (2026-10-21)
+
+The **experimental** native C++ processor now uses the same slider-index center frequencies as Android and the stable Windows APO UI: **60, 150, 400, 1000, 2500, 6000, 12000 Hz**. It formerly applied its seven peaking filters to 60/170/310/600/1000/3000/12000 Hz, so an experimental control index (notably index 4) did not correspond to the user-visible Hz label. The source mapping is fixed; previously stored seven dB values retain their indices as *product-labeled* values. This experimental native engine is not distributed as the current official Windows backend.
+
+C++ tests now measure low-level synthetic sine response at **every** advertised center and 1 kHz native interop controls target index 3. A dependency-free contract test compares the Android, Desktop and C++ source frequency arrays in CI. An actual signed virtual endpoint, independent application routing, physical sound measurements and user-facing native boost remain unverified, and no public binary has changed.

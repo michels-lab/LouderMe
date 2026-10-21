@@ -77,6 +77,42 @@ class FileStewardTests(unittest.TestCase):
                 self.assertEqual(audit.identify(path,{})[0], role)
     def test_android_backup_rules_not_disposable(self):
         self.assertEqual(audit.identify("android/app/src/main/res/xml/backup_rules.xml", {})[0], "config")
+    def test_real_app_artifact_purposes(self):
+        values={
+            "supabase/migrations/20261010_delete_instagram_profiles.sql":"database_migration",
+            "supabase/tests/rls_isolation.sql":"test",
+            ".michelslab/release-intents/unified-v3221-a029.txt":"release_intent",
+            "installer/TaskbarPinning.txt":"installer_metadata",
+            "src/MichelsLife/Program.cs.gz.b64":"encoded_source",
+            "src/MichelsLife/app.manifest":"config",
+        }
+        for path,expected in values.items():
+            with self.subTest(path=path):
+                self.assertEqual(audit.identify(path,{})[0],expected)
+
+    def test_backup_and_draft_labels_are_not_unused_evidence(self):
+        for name in ("docs/BACKUP_PREFLIGHT.md","tools/test_granada_backup_preflight.py",
+                     "android/PLAY_CONSOLE_SUBMISSION_DRAFT.md"):
+            self.assertIsNone(audit.OLD.search(name),name)
+        self.assertIsNotNone(audit.OLD.search("legacy/obsolete.test.py"))
+
+    def test_real_source_edit_after_log_needs_reconciliation(self):
+        log=self.root/"PROJECT_LOG.md"
+        log.write_text("Initial implementation was validated here.\n",encoding="utf-8")
+        subprocess.run(["git","-C",str(self.root),"add","PROJECT_LOG.md"],check=True)
+        subprocess.run(["git","-C",str(self.root),"commit","-qm","add log"],check=True)
+        (self.root/"feature.py").write_text("print(2)\n",encoding="utf-8")
+        subprocess.run(["git","-C",str(self.root),"add","feature.py"],check=True)
+        subprocess.run(["git","-C",str(self.root),"commit","-qm","change code without log"],check=True)
+        dirty=audit.scan(self.root,self.policy,dt.date(2026,10,21))
+        self.assertIn("POTENTIAL_UNLOGGED_CHANGES",{x["code"] for x in dirty["findings"]})
+        self.assertEqual(audit.log_change_candidates(self.root,"PROJECT_LOG.md"),["feature.py"])
+        log.write_text("Code change reviewed.\n",encoding="utf-8")
+        subprocess.run(["git","-C",str(self.root),"add","PROJECT_LOG.md"],check=True)
+        subprocess.run(["git","-C",str(self.root),"commit","-qm","reconcile log"],check=True)
+        clean=audit.scan(self.root,self.policy,dt.date(2026,10,21))
+        self.assertNotIn("POTENTIAL_UNLOGGED_CHANGES",{x["code"] for x in clean["findings"]})
+
     def test_historical_is_not_assumed_obsolete(self):
         self.assertIsNotNone(audit.HISTORY.search("docs/archive/2026-01-01-experiment.md"))
     def test_idempotent_digests(self):

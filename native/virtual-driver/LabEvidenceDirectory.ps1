@@ -53,7 +53,17 @@ function Protect-LouderMeLabLogLine {
   param([AllowEmptyString()][Parameter(Mandatory)][string]$Line,
         [string[]]$KnownEndpointIds = @(), [switch]$ListDevices)
   $safe = $Line
-  if ($ListDevices -and $safe -match '^\\[(?<friendly>.+)\\] (?<endpoint>.+)$') {
+  if ($ListDevices -and $safe -match '^\[(?<friendly>.+)\] (?<endpoint>.+)) {
+    $safe = "[$($Matches.friendly)] [REDACTED_ENDPOINT_ID]"
+  }
+  foreach ($id in $KnownEndpointIds) {
+    if (-not [string]::IsNullOrWhiteSpace($id) -and $id.Length -ge 5) {
+      $safe = $safe.Replace($id, '[REDACTED_ENDPOINT_ID]')
+    }
+  }
+  return $safe
+}
+) {
     $safe = "[$($Matches.friendly)] [REDACTED_ENDPOINT_ID]"
   }
   foreach ($id in $KnownEndpointIds) {

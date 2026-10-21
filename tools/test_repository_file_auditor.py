@@ -87,6 +87,11 @@ class FileStewardTests(unittest.TestCase):
                 self.assertEqual(audit.identify(path,{})[0],role)
         self.assertEqual(audit.identify("external_project/0/metal/T",{})[0],"unknown")
 
+    def test_shared_css_and_native_header_have_purpose(self):
+        self.assertEqual(audit.identify("shared-components/about-web/about.css", {})[0],"style")
+        self.assertEqual(audit.identify("native/audio-engine/include/louderme/AudioEngine.hpp", {})[0],"source")
+        self.assertEqual(audit.identify("reports/agent-health.json", {})[0],"config")
+
     def test_research_taxonomy_not_cloned_into_audio(self):
         source=(HERE/"repository_file_auditor.py").read_text(encoding="utf-8")
         for token in ("cleanproy", "doctor_original", "freesurface", "OpenFOAM case"):

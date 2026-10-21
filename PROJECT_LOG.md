@@ -1,3 +1,8 @@
+## 2026-10-21 — Product Perspective Council agent profiles (branch candidate)
+
+- Added **read-first review agents**: independent Contrarian, User Advocate, Intelligence Architect and Council with product-specific instructions. The Council synthesizes overlooked opportunities, alternative designs and measurable experiments; shared source-of-truth is `michels-lab/Michel-Software-Standards/standards/PERSPECTIVE_COUNCIL_STANDARD.md`.
+- Applies to Android/Windows device setup, EQ/Boost UI, provider installation and app update channels, route bypass, clipping, actual PCM and physical-acoustic evidence; do not overstate dB SPL. Product-specific reviews are proposals, not implemented features or established test evidence. No live agent execution, CI validation, installed QA, production code changes or release claimed in this change.
+
 ## 2026-10-21 — Operación Granada: live, nonblocking native DSP control handoff (candidate)
 
 - Candidate `feat/granada-native-live-dsp-controls-20261021`: add `DspControlMailbox` with immutable copied seven-band EQ command snapshots, Interlocked single-slot latest-wins publication (no command backlog) and callback-only C++ DSP setters. `NativeDsp.ConfigureBoost` adds bounded native setter; EQ guard removes LINQ from callback path. The existing capture PCM callback alone applies validated pending controls **before** processing its buffer. Per-second LAB counters distinguish commands published/applied/actually overwritten (not processed audio losses or audibility), without logging user audio. `--interactive-controls` plus `--auto-reconnect` is rejected, preventing a stale console reader from outliving the route it controls.

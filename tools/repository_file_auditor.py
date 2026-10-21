@@ -24,7 +24,7 @@ LINK = re.compile(r'(?<!!)\[[^\]\n]*\]\((<?[^)\n]+>?)\)')
 DATE = re.compile(r'(?im)\b(?:last reviewed|last updated|última revisión|última actualización|revisado el|actualizado el)\s*:?\s*\*{0,2}(20\d{2}-\d{2}-\d{2})\b')
 OLD = re.compile(r'(?i)(?:^|[._/\-])(?:old|obsolete|deprecated|tmp|temp)(?:[._/\-]|$)')
 HISTORY = re.compile(r'(?i)(?:^|/)(?:archives?|historical|history|legacy|snapshots?|historial)(?:/|$)|(?:^|[/_-])20\d{2}[-_]\d{2}[-_]\d{2}')
-SRC = set(".py .js .jsx .ts .tsx .c .h .cc .cpp .cs .kt .java .go .rs .sh .ps1 .cjs .mjs".split())
+SRC = set(".py .js .jsx .ts .tsx .c .h .hpp .hh .cc .cpp .cs .kt .java .go .rs .sh .ps1 .cjs .mjs".split())
 ASSET = set(".png .jpg .jpeg .webp .svg .gif .ico .woff .woff2 .ttf .mp3 .mp4 .ogg".split())
 DATA = set(".csv .tsv .parquet .sqlite .db".split())
 BINARY = set(".exe .apk .msix .aab .zip .dll .so .dylib .jar .7z .pdf".split())
@@ -67,6 +67,7 @@ def identify(path, custom):
         return "bitacora","technical/audit change history", "rule"
     if ext in {".md",".rst",".adoc"}: return "document","manual/decision/report/historical note","inferred"
     if ext in {".html",".htm"}: return "web_ui","local HTML documentation or web interface", "inferred"
+    if ext==".css": return "style","application/browser stylesheet", "rule"
     if ext in {".kts",".cmd",".bat",".iss",".sln",".slnx",".csproj",".props",".targets"}: return "build_script","platform build/project/installer script", "inferred"
     if ext in SRC:
         return ("test" if re.search(r'(^|/)(tests?|__tests__)/|(^|/)test[_-]',p) else "source"),"code/test implementation","rule"

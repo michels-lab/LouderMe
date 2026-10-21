@@ -43,8 +43,15 @@ function Invoke-Bridge([string[]]$BridgeArgs, [string]$Label) {
   $lines = @(& dotnet $script:BridgeDll @BridgeArgs 2>&1)
   $code = $LASTEXITCODE
   $logPath = Join-Path $script:EvidenceDir "$Label.log"
-  Write-LouderMeLabTextOnce -Path $logPath -Content ((($lines | ForEach-Object { "$_" }) -join [Environment]::NewLine) + [Environment]::NewLine)
-  $lines | ForEach-Object { Write-Host $_ }
+  $ids = @($PhysicalEndpointId)
+  if (Get-Variable -Name virtualId -Scope Script -ErrorAction SilentlyContinue) {
+    $ids += $script:virtualId
+  }
+  $safeLines = @($lines | ForEach-Object {
+    Protect-LouderMeLabLogLine -Line "$_" -KnownEndpointIds $ids -ListDevices:($Label -eq 'list-devices')
+  })
+  Write-LouderMeLabTextOnce -Path $logPath -Content (($safeLines -join [Environment]::NewLine) + [Environment]::NewLine)
+  $safeLines | ForEach-Object { Write-Host $_ }
   if ($code -ne 0) { throw "$Label failed (exit $code); see $logPath" }
   return $lines
 }

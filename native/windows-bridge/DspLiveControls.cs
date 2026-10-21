@@ -99,11 +99,49 @@ internal sealed class DspControlMailbox
             catch (ArgumentException) { continue; }
             throw new InvalidOperationException("Invalid live EQ value accepted.");
         }
+        bool invalidBoostRejected = false;
         try { queue.Publish(251, false, latest); }
-        catch (ArgumentException) { goto passed; }
-        throw new InvalidOperationException("Invalid live Boost accepted.");
-    passed:
-        Console.WriteLine("PASS: native DSP live mailbox, coalescing, isolated immutable EQ, numeric PCM, invalid controls.");
+        catch (ArgumentException) { invalidBoostRejected = true; }
+        if (!invalidBoostRejected)
+            throw new InvalidOperationException("Invalid live Boost accepted.");
+
+        // Stress a changing producer while the only consumer processes native
+        // PCM. The producer NEVER calls C ABI native setters or processes audio.
+        var concurrentQueue = new DspControlMailbox();
+        using var streamingEngine = new NativeDsp(48000, 2, 100);
+        var producer = Task.Run(() =>
+        {
+            for (var i = 0; i < 1200; i++)
+            {
+                var eq = new float[7];
+                eq[4] = i % 2 == 0 ? 3 : -3;
+                concurrentQueue.Publish(100 + i % 151, true, eq);
+            }
+        });
+        var chunk = new byte[480 * 2 * sizeof(float)];
+        for (var batch = 0; batch < 240; batch++)
+        {
+            for (int i = 0; i < chunk.Length; i += 4)
+                BinaryPrimitives.WriteSingleLittleEndian(chunk.AsSpan(i), .025f);
+            concurrentQueue.ApplyPending(streamingEngine);
+            streamingEngine.Process(chunk, chunk.Length, 2);
+            for (int i = 0; i < chunk.Length; i += 4)
+            {
+                float sample = BinaryPrimitives.ReadSingleLittleEndian(chunk.AsSpan(i));
+                if (!float.IsFinite(sample) || sample is < -1f or > 1f)
+                    throw new InvalidOperationException("Concurrent live DSP update corrupted PCM.");
+            }
+        }
+        producer.GetAwaiter().GetResult();
+        concurrentQueue.ApplyPending(streamingEngine);
+        if (concurrentQueue.Published != 1200 ||
+            concurrentQueue.Applied > concurrentQueue.Published ||
+            concurrentQueue.Applied == 0)
+            throw new InvalidOperationException("Concurrent live DSP command accounting broken.");
+
+        Console.WriteLine(
+            "PASS: native DSP live controls, bounded valid parameter snapshots, " +
+            "coalescing, concurrent producer/PCM consumer, finite output, no Windows endpoints.");
     }
 }
 

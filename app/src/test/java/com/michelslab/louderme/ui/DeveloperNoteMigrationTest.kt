@@ -3,9 +3,7 @@ package com.michelslab.louderme.ui
 import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DeveloperNoteMigrationTest {
@@ -96,13 +94,11 @@ class DeveloperNoteMigrationTest {
     }
 
     @Test fun explicitlyAllowsLegacyFullAuditExportOfSameDeveloperPackage() {
-        val audit = JSONObject(file(baseline)).remove("schema")
-        // org.json JSONObject.remove returns previous schema value: keep the
-        // actual legacy report object separate from this deletion call.
+        // Existing full audit exports have the same product/package identity,
+        // but no dedicated backup schema. Preserve those old note exports.
         val report = JSONObject(file(baseline))
         report.remove("schema")
         report.put("findings", JSONArray())
         assertEquals(1, parseDeveloperBackup(report.toString(), pack, emptyList()).newCount)
-        assertFalse(audit is JSONObject)
     }
 }

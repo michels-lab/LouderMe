@@ -24,9 +24,9 @@ LINK = re.compile(r'(?<!!)\[[^\]\n]*\]\((<?[^)\n]+>?)\)')
 DATE = re.compile(r'(?im)\b(?:last reviewed|last updated|última revisión|última actualización|revisado el|actualizado el)\s*:?\s*\*{0,2}(20\d{2}-\d{2}-\d{2})\b')
 OLD = re.compile(r'(?i)(?:^|[._/\-])(?:old|obsolete|deprecated|tmp|temp)(?:[._/\-]|$)')
 HISTORY = re.compile(r'(?i)(?:^|/)(?:archives?|historical|history|legacy|snapshots?|historial)(?:/|$)|(?:^|[/_-])20\d{2}[-_]\d{2}[-_]\d{2}')
-SRC = set(".py .js .jsx .ts .tsx .c .h .cc .cpp .cs .kt .java .go .rs .sh .ps1 .cjs .mjs".split())
+SRC = set(".py .js .jsx .ts .tsx .c .h .hpp .hh .cc .cpp .cs .kt .java .go .rs .sh .ps1 .cjs .mjs".split())
 ASSET = set(".png .jpg .jpeg .webp .svg .gif .ico .woff .woff2 .ttf .mp3 .mp4 .ogg".split())
-DATA = set(".csv .tsv .vtk .vtu .foam .stl .obj .step .iges .parquet".split())
+DATA = set(".csv .tsv .parquet .sqlite .db".split())
 BINARY = set(".exe .apk .msix .aab .zip .dll .so .dylib .jar .7z .pdf".split())
 
 def git(root, *args, timeout=90):
@@ -55,8 +55,6 @@ def identify(path, custom):
         if "/tests/" in p: return "test","SQL/RLS regression test; not evidence of execution","inferred"
         if "/migrations/" in p: return "database_migration","ordered database schema migration; never discard automatically","rule"
         return "database_schema","database schema/query source; verify against live DB separately","inferred"
-    if name.endswith(".cs.gz.b64"):
-        return "encoded_source","compressed/encoded C# source artifact; code meaning not audited","inferred"
     if name.endswith(".manifest"):
         return "config","native application execution manifest","rule"
     if ext==".txt":
@@ -67,6 +65,7 @@ def identify(path, custom):
         return "bitacora","technical/audit change history", "rule"
     if ext in {".md",".rst",".adoc"}: return "document","manual/decision/report/historical note","inferred"
     if ext in {".html",".htm"}: return "web_ui","local HTML documentation or web interface", "inferred"
+    if ext==".css": return "style","application/browser stylesheet", "rule"
     if ext in {".kts",".cmd",".bat",".iss",".sln",".slnx",".csproj",".props",".targets"}: return "build_script","platform build/project/installer script", "inferred"
     if ext in SRC:
         return ("test" if re.search(r'(^|/)(tests?|__tests__)/|(^|/)test[_-]',p) else "source"),"code/test implementation","rule"
@@ -75,24 +74,7 @@ def identify(path, custom):
     if ext in BINARY: return "binary","binary/archive (not parsed)","rule"
     if ext in {".json",".yaml",".yml",".toml",".xml",".ini",".properties",".gradle"} or name in {"dockerfile","makefile",".gitignore",".gitattributes"}:
         return "config","machine-readable configuration","rule"
-    # OpenFOAM is extensionless by design: classify *structure*, not unknown files.
-    # This is an inferred functional group, NEVER a solver verification.
-    parts=p.split("/")
-    if (parts[0] in {"cases","case","cleanproy","doctor_original","freesurface"} or parts[0].startswith("cases_")) and len(parts)>=2:
-        below=parts[1:] if parts[0]=="cleanproy" else parts[2:]
-        if not below:
-            return "simulation_case_file","OpenFOAM case support artifact","inferred"
-        if below[0] in {"0","constant","system"}:
-            return "simulation_input","OpenFOAM case field/dictionary input (content unvalidated)","inferred"
-        if "postprocessing" in below or any(b.replace(".", "", 1).isdigit() for b in below):
-            return "simulation_output","OpenFOAM solution time/postProcessing artifact (content unvalidated)","inferred"
-        if "logs" in below or name.startswith("log."):
-            return "simulation_log","OpenFOAM solver/run log (not proof of run quality)","inferred"
-        return "simulation_case_file","OpenFOAM case-specific support artifact","inferred"
-    if parts[0] in {"analysis_results","postprocessing","experiment_results"}:
-        return "scientific_analysis","research analysis/evidence artifact (not physically validated)","inferred"
-    if parts[0] == "analysis_tools":
-        return "analysis_tool","analysis helper/command (source must be inspected before executing)","inferred"
+    # Audio/distribution repositories do not infer scientific solver files.
     return "unknown","function unknown: owner classification required","unknown"
 
 def link_result(source, raw, paths):

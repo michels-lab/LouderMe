@@ -7,9 +7,29 @@ on:
       - 'release/**'
       - 'development/**'
       - 'fix/**'
+    paths-ignore:
+      - 'tools/repository_file_auditor.py'
+      - 'tools/test_repository_file_auditor.py'
+      - 'tools/test_android_release_trigger_guard.py'
+      - '.michelslab/agents/file-steward.md'
+      - '.michelslab/file-audit-policy.json'
+      - '.github/workflows/file-governance-audit.yml'
+      - '.github/workflows/file-steward-pr-validation.yml'
+      - '.github/workflows/android-ci-release.yml'
+      - 'docs/audits/FILE_GOVERNANCE_LOG.md'
+      - 'reports/file-governance/**'
   pull_request:
     branches:
       - main
+    paths-ignore:
+      - 'tools/repository_file_auditor.py'
+      - 'tools/test_repository_file_auditor.py'
+      - '.michelslab/agents/file-steward.md'
+      - '.michelslab/file-audit-policy.json'
+      - '.github/workflows/file-governance-audit.yml'
+      - '.github/workflows/file-steward-pr-validation.yml'
+      - 'docs/audits/FILE_GOVERNANCE_LOG.md'
+      - 'reports/file-governance/**'
   workflow_dispatch:
   schedule:
     - cron: '17 3 1 * *'

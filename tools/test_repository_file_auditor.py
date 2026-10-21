@@ -71,43 +71,51 @@ class FileStewardTests(unittest.TestCase):
         audit.write_reports(self.root,later,self.policy)
         self.assertEqual((self.root/"docs/audits/FILE_GOVERNANCE_LOG.md").read_text(encoding="utf-8"),history)
 
-    def test_extensionless_openfoam_fields_and_timesteps(self):
-        samples = {
-            "cases_controlled_buoyancy/B14/0/metal/T": "simulation_input",
-            "cases_buoyancy/B1/0/metal/T": "simulation_input",
-            "cases_buoyancy/B1/10/metal/T": "simulation_output",
-            "cleanproy/0/metal/T": "simulation_input",
-            "cleanproy/system/controlDict": "simulation_input",
-            "doctor_original/bcFourier/0/T": "simulation_input",
-            "freesurface/FS-C01/constant/g": "simulation_input",
-            "cases_controlled_buoyancy/B14/system/controlDict": "simulation_input",
-            "cases_controlled_buoyancy/B14/10/metal/T": "simulation_output",
-            "cases_controlled_buoyancy/B14/postProcessing/metal/T": "simulation_output",
-            "cases_controlled_buoyancy/B14/logs/CourantMax_0": "simulation_log",
-            "analysis_results/v15_v16_postpush_20261015/output.dat": "scientific_analysis",
+    def test_audio_product_and_release_file_roles(self):
+        cases = {
+            "README.md": "index",
+            "tools/repository_file_auditor.py": "source",
+            "tools/test_repository_file_auditor.py": "test",
+            ".github/workflows/file-governance-audit.yml": "workflow",
+            ".github/workflows/native-audio-engine-ci.yml": "workflow",
+            ".michelslab/file-audit-policy.json": "config",
+            "docs/audits/FILE_GOVERNANCE_LOG.md": "bitacora",
+            "reports/file-governance/SUMMARY.json": "config",
         }
-        for path, role in samples.items():
+        for path, role in cases.items():
             with self.subTest(path=path):
-                self.assertEqual(audit.identify(path,{})[0], role)
-    def test_android_backup_rules_not_disposable(self):
-        self.assertEqual(audit.identify("android/app/src/main/res/xml/backup_rules.xml", {})[0], "config")
+                self.assertEqual(audit.identify(path,{})[0],role)
+        self.assertEqual(audit.identify("external_project/0/metal/T",{})[0],"unknown")
+
+    def test_android_release_ci_ignores_only_file_steward_changes(self):
+        workflow=(HERE.parent/".github/workflows/android-ci-release.yml").read_text(encoding="utf-8")
+        for section in ("  push:\n", "  pull_request:\n"):
+            region=workflow.split(section,1)[1].split("  workflow_dispatch:",1)[0]
+            self.assertIn("    paths-ignore:\n",region)
+            for exclusion in ("tools/repository_file_auditor.py",
+                              "tools/test_repository_file_auditor.py",
+                              "reports/file-governance/**"):
+                self.assertIn(exclusion,region)
+        self.assertIn("  workflow_dispatch:", workflow)
+
     def test_shared_css_and_native_header_have_purpose(self):
         self.assertEqual(audit.identify("shared-components/about-web/about.css", {})[0],"style")
         self.assertEqual(audit.identify("native/audio-engine/include/louderme/AudioEngine.hpp", {})[0],"source")
         self.assertEqual(audit.identify("reports/agent-health.json", {})[0],"config")
 
-    def test_real_app_artifact_purposes(self):
-        values={
-            "supabase/migrations/20261010_delete_instagram_profiles.sql":"database_migration",
-            "supabase/tests/rls_isolation.sql":"test",
-            ".michelslab/release-intents/unified-v3221-a029.txt":"release_intent",
-            "installer/TaskbarPinning.txt":"installer_metadata",
-            "src/MichelsLife/Program.cs.gz.b64":"encoded_source",
-            "src/MichelsLife/app.manifest":"config",
-        }
-        for path,expected in values.items():
-            with self.subTest(path=path):
-                self.assertEqual(audit.identify(path,{})[0],expected)
+    def test_research_taxonomy_not_cloned_into_audio(self):
+        source=(HERE/"repository_file_auditor.py").read_text(encoding="utf-8")
+        for token in ("cleanproy", "doctor_original", "freesurface", "OpenFOAM case"):
+            with self.subTest(token=token):
+                self.assertNotIn(token,source)
+
+    def test_android_backup_rules_not_disposable(self):
+        self.assertEqual(audit.identify("android/app/src/main/res/xml/backup_rules.xml", {})[0], "config")
+    def test_audio_native_and_web_assets_have_real_roles(self):
+        self.assertEqual(audit.identify("shared-components/about-web/about.css",{})[0],"style")
+        self.assertEqual(audit.identify("native/audio-engine/include/louderme/AudioEngine.hpp",{})[0],"source")
+        self.assertEqual(audit.identify("reports/agent-health.json",{})[0],"config")
+        self.assertEqual(audit.identify("src/MichelsLife/Program.cs.gz.b64",{})[0],"unknown")
 
     def test_backup_and_draft_labels_are_not_unused_evidence(self):
         for name in ("docs/BACKUP_PREFLIGHT.md","tools/test_granada_backup_preflight.py",

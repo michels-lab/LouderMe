@@ -10,6 +10,7 @@ on:
     paths-ignore:
       - 'tools/repository_file_auditor.py'
       - 'tools/test_repository_file_auditor.py'
+      - 'tools/test_android_release_trigger_guard.py'
       - '.michelslab/agents/file-steward.md'
       - '.michelslab/file-audit-policy.json'
       - '.github/workflows/file-governance-audit.yml'

@@ -71,24 +71,28 @@ class FileStewardTests(unittest.TestCase):
         audit.write_reports(self.root,later,self.policy)
         self.assertEqual((self.root/"docs/audits/FILE_GOVERNANCE_LOG.md").read_text(encoding="utf-8"),history)
 
-    def test_extensionless_openfoam_fields_and_timesteps(self):
-        samples = {
-            "cases_controlled_buoyancy/B14/0/metal/T": "simulation_input",
-            "cases_buoyancy/B1/0/metal/T": "simulation_input",
-            "cases_buoyancy/B1/10/metal/T": "simulation_output",
-            "cleanproy/0/metal/T": "simulation_input",
-            "cleanproy/system/controlDict": "simulation_input",
-            "doctor_original/bcFourier/0/T": "simulation_input",
-            "freesurface/FS-C01/constant/g": "simulation_input",
-            "cases_controlled_buoyancy/B14/system/controlDict": "simulation_input",
-            "cases_controlled_buoyancy/B14/10/metal/T": "simulation_output",
-            "cases_controlled_buoyancy/B14/postProcessing/metal/T": "simulation_output",
-            "cases_controlled_buoyancy/B14/logs/CourantMax_0": "simulation_log",
-            "analysis_results/v15_v16_postpush_20261015/output.dat": "scientific_analysis",
+    def test_audio_product_and_release_file_roles(self):
+        cases = {
+            "README.md": "index",
+            "tools/repository_file_auditor.py": "source",
+            "tools/test_repository_file_auditor.py": "test",
+            ".github/workflows/file-governance-audit.yml": "workflow",
+            ".github/workflows/native-audio-engine-ci.yml": "workflow",
+            ".michelslab/file-audit-policy.json": "config",
+            "docs/audits/FILE_GOVERNANCE_LOG.md": "bitacora",
+            "reports/file-governance/SUMMARY.json": "config",
         }
-        for path, role in samples.items():
+        for path, role in cases.items():
             with self.subTest(path=path):
-                self.assertEqual(audit.identify(path,{})[0], role)
+                self.assertEqual(audit.identify(path,{})[0],role)
+        self.assertEqual(audit.identify("external_project/0/metal/T",{})[0],"unknown")
+
+    def test_research_taxonomy_not_cloned_into_audio(self):
+        source=(HERE/"repository_file_auditor.py").read_text(encoding="utf-8")
+        for token in ("cleanproy", "doctor_original", "freesurface", "OpenFOAM case"):
+            with self.subTest(token=token):
+                self.assertNotIn(token,source)
+
     def test_android_backup_rules_not_disposable(self):
         self.assertEqual(audit.identify("android/app/src/main/res/xml/backup_rules.xml", {})[0], "config")
     def test_real_app_artifact_purposes(self):

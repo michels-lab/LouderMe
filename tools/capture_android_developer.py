@@ -113,6 +113,15 @@ def open_inspector(*, attempts: int = 3, panel_wait_s: float = 7.0) -> ET.Elemen
         "Actual Developer inspector did not open after bounded live UI taps")
 
 
+def installed_developer_version_code() -> int:
+    # Read the *actual installed* package, not the APK filename or build input.
+    output = adb("shell", "dumpsys", "package", PACKAGE)
+    match = re.search(r"\\bversionCode=(\\d+)\\b", output)
+    if match is None:
+        raise RuntimeError("Android did not expose installed Developer package versionCode")
+    return int(match.group(1))
+
+
 def screenshot(folder: Path, name: str, digest: str) -> dict:
     picture = folder / f"{name}.png"
     picture.write_bytes(adb("exec-out", "screencap", "-p", binary=True))
@@ -186,8 +195,15 @@ def run(apk: Path, sha: str, out: Path, public_apk: Path | None = None,
         click(root, "DEV · Audit / Notes")
         root = wait_for_text(NOTE, contains=True)
         if upgrade_apk is not None:
+            prior_code = installed_developer_version_code()
             adb("shell", "am", "force-stop", PACKAGE)
-            adb("install", "-r", str(upgrade_apk.resolve()))
+            result = adb("install", "-r", str(upgrade_apk.resolve()))
+            if "Success" not in result:
+                raise RuntimeError("Developer upgrade was not acknowledged by Android PackageManager")
+            upgraded_code = installed_developer_version_code()
+            if upgraded_code <= prior_code:
+                raise RuntimeError(
+                    f"Developer upgrade did not increase installed versionCode: {prior_code} -> {upgraded_code}")
             adb("shell", "am", "start", "-W", "-n", PACKAGE + "/" + MAIN_ACTIVITY)
             root = open_inspector()
             wait_for_text(NOTE, contains=True)

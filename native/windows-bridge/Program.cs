@@ -431,7 +431,10 @@ internal static class Program
                             $"starvedRenderReads={playbackReader.ReadsWithInsufficientPcm} " +
                             $"overflows={Interlocked.Read(ref overflowPackets)} " +
                             $"queueResets={currentResets} " +
-                            $"flushedOutputFrames={Interlocked.Read(ref flushedOutputFrames)}");
+                            $"flushedOutputFrames={Interlocked.Read(ref flushedOutputFrames)} " +
+                            $"liveCommandsPublished={liveControlQueue.Published} " +
+                            $"liveCommandsApplied={liveControlQueue.Applied} " +
+                            $"liveCommandsSuperseded={Math.Max(0, liveControlQueue.Published - liveControlQueue.Applied)}");
                         if (queuedMs > 160)
                             Console.Error.WriteLine(
                                 "WARNING: experimental render queue above 160 ms; " +

@@ -92,10 +92,22 @@ jobs:
           grep -q 'create("developer")' app/build.gradle.kts
           grep -q 'applicationIdSuffix = ".developer"' app/build.gradle.kts
 
-      - name: Validate manual Developer signing boundaries without using signing secrets
+      - name: Validate manual Developer signing YAML and privacy boundaries without Secrets
         run: |
+          python3 -m pip install --disable-pip-version-check PyYAML==6.0.2
+          python3 - <<'PY'
+          import yaml
+          from pathlib import Path
+          path = Path(".github/workflows/developer-android-signed-owner-qa.yml")
+          doc = yaml.safe_load(path.read_text(encoding="utf-8"))
+          assert set(doc["jobs"]) == {"sign", "verify_installed_upgrade", "verified_candidate"}
+          assert "github.event.repository.private == true" in doc["jobs"]["sign"]["if"]
+          assert doc["jobs"]["verified_candidate"]["needs"] == ["sign", "verify_installed_upgrade"]
+          print("Dedicated Developer signing workflow parses and remains manual + private-only.")
+          PY
           python3 -m unittest discover -s tools/tests -p 'test_android_developer_signed_contract.py' -v
           python3 -m unittest discover -s tools/tests -p 'test_android_developer_harness.py' -v
+          python3 -m py_compile tools/capture_android_developer.py
 
       - name: Run tests and build distribution flavors
         run: |

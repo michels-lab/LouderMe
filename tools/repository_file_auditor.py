@@ -55,8 +55,6 @@ def identify(path, custom):
         if "/tests/" in p: return "test","SQL/RLS regression test; not evidence of execution","inferred"
         if "/migrations/" in p: return "database_migration","ordered database schema migration; never discard automatically","rule"
         return "database_schema","database schema/query source; verify against live DB separately","inferred"
-    if name.endswith(".cs.gz.b64"):
-        return "encoded_source","compressed/encoded C# source artifact; code meaning not audited","inferred"
     if name.endswith(".manifest"):
         return "config","native application execution manifest","rule"
     if ext==".txt":

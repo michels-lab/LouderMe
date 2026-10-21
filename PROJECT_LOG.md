@@ -1,3 +1,8 @@
+## 2026-10-21 — Correction: Perspective Council is for ChatGPT, not Copilot
+
+- Owner clarified these perspectives must help the assistant doing Michel's Lab development. The four mistakenly Copilot-specific perspective profiles are removed, replaced by four provider-neutral `.michelslab/agents/*.md` role instructions, readable through GitHub and usable with the master offline prompt pack.
+- No independent AI execution, parallel workers, background process, product code edit or release is claimed. Existing unrelated GitHub/Copilot infrastructure stays unchanged.
+
 ## 2026-10-21 — Product Perspective Council agent profiles (branch candidate)
 
 - Added **read-first review agents**: independent Contrarian, User Advocate, Intelligence Architect and Council with product-specific instructions. The Council synthesizes overlooked opportunities, alternative designs and measurable experiments; shared source-of-truth is `michels-lab/Michel-Software-Standards/standards/PERSPECTIVE_COUNCIL_STANDARD.md`.

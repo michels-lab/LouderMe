@@ -25,9 +25,11 @@ internal sealed class DspControlMailbox
     private Command? _pending;
     private long _published;
     private long _applied;
+    private long _superseded;
 
     public long Published => Interlocked.Read(ref _published);
     public long Applied => Interlocked.Read(ref _applied);
+    public long Superseded => Interlocked.Read(ref _superseded);
 
     public void Publish(int boost, bool eqEnabled, float[] eqDb)
     {
@@ -37,7 +39,8 @@ internal sealed class DspControlMailbox
             if (!float.IsFinite(value) || value is < -10f or > 10f)
                 throw new ArgumentException("DSP EQ must be finite in [-10,+10] dB.");
 
-        Interlocked.Exchange(ref _pending, new Command(boost, eqEnabled, eqDb));
+        if (Interlocked.Exchange(ref _pending, new Command(boost, eqEnabled, eqDb)) is not null)
+            Interlocked.Increment(ref _superseded);
         Interlocked.Increment(ref _published);
     }
 
@@ -89,7 +92,8 @@ internal sealed class DspControlMailbox
         var latest = new float[7];
         for (int i = 0; i < 200; i++) queue.Publish(100 + i % 151, false, latest);
         if (!queue.ApplyPending(engine) || queue.ApplyPending(engine) ||
-            queue.Applied != 3 || queue.Published != 202)
+            queue.Applied != 3 || queue.Published != 202 ||
+            queue.Superseded != 199)
             throw new InvalidOperationException("Bursty DSP control updates were not coalesced.");
 
         foreach (var invalid in new[] { float.NaN, float.PositiveInfinity, 10.1f, -10.1f })

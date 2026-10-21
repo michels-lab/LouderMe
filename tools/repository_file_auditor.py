@@ -272,6 +272,28 @@ def write_reports(root, report, policy):
                 "; inventory "+report["inventory_fingerprint"][:12]+
                 "; evidence "+report["evidence_fingerprint"][:12]+
                 ". Full local report in reports/file-governance/. Status REVIEW_REQUIRED.\n")
+            old_findings={x["id"]:x for x in prior.get("findings",[]) if isinstance(x,dict) and "id" in x}
+            current_findings={x["id"]:x for x in report["findings"]}
+            newly_detected=sorted(set(current_findings)-set(old_findings))
+            no_longer_detected=sorted(set(old_findings)-set(current_findings))
+            old_roles={x["path"]:x["role"] for x in prior.get("files",[]) if isinstance(x,dict) and "path" in x}
+            new_roles={x["path"]:x["role"] for x in report["files"]}
+            added_paths=set(new_roles)-set(old_roles)
+            removed_paths=set(old_roles)-set(new_roles)
+            changed_roles=[p for p in set(new_roles)&set(old_roles) if new_roles[p]!=old_roles[p]]
+            f.write("- Finding changes: "+str(len(newly_detected))+" NEW; "+
+                str(len(no_longer_detected))+" NO_LONGER_DETECTED (not necessarily resolved). "+
+                "Inventory: "+str(len(added_paths))+" new paths, "+str(len(removed_paths))+
+                " removed paths, "+str(len(changed_roles))+" reclassified paths.\n")
+            for state,ids,items in (("NEW",newly_detected,current_findings),
+                                    ("NO_LONGER_DETECTED",no_longer_detected,old_findings)):
+                for key in ids[:12]:
+                    item=items[key]
+                    path_text=str(item["path"]).replace(chr(10)," ").replace(chr(13)," ")
+                    f.write("- "+state+" — "+item["code"]+" at `"+path_text+"` (ID "+key+").\n")
+                if len(ids)>12:
+                    f.write("- "+state+" additional items: "+str(len(ids)-12)+
+                        " (full before/after evidence remains in Git history).\n")
 
 def main():
     parser=argparse.ArgumentParser()

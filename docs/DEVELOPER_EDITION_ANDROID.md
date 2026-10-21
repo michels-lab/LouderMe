@@ -1,6 +1,6 @@
 # LouderMe Android Developer Edition — Granada 2026-10-20
 
-**Status: candidate implementation in an isolated branch. Not published or validated on a physical Android device.**
+**Status: Developer source integrated on `main`, with real installed-emulator annotation/restart/audit/JSON and status-filter QA passed. The independently signed owner APK workflow is a NEW source candidate; it is not configured, executed, published, or physically device-tested.**
 
 The Android Developer Edition is a third Gradle product flavor (\`developerDebug\`) installed **alongside** the ordinary \`play\` and \`sideload\` applications as \`com.michelslab.louderme.developer\`. It uses the same current Compose app screens, audio service and EQ implementation but private package-scoped SharedPreferences and application data. The launcher is labeled *LouderMe Developer Edition*. It does not import production settings, cookies, accounts, audio state journals or private files. Backups and boot receiver are disabled; public release update prompts, checks and installation actions are disabled for the developer package.
 
@@ -40,3 +40,9 @@ A Compose ordering bug was corrected: activate Home/About before registering mea
 The **Developer Edition inspector only** now offers horizontally scrollable `All / Open / Investigating / Resolved` status filters, displays the visible/total count and keeps each note's exact `Edit / Locate / Delete` actions. Filters never modify the saved notes; JSON/AI repair prompt continue exporting **all** owner observations (including resolved) unless the owner deliberately redacts the reviewed export. Core public audio settings, native App screens and release/update paths are unchanged.
 
 The shared pure filter function has Android unit regression coverage for each status, an unknown status, immutable note counts, preserved timestamps and verbatim observations. The installed Android Developer E2E now also taps the real Resolved filter, requires its visible/total label and absence of the Open note, then taps All and requires the same verbatim note to reappear before the persistence/restart/audit test. Physical owner-phone behavior remains separate from emulator evidence.
+
+## Granada continuation — persistent signed Developer installation channel (2026-10-20)
+
+A separate, owner-triggered private-GitHub workflow has been prepared in `.github/workflows/developer-android-signed-owner-qa.yml`, documented in `docs/DEVELOPER_ANDROID_SIGNED_CHANNEL.md`. It requires four **Developer-only** keystore secrets and an independently pinned public certificate SHA-256; it explicitly does not access the public sideload signing identity or create a GitHub Release. It builds N-1/N Developer release APKs, signs both with the same pinned identity and requires actual emulator **in-place** update with the same persisted owner note and reviewed export. It retains the signed final candidate for seven days **only if** installed QA passes.
+
+The normal 3-flavor CI also compiles the Developer unsigned release APK and checks these boundary rules. This workstream is **not** a signed APK already created or available. Existing debug-signed Developer apps require careful note export before a signer switch because Android prohibits in-place updates with incompatible certificates. Physical owner-device acceptance remains pending.

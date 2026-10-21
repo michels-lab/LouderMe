@@ -1,3 +1,12 @@
+## 2026-10-21 — Operación Granada: native Windows physical gain proof contract and Perspective Council review (source candidate)
+
+- After PR #88 merged `7ea4f26` with exact-head Windows native, SysVAD package WDK and Android installed CI green, candidate branch `feat/granada-independent-gain-validator-20261021` extracts physical WASAPI loopback 100→150% gain acceptance into pure `native/virtual-driver/IndependentGainCheck.ps1`. The actual VM route now uses this same production-of-evidence validator, not separately hand-coded if statements.
+- Standalone negative fixtures `native/virtual-driver/test_IndependentGainCheck.ps1` reject missing source JSON, wrong/ambiguous boost percentages, fake separate application provenance, inflated generic-system-audio/SPL scope claims, nonfinite or string measurements, silence, non-coherent source and out-of-range numeric gain ratios; native Windows CI executes them without audio hardware.
+- Added `docs/product-reviews/2026-10-21-native-windows-audio-evidence.md`: ONE ChatGPT multi-lens PDR (Contrarian, User Advocate, Intelligence Architect and trust) challenges driver/signed endpoint claims, alternative own APO path, safety, observable latency and unsupported AI features, with concrete W1–W5 priorities. It is not independent agent execution or production acceptance.
+- **Source candidate pending CI**, not an installed/physically signed driver or tested system-audio amplification. Native issues #46/#48 remain OPEN; public versions unchanged, no release.
+
+---
+
 ## 2026-10-21 — Operación Granada: separate Windows process PCM → virtual render → native DSP → physical monitor (source candidate)
 
 - [PR #88](https://github.com/michels-lab/LouderMe/pull/88): add `native/independent-tone/` as a truly distinct NAudio Windows executable which emits bounded 440 Hz PCM16/float32 to a selected virtual render device; no DSP, recording, microphone, default changes or driver installation.

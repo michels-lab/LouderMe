@@ -87,6 +87,17 @@ class FileStewardTests(unittest.TestCase):
                 self.assertEqual(audit.identify(path,{})[0],role)
         self.assertEqual(audit.identify("external_project/0/metal/T",{})[0],"unknown")
 
+    def test_android_release_ci_ignores_only_file_steward_changes(self):
+        workflow=(HERE.parent/".github/workflows/android-ci-release.yml").read_text(encoding="utf-8")
+        for section in ("  push:\n", "  pull_request:\n"):
+            region=workflow.split(section,1)[1].split("  workflow_dispatch:",1)[0]
+            self.assertIn("    paths-ignore:\n",region)
+            for exclusion in ("tools/repository_file_auditor.py",
+                              "tools/test_repository_file_auditor.py",
+                              "reports/file-governance/**"):
+                self.assertIn(exclusion,region)
+        self.assertIn("  workflow_dispatch:", workflow)
+
     def test_shared_css_and_native_header_have_purpose(self):
         self.assertEqual(audit.identify("shared-components/about-web/about.css", {})[0],"style")
         self.assertEqual(audit.identify("native/audio-engine/include/louderme/AudioEngine.hpp", {})[0],"source")

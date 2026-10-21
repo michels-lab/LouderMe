@@ -91,9 +91,11 @@ if (-not (Test-Path -LiteralPath $evidence)) {
 }
 $script:EvidenceDir = $evidence
 $script:BridgeDll = [IO.Path]::GetFullPath($BridgeDll)
+$sessionId = [guid]::NewGuid().ToString('D')
 @(
   'LAB_VIRTUAL_RENDER_CI=NOT_APPLICABLE',
   "VM=$modelText",
+  "LAB_SESSION_ID=$sessionId",
   'DRIVER_PACKAGE_SIGNATURE=VALID_LOCAL_VM',
   "CAT_SHA256=$((Get-FileHash -LiteralPath $cat -Algorithm SHA256).Hash.ToLowerInvariant())",
   "SYS_SHA256=$((Get-FileHash -LiteralPath $sys -Algorithm SHA256).Hash.ToLowerInvariant())",
@@ -160,7 +162,7 @@ try {
   # Real no-stimulus negative proof must pass BEFORE either renderer runs.
   pwsh -NoProfile -File $separateProbe -BridgeDll $BridgeDll -IndependentToneDll $IndependentToneDll `
     -VirtualEndpointId $virtualId -PhysicalEndpointId $PhysicalEndpointId `
-    -LabConsent $LabConsent -EvidenceDir $evidence -BoostPercent 100 `
+    -LabConsent $LabConsent -EvidenceDir $evidence -SessionId $sessionId -BoostPercent 100 `
     -ExpectNoSource -ControlPhase before
   if ($LASTEXITCODE -ne 0 -or
       -not (Test-Path -LiteralPath (Join-Path $evidence 'no-source-control-before.json'))) {
@@ -169,7 +171,7 @@ try {
   foreach ($percent in @(100, 150)) {
     pwsh -NoProfile -File $separateProbe -BridgeDll $BridgeDll -IndependentToneDll $IndependentToneDll `
       -VirtualEndpointId $virtualId -PhysicalEndpointId $PhysicalEndpointId `
-      -LabConsent $LabConsent -EvidenceDir $evidence -BoostPercent $percent
+      -LabConsent $LabConsent -EvidenceDir $evidence -SessionId $sessionId -BoostPercent $percent
     if ($LASTEXITCODE -ne 0 -or
         -not (Test-Path (Join-Path $evidence "independent-source-result-$percent.json"))) {
       throw "Independent APP PCM at $percent% did not reach the virtual→native DSP→physical monitor."
@@ -179,7 +181,7 @@ try {
   # after the sources exit, or 440Hz contamination makes the ratio suspect.
   pwsh -NoProfile -File $separateProbe -BridgeDll $BridgeDll -IndependentToneDll $IndependentToneDll `
     -VirtualEndpointId $virtualId -PhysicalEndpointId $PhysicalEndpointId `
-    -LabConsent $LabConsent -EvidenceDir $evidence -BoostPercent 100 `
+    -LabConsent $LabConsent -EvidenceDir $evidence -SessionId $sessionId -BoostPercent 100 `
     -ExpectNoSource -ControlPhase after
   if ($LASTEXITCODE -ne 0 -or
       -not (Test-Path -LiteralPath (Join-Path $evidence 'no-source-control-after.json'))) {
@@ -190,7 +192,7 @@ try {
   . $validator
   # Real measured source evidence must pass the same data guard exercised in
   # native CI adversarial fixtures. Only accepted comparisons can leave a PASS.
-  $ratio = Test-LouderMeIndependentGain -EvidenceDir $evidence
+  $ratio = Test-LouderMeIndependentGain -EvidenceDir $evidence -ExpectedSessionId $sessionId
   $ratio.ToString('F3', [Globalization.CultureInfo]::InvariantCulture) |
     Out-File -LiteralPath (Join-Path $evidence 'independent-app-boost-ratio.txt') -Encoding utf8
   Write-Host (("LAB_ROUTE_INDEPENDENT_APP_100_150_GAIN=PASS ratio={0:F3}; " +

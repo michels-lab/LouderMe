@@ -14,6 +14,7 @@ param(
   [Parameter(Mandatory)][ValidateSet('I_ACCEPT_DISPOSABLE_WINDOWS_VM_DRIVER_TEST')]
   [string]$LabConsent,
   [Parameter(Mandatory)][string]$EvidenceDir,
+  [Parameter(Mandatory)][ValidatePattern('^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$')][string]$SessionId,
   [Parameter(Mandatory)][ValidateSet(100, 150)][int]$BoostPercent,
   [switch]$ExpectNoSource,
   [ValidateSet('before', 'after')][string]$ControlPhase = 'before'
@@ -48,6 +49,21 @@ foreach ($file in @($BridgeDll, $IndependentToneDll)) {
   if (-not (Test-Path -LiteralPath $file -PathType Leaf)) {
     throw "Missing independently built lab executable: $file"
   }
+}
+function Get-LabIdHash([string]$id) {
+  return [Convert]::ToHexString(
+    [Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes($id))
+  ).ToLowerInvariant()
+}
+$proofIdentity = [ordered]@{
+  session_id = $SessionId.ToLowerInvariant()
+  virtual_endpoint_sha256 = (Get-LabIdHash $VirtualEndpointId)
+  physical_endpoint_sha256 = (Get-LabIdHash $PhysicalEndpointId)
+  bridge_binary_sha256 = (Get-FileHash -LiteralPath $BridgeDll -Algorithm SHA256).Hash.ToLowerInvariant()
+  source_binary_sha256 = (Get-FileHash -LiteralPath $IndependentToneDll -Algorithm SHA256).Hash.ToLowerInvariant()
+}
+if ($proofIdentity.virtual_endpoint_sha256 -eq $proofIdentity.physical_endpoint_sha256) {
+  throw 'Proof cannot use the same virtual and physical render endpoint.'
 }
 $folder = [IO.Path]::GetFullPath($EvidenceDir)
 if (-not (Test-Path $folder)) {
@@ -90,6 +106,8 @@ try {
     . (Join-Path $PSScriptRoot 'NoSourceControlCheck.ps1')
     $negative = Test-LouderMeNoSourceControl -ExitCode $bridge.ExitCode `
       -StdOut $bridgeStdOut -StdErr $bridgeStdErr
+    $negative['control_phase'] = $ControlPhase
+    foreach ($key in $proofIdentity.Keys) { $negative[$key] = $proofIdentity[$key] }
     $file = Join-Path $folder "no-source-control-$ControlPhase.json"
     if (Test-Path -LiteralPath $file) {
       throw 'Stale no-source control evidence exists; choose a fresh evidence directory.'
@@ -141,6 +159,11 @@ try {
     status = 'PASS'
     stimulus = 'separate Windows process'
     boost_percent = $BoostPercent
+    session_id = $proofIdentity.session_id
+    virtual_endpoint_sha256 = $proofIdentity.virtual_endpoint_sha256
+    physical_endpoint_sha256 = $proofIdentity.physical_endpoint_sha256
+    bridge_binary_sha256 = $proofIdentity.bridge_binary_sha256
+    source_binary_sha256 = $proofIdentity.source_binary_sha256
     physical_matched440_amplitude = $amplitude
     physical_coherence = $coherence
     general_third_party_audio_proven = $false

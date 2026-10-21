@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 209,
-  "classified_files_total": 205,
-  "docs_content_inspected": 51,
+  "tracked_files_total": 212,
+  "classified_files_total": 208,
+  "docs_content_inspected": 52,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,21 +12,19 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 43,
+    "document": 44,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
-    "source": 78,
-    "test": 17,
+    "source": 79,
+    "test": 18,
     "text_metadata": 2,
     "workflow": 10
   },
-  "finding_counts": {
-    "POTENTIAL_UNLOGGED_CHANGES": 1
-  },
-  "finding_total": 1,
-  "inventory_fingerprint": "179d51bbb260cf95d84649f963674a1cefdcf9ddf6f3197ea6b4edbe044c3f4e",
-  "evidence_fingerprint": "9e45cfc06a8bc0c0b7701214daef80725e8dd02e165407baeffdd68777c9f9b2",
+  "finding_counts": {},
+  "finding_total": 0,
+  "inventory_fingerprint": "7c86c71619a616cf55653394d6d6c6fdf46d7527e0b333ac0b8b357d3cd6c432",
+  "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/chatgpt-task.yml",
@@ -103,14 +101,14 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "c2bbf77e14dfab6bca0015564abab18294e1ac56"
+      "blob": "96bf54cd1d59868e239a343b78e360333d1a6f2d"
     },
     {
       "path": ".github/workflows/native-physical-lab-manual.yml",
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "c04b146b148fb42f07377e2b8d4b16313ae6256f"
+      "blob": "6d0bd81f43ed15841f0214ddac7a7da2f0e0520a"
     },
     {
       "path": ".github/workflows/native-virtual-device-ci.yml",
@@ -229,7 +227,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "1f8b8ed95ec188af7046028da28cc9ff46dccd0e"
+      "blob": "09814a00852eaae2befae7a0a94ea2f75ba05903"
     },
     {
       "path": "README.md",
@@ -1107,6 +1105,13 @@
       "blob": "e1145a56c9f5b5091a6e2a2807361d5e73f77124"
     },
     {
+      "path": "docs/audits/GRANADA_2026-10-21_LAB_EVIDENCE_FRESHNESS.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "d41949517b7e3ef71c2b0ef83a8bed5f43a2063b"
+    },
+    {
       "path": "docs/audits/GRANADA_2026-10-21_NATIVE_SESSION_EVIDENCE.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -1212,6 +1217,13 @@
       "blob": "a2a7d3be7b59a48b50b6156b115c3496de40f4fe"
     },
     {
+      "path": "native/virtual-driver/LabEvidenceDirectory.ps1",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "5203a77f40361c5db4aa0236bcf88783f3e06f8a"
+    },
+    {
       "path": "native/virtual-driver/NoSourceControlCheck.ps1",
       "role": "source",
       "purpose": "code/test implementation",
@@ -1223,7 +1235,7 @@
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "1ea01fa59e43aa628def66d71c1a6a7be6cda2ff"
+      "blob": "d0062242263c7ce80bdddb3053a6433cd8b10f1b"
     },
     {
       "path": "native/virtual-driver/prepare_sysvad.py",
@@ -1237,14 +1249,14 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "78dfe046df7808bfe1cfb451a4b43192f726e8d3"
+      "blob": "9aadcffd9889dcea7102bc09c50964a6fbc8bf1e"
     },
     {
       "path": "native/virtual-driver/run_disposable_lab.ps1",
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "0c6e15ceb30f3fc1781b32ff07a62bd076ddbc54"
+      "blob": "8d0e07fe7d45d8dd547246c42e056e62594b8fa3"
     },
     {
       "path": "native/virtual-driver/test_IndependentGainCheck.ps1",
@@ -1252,6 +1264,13 @@
       "purpose": "code/test implementation",
       "certainty": "rule",
       "blob": "322aa6c889687b52828f296b1bfc838a40d10d09"
+    },
+    {
+      "path": "native/virtual-driver/test_LabEvidenceDirectory.ps1",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "2ba6f5a1056b51e61da8a1f9e78874774881a94f"
     },
     {
       "path": "native/virtual-driver/test_NoSourceControlCheck.ps1",
@@ -1464,17 +1483,7 @@
       "blob": "724f2c9b5eb8b069e266eb1619375c97628d9202"
     }
   ],
-  "findings": [
-    {
-      "id": "7e2af0e56e39f596",
-      "code": "POTENTIAL_UNLOGGED_CHANGES",
-      "severity": "review",
-      "path": "PROJECT_LOG.md",
-      "observation": "8 implementation/config paths changed since this log's last commit; examples: .github/workflows/android-ci-release.yml, .github/workflows/file-steward-pr-validation.yml, .github/workflows/native-audio-engine-ci.yml, native/virtual-driver/IndependentGainCheck.ps1, native/virtual-driver/probe_independent_app_route.ps1, native/virtual-driver/run_disposable_lab.ps1",
-      "recommendation": "Inspect diffs and reconcile only meaningful decisions/results in the canonical log",
-      "state": "REVIEW_REQUIRED"
-    }
-  ],
+  "findings": [],
   "untracked_audited": false,
   "ignored_audited": false,
   "binary_contents_audited": false,

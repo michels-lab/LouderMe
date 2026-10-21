@@ -59,13 +59,13 @@ jobs:
           LAB_PHYSICAL: ${{ inputs.physical_endpoint_id }}
         run: |
           $ErrorActionPreference = 'Stop'
-          pwsh -NoProfile -File native/virtual-driver/run_disposable_lab.ps1 -PackageDir $env:LAB_PACKAGE -DevconExe $env:LAB_DEVCON -BridgeDll $env:LAB_BRIDGE -IndependentToneDll $env:LAB_APP_TONE -PhysicalEndpointId $env:LAB_PHYSICAL -LabConsent $env:LAB_CONSENT -EvidenceDir "$env:RUNNER_TEMP/louderme-lab-evidence"
+          pwsh -NoProfile -File native/virtual-driver/run_disposable_lab.ps1 -PackageDir $env:LAB_PACKAGE -DevconExe $env:LAB_DEVCON -BridgeDll $env:LAB_BRIDGE -IndependentToneDll $env:LAB_APP_TONE -PhysicalEndpointId $env:LAB_PHYSICAL -LabConsent $env:LAB_CONSENT -EvidenceDir "$env:RUNNER_TEMP/louderme-lab-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
           if ($LASTEXITCODE -ne 0) { throw "Lab physical audio proof FAILED; revert VM snapshot." }
       - name: Archive metadata-only lab evidence even on failure
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: louderme-disposable-vm-physical-loopback-evidence
-          path: ${{ runner.temp }}/louderme-lab-evidence/
+          path: ${{ runner.temp }}/louderme-lab-${{ github.run_id }}-${{ github.run_attempt }}/
           if-no-files-found: warn
           retention-days: 7

@@ -118,6 +118,10 @@ internal static class Program
             if (provePhysicalRoute && args.Contains("--interactive-controls"))
                 throw new ArgumentException(
                     "Physical-route tone evidence forbids live control changes during measurement.");
+            if (args.Contains("--interactive-controls") && args.Contains("--auto-reconnect"))
+                throw new ArgumentException(
+                    "Live stdin controls cannot safely survive experimental reconnect; " +
+                    "start a new confirmed session after a route interruption.");
 
             // Never fall back to the new Windows default device after a
             // Bluetooth/USB/HDMI hot-swap. Retry ONLY the exact supplied IDs.
@@ -434,7 +438,7 @@ internal static class Program
                             $"flushedOutputFrames={Interlocked.Read(ref flushedOutputFrames)} " +
                             $"liveCommandsPublished={liveControlQueue.Published} " +
                             $"liveCommandsApplied={liveControlQueue.Applied} " +
-                            $"liveCommandsSuperseded={Math.Max(0, liveControlQueue.Published - liveControlQueue.Applied)}");
+                            $"liveCommandsSuperseded={liveControlQueue.Superseded}");
                         if (queuedMs > 160)
                             Console.Error.WriteLine(
                                 "WARNING: experimental render queue above 160 ms; " +

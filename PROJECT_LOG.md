@@ -1,3 +1,13 @@
+## 2026-10-20 — Operación Granada: Developer notes safe migration between Android signing identities (candidate)
+
+- Added developer-only **Save notes backup** (Android CreateDocument SAF) and **Restore notes backup** (OpenDocument SAF) to preserve owner annotations across necessary uninstall/reinstall between ephemeral debug signer and permanently owner-signed Developer app. No public Play/Direct audio/version/signature/UI changes, no automatic cloud upload.
+- Import validates exact Developer product/package identity, <=2 MB JSON, 1–250 entries, unique IDs, screen, locator syntax, verbatim comment lengths, P0/P1/P2, Open/Investigating/Resolved, timestamps; rejects corrupt/foreign backups before modifying local data. Accepts earlier full Developer JSON report schema when correctly identified.
+- Displays new/identical/conflicting/stale-locator counts; offers separate no-overwrite vs explicit replace-existing actions. Merge never deletes unrelated existing notes; unknown old locators survive and remain visible in audit; SharedPreferences commits are synchronous.
+- Added JVM JSON parser/merge regression tests and expanded actual installed-emulator inspector QA to require both backup/restore entry points. **The picker/file round trip on the owner's phone remains unverified**, and a new signing certificate cannot update the old debug-signed APK in place; user must export before uninstalling.
+- Source PR candidate only; no new public release, APK signing, hardware audio test or private signer provisioning.
+
+---
+
 ## 2026-10-20 — Operación Granada: durable, independent Android Developer signing QA (source candidate)
 
 - Candidate branch `feat/granada-developer-android-persistent-signed-channel-20261020`: allow a strictly bounded **Developer-only** versionCode override (`-PdeveloperVersionCode=10001+`) while preserving public Android 0.1.12/code13 and existing release signing.

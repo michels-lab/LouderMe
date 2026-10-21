@@ -166,26 +166,14 @@ try {
       throw "Independent APP PCM at $percent% did not reach the virtual→native DSP→physical monitor."
     }
   }
-  $baseMeasure = Get-Content (Join-Path $evidence 'independent-source-result-100.json') -Raw | ConvertFrom-Json
-  $highMeasure = Get-Content (Join-Path $evidence 'independent-source-result-150.json') -Raw | ConvertFrom-Json
-  $reference = [double]$baseMeasure.physical_matched440_amplitude
-  $amplified = [double]$highMeasure.physical_matched440_amplitude
-  if ($baseMeasure.status -ne 'PASS' -or $highMeasure.status -ne 'PASS' -or
-      [int]$baseMeasure.boost_percent -ne 100 -or [int]$highMeasure.boost_percent -ne 150 -or
-      $baseMeasure.stimulus -ne 'separate Windows process' -or
-      $highMeasure.stimulus -ne 'separate Windows process' -or
-      $reference -le 0 -or $amplified -le 0) {
-    throw 'Missing or invalid positive physical 440 Hz gain baselines.'
-  }
-  # Expected 1.5x linear output is only a lab acceptance RANGE. If a
-  # Windows enhancement, limiter, or bad virtual render path changes gain,
-  # FAIL instead of calling synthetic PCM tests an audible pass.
-  $ratio = $amplified / $reference
+  $validator = Join-Path $PSScriptRoot 'IndependentGainCheck.ps1'
+  Require-File $validator
+  . $validator
+  # Real measured source evidence must pass the same data guard exercised in
+  # native CI adversarial fixtures. Only accepted comparisons can leave a PASS.
+  $ratio = Test-LouderMeIndependentGain -EvidenceDir $evidence
   $ratio.ToString('F3', [Globalization.CultureInfo]::InvariantCulture) |
     Out-File -LiteralPath (Join-Path $evidence 'independent-app-boost-ratio.txt') -Encoding utf8
-  if ($ratio -lt 1.30 -or $ratio -gt 1.70) {
-    throw "Physical 100%→150% native boost ratio outside conservative acceptance band: $ratio."
-  }
   Write-Host (("LAB_ROUTE_INDEPENDENT_APP_100_150_GAIN=PASS ratio={0:F3}; " +
     "NOT consumer sound, physical SPL or general app compatibility.") -f $ratio)
 } finally {

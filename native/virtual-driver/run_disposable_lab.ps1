@@ -43,8 +43,15 @@ function Invoke-Bridge([string[]]$BridgeArgs, [string]$Label) {
   $lines = @(& dotnet $script:BridgeDll @BridgeArgs 2>&1)
   $code = $LASTEXITCODE
   $logPath = Join-Path $script:EvidenceDir "$Label.log"
-  $lines | Out-File -LiteralPath $logPath -Encoding utf8
-  $lines | ForEach-Object { Write-Host $_ }
+  $ids = @($PhysicalEndpointId)
+  if (Get-Variable -Name virtualId -Scope Script -ErrorAction SilentlyContinue) {
+    $ids += $script:virtualId
+  }
+  $safeLines = @($lines | ForEach-Object {
+    Protect-LouderMeLabLogLine -Line "$_" -KnownEndpointIds $ids -ListDevices:($Label -eq 'list-devices')
+  })
+  Write-LouderMeLabTextOnce -Path $logPath -Content (($safeLines -join [Environment]::NewLine) + [Environment]::NewLine)
+  $safeLines | ForEach-Object { Write-Host $_ }
   if ($code -ne 0) { throw "$Label failed (exit $code); see $logPath" }
   return $lines
 }
@@ -85,14 +92,14 @@ if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
   throw 'dotnet runtime/SDK is missing; cannot execute native bridge.'
 }
 
-$evidence = [IO.Path]::GetFullPath($EvidenceDir)
-if (-not (Test-Path -LiteralPath $evidence)) {
-  [void](New-Item -ItemType Directory -Path $evidence -Force)
-}
+. (Join-Path $PSScriptRoot 'LabEvidenceDirectory.ps1')
+$sessionId = [guid]::NewGuid().ToString('D')
+# Fail before the first privileged PnP operation for any reused folder,
+# including one containing only metadata from a failed previous attempt.
+$evidence = New-LouderMeLabEvidenceDirectory -Path $EvidenceDir -SessionId $sessionId
 $script:EvidenceDir = $evidence
 $script:BridgeDll = [IO.Path]::GetFullPath($BridgeDll)
-$sessionId = [guid]::NewGuid().ToString('D')
-@(
+$metadata = @(
   'LAB_VIRTUAL_RENDER_CI=NOT_APPLICABLE',
   "VM=$modelText",
   "LAB_SESSION_ID=$sessionId",
@@ -101,7 +108,8 @@ $sessionId = [guid]::NewGuid().ToString('D')
   "SYS_SHA256=$((Get-FileHash -LiteralPath $sys -Algorithm SHA256).Hash.ToLowerInvariant())",
   'SPEAKER_AUDIO_MEASUREMENT=NOT_PERFORMED',
   'PRODUCTION_SIGNING=NOT_VERIFIED'
-) | Out-File -LiteralPath (Join-Path $evidence 'lab-metadata.txt') -Encoding utf8
+)
+Write-LouderMeLabTextOnce -Path (Join-Path $evidence 'lab-metadata.txt') -Content (($metadata -join [Environment]::NewLine) + [Environment]::NewLine)
 
 try {
   Write-Host "Installing LAB root device '$hardwareId' in disposable VM only."
@@ -193,8 +201,7 @@ try {
   # Real measured source evidence must pass the same data guard exercised in
   # native CI adversarial fixtures. Only accepted comparisons can leave a PASS.
   $ratio = Test-LouderMeIndependentGain -EvidenceDir $evidence -ExpectedSessionId $sessionId
-  $ratio.ToString('F3', [Globalization.CultureInfo]::InvariantCulture) |
-    Out-File -LiteralPath (Join-Path $evidence 'independent-app-boost-ratio.txt') -Encoding utf8
+  Write-LouderMeLabTextOnce -Path (Join-Path $evidence 'independent-app-boost-ratio.txt') -Content ($ratio.ToString('F3', [Globalization.CultureInfo]::InvariantCulture) + [Environment]::NewLine)
   Write-Host (("LAB_ROUTE_INDEPENDENT_APP_100_150_GAIN=PASS ratio={0:F3}; " +
     "NOT consumer sound, physical SPL or general app compatibility.") -f $ratio)
 } finally {

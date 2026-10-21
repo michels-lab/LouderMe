@@ -218,6 +218,7 @@ pwsh -NoProfile -File native/virtual-driver/run_disposable_lab.ps1 `
   -PackageDir "C:\lab\louderme-lab-package" `
   -DevconExe "C:\lab\devcon.exe" `
   -BridgeDll "C:\lab\LouderMeAudioBridge.dll" `
+  -IndependentToneDll "C:\lab\LouderMeIndependentTone.dll" `
   -PhysicalEndpointId "<PHYSICAL_RENDER_ID_FROM_LIST_DEVICES>" `
   -LabConsent I_ACCEPT_DISPOSABLE_WINDOWS_VM_DRIVER_TEST
 ```
@@ -277,3 +278,9 @@ The isolated VM now generates a **fresh nonempty GUID** for each driver bring-up
 `Test-LouderMeIndependentGain -EvidenceDir <LAB_EVIDENCE_DIR> -ExpectedSessionId <LAB_SESSION_GUID>` now requires **all four distinct records** and validates both negative-control scope, matched 440 Hz silence (maximum 0.003), nonzero listener frames and the original 100%→150% physical-amplitude ratio (1.30–1.70). It cannot accept just two disconnected `PASS` result files. The GUID is recorded in `lab-metadata.txt`; it is a provenance cross-check, **not an unforgeable attestation**, and SHA-256 fingerprints do not independently certify that the driver is installed. Hardware-free CI fixtures test corrupted phases, mixed GUIDs, endpoint/binary changes, missing silence evidence and falsely inflated evidence claims.
 
 Do **not** run `probe_independent_app_route.ps1` outside the disposable VM, use a reused evidence directory, infer human-audible SPL from PCM loopback, or publish a native driver from these tests. The actual signed-driver VM experiment and owner-approved physical acceptance remain **NOT RUN**.
+
+## Granada 2026-10-21 — single-use VM evidence and endpoint redaction
+
+The disposable VM runner now refuses **all existing evidence paths**, including empty directories, before any driver install. It claims a per-run GUID lock. The manual workflow uses a unique run-ID plus attempt folder. No lab evidence records are overwritten: per-phase JSON, logs, metadata and ratio use .NET FileMode.CreateNew. Each probe verifies the session lock before launching the bridge.
+
+Runner logs replace raw WASAPI device identifiers with [REDACTED_ENDPOINT_ID], while the actual device enumeration remains available only in memory to the lab code. The hardware-free test_LabEvidenceDirectory.ps1 covers freshness, collisions, write-once immutability, existing evidence preservation and redaction. CI parses lab PowerShell and exercises these tests. This is **not** proof that a signed driver, physical audio, or arbitrary third-party playback works. No public release changes.

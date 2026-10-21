@@ -14,7 +14,9 @@ param(
   [Parameter(Mandatory)][ValidateSet('I_ACCEPT_DISPOSABLE_WINDOWS_VM_DRIVER_TEST')]
   [string]$LabConsent,
   [Parameter(Mandatory)][string]$EvidenceDir,
-  [Parameter(Mandatory)][ValidateSet(100, 150)][int]$BoostPercent
+  [Parameter(Mandatory)][ValidateSet(100, 150)][int]$BoostPercent,
+  [switch]$ExpectNoSource,
+  [ValidateSet('before', 'after')][string]$ControlPhase = 'before'
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
@@ -75,6 +77,27 @@ try {
   }
   if (-not $ready) {
     throw 'Bridge did not report actual capture+physical-monitor readiness. No source tone sent.'
+  }
+  if ($ExpectNoSource) {
+    # Control MUST run the actual full capture window with the correct VM
+    # devices, but deliberately NEVER launch the independent tone process.
+    if (-not $bridge.WaitForExit(9000)) {
+      throw 'No-stimulus bridge capture failed to finish its complete time window.'
+    }
+    $bridgeStdOut = ($bridgeLines.ToArray() -join [Environment]::NewLine) +
+      [Environment]::NewLine + $bridge.StandardOutput.ReadToEnd()
+    $bridgeStdErr = $bridge.StandardError.ReadToEnd()
+    . (Join-Path $PSScriptRoot 'NoSourceControlCheck.ps1')
+    $negative = Test-LouderMeNoSourceControl -ExitCode $bridge.ExitCode `
+      -StdOut $bridgeStdOut -StdErr $bridgeStdErr
+    $file = Join-Path $folder "no-source-control-$ControlPhase.json"
+    if (Test-Path -LiteralPath $file) {
+      throw 'Stale no-source control evidence exists; choose a fresh evidence directory.'
+    }
+    $negative | ConvertTo-Json -Depth 3 |
+      Out-File -LiteralPath $file -Encoding utf8
+    Write-Host "PASS: $ControlPhase negative control proved virtual and physical listeners reject missing source PCM."
+    return
   }
   $source = Make-Process $IndependentToneDll @(
     '--device-id', $VirtualEndpointId, '--external-app-source',

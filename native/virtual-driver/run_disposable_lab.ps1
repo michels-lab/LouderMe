@@ -157,6 +157,15 @@ try {
       throw "Stale independent source evidence for $percent% exists; choose a fresh evidence directory."
     }
   }
+  # Real no-stimulus negative proof must pass BEFORE either renderer runs.
+  pwsh -NoProfile -File $separateProbe -BridgeDll $BridgeDll -IndependentToneDll $IndependentToneDll `
+    -VirtualEndpointId $virtualId -PhysicalEndpointId $PhysicalEndpointId `
+    -LabConsent $LabConsent -EvidenceDir $evidence -BoostPercent 100 `
+    -ExpectNoSource -ControlPhase before
+  if ($LASTEXITCODE -ne 0 -or
+      -not (Test-Path -LiteralPath (Join-Path $evidence 'no-source-control-before.json'))) {
+    throw 'Silence baseline failed; external source gain measurement forbidden.'
+  }
   foreach ($percent in @(100, 150)) {
     pwsh -NoProfile -File $separateProbe -BridgeDll $BridgeDll -IndependentToneDll $IndependentToneDll `
       -VirtualEndpointId $virtualId -PhysicalEndpointId $PhysicalEndpointId `
@@ -165,6 +174,16 @@ try {
         -not (Test-Path (Join-Path $evidence "independent-source-result-$percent.json"))) {
       throw "Independent APP PCM at $percent% did not reach the virtual→native DSP→physical monitor."
     }
+  }
+  # The SAME real virtual and physical devices must reject silence again
+  # after the sources exit, or 440Hz contamination makes the ratio suspect.
+  pwsh -NoProfile -File $separateProbe -BridgeDll $BridgeDll -IndependentToneDll $IndependentToneDll `
+    -VirtualEndpointId $virtualId -PhysicalEndpointId $PhysicalEndpointId `
+    -LabConsent $LabConsent -EvidenceDir $evidence -BoostPercent 100 `
+    -ExpectNoSource -ControlPhase after
+  if ($LASTEXITCODE -ne 0 -or
+      -not (Test-Path -LiteralPath (Join-Path $evidence 'no-source-control-after.json'))) {
+    throw 'Post-source silence control failed; previous signal may be lingering.'
   }
   $validator = Join-Path $PSScriptRoot 'IndependentGainCheck.ps1'
   Require-File $validator

@@ -52,9 +52,27 @@ class IndependentSourceBoundaryTests(unittest.TestCase):
         self.assertIn('$process.Kill($true)', text)
         self.assertNotIn('Stop-Process -Name', text)
 
+    def test_silence_control_is_distinct_full_window_and_fail_closed(self):
+        control = (ROOT / "native/virtual-driver/NoSourceControlCheck.ps1").read_text()
+        runner = RUNNER.read_text()
+        fixture = (ROOT / "native/virtual-driver/test_NoSourceControlCheck.ps1").read_text()
+        for fragment in ("EXTERNAL_SOURCE_READY", "Physical LAB proof:",
+                         "FAIL: no matching lab tone reached", "matched440",
+                         "virtual", "physical", "stimulus_launched"):
+            self.assertIn(fragment, control)
+        self.assertIn("if ($ExpectNoSource)", runner)
+        self.assertIn("Test-LouderMeNoSourceControl", runner)
+        self.assertIn("return", runner)
+        self.assertIn("Assert-Rejected", fixture)
+        self.assertIn("11 adversarial", fixture)
+
     def test_disposable_vm_and_explicit_manual_audio_proof_mandatory(self):
         text = LAB.read_text()
         self.assertIn('probe_independent_app_route.ps1', text)
+        self.assertIn('-ExpectNoSource -ControlPhase before', text)
+        self.assertIn('-ExpectNoSource -ControlPhase after', text)
+        self.assertIn('no-source-control-before.json', text)
+        self.assertIn('no-source-control-after.json', text)
         self.assertIn('IndependentToneDll', text)
         self.assertIn('IndependentGainCheck.ps1', text)
         self.assertIn('Test-LouderMeIndependentGain -EvidenceDir $evidence', text)

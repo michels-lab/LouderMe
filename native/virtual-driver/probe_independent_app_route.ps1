@@ -57,8 +57,8 @@ function Get-LabIdHash([string]$id) {
 }
 $proofIdentity = [ordered]@{
   session_id = $SessionId.ToLowerInvariant()
-  virtual_endpoint_sha256 = Get-LabIdHash $VirtualEndpointId
-  physical_endpoint_sha256 = Get-LabIdHash $PhysicalEndpointId
+  virtual_endpoint_sha256 = (Get-LabIdHash $VirtualEndpointId)
+  physical_endpoint_sha256 = (Get-LabIdHash $PhysicalEndpointId)
   bridge_binary_sha256 = (Get-FileHash -LiteralPath $BridgeDll -Algorithm SHA256).Hash.ToLowerInvariant()
   source_binary_sha256 = (Get-FileHash -LiteralPath $IndependentToneDll -Algorithm SHA256).Hash.ToLowerInvariant()
 }

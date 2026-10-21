@@ -21,6 +21,7 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
+. (Join-Path $PSScriptRoot 'LabEvidenceDirectory.ps1')
 
 function Make-Process([string]$dll, [string[]]$arguments) {
   $start = [Diagnostics.ProcessStartInfo]::new('dotnet')
@@ -66,8 +67,17 @@ if ($proofIdentity.virtual_endpoint_sha256 -eq $proofIdentity.physical_endpoint_
   throw 'Proof cannot use the same virtual and physical render endpoint.'
 }
 $folder = [IO.Path]::GetFullPath($EvidenceDir)
-if (-not (Test-Path $folder)) {
-  [void](New-Item -ItemType Directory -Path $folder -Force)
+if (-not (Test-Path -LiteralPath (Join-Path $folder 'lab-session.lock') -PathType Leaf) -or
+    (Get-Content -LiteralPath (Join-Path $folder 'lab-session.lock') -Raw).Trim() -cne $SessionId.ToLowerInvariant()) {
+  throw 'Independent LAB probe must use a fresh, session-locked folder prepared by the VM runner.'
+}
+$recordFile = if ($ExpectNoSource) {
+  Join-Path $folder "no-source-control-$ControlPhase.json"
+} else {
+  Join-Path $folder "independent-source-result-$BoostPercent.json"
+}
+if (Test-Path -LiteralPath $recordFile) {
+  throw "Refusing to overwrite stale LAB phase evidence: $recordFile"
 }
 $bridge = $null
 $source = $null
@@ -112,8 +122,7 @@ try {
     if (Test-Path -LiteralPath $file) {
       throw 'Stale no-source control evidence exists; choose a fresh evidence directory.'
     }
-    $negative | ConvertTo-Json -Depth 3 |
-      Out-File -LiteralPath $file -Encoding utf8
+    Write-LouderMeLabJsonOnce -Path $file -Record $negative
     Write-Host "PASS: $ControlPhase negative control proved virtual and physical listeners reject missing source PCM."
     return
   }
@@ -141,7 +150,7 @@ try {
   foreach ($endpoint in @($VirtualEndpointId, $PhysicalEndpointId)) {
     $all = $all.Replace($endpoint, '[REDACTED_ENDPOINT_ID]')
   }
-  $all | Out-File -LiteralPath (Join-Path $folder "independent-source-route-$BoostPercent.log") -Encoding utf8
+  Write-LouderMeLabTextOnce -Path (Join-Path $folder "independent-source-route-$BoostPercent.log") -Content $all
   if ($bridge.ExitCode -ne 0 -or
       $all -notmatch 'PASS: LAB independent source Windows process') {
     throw "External application PCM failed route gate: bridge exit=$($bridge.ExitCode)."
@@ -169,8 +178,7 @@ try {
     general_third_party_audio_proven = $false
     acoustic_spl_proven = $false
   }
-  $result | ConvertTo-Json -Depth 3 |
-    Out-File -LiteralPath (Join-Path $folder "independent-source-result-$BoostPercent.json") -Encoding utf8
+  Write-LouderMeLabJsonOnce -Path (Join-Path $folder "independent-source-result-$BoostPercent.json") -Record $result
   Write-Host 'PASS: independent Windows app process -> real installed virtual render -> own DSP -> physical WASAPI monitor.'
   Write-Warning 'NOT proof of production driver signing, universal third-party audio or acoustic SPL.'
 } finally {

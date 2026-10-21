@@ -18,8 +18,8 @@ En **michels-lab/LouderMe**:
 - Antes de empezar, comprobar HEAD, estado, PRs, claims, riesgos P0, archivos de propiedad y CI. Un trabajo bloqueado NO se considera completo; solo se aparca de manera reversible y documentada.
 - Elegir un bloque diferente ya identificado por usuario o backlog existente, con límites de archivos y pruebas claros. Si hay colisión, cambiar de bloque.
 - Ejecutar código y pruebas aplicables, registrar commit/resultado exacto, actualizar bitácora y master cuando corresponda; conservar estado y datos históricos.
-- No tomar GRANADA como permiso para publicar versiones, alterar credenciales, borrar datos de producción, hacer merges sin QA ni ejecutar acciones inciertas sobre cuentas de Instagram.
-- En repos solo de distribución o investigación sin interfaz, adaptar GRANADA a tareas de documentación, QA, herramientas científicas o releases expresamente autorizados; no inventar una app.
+- **Orden del propietario (2026-10-21): GRANADA SÍ puede publicar el siguiente release DEFINITIVO y ESTABLE de la app objetivo, sin pedir nueva autorización, cuando pasen todos los gates del producto** (CI exacto, integración, instalación/runtime real, pruebas científicas/cuenta cuando aplique, firma, SHA-256, versión, updater y distribución multiplataforma). No RC/beta/prerelease, otro producto, merge sin QA, alteración de credenciales/datos ni acciones inciertas en Instagram.
+- En repos de distribución GRANADA solo puede publicar el release final **del producto origen objetivo** después de validar sus gates y la procedencia de todos los assets. En repos de investigación sin software distribuible, GRANADA no debe inventar una app ni un release. Mantener QA/herramientas/manuales como tareas independientes.
 
 **Estados diferentes:** pendiente → implementado → pruebas superadas → integrado → publicado → validado por el usuario. No presentar una fase como otra.
 
@@ -30,7 +30,7 @@ En **michels-lab/LouderMe**:
 **Este repositorio hereda inmediatamente la escala obligatoria** del estándar maestro [GRANADA_CONTINUOUS_BLOCK_PROTOCOL.md](https://github.com/michels-lab/Michel-Software-Standards/blob/main/standards/GRANADA_CONTINUOUS_BLOCK_PROTOCOL.md#escala-obligatoria-desde-2026-10-20--granada-grande).
 
 - Priorizar **un paquete amplio y funcional**, normalmente 3 entregables sustanciales relacionados (flujo completo, casos límite, persistencia o seguridad, pruebas de regresión y evidencia), no un mini-PR, una prueba suelta o solamente documentación. Un único P0 grande puede bastar; no inventar relleno.
-- Revisar issues/PR/HEAD/claims antes de actuar; **la ambición no permite pisar trabajo de otros**, mezclar estados de usuario, arriesgar datos, reactivar plataformas pausadas ni publicar sin autorización. Sustituir subpartes bloqueadas por otras independientes.
+- Revisar issues/PR/HEAD/claims antes de actuar; **la ambición no permite pisar trabajo de otros**, mezclar estados de usuario, arriesgar datos, reactivar plataformas pausadas ni publicar sin autorización (incluida la nueva autorización condicional GRANADA del producto objetivo tras aprobar todos los gates). Sustituir subpartes bloqueadas por otras independientes.
 - Cada bloque debe dejar **código/capacidad real y QA ejecutada cuando sea posible**, con estado A/B/C, SHAs, resultados y próximos gates. Un plan o una bitácora **no es un bloque funcional completado**.
-- En repositorios de distribución, GRANADA GRANDE se traduce a paquetes de controles de integridad/procedencia/documentación o pruebas no destructivas; nunca crear versiones ni releases sin orden expresa.
+- En repositorios de distribución, GRANADA GRANDE se traduce a paquetes de controles de integridad/procedencia/documentación o pruebas no destructivas; solo publicar una versión/release final con GRANADA cuando se trate del producto objetivo, todos los gates pasen y la distribución oficial esté verificada; nunca RC ni publicación autónoma.
 - Mantener las bitácoras locales, los límites de cada producto y su punto de reentrada; al siguiente “operación granada”, empezar con el paquete sustancial seguro de mayor impacto.

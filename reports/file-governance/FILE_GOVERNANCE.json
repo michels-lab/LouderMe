@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 200,
-  "classified_files_total": 196,
-  "docs_content_inspected": 48,
+  "tracked_files_total": 203,
+  "classified_files_total": 199,
+  "docs_content_inspected": 49,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,20 +12,22 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 40,
+    "document": 41,
     "index": 6,
-    "license": 2,
-    "source": 75,
-    "test": 14,
-    "unknown": 3,
+    "installer_metadata": 1,
+    "license": 1,
+    "source": 76,
+    "test": 15,
+    "text_metadata": 2,
+    "unknown": 1,
     "workflow": 9
   },
   "finding_counts": {
-    "UNKNOWN_PURPOSE": 3
+    "UNKNOWN_PURPOSE": 1
   },
-  "finding_total": 3,
-  "inventory_fingerprint": "91812311a475efe2ec7002c895bc1c93fd579ef9ff2da86df399260048ce0c86",
-  "evidence_fingerprint": "09b92732ea12603d7788c985aa8e0e60c5bc7d3258286fc6815491de137bd25c",
+  "finding_total": 1,
+  "inventory_fingerprint": "89af5285b601b434c0b7a710df492cc751e3260df194ee6cdd9bf681b42b5eb6",
+  "evidence_fingerprint": "cdda1598699f4c905f81830d83a6e4d9b248357cce864ac09d8b8ea77d2027c9",
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/chatgpt-task.yml",
@@ -95,7 +97,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "160e03eb6dcf69a2a83714516fb91c3d77c9c464"
+      "blob": "bbc7c0a0c789bc48bd7ef8fb969cdde3fbbec876"
     },
     {
       "path": ".github/workflows/native-physical-lab-manual.yml",
@@ -221,7 +223,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "6a37f8aaed23000c101b767d144cd5a632f00945"
+      "blob": "7119bd307196921a319d22c4921a9a44182658fc"
     },
     {
       "path": "README.md",
@@ -624,9 +626,9 @@
     },
     {
       "path": "desktop/LICENSE.txt",
-      "role": "license",
-      "purpose": "licensing/notice",
-      "certainty": "rule",
+      "role": "text_metadata",
+      "purpose": "plain-text source/release/installer metadata; specific purpose inferred",
+      "certainty": "inferred",
       "blob": "0c78eafec277a8f3e2cada23623a541daa3b6586"
     },
     {
@@ -652,9 +654,9 @@
     },
     {
       "path": "desktop/installer/TaskbarPinning.txt",
-      "role": "unknown",
-      "purpose": "function unknown: owner classification required",
-      "certainty": "unknown",
+      "role": "installer_metadata",
+      "purpose": "Windows taskbar installer configuration",
+      "certainty": "inferred",
       "blob": "bb601b7d95ed2f656b0db7b4afe35d54c537be68"
     },
     {
@@ -1092,6 +1094,13 @@
       "blob": "e1145a56c9f5b5091a6e2a2807361d5e73f77124"
     },
     {
+      "path": "docs/product-reviews/2026-10-21-native-windows-audio-evidence.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "d6073b9a9866128aefae9b36f184697bcea28ca9"
+    },
+    {
       "path": "docs/product-reviews/README.md",
       "role": "index",
       "purpose": "navigation/onboarding",
@@ -1114,9 +1123,9 @@
     },
     {
       "path": "native/audio-engine/CMakeLists.txt",
-      "role": "unknown",
-      "purpose": "function unknown: owner classification required",
-      "certainty": "unknown",
+      "role": "text_metadata",
+      "purpose": "plain-text source/release/installer metadata; specific purpose inferred",
+      "certainty": "inferred",
       "blob": "5564e0783c026b061461e09679e8dc47d92bfe0d"
     },
     {
@@ -1176,11 +1185,18 @@
       "blob": "7586ead809d45665b6ec7786df20e8628c2b6c79"
     },
     {
+      "path": "native/virtual-driver/IndependentGainCheck.ps1",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "787cdb12f47847d67479fc051c02c91180d5dd0e"
+    },
+    {
       "path": "native/virtual-driver/README.md",
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "b9b60434d28149631209eecc8c40f8c83260d741"
+      "blob": "42da496cc932a4c71e12f842e213ff40e0d9f82c"
     },
     {
       "path": "native/virtual-driver/prepare_sysvad.py",
@@ -1201,14 +1217,21 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "6aca1d90537a419779df990c2036195473451d9d"
+      "blob": "b105de4a18dd172c3a22416ed09c28f050dc88b2"
+    },
+    {
+      "path": "native/virtual-driver/test_IndependentGainCheck.ps1",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "b51886b943be500d392d341a58d7854074f9bbd9"
     },
     {
       "path": "native/virtual-driver/tests/test_independent_source_contract.py",
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "8ff011ad4c2f3af930f0041591deebb89e092f2a"
+      "blob": "b0218ece5e02c909018a4e6b043887ad9a7b3000"
     },
     {
       "path": "native/virtual-driver/tests/test_prepare_sysvad.py",
@@ -1341,7 +1364,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "5233e1e0466ce9bf333e24177d66e21b7d8fef84"
+      "blob": "50d28a76044b68d08461f77dca182750eaae8a92"
     },
     {
       "path": "tools/run_android_signed_visual_ci.sh",
@@ -1362,7 +1385,7 @@
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "de43a587db0cf63a8dbe1045e00a81704b4a0d75"
+      "blob": "bbec7d5a91fc96ac4915b703dc31ea7c075475f3"
     },
     {
       "path": "tools/tests/test_android_developer_harness.py",
@@ -1401,24 +1424,6 @@
     }
   ],
   "findings": [
-    {
-      "id": "802201151e86f352",
-      "code": "UNKNOWN_PURPOSE",
-      "severity": "review",
-      "path": "desktop/installer/TaskbarPinning.txt",
-      "observation": "No reliable purpose category from path",
-      "recommendation": "Declare role after reviewing usage",
-      "state": "REVIEW_REQUIRED"
-    },
-    {
-      "id": "dcbb59ac3c172b89",
-      "code": "UNKNOWN_PURPOSE",
-      "severity": "review",
-      "path": "native/audio-engine/CMakeLists.txt",
-      "observation": "No reliable purpose category from path",
-      "recommendation": "Declare role after reviewing usage",
-      "state": "REVIEW_REQUIRED"
-    },
     {
       "id": "e27ff08885a0e8fc",
       "code": "UNKNOWN_PURPOSE",

@@ -5,11 +5,9 @@ on:
     - cron: '35 8 * * 2'
   push:
     branches: [main]
-    paths:
-      - 'tools/repository_file_auditor.py'
-      - 'tools/test_repository_file_auditor.py'
-      - '.michelslab/file-audit-policy.json'
-      - '.github/workflows/file-governance-audit.yml'
+    paths-ignore:
+      - 'reports/file-governance/**'
+      - 'docs/audits/FILE_GOVERNANCE_LOG.md'
 permissions:
   contents: write
 concurrency:

@@ -10,7 +10,7 @@ LouderMe is an Android audio utility by **Michel's Lab** for increasing quiet me
 
 ## Current public release bundle
 
-**Android v0.1.12 + Windows Desktop v0.1.12** (current verified public bundle). Both source releases, final signed Android APK render gate, Windows installer launch checks, and dedicated Michel's Lab unified public publisher passed on 2026-10-12.
+**Android v0.1.12 + Windows Desktop v0.1.13** (latest verified public unified bundle; GitHub release metadata checked 2026-10-21). Both source releases, final signed Android APK render gate, Windows installer launch checks, and dedicated Michel's Lab unified public publisher passed on 2026-10-12.
 
 Michel's Lab publishes the current stable Android and Windows binaries together on one public GitHub release page. Platform versions remain explicit when their release lines differ.
 
@@ -72,7 +72,7 @@ near-black workspace, layered blue-black surfaces, cyan/blue operational accents
 - Studio: **Michel's Lab**
 - Android package: `com.michelslab.louderme`
 - Current verified public Android version: `0.1.12` (versionCode `13`)
-- Current verified public Windows Desktop version: `0.1.12`
+- Current verified public Windows Desktop version: `0.1.13`
 - Developer: Michel Duarte / Michel Armando Duarte Flores
 - License: Proprietary — All Rights Reserved
 

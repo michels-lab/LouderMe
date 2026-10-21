@@ -64,8 +64,10 @@ def identify(path, custom):
     # OpenFOAM is extensionless by design: classify *structure*, not unknown files.
     # This is an inferred functional group, NEVER a solver verification.
     parts=p.split("/")
-    if (parts[0] in {"cases","case"} or parts[0].startswith("cases_")) and len(parts)>=3:
-        below=parts[2:]
+    if (parts[0] in {"cases","case","cleanproy","doctor_original","freesurface"} or parts[0].startswith("cases_")) and len(parts)>=2:
+        below=parts[1:] if parts[0]=="cleanproy" else parts[2:]
+        if not below:
+            return "simulation_case_file","OpenFOAM case support artifact","inferred"
         if below[0] in {"0","constant","system"}:
             return "simulation_input","OpenFOAM case field/dictionary input (content unvalidated)","inferred"
         if "postprocessing" in below or any(b.replace(".", "", 1).isdigit() for b in below):

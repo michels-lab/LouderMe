@@ -1,12 +1,16 @@
 # LouderMe
 
+## Operación Granada — auditoría de aplicación y plugins (2026-10-21)
+
+[Ver auditoría y bitácora propias de este producto](docs/GRANADA_APP_PLUGIN_AUDIT_2026-10-21.md): evidencia de GitHub Actions, conectores ChatGPT aplicables, servicios existentes, costo cero adicional por defecto, pendientes reales y separación estricta de los demás productos. La documentación no prueba QA físico ni publica una versión.
+
 **Make everything louder.**
 
 LouderMe is an Android audio utility by **Michel's Lab** for increasing quiet media output, shaping sound with a real equalizer, and exposing the state of the Android audio engine instead of hiding it behind fake controls.
 
 ## Current public release bundle
 
-**Android v0.1.12 + Windows Desktop v0.1.12** (current verified public bundle). Both source releases, final signed Android APK render gate, Windows installer launch checks, and dedicated Michel's Lab unified public publisher passed on 2026-10-12.
+**Android v0.1.12 + Windows Desktop v0.1.13** (latest verified public unified bundle; GitHub release metadata checked 2026-10-21). Both source releases, final signed Android APK render gate, Windows installer launch checks, and dedicated Michel's Lab unified public publisher passed on 2026-10-12.
 
 Michel's Lab publishes the current stable Android and Windows binaries together on one public GitHub release page. Platform versions remain explicit when their release lines differ.
 
@@ -68,7 +72,7 @@ near-black workspace, layered blue-black surfaces, cyan/blue operational accents
 - Studio: **Michel's Lab**
 - Android package: `com.michelslab.louderme`
 - Current verified public Android version: `0.1.12` (versionCode `13`)
-- Current verified public Windows Desktop version: `0.1.12`
+- Current verified public Windows Desktop version: `0.1.13`
 - Developer: Michel Duarte / Michel Armando Duarte Flores
 - License: Proprietary — All Rights Reserved
 
@@ -95,7 +99,7 @@ When one platform is updated, the public publisher carries forward the validated
 
 ## Verified October 12, 2026 release
 
-- [Unified Android + Windows v0.1.12 download](https://github.com/michels-lab/LouderME-Releases/releases/tag/louderme-android-v0.1.12-desktop-v0.1.12) — six release/checksum files, Android Direct and Windows updater manifests both now 0.1.12.
+- [Latest unified public Android v0.1.12 + Windows v0.1.13 download](https://github.com/michels-lab/LouderME-Releases/releases/tag/louderme-android-v0.1.12-desktop-v0.1.13) — six APK/Setup/Portable and checksum assets verified by GitHub release metadata; runtime tests remain separate.
 - [Release-publisher CI](https://github.com/michels-lab/LouderME-Releases/actions/runs/38231448218) passed; source commit for both tags: `ed0bd6da54c022ac05eba0b3760361f4bce056ff`.
 - Android Direct APK SHA-256: `0947e7f6b21f4c5beb10ebebe914d3420586504aa0bac7de42d1a565625a68a7`.
 - Windows Setup SHA-256: `9bc5def136fc35d01317e9892d599f6aefe5701758fafbf20941c0b459707501`.

@@ -99,7 +99,7 @@ When one platform is updated, the public publisher carries forward the validated
 
 ## Verified October 12, 2026 release
 
-- [Unified Android + Windows v0.1.12 download](https://github.com/michels-lab/LouderME-Releases/releases/tag/louderme-android-v0.1.12-desktop-v0.1.12) — six release/checksum files, Android Direct and Windows updater manifests both now 0.1.12.
+- [Latest unified public Android v0.1.12 + Windows v0.1.13 download](https://github.com/michels-lab/LouderME-Releases/releases/tag/louderme-android-v0.1.12-desktop-v0.1.13) — six APK/Setup/Portable and checksum assets verified by GitHub release metadata; runtime tests remain separate.
 - [Release-publisher CI](https://github.com/michels-lab/LouderME-Releases/actions/runs/38231448218) passed; source commit for both tags: `ed0bd6da54c022ac05eba0b3760361f4bce056ff`.
 - Android Direct APK SHA-256: `0947e7f6b21f4c5beb10ebebe914d3420586504aa0bac7de42d1a565625a68a7`.
 - Windows Setup SHA-256: `9bc5def136fc35d01317e9892d599f6aefe5701758fafbf20941c0b459707501`.

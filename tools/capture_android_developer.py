@@ -116,7 +116,7 @@ def open_inspector(*, attempts: int = 3, panel_wait_s: float = 7.0) -> ET.Elemen
 def installed_developer_version_code() -> int:
     # Read the *actual installed* package, not the APK filename or build input.
     output = adb("shell", "dumpsys", "package", PACKAGE)
-    match = re.search(r"\\bversionCode=(\\d+)\\b", output)
+    match = re.search(r"\bversionCode=(\d+)\b", output)
     if match is None:
         raise RuntimeError("Android did not expose installed Developer package versionCode")
     return int(match.group(1))

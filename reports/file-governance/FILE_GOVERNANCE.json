@@ -25,7 +25,7 @@
     "POTENTIAL_UNLOGGED_CHANGES": 1
   },
   "finding_total": 1,
-  "inventory_fingerprint": "af82747922d782dc847ab733a4860655d58a553101709406627097162ce25485",
+  "inventory_fingerprint": "5db768fb023850d7c22080a3aee16086e1fe5759f32ecc54077d28e0f8252e78",
   "evidence_fingerprint": "032d19a6732369f14ecac0cef30c8a48ba1c8530a4fc3a461f99ac9ac809f5b2",
   "files": [
     {
@@ -61,7 +61,7 @@
       "role": "document",
       "purpose": "manual/decision/report/historical note",
       "certainty": "inferred",
-      "blob": "7940f82b07eacc6fb0331cd8366e2baa3c0de3e9"
+      "blob": "b3c75a0dc4e27f20abc3017965cf44b39194e902"
     },
     {
       "path": ".github/workflows/android-ci-release.yml",
@@ -166,7 +166,7 @@
       "role": "agent",
       "purpose": "assistant role/instructions",
       "certainty": "rule",
-      "blob": "e2194612f641fd0208c08894619c59a6b314e8a4"
+      "blob": "51d8b2f77df8d7f569826022bb98408f3e543690"
     },
     {
       "path": ".michelslab/agents/intelligence-architect.md",
@@ -201,7 +201,7 @@
       "role": "agent",
       "purpose": "assistant role/instructions",
       "certainty": "rule",
-      "blob": "a68b5503baf5c8b7494d89f57bc10d3d43a24f7a"
+      "blob": "fa011a00b37f1ea9de381c5fb7f7a0fa345a0b66"
     },
     {
       "path": "CHANGELOG.md",
@@ -1384,7 +1384,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "de1273570527156298abef4e688d148b971b92b8"
+      "blob": "3add7ef6d08802698b9bdb86b50dab2260cde256"
     },
     {
       "path": "tools/run_android_signed_visual_ci.sh",
@@ -1412,7 +1412,7 @@
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "bc74f6ac9fa0a9d322d1e92fa94a64b35b082177"
+      "blob": "dfbbfe2e18f212be20f53dd33718d8a8b1389ca2"
     },
     {
       "path": "tools/tests/test_android_developer_harness.py",
@@ -1464,7 +1464,7 @@
   "untracked_audited": false,
   "ignored_audited": false,
   "binary_contents_audited": false,
-  "scientific_validation": "NOT_CHECKED",
+  "product_runtime_validation": "NOT_CHECKED",
   "app_installed_acceptance": "NOT_CHECKED",
   "deletion_approved": false
 }

@@ -1,6 +1,6 @@
 # File steward: repository file audit
 
-All tracked files classified; Markdown/text docs inspected with size cap. Binary/research-content validity and untracked files not assessed.
+All tracked files classified; Markdown/text docs inspected with size cap. Binary/media-content validity and untracked files not assessed.
 No file is auto-deleted or declared unused.
 
 ## Coverage

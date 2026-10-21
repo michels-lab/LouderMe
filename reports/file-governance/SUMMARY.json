@@ -25,12 +25,12 @@
     "POTENTIAL_UNLOGGED_CHANGES": 1
   },
   "finding_total": 1,
-  "inventory_fingerprint": "af82747922d782dc847ab733a4860655d58a553101709406627097162ce25485",
+  "inventory_fingerprint": "5db768fb023850d7c22080a3aee16086e1fe5759f32ecc54077d28e0f8252e78",
   "evidence_fingerprint": "032d19a6732369f14ecac0cef30c8a48ba1c8530a4fc3a461f99ac9ac809f5b2",
   "untracked_audited": false,
   "ignored_audited": false,
   "binary_contents_audited": false,
-  "scientific_validation": "NOT_CHECKED",
+  "product_runtime_validation": "NOT_CHECKED",
   "app_installed_acceptance": "NOT_CHECKED",
   "deletion_approved": false
 }

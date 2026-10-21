@@ -1,0 +1,27 @@
+name: File Steward - product domain PR validation
+on:
+  pull_request:
+    paths:
+      - 'tools/repository_file_auditor.py'
+      - 'tools/test_repository_file_auditor.py'
+      - '.michelslab/file-audit-policy.json'
+      - '.michelslab/agents/file-steward.md'
+      - '.github/workflows/file-steward-pr-validation.yml'
+permissions:
+  contents: read
+jobs:
+  verify-domain:
+    name: Offline File Steward domain and tracked-tree contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test genuine app/release roles and reject foreign scientific cases
+        run: python3 tools/test_repository_file_auditor.py
+      - name: Audit tracked files without changing reports or the repository
+        run: python3 tools/repository_file_auditor.py --repo . --no-write

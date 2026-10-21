@@ -1,0 +1,212 @@
+name: LouderMe Developer Android signed QA - manual, no stable release
+
+on:
+  workflow_dispatch:
+    inputs:
+      developer_version_code:
+        type: number
+        required: true
+        description: 'Developer-only versionCode 10001..2099999999; must increase for real updates'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: louderme-developer-manual-signing
+  cancel-in-progress: false
+
+jobs:
+  sign:
+    name: Build and sign isolated Developer APKs with independent pinned key
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && github.event.repository.private == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      DEV_CODE: ${{ inputs.developer_version_code }}
+      CERT_PIN: ${{ vars.LOUDERME_DEVELOPER_CERT_SHA256 }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - name: Set up SDK and strict Developer signing prerequisites
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$DEV_CODE" -ge 10001
+          test "$DEV_CODE" -le 2099999999
+          [[ "$CERT_PIN" =~ ^[0-9a-fA-F]{64}$ ]] || {
+            echo "::error::Owner must pin LOUDERME_DEVELOPER_CERT_SHA256 in GitHub Variables."
+            exit 1
+          }
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+            "platforms;android-36" "build-tools;36.0.0"
+      - name: Build two Developer versions and disposable public co-install QA package
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p stage
+          PREV_CODE="$((DEV_CODE-1))"
+          gradle :app:assembleDeveloperRelease -PdeveloperVersionCode="$PREV_CODE" --stacktrace
+          cp app/build/outputs/apk/developer/release/app-developer-release-unsigned.apk \
+            stage/previous-unsigned.apk
+          gradle :app:assembleDeveloperRelease :app:assembleSideloadDebug \
+            -PdeveloperVersionCode="$DEV_CODE" --rerun-tasks --stacktrace
+          cp app/build/outputs/apk/developer/release/app-developer-release-unsigned.apk \
+            stage/current-unsigned.apk
+          cp app/build/outputs/apk/sideload/debug/app-sideload-debug.apk stage/public-debug.apk
+          AAPT="$ANDROID_HOME/build-tools/36.0.0/aapt"
+          "$AAPT" dump badging stage/previous-unsigned.apk > stage/previous-badging.txt
+          "$AAPT" dump badging stage/current-unsigned.apk > stage/current-badging.txt
+          grep -Fq "package: name='com.michelslab.louderme.developer' versionCode='$PREV_CODE'" stage/previous-badging.txt
+          grep -Fq "package: name='com.michelslab.louderme.developer' versionCode='$DEV_CODE'" stage/current-badging.txt
+          grep -Fq "package: name='com.michelslab.louderme' versionCode='13'" \
+            <("$AAPT" dump badging stage/public-debug.apk)
+          if "$AAPT" dump permissions stage/current-unsigned.apk |
+            grep -q 'android.permission.REQUEST_INSTALL_PACKAGES'; then
+            echo "::error::Developer must not install third-party packages."; exit 1
+          fi
+      - name: Sign both APKs using ONLY the private Developer keystore and pinned certificate
+        shell: bash
+        env:
+          DEV_B64: ${{ secrets.LOUDERME_DEVELOPER_KEYSTORE_BASE64 }}
+          DEV_STORE_PASS: ${{ secrets.LOUDERME_DEVELOPER_STORE_PASSWORD }}
+          DEV_KEY_ALIAS: ${{ secrets.LOUDERME_DEVELOPER_KEY_ALIAS }}
+          DEV_KEY_PASS: ${{ secrets.LOUDERME_DEVELOPER_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          umask 077
+          mkdir -p signing
+          trap 'rm -f signing/developer.jks' EXIT
+          if [ -z "$DEV_B64" ] || [ -z "$DEV_STORE_PASS" ] || \
+             [ -z "$DEV_KEY_ALIAS" ] || [ -z "$DEV_KEY_PASS" ]; then
+            echo "::error::All four dedicated LOUDERME_DEVELOPER_* Secrets required."; exit 1
+          fi
+          echo "::add-mask::$DEV_STORE_PASS"
+          echo "::add-mask::$DEV_KEY_ALIAS"
+          echo "::add-mask::$DEV_KEY_PASS"
+          printf '%s' "$DEV_B64" | tr -d '\r\n' | base64 --decode > signing/developer.jks
+          if ! keytool -list -keystore signing/developer.jks \
+            -storepass "$DEV_STORE_PASS" -alias "$DEV_KEY_ALIAS" >/dev/null 2>&1; then
+            echo "::error::Developer keystore/alias invalid."; exit 1
+          fi
+          actual="$(keytool -exportcert -keystore signing/developer.jks \
+            -storepass "$DEV_STORE_PASS" -alias "$DEV_KEY_ALIAS" |
+            openssl dgst -sha256 | awk '{print $NF}')"
+          pin="$(printf '%s' "$CERT_PIN" | tr '[:upper:]' '[:lower:]')"
+          if [ "$actual" != "$pin" ]; then
+            echo "::error::Developer signer changed; refusing loss of owner annotations."; exit 1
+          fi
+          for v in previous current; do
+            "$ANDROID_HOME/build-tools/36.0.0/zipalign" -p -f 4 \
+              "stage/$v-unsigned.apk" "stage/$v-aligned.apk"
+            "$ANDROID_HOME/build-tools/36.0.0/apksigner" sign \
+              --ks signing/developer.jks --ks-key-alias "$DEV_KEY_ALIAS" \
+              --ks-pass env:DEV_STORE_PASS --key-pass env:DEV_KEY_PASS \
+              --out "stage/LouderMe-Developer-$v.apk" "stage/$v-aligned.apk"
+            "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --print-certs \
+              "stage/LouderMe-Developer-$v.apk" > "stage/$v-cert.txt"
+            signer="$(grep -m1 'Signer #1 certificate SHA-256 digest:' "stage/$v-cert.txt" |
+              awk '{print $NF}')"
+            test "$signer" = "$pin"
+          done
+          sha256sum stage/LouderMe-Developer-current.apk |
+            sed 's@stage/@@' > stage/LouderMe-Developer-current.apk.sha256
+          printf '%s\n' "$pin" > stage/developer-certificate-sha256.txt
+          rm -f stage/*unsigned.apk stage/*aligned.apk stage/*cert.txt stage/*badging.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LouderMe-Developer-UNVERIFIED-${{ github.sha }}-${{ inputs.developer_version_code }}
+          path: stage/
+          retention-days: 3
+          if-no-files-found: error
+
+  verify_installed_upgrade:
+    name: Install, annotate, upgrade without uninstall, audit final signed APK
+    needs: sign
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check Developer emulator QA harness
+        run: |
+          python3 -m py_compile tools/capture_android_developer.py tools/capture_android_visual.py
+          python3 -m unittest discover -s tools/tests -p 'test_android_developer_harness.py' -v
+      - uses: actions/download-artifact@v4
+        with:
+          name: LouderMe-Developer-UNVERIFIED-${{ github.sha }}-${{ inputs.developer_version_code }}
+          path: stage/
+      - name: Verify exact signed current APK checksum before emulation
+        run: cd stage && sha256sum --check LouderMe-Developer-current.apk.sha256
+      - name: Enable emulator acceleration
+        run: |
+          if [ -e /dev/kvm ]; then sudo chmod 666 /dev/kvm; fi
+      - name: Verify signed Developer notes survive REAL in-place Android upgrade
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_6
+          script: python3 tools/capture_android_developer.py --apk stage/LouderMe-Developer-previous.apk --upgrade-apk stage/LouderMe-Developer-current.apk --public-apk stage/public-debug.apk --source-sha "$GITHUB_SHA" --out artifacts/developer-signed-qa
+      - name: Require hash-bound real-upgrade, note persistence and export proof
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          m=json.loads(Path('artifacts/developer-signed-qa/manifest.json').read_text())
+          old=Path('stage/LouderMe-Developer-previous.apk')
+          new=Path('stage/LouderMe-Developer-current.apk')
+          assert m['source_commit'] == os.environ['GITHUB_SHA']
+          assert m['actual_inplace_upgrade'] is True
+          assert m['developer_package'] == 'com.michelslab.louderme.developer'
+          assert m['coinstalled_public_package'] == 'com.michelslab.louderme'
+          assert m['initial_apk_sha256'] == hashlib.sha256(old.read_bytes()).hexdigest()
+          assert m['apk_sha256'] == hashlib.sha256(new.read_bytes()).hexdigest()
+          screens={s['screen'] for s in m['screenshots']}
+          assert {'developer-note-after-signed-upgrade','developer-reviewed-export'}.issubset(screens)
+          assert any('upgraded in place' in item for item in m['verified_workflow'])
+          print('PASS: real signed Developer in-place upgrade preserved owner annotations.')
+          PY
+      - name: Retain real installed pixels or failed-run diagnostic pixels
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LouderMe-Developer-Upgrade-Proof-${{ github.sha }}
+          path: artifacts/developer-signed-qa/
+          retention-days: 7
+          if-no-files-found: warn
+
+  verified_candidate:
+    name: Make signed Developer candidate available only after upgrade QA PASS
+    needs: [sign, verify_installed_upgrade]
+    if: needs.verify_installed_upgrade.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: LouderMe-Developer-UNVERIFIED-${{ github.sha }}-${{ inputs.developer_version_code }}
+          path: stage/
+      - name: Recheck output checksum
+        run: cd stage && sha256sum --check LouderMe-Developer-current.apk.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LouderMe-Developer-QA-PASSED-${{ github.sha }}-${{ inputs.developer_version_code }}
+          path: |
+            stage/LouderMe-Developer-current.apk
+            stage/LouderMe-Developer-current.apk.sha256
+            stage/developer-certificate-sha256.txt
+          retention-days: 7
+          if-no-files-found: error

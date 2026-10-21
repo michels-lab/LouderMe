@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 208,
-  "classified_files_total": 204,
-  "docs_content_inspected": 50,
+  "tracked_files_total": 209,
+  "classified_files_total": 205,
+  "docs_content_inspected": 51,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,7 +12,7 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 42,
+    "document": 43,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
@@ -25,8 +25,8 @@
     "POTENTIAL_UNLOGGED_CHANGES": 1
   },
   "finding_total": 1,
-  "inventory_fingerprint": "cafe891baed08e4871fd157bc98550fc59f901b8c3fc1d4a607b9b7d2e55cd07",
-  "evidence_fingerprint": "032d19a6732369f14ecac0cef30c8a48ba1c8530a4fc3a461f99ac9ac809f5b2",
+  "inventory_fingerprint": "4ab4a68cdca289572abbb1ea05051f5c6a3836919db3fbfa82632206a6cf659c",
+  "evidence_fingerprint": "9e45cfc06a8bc0c0b7701214daef80725e8dd02e165407baeffdd68777c9f9b2",
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/chatgpt-task.yml",
@@ -1107,6 +1107,13 @@
       "blob": "e1145a56c9f5b5091a6e2a2807361d5e73f77124"
     },
     {
+      "path": "docs/audits/GRANADA_2026-10-21_NATIVE_SESSION_EVIDENCE.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "354f37710467a30f6578a18b055d847d73d5bb0f"
+    },
+    {
       "path": "docs/product-reviews/2026-10-21-native-windows-audio-evidence.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -1202,7 +1209,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "787cdb12f47847d67479fc051c02c91180d5dd0e"
+      "blob": "a2a7d3be7b59a48b50b6156b115c3496de40f4fe"
     },
     {
       "path": "native/virtual-driver/NoSourceControlCheck.ps1",
@@ -1216,7 +1223,7 @@
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "210c8b09d8a06b0d1e84d35ed7540c8d74cfc8c5"
+      "blob": "1ea01fa59e43aa628def66d71c1a6a7be6cda2ff"
     },
     {
       "path": "native/virtual-driver/prepare_sysvad.py",
@@ -1230,21 +1237,21 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "02be59f3060e0e5e2a0e299bc0485e5773c19b98"
+      "blob": "78dfe046df7808bfe1cfb451a4b43192f726e8d3"
     },
     {
       "path": "native/virtual-driver/run_disposable_lab.ps1",
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "1f176c93fc6d7c8557dbea72f94e8318721a597d"
+      "blob": "0c6e15ceb30f3fc1781b32ff07a62bd076ddbc54"
     },
     {
       "path": "native/virtual-driver/test_IndependentGainCheck.ps1",
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "b51886b943be500d392d341a58d7854074f9bbd9"
+      "blob": "322aa6c889687b52828f296b1bfc838a40d10d09"
     },
     {
       "path": "native/virtual-driver/test_NoSourceControlCheck.ps1",
@@ -1459,11 +1466,11 @@
   ],
   "findings": [
     {
-      "id": "f088c905c97b6749",
+      "id": "7e2af0e56e39f596",
       "code": "POTENTIAL_UNLOGGED_CHANGES",
       "severity": "review",
       "path": "PROJECT_LOG.md",
-      "observation": "4 implementation/config paths changed since this log's last commit; examples: .github/workflows/android-ci-release.yml, .github/workflows/file-steward-pr-validation.yml, .github/workflows/native-audio-engine-ci.yml, tools/test_android_release_trigger_guard.py",
+      "observation": "8 implementation/config paths changed since this log's last commit; examples: .github/workflows/android-ci-release.yml, .github/workflows/file-steward-pr-validation.yml, .github/workflows/native-audio-engine-ci.yml, native/virtual-driver/IndependentGainCheck.ps1, native/virtual-driver/probe_independent_app_route.ps1, native/virtual-driver/run_disposable_lab.ps1",
       "recommendation": "Inspect diffs and reconcile only meaningful decisions/results in the canonical log",
       "state": "REVIEW_REQUIRED"
     }

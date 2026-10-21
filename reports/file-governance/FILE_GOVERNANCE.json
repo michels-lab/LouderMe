@@ -1,30 +1,31 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 196,
+  "tracked_files_total": 200,
   "classified_files_total": 196,
   "docs_content_inspected": 48,
   "large_docs_skipped": 0,
-  "excluded_reports": 0,
+  "excluded_reports": 4,
   "roles": {
     "agent": 9,
     "asset": 9,
     "bitacora": 2,
+    "build_script": 7,
     "config": 20,
     "document": 40,
     "index": 6,
-    "license": 1,
+    "license": 2,
     "source": 75,
     "test": 14,
-    "unknown": 11,
+    "unknown": 3,
     "workflow": 9
   },
   "finding_counts": {
-    "UNKNOWN_PURPOSE": 11
+    "UNKNOWN_PURPOSE": 3
   },
-  "finding_total": 11,
-  "inventory_fingerprint": "e071a24d0b71c6f5d15bb2bb065277fe7cb2380f03a048b1cb10cd04c8c3526b",
-  "evidence_fingerprint": "c408d6f0e96343c2c5fe9f9dd727bf970ca0b014950104f5ff1e5653ac296a36",
+  "finding_total": 3,
+  "inventory_fingerprint": "5715187803562b0ca84a5a1c0ad547f2c3bac2278d925f42f072956c6fa1950e",
+  "evidence_fingerprint": "09b92732ea12603d7788c985aa8e0e60c5bc7d3258286fc6815491de137bd25c",
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/chatgpt-task.yml",
@@ -231,9 +232,9 @@
     },
     {
       "path": "app/build.gradle.kts",
-      "role": "unknown",
-      "purpose": "function unknown: owner classification required",
-      "certainty": "unknown",
+      "role": "build_script",
+      "purpose": "platform build/project/installer script",
+      "certainty": "inferred",
       "blob": "e8f9f5f0efa8c35550acc2aba0402737ae96f516"
     },
     {
@@ -616,16 +617,16 @@
     },
     {
       "path": "build.gradle.kts",
-      "role": "unknown",
-      "purpose": "function unknown: owner classification required",
-      "certainty": "unknown",
+      "role": "build_script",
+      "purpose": "platform build/project/installer script",
+      "certainty": "inferred",
       "blob": "778547eae01b32a71458404ab3ce299d81f95511"
     },
     {
       "path": "desktop/LICENSE.txt",
-      "role": "unknown",
-      "purpose": "function unknown: owner classification required",
-      "certainty": "unknown",
+      "role": "license",
+      "purpose": "licensing/notice",
+      "certainty": "rule",
       "blob": "0c78eafec277a8f3e2cada23623a541daa3b6586"
     },
     {
@@ -644,9 +645,9 @@
     },
     {
       "path": "desktop/installer/LouderMe.iss",
-      "role": "unknown",
-      "purpose": "function unknown: owner classification required",
-      "certainty": "unknown",
+      "role": "build_script",
+      "purpose": "platform build/project/installer script",
+      "certainty": "inferred",
       "blob": "3bc5c883f09082b70070f44b4a41fb53e5638d13"
     },
     {
@@ -840,9 +841,9 @@
     },
     {
       "path": "desktop/src/LouderMeDesktop/LouderMeDesktop.csproj",
-      "role": "unknown",
-      "purpose": "function unknown: owner classification required",
-      "certainty": "unknown",
+      "role": "build_script",
+      "purpose": "platform build/project/installer script",
+      "certainty": "inferred",
       "blob": "179acfe6383414150b417b8b607c14164dbb1ce5"
     },
     {
@@ -1162,9 +1163,9 @@
     },
     {
       "path": "native/independent-tone/LouderMeIndependentTone.csproj",
-      "role": "unknown",
-      "purpose": "function unknown: owner classification required",
-      "certainty": "unknown",
+      "role": "build_script",
+      "purpose": "platform build/project/installer script",
+      "certainty": "inferred",
       "blob": "906f436258c79af2ff7296155f6ec035a99c1f33"
     },
     {
@@ -1260,9 +1261,9 @@
     },
     {
       "path": "native/windows-bridge/LouderMeAudioBridge.csproj",
-      "role": "unknown",
-      "purpose": "function unknown: owner classification required",
-      "certainty": "unknown",
+      "role": "build_script",
+      "purpose": "platform build/project/installer script",
+      "certainty": "inferred",
       "blob": "53ee4c7fedd075ec9566e479d74c0563fc542e05"
     },
     {
@@ -1309,9 +1310,9 @@
     },
     {
       "path": "settings.gradle.kts",
-      "role": "unknown",
-      "purpose": "function unknown: owner classification required",
-      "certainty": "unknown",
+      "role": "build_script",
+      "purpose": "platform build/project/installer script",
+      "certainty": "inferred",
       "blob": "fa3bf620e23eb2b2e5b5ef8e996c7bbd54b9fe55"
     },
     {
@@ -1340,7 +1341,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "fe0546a76c0cf308c99f0cc4f1c11aa0677496ec"
+      "blob": "3f704fa24a27aa107914d85b772b32227ffd82fa"
     },
     {
       "path": "tools/run_android_signed_visual_ci.sh",
@@ -1361,7 +1362,7 @@
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "b94da69cd18c8066756acba162bc66618261b522"
+      "blob": "ebac5d9cfe86ff3c1e94b96468027a6578d1d708"
     },
     {
       "path": "tools/tests/test_android_developer_harness.py",
@@ -1401,55 +1402,10 @@
   ],
   "findings": [
     {
-      "id": "ed9bcbc50f7db070",
-      "code": "UNKNOWN_PURPOSE",
-      "severity": "review",
-      "path": "app/build.gradle.kts",
-      "observation": "No reliable purpose category from path",
-      "recommendation": "Declare role after reviewing usage",
-      "state": "REVIEW_REQUIRED"
-    },
-    {
-      "id": "f0d8bef90f42ef54",
-      "code": "UNKNOWN_PURPOSE",
-      "severity": "review",
-      "path": "build.gradle.kts",
-      "observation": "No reliable purpose category from path",
-      "recommendation": "Declare role after reviewing usage",
-      "state": "REVIEW_REQUIRED"
-    },
-    {
-      "id": "19eb98f6a377f33f",
-      "code": "UNKNOWN_PURPOSE",
-      "severity": "review",
-      "path": "desktop/LICENSE.txt",
-      "observation": "No reliable purpose category from path",
-      "recommendation": "Declare role after reviewing usage",
-      "state": "REVIEW_REQUIRED"
-    },
-    {
-      "id": "bc3340bb038d622a",
-      "code": "UNKNOWN_PURPOSE",
-      "severity": "review",
-      "path": "desktop/installer/LouderMe.iss",
-      "observation": "No reliable purpose category from path",
-      "recommendation": "Declare role after reviewing usage",
-      "state": "REVIEW_REQUIRED"
-    },
-    {
       "id": "802201151e86f352",
       "code": "UNKNOWN_PURPOSE",
       "severity": "review",
       "path": "desktop/installer/TaskbarPinning.txt",
-      "observation": "No reliable purpose category from path",
-      "recommendation": "Declare role after reviewing usage",
-      "state": "REVIEW_REQUIRED"
-    },
-    {
-      "id": "7b8c26f3b5542291",
-      "code": "UNKNOWN_PURPOSE",
-      "severity": "review",
-      "path": "desktop/src/LouderMeDesktop/LouderMeDesktop.csproj",
       "observation": "No reliable purpose category from path",
       "recommendation": "Declare role after reviewing usage",
       "state": "REVIEW_REQUIRED"
@@ -1468,33 +1424,6 @@
       "code": "UNKNOWN_PURPOSE",
       "severity": "review",
       "path": "native/audio-engine/include/louderme/AudioEngine.hpp",
-      "observation": "No reliable purpose category from path",
-      "recommendation": "Declare role after reviewing usage",
-      "state": "REVIEW_REQUIRED"
-    },
-    {
-      "id": "560f7a488670d0d9",
-      "code": "UNKNOWN_PURPOSE",
-      "severity": "review",
-      "path": "native/independent-tone/LouderMeIndependentTone.csproj",
-      "observation": "No reliable purpose category from path",
-      "recommendation": "Declare role after reviewing usage",
-      "state": "REVIEW_REQUIRED"
-    },
-    {
-      "id": "3a1bfcb51818737e",
-      "code": "UNKNOWN_PURPOSE",
-      "severity": "review",
-      "path": "native/windows-bridge/LouderMeAudioBridge.csproj",
-      "observation": "No reliable purpose category from path",
-      "recommendation": "Declare role after reviewing usage",
-      "state": "REVIEW_REQUIRED"
-    },
-    {
-      "id": "edf0bead68802955",
-      "code": "UNKNOWN_PURPOSE",
-      "severity": "review",
-      "path": "settings.gradle.kts",
       "observation": "No reliable purpose category from path",
       "recommendation": "Declare role after reviewing usage",
       "state": "REVIEW_REQUIRED"

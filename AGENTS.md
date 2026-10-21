@@ -1,5 +1,10 @@
 # LouderMe — Agent Contract
 
+## Owner's Granada release authority — 2026-10-21
+
+When the owner invokes **Operación Granada for this specific product**, agents MAY complete release integration, final versioning and **publish the official final STABLE release** without asking for a second release command, **only after all product-specific current-SHA tests, installed/device/runtime/scientific/privacy gates, validated artifacts, signing/integrity and update/distribution requirements have passed**. It is conditional authority, NOT an instruction to ship unfinished code on every Granada. **No RC, beta, prerelease, preview release or publication for other products.** A distribution repository may receive only its own app's verified final assets, never initiate independent releases. Follow master `GLOBAL_RULES.md` and `standards/RELEASE_PROTOCOL.md`; record tag, provenance, published assets and exact result. If any gate is missing, do not release and continue another independent block.
+
+
 
 ## Desktop About placement (mandatory)
 

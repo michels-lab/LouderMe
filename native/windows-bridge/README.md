@@ -242,3 +242,19 @@ dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll
 
 The 250 ms provider queue is intentionally unchanged; queue recovery is
 **bounded and observable**, not a claim that 250 ms is actual render latency.
+
+## Granada continuation — guarded live DSP controls (2026-10-21)
+
+The experimental Windows bridge now supports **`--interactive-controls`** on the already-confirmed virtual-to-physical bridge, using a local text console only. It does **not** install a virtual driver, change Windows' default output, run in the public LouderMe desktop app, create a new GUI control panel, transmit user audio or prove that unrelated apps route to it. It requires the same explicit `--confirm-experimental`, selected active virtual source ID and distinct physical sink ID as the existing route.
+
+Example, **only if a valid signed virtual endpoint is already installed in a disposable audio lab**:
+
+```powershell
+dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --source-id "<EXACT_VIRTUAL_RENDER_ID>" --output-id "<EXACT_PHYSICAL_OUTPUT_ID>" --boost 100 --confirm-experimental --interactive-controls
+```
+
+On the lab console, type `boost 150`, `eq 0,0,0,0,8,0,0`, `eq off`. Invalid percentages, wrong band counts and NaN/Infinity are rejected **before publication**. A background console reader only publishes validated, copied, immutable snapshots into a single-slot Interlocked mailbox. **The existing WASAPI capture callback is the sole consumer and the only writer of native C++ DSP boost/EQ parameters**, immediately before `Process`. A storm of old pending changes coalesces to the newest accepted snapshot; it cannot build a queue of obsolete DSP commands. Per-second LAB telemetry now exposes **liveCommandsPublished**, **liveCommandsApplied**, and **liveCommandsSuperseded** (only the actual overwritten commands, not an audio-frame loss metric), so integration can detect controller bursts and a stalled consumer without logging PCM or private settings. **Do not combine `--interactive-controls` with `--auto-reconnect`:** blocking input from an interrupted session cannot be safely transferred to a new native engine, so the bridge rejects that combination. EQ filter bank crossfade and gain smoothing remain within the original C++ engine; no new user-facing volume changes are applied by CI.
+
+**Critical measurement boundary:** `--probe-route` refuses `--interactive-controls` to prevent changing amplitude/EQ during its controlled 440 Hz physical evidence capture. Lab console functionality is not an endpoint-routing implementation or proof of actual external-app PCM. Do not describe it as a new finished virtual driver or audible global Boost.
+
+Run `--check-controls` (now required by native Windows CI) to test the actual native C ABI, one-time command application, burst coalescing, copying/immutability of the seven bands, invalid-input rejection, settled boost/EQ behavior and concurrent producer while native PCM callbacks continue. This is repeatable **hardware-free evidence**, not a claim of zero glitch/latency or an audible physical result. Next still requires signed virtual endpoint installation in a disposable VM, true-source PCM evidence, thread-safe installed UI control integration, host driver certification, hotplug and physical listening/loopback acceptance.

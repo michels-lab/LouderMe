@@ -1,3 +1,12 @@
+## 2026-10-21 — Operación Granada: live, nonblocking native DSP control handoff (candidate)
+
+- Candidate `feat/granada-native-live-dsp-controls-20261021`: add `DspControlMailbox` with immutable copied seven-band EQ command snapshots, Interlocked single-slot latest-wins publication (no command backlog) and callback-only C++ DSP setters. `NativeDsp.ConfigureBoost` adds bounded native setter; EQ guard removes LINQ from callback path. The existing capture PCM callback alone applies validated pending controls **before** processing its buffer. Per-second LAB counters distinguish commands published/applied/actually overwritten (not processed audio losses or audibility), without logging user audio. `--interactive-controls` plus `--auto-reconnect` is rejected, preventing a stale console reader from outliving the route it controls.
+- New strictly experimental `--interactive-controls` (local stdin text only) accepts `boost 100..250`, `eq off`, `eq seven dB values`; malformed/NaN/Inf/out-of-range input rejected without modifying DSP state. Requires explicit virtual source, separate physical sink and `--confirm-experimental`; cannot run during `--probe-route` physical measurement. No listening device or default output is changed without user selection.
+- Native Windows CI extends `--check-controls`: actual DSP DLL numeric Boost/EQ PCM checks, state immutability, single-consumer correctness, storm coalescing, invalid inputs and concurrent producer/callback PCM finite/bounded samples. Prior native DSP/Windows bridge infrastructure and tested synthetic stream conversion kept intact.
+- **Not proven**: a signed/installed LouderMe virtual endpoint; third-party Windows system audio routing into this bridge; user-facing desktop UI live controls; external audible sound changes, measured physical latency/CPU, production driver signing/install/rollback, or hardware tests. No release candidate/public release or stable version bump; #46/#48 remain open.
+
+---
+
 ## 2026-10-20 — Operación Granada: Developer notes safe migration between Android signing identities (candidate)
 
 - Added developer-only **Save notes backup** (Android CreateDocument SAF) and **Restore notes backup** (OpenDocument SAF) to preserve owner annotations across necessary uninstall/reinstall between ephemeral debug signer and permanently owner-signed Developer app. No public Play/Direct audio/version/signature/UI changes, no automatic cloud upload.

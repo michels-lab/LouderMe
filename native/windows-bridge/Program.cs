@@ -66,6 +66,12 @@ internal static class Program
                 AudioQueueRecovery.RunSelfTests();
                 return 0;
             }
+            if (args.Contains("--check-controls"))
+            {
+                DspControlMailbox.RunSelfTests();
+                DspLiveConsoleControls.RunSelfTests();
+                return 0;
+            }
             if (args.Contains("--check-formats"))
             {
                 PcmFormatAdapter.RunSelfTests();
@@ -109,6 +115,13 @@ internal static class Program
             if (provePhysicalRoute && boost is < 100 or > 150)
                 throw new ArgumentException(
                     "Physical-route lab proof requires --boost 100..150 to limit test output.");
+            if (provePhysicalRoute && args.Contains("--interactive-controls"))
+                throw new ArgumentException(
+                    "Physical-route tone evidence forbids live control changes during measurement.");
+            if (args.Contains("--interactive-controls") && args.Contains("--auto-reconnect"))
+                throw new ArgumentException(
+                    "Live stdin controls cannot safely survive experimental reconnect; " +
+                    "start a new confirmed session after a route interruption.");
 
             // Never fall back to the new Windows default device after a
             // Bluetooth/USB/HDMI hot-swap. Retry ONLY the exact supplied IDs.
@@ -159,6 +172,7 @@ internal static class Program
                 }
             }
             engine.ConfigureEqualizer(eqText is not null, eqGains);
+            var liveControlQueue = new DspControlMailbox();
             using var playback = new WasapiOut(physical, AudioClientShareMode.Shared, true, 75);
             var buffer = new BufferedWaveProvider(outputFormat, TimeSpan.FromMilliseconds(250))
             {
@@ -247,6 +261,9 @@ internal static class Program
                     // Never mutate NAudio's recycled event buffer. Native DSP
                     // receives an independent float32 copy even for PCM16 input.
                     byte[] decoded = adapter.Decode(e.Buffer, e.BytesRecorded);
+                    // The ONLY reader and native-state writer is the PCM
+                    // callback. The control worker publishes immutable data.
+                    liveControlQueue.ApplyPending(engine);
                     engine.Process(decoded, decoded.Length, inputFormat.Channels);
                     byte[] converted = adapter.Encode(decoded, decoded.Length);
                     if (converted.Length == 0) return;
@@ -317,6 +334,29 @@ internal static class Program
                 Console.WriteLine($"Formats: virtual {inputFormat}; physical {outputFormat}");
                 Console.WriteLine("PCM16/float32 conversion + linear rate adaptation; matching channels or mono/stereo map.");
                 Console.WriteLine("Press Ctrl+C to stop; this is not a shipped system driver.");
+                if (args.Contains("--interactive-controls"))
+                {
+                    var consoleControls = new DspLiveConsoleControls(
+                        liveControlQueue, boost, eqText is not null, eqGains);
+                    // Background reader may block on Console.ReadLine; it never
+                    // changes the native engine or device routing directly.
+                    var controlReader = new Thread(() =>
+                    {
+                        try
+                        {
+                            string? command;
+                            while ((command = Console.ReadLine()) is not null)
+                            {
+                                consoleControls.TryHandle(command, out var status);
+                                Console.WriteLine(status);
+                            }
+                        }
+                        catch (IOException) { /* unavailable stdin: lab controls disabled */ }
+                    }) { IsBackground = true, Name = "LouderMe-Lab-Controls" };
+                    controlReader.Start();
+                    Console.WriteLine("LAB live controls: boost 100..250 | eq off | eq seven comma-separated dB values");
+                    Console.WriteLine("Changes are applied on the next capture callback; no UI/console thread touches DSP.");
+                }
                 if (provePhysicalRoute)
                     Console.WriteLine(
                         "LAB physical proof: 2-second quiet 440 Hz tone routed to virtual speaker; " +
@@ -395,7 +435,10 @@ internal static class Program
                             $"starvedRenderReads={playbackReader.ReadsWithInsufficientPcm} " +
                             $"overflows={Interlocked.Read(ref overflowPackets)} " +
                             $"queueResets={currentResets} " +
-                            $"flushedOutputFrames={Interlocked.Read(ref flushedOutputFrames)}");
+                            $"flushedOutputFrames={Interlocked.Read(ref flushedOutputFrames)} " +
+                            $"liveCommandsPublished={liveControlQueue.Published} " +
+                            $"liveCommandsApplied={liveControlQueue.Applied} " +
+                            $"liveCommandsSuperseded={liveControlQueue.Superseded}");
                         if (queuedMs > 160)
                             Console.Error.WriteLine(
                                 "WARNING: experimental render queue above 160 ms; " +

@@ -82,6 +82,11 @@ jobs:
         run: |
           dotnet "native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll" --check-timing
           if ($LASTEXITCODE -ne 0) { throw 'Clock-drift controller or audio-workload metering numeric regression failed.' }
+      - name: Verify live DSP controls are validated and applied on the audio callback only
+        shell: pwsh
+        run: |
+          dotnet "native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll" --check-controls
+          if ($LASTEXITCODE -ne 0) { throw 'Live native Boost/EQ control mailbox or parser regression failed.' }
       - name: Validate bounded queue overflow/underflow recovery without hardware
         shell: pwsh
         run: |

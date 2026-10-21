@@ -175,6 +175,14 @@ jobs:
           assert m['apk_sha256'] == hashlib.sha256(new.read_bytes()).hexdigest()
           screens={s['screen'] for s in m['screenshots']}
           assert {'developer-note-after-signed-upgrade','developer-reviewed-export'}.issubset(screens)
+          for screenshot in m['screenshots']:
+              image=Path('artifacts/developer-signed-qa') / screenshot['path']
+              assert image.exists()
+              assert hashlib.sha256(image.read_bytes()).hexdigest() == screenshot['sha256']
+              expected= new if screenshot['screen'] in (
+                  'developer-note-after-signed-upgrade','developer-reviewed-export'
+              ) else old
+              assert screenshot['apk_sha256'] == hashlib.sha256(expected.read_bytes()).hexdigest()
           assert any('upgraded in place' in item for item in m['verified_workflow'])
           print('PASS: real signed Developer in-place upgrade preserved owner annotations.')
           PY

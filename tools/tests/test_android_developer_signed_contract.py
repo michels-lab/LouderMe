@@ -10,9 +10,11 @@ ROOT = Path(__file__).resolve().parents[2]
 
 class SignedDeveloperContract(unittest.TestCase):
     def test_signed_qa_is_manual_private_and_no_public_release(self):
-        source = (ROOT / ".github/workflows/developer-android-signed-owner-qa.yml").read_text()
+        source = (ROOT / "infra/private-developer-signer/.github/workflows/developer-android-signed-owner-qa.yml").read_text()
         for required in (
-            "workflow_dispatch:", "github.ref == 'refs/heads/main'",
+            "workflow_dispatch:",
+            "repository: michels-lab/LouderMe",
+            "inputs.source_commit_sha", "git merge-base --is-ancestor", "github.ref == 'refs/heads/main'",
             "github.event.repository.private == true", "contents: read",
             "LOUDERME_DEVELOPER_KEYSTORE_BASE64",
             "LOUDERME_DEVELOPER_STORE_PASSWORD",

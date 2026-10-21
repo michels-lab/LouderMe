@@ -3,6 +3,9 @@ package com.michelslab.louderme.ui
 import android.content.Intent
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import java.io.ByteArrayOutputStream
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
@@ -54,6 +57,53 @@ internal fun DeveloperInspectorUi(
     var audit by remember { mutableStateOf<JSONArray?>(null) }
     var pendingDelete by remember { mutableStateOf<OwnerNote?>(null) }
     var statusFilter by remember { mutableStateOf("All") }
+    var importedPreview by remember { mutableStateOf<DeveloperImportPreview?>(null) }
+    var importError by remember { mutableStateOf<String?>(null) }
+
+    // System Storage Access Framework: user deliberately selects the file.
+    // Backups never access the production package or upload automatically.
+    val saveBackup = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        if (uri != null) {
+            try {
+                val payload = owner.backupJson().toByteArray(Charsets.UTF_8)
+                val stream = context.contentResolver.openOutputStream(uri, "wt")
+                    ?: error("Selected storage provider refused to create the backup.")
+                stream.use { it.write(payload) }
+                Toast.makeText(context, "Developer notes backup saved.", Toast.LENGTH_LONG).show()
+            } catch (_: Exception) {
+                importError = "Could not write notes backup. Existing notes were not changed."
+            }
+        }
+    }
+
+    val openBackup = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            try {
+                val input = context.contentResolver.openInputStream(uri)
+                    ?: error("Selected document could not be opened.")
+                val content = input.use { stream ->
+                    val bounded = ByteArrayOutputStream()
+                    val buf = ByteArray(8192)
+                    var length = 0
+                    while (true) {
+                        val read = stream.read(buf)
+                        if (read < 0) break
+                        length += read
+                        require(length <= 2_097_152) { "Document exceeds the 2 MB import limit." }
+                        bounded.write(buf, 0, read)
+                    }
+                    bounded.toString("UTF-8")
+                }
+                importedPreview = owner.previewImport(content)
+            } catch (_: Exception) {
+                importError = "This is not a valid, supported Developer notes backup (2 MB maximum). Nothing was imported."
+            }
+        }
+    }
 
     BackHandler(enabled = owner.inspect) { owner.inspect = false }
 
@@ -146,9 +196,83 @@ internal fun DeveloperInspectorUi(
                             owner.panel = false
                         }) { Text("AI repair prompt") }
                     }
+                    Row {
+                        TextButton(onClick = {
+                            owner.panel = false
+                            saveBackup.launch("LouderMe-Developer-notes.json")
+                        }, enabled = owner.error == null && owner.notes.isNotEmpty()) {
+                            Text("Save notes backup")
+                        }
+                        TextButton(onClick = {
+                            owner.panel = false
+                            openBackup.launch(arrayOf("application/json", "text/plain"))
+                        }, enabled = owner.error == null) {
+                            Text("Restore notes backup")
+                        }
+                    }
                     TextButton(onClick = { owner.panel = false }) { Text("Close") }
                 }
             }
+        )
+    }
+
+    if (importError != null) {
+        AlertDialog(
+            onDismissRequest = { importError = null },
+            title = { Text("Developer backup not imported") },
+            text = { Text(importError ?: "") },
+            confirmButton = {
+                TextButton(onClick = { importError = null }) { Text("OK") }
+            },
+        )
+    }
+
+    val preview = importedPreview
+    if (preview != null) {
+        AlertDialog(
+            onDismissRequest = { importedPreview = null },
+            title = { Text("Review notes restoration") },
+            text = {
+                Column {
+                    Text("Incoming notes: " + preview.incoming.size)
+                    Text("New notes: " + preview.newCount +
+                        " · Already identical: " + preview.exactDuplicates)
+                    Text("Different notes with matching IDs: " + preview.conflicts)
+                    Text("Outdated section IDs: " + preview.staleLocators +
+                        " (preserved exactly, reported in audit)")
+                    Text("This affects only Developer notes. Production data is never accessed.",
+                        style = MaterialTheme.typography.bodySmall)
+                    Text("Choose whether to keep existing notes or explicitly replace matching IDs. " +
+                        "Notes absent from the file are never deleted.")
+                }
+            },
+            confirmButton = {
+                Column {
+                    TextButton(onClick = {
+                        if (owner.applyImport(preview, replaceConflicts = false)) {
+                            importedPreview = null
+                            owner.panel = true
+                        } else {
+                            importedPreview = null
+                            importError = "Could not save restored notes. Original notes remain."
+                        }
+                    }) { Text("Import new only") }
+                    if (preview.conflicts > 0) {
+                        TextButton(onClick = {
+                            if (owner.applyImport(preview, replaceConflicts = true)) {
+                                importedPreview = null
+                                owner.panel = true
+                            } else {
+                                importedPreview = null
+                                importError = "Could not apply chosen note replacements. Original notes remain."
+                            }
+                        }) { Text("Replace matching IDs") }
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { importedPreview = null }) { Text("Cancel") }
+            },
         )
     }
 

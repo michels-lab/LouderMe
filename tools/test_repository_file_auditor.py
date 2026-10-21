@@ -91,6 +91,11 @@ class FileStewardTests(unittest.TestCase):
                 self.assertEqual(audit.identify(path,{})[0], role)
     def test_android_backup_rules_not_disposable(self):
         self.assertEqual(audit.identify("android/app/src/main/res/xml/backup_rules.xml", {})[0], "config")
+    def test_shared_css_and_native_header_have_purpose(self):
+        self.assertEqual(audit.identify("shared-components/about-web/about.css", {})[0],"style")
+        self.assertEqual(audit.identify("native/audio-engine/include/louderme/AudioEngine.hpp", {})[0],"source")
+        self.assertEqual(audit.identify("reports/agent-health.json", {})[0],"config")
+
     def test_real_app_artifact_purposes(self):
         values={
             "supabase/migrations/20261010_delete_instagram_profiles.sql":"database_migration",

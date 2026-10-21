@@ -59,6 +59,20 @@ def identify(path, custom):
     if ext in BINARY: return "binary","binary/archive (not parsed)","rule"
     if ext in {".json",".yaml",".yml",".toml",".xml",".ini",".properties",".gradle"} or name in {"dockerfile","makefile",".gitignore",".gitattributes"}:
         return "config","machine-readable configuration","rule"
+    # OpenFOAM is extensionless by design: classify *structure*, not unknown files.
+    # This is an inferred functional group, NEVER a solver verification.
+    parts=p.split("/")
+    if parts[0] in {"cases_controlled_buoyancy","cases_3d","cases","case"} and len(parts)>=3:
+        below=parts[2:]
+        if "postprocessing" in below or any(b.replace(".", "", 1).isdigit() for b in below):
+            return "simulation_output","OpenFOAM solution time/postProcessing artifact (content unvalidated)","inferred"
+        if below[0] in {"0","constant","system"}:
+            return "simulation_input","OpenFOAM case field/dictionary input (content unvalidated)","inferred"
+        if "logs" in below or name.startswith("log."):
+            return "simulation_log","OpenFOAM solver/run log (not proof of run quality)","inferred"
+        return "simulation_case_file","OpenFOAM case-specific support artifact","inferred"
+    if parts[0] in {"analysis_results","postprocessing","experiment_results"}:
+        return "scientific_analysis","research analysis/evidence artifact (not physically validated)","inferred"
     return "unknown","function unknown: owner classification required","unknown"
 
 def link_result(source, raw, paths):

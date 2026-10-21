@@ -1,3 +1,11 @@
+## 2026-10-21 — Operación Granada: real no-stimulus causality gate for native Windows external-source route (candidate)
+
+- Follow-up after merged #88 and #91: the independent source physical-audio VM procedure now brackets 100%/150% measurements with **no-stimulus WASAPI capture before and after**. It must announce EXTERNAL_SOURCE_READY, complete a real five-second physical-monitor window, show one valid numeric measurement with physical frames and no dropped packets, and fail specifically because the externally generated 440 Hz input is **absent**. A different error, missing listener, unexpected PASS, stale result or matched440 contamination >0.003 aborts the laboratory instead of claiming source causality.
+- Added `native/virtual-driver/NoSourceControlCheck.ps1` pure validator and 11 device-free malicious/error fixtures `test_NoSourceControlCheck.ps1`; integrated into Windows native CI and static driver source contract. The actual VM script uses this exact validator and protects before/after evidence from stale files; the cleanup still removes only its own root-lab device.
+- **No virtual driver installed or signed**, no actual audio playback performed in GitHub, no proof yet of separate-app sound on a user's speakers. This is a **source + CI tested acceptance gate**, not new physical output results. Native Windows routing issues #46/#48 and owner approval remain open. Stable public Android/Windows versions unchanged, no release.
+
+---
+
 ## 2026-10-21 — Operación Granada: native Windows physical gain proof contract and Perspective Council review (source candidate)
 
 - After PR #88 merged `7ea4f26` with exact-head Windows native, SysVAD package WDK and Android installed CI green, candidate branch `feat/granada-independent-gain-validator-20261021` extracts physical WASAPI loopback 100→150% gain acceptance into pure `native/virtual-driver/IndependentGainCheck.ps1`. The actual VM route now uses this same production-of-evidence validator, not separately hand-coded if statements.

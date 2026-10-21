@@ -1,3 +1,13 @@
+## 2026-10-21 — Operación Granada: separate Windows process PCM → virtual render → native DSP → physical monitor (source candidate)
+
+- [PR #88](https://github.com/michels-lab/LouderMe/pull/88): add `native/independent-tone/` as a truly distinct NAudio Windows executable which emits bounded 440 Hz PCM16/float32 to a selected virtual render device; no DSP, recording, microphone, default changes or driver installation.
+- Bridge `--probe-app-route` captures and processes input but synthesizes **NO tone**. It emits `EXTERNAL_SOURCE_READY` once both virtual and physical WASAPI listeners have started, monitors five seconds, requires correctly identified 440 Hz output plus actual virtual capture frame counts and no drops/resets, and forbids automatic probe retry.
+- Dedicated disposable-VM PowerShell runner coordinates separate bridge/source process startup/readiness/exit and cleanup by owned PIDs, redacts endpoint IDs and stores only metadata. Existing lab VM install→virtual loopback→internal physical loopback→**external application physical route**→remove-own-root-device gate now requires this independent proof before VM success. It repeats the genuine external-source physical monitor at **100% and 150%** Boost; measured physical 440 Hz amplitudes must have a **1.30–1.70 gain ratio** or the VM test fails. That is not hardware SPL calibration.
+- Native Windows CI builds independent source and runs synthetic source tone identity tests, validates lab PS syntax and fail-closed static cross-process contract; driver CI source derivation/WDK gate remains separate. **Physical VM driver installation, signed package, actual non-silent virtual-app PCM, external loudness and generic OS audio are NOT proven by CI; native issues #46/#48 remain open.**
+- Source PR candidate; no public release, version bump, driver installation or owner physical test.
+
+---
+
 ## 2026-10-21 — Correction: Perspective Council is for ChatGPT, not Copilot
 
 - Owner clarified these perspectives must help the assistant doing Michel's Lab development. The four mistakenly Copilot-specific perspective profiles are removed, replaced by four provider-neutral `.michelslab/agents/*.md` role instructions, readable through GitHub and usable with the master offline prompt pack.

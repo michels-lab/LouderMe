@@ -19,6 +19,10 @@ on:
         description: "ABSOLUTE path to built .NET bridge + neighboring native DLL on VM"
         required: true
         type: string
+      independent_tone_dll:
+        description: "ABSOLUTE path to separately built LouderMeIndependentTone.dll in VM"
+        required: true
+        type: string
       physical_endpoint_id:
         description: "Exact physical playback ID from --list-devices INSIDE that VM"
         required: true
@@ -51,10 +55,11 @@ jobs:
           LAB_PACKAGE: ${{ inputs.signed_driver_package_dir }}
           LAB_DEVCON: ${{ inputs.devcon_exe }}
           LAB_BRIDGE: ${{ inputs.bridge_dll }}
+          LAB_APP_TONE: ${{ inputs.independent_tone_dll }}
           LAB_PHYSICAL: ${{ inputs.physical_endpoint_id }}
         run: |
           $ErrorActionPreference = 'Stop'
-          pwsh -NoProfile -File native/virtual-driver/run_disposable_lab.ps1 -PackageDir $env:LAB_PACKAGE -DevconExe $env:LAB_DEVCON -BridgeDll $env:LAB_BRIDGE -PhysicalEndpointId $env:LAB_PHYSICAL -LabConsent $env:LAB_CONSENT -EvidenceDir "$env:RUNNER_TEMP/louderme-lab-evidence"
+          pwsh -NoProfile -File native/virtual-driver/run_disposable_lab.ps1 -PackageDir $env:LAB_PACKAGE -DevconExe $env:LAB_DEVCON -BridgeDll $env:LAB_BRIDGE -IndependentToneDll $env:LAB_APP_TONE -PhysicalEndpointId $env:LAB_PHYSICAL -LabConsent $env:LAB_CONSENT -EvidenceDir "$env:RUNNER_TEMP/louderme-lab-evidence"
           if ($LASTEXITCODE -ne 0) { throw "Lab physical audio proof FAILED; revert VM snapshot." }
       - name: Archive metadata-only lab evidence even on failure
         if: always()

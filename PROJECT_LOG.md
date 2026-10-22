@@ -2137,3 +2137,5 @@ Updated only the managed blocks in AGENTS.md and .github/copilot-instructions.md
 - **B — Data safety:** third-party changes within a tagged probe are never overwritten by automatic recovery, the finally handler, or later ordinary Apply; show a warning rather than claiming processing works.
 - **C — Regression:** `--check-apo-contract` covers crash-style omission of finally, repeat no-op, manual-file conflicts, normal Apply refusal, legacy exact match, legacy foreign edit, and ordinary configuration. No physical audio proof.
 - **PR / CI:** `granada/windows-apo-probe-crash-recovery-20261022`; Windows desktop CI is mandatory before merge. No version bump, driver release or public update. Details in [audio recovery audit](docs/audits/GRANADA_2026-10-22_APO_DIAGNOSTIC_RECOVERY.md).
+
+- **D — Interacción durante la prueba:** clonar la configuración de Boost y siete bandas al iniciar la atenuación, suspender los controles Boost/EQ durante esos cuatro segundos y restaurar contra la copia exacta. Nueva regresión impide recuperar usando ajustes mutados durante el test.

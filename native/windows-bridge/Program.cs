@@ -695,7 +695,7 @@ internal static class Program
         if (Math.Abs(sample - 0.15f) > 0.001f)
             throw new InvalidOperationException("Managed-to-native DSP gain test failed.");
         using var eqEngine = new NativeDsp(rate, channels, 100);
-        eqEngine.ConfigureEqualizer(true, new float[] { 0, 0, 0, 0, 8, 0, 0 });
+        eqEngine.ConfigureEqualizer(true, new float[] { 0, 0, 0, 8, 0, 0, 0 });
         byte[] tone = new byte[rate / 10 * channels * sizeof(float)];
         for (var frame = 0; frame < rate / 10; frame++)
         {

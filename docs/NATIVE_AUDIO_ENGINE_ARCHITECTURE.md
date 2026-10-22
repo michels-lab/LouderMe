@@ -51,7 +51,7 @@ Implementation: `native/audio-engine/include/louderme/AudioEngine.hpp` and `src/
 
 - Mono to eight-channel interleaved float32 PCM; 8–384 kHz; preallocated filter state.
 - Gain 100–250%, one scalar across channels with 5 ms exponential smoothing; gain disabled = unity.
-- Seven equalizer peaking bands (60/170/310/600/1000/3000/12000 Hz; Q=1.2; gains clamped to ±10 dB). When disabled, bypass. EQ on/off and live band changes now transition through preallocated 5 ms crossfades; rapid off/on events preserve active wet filter history. These are synthetic DSP guarantees, not proof of physical click-free sound.
+- Seven equalizer peaking bands (60/150/400/1000/2500/6000/12000 Hz; Q=1.2; gains clamped to ±10 dB). When disabled, bypass. EQ on/off and live band changes now transition through preallocated 5 ms crossfades; rapid off/on events preserve active wet filter history. These are synthetic DSP guarantees, not proof of physical click-free sound.
 - Soft limiting begins at magnitude 0.88 and stays within ±1.0 PCM to mitigate hard digital clipping. This is **not** true-peak / lookahead limiting and can introduce distortion on high-level input; it does not guarantee hearing safety or prevent clipping after hardware gain.
 - `process()` does not allocate memory and accepts frames from a host; setters **are not safe for concurrent use** with the audio thread. Add lock-free state transfer before connecting a real device backend.
 - All PCM remains local; core does not open devices, access networking, record audio or modify OS volume.
@@ -67,3 +67,7 @@ Tests: portable synthetic PCM checks for unity, boost, EQ frequency response, ch
 5. M5: end-to-end latency/quality evidence, packaged user testing and explicit versioned release. Michel's visual review occurs after publication, not as a pre-release manual approval gate.
 
 No new version is authorized by this architecture document.
+
+### Granada EQ band index parity (2026-10-21)
+
+Android and stable Windows already exposed the same 60/150/400/1000/2500/6000/12000 Hz seven-band order, but the experimental native C++ DSP previously used different center frequencies. That mapping has been corrected **only in the experimental DSP source**. Product gain arrays remain ordered, with 1 kHz at zero-based band index 3. C++ frequency-response tests check each real band, and a source contract test guards Android/Windows/native array equality. This does not claim equivalence of Android session-0 device hardware equalizer curves, Equalizer APO GraphicEQ interpolation, and the native Q=1.2 peaking filter shapes; it only aligns nominal centers and slider indices. No app binaries were published.

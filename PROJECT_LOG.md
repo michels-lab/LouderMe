@@ -2121,3 +2121,11 @@ Updated only the managed blocks in AGENTS.md and .github/copilot-instructions.md
 - Scope: LouderMe Windows audio only; no other app or OpenFOAM research rules. Branch: granada/lab-evidence-single-use-20261021.
 - Exact-head CI: pending at writing; do not claim runtime/signed driver hardware PASS. Signed VM, physical audio and universal third-party integration still unverified (#46/#48).
 - Public release unchanged: Android v0.1.12 + Windows v0.1.13; no release candidate. PR #95 previously merged at fad832a9af0a3fedde1f72e052d03625a74a5496.
+
+## 2026-10-21 — Granada: 7-band native EQ contract audit (separate source PR)
+
+- Root cause: native C++ EQ centers `60/170/310/600/1000/3000/12000` did not match public Android/Windows UI `60/150/400/1000/2500/6000/12000`. Native 1-kHz synthetic tests also mistakenly used index 4 instead of product index 3.
+- A. Align **experimental** native `AudioEngine::CenterHz` only; no shipping APK/EXE UI or Android device EQ changed.
+- B. Test real synthetic response at each of seven center frequencies at 48 kHz, preserve existing bypass/live click-attenuation/channel tests; correct Windows bridge C# 1-kHz index.
+- C. Add permanent Python source-contract guard comparing three product source arrays and wire into native CI; Android/Desktop EQ source changes also trigger verification. Detailed root-cause and limits: `docs/audits/GRANADA_2026-10-21_NATIVE_EQ_PARITY.md`.
+- QA: exact-head checks to be recorded on PR; physical device and driver acceptance not performed. No stable release or version bump. Issue #46/#48 remain open.

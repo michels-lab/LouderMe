@@ -8,8 +8,10 @@ namespace louderme::audio {
 class AudioEngine final {
 public:
     static constexpr std::size_t BandCount = 7;
+    // Shared product band order: Android UI + stable Desktop Equalizer APO.
+    // Native experimental DSP must map the same slider index to the same Hz.
     static constexpr std::array<float, BandCount> CenterHz{
-        60.0f, 170.0f, 310.0f, 600.0f, 1000.0f, 3000.0f, 12000.0f
+        60.0f, 150.0f, 400.0f, 1000.0f, 2500.0f, 6000.0f, 12000.0f
     };
     AudioEngine(int sampleRate, int channels);
     int sampleRate() const noexcept { return sampleRate_; }

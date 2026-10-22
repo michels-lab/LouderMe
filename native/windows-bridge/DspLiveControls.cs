@@ -118,7 +118,7 @@ internal sealed class DspControlMailbox
             for (var i = 0; i < 1200; i++)
             {
                 var eq = new float[7];
-                eq[4] = i % 2 == 0 ? 3 : -3;
+                eq[3] = i % 2 == 0 ? 3 : -3; // 1 kHz product band
                 concurrentQueue.Publish(100 + i % 151, true, eq);
             }
         });

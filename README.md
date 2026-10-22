@@ -1,5 +1,9 @@
 # LouderMe
 
+## Operación Granada — ecualizador nativo, contrato de siete bandas (2026-10-21)
+
+[Ver auditoría de alineación de frecuencias entre Android/Windows y el DSP experimental](docs/audits/GRANADA_2026-10-21_NATIVE_EQ_PARITY.md). **No modifica la versión pública** ni demuestra audio físico del driver virtual.
+
 ## Operación Granada — auditoría de aplicación y plugins (2026-10-21)
 
 [Ver auditoría y bitácora propias de este producto](docs/GRANADA_APP_PLUGIN_AUDIT_2026-10-21.md): evidencia de GitHub Actions, conectores ChatGPT aplicables, servicios existentes, costo cero adicional por defecto, pendientes reales y separación estricta de los demás productos. La documentación no prueba QA físico ni publica una versión.

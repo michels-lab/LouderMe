@@ -45,25 +45,46 @@ void limiterAndChannels() {
     check(pcm.back() < 0.0f, "channel sign");
 }
 void equalizerFrequencyResponse() {
-    AudioEngine engine(48000, 1);
-    constexpr int frames = 48000;
-    std::vector<float> original(frames), treated(frames);
-    for (int i = 0; i < frames; ++i) {
-        const float v = 0.04f * static_cast<float>(
-            std::sin(2.0 * 3.14159265358979323846 * 1000.0 * i / 48000.0));
-        original[i] = v;
-        treated[i] = v;
+    constexpr int rate = 48000;
+    constexpr int frames = rate;
+    constexpr std::array<float, AudioEngine::BandCount> productBands{
+        60.0f, 150.0f, 400.0f, 1000.0f, 2500.0f, 6000.0f, 12000.0f
+    };
+    check(AudioEngine::CenterHz == productBands,
+          "Native seven-band ordering differs from Android/Desktop product EQ");
+    // One independent 48-kHz DSP instance per advertised band. Each peak
+    // must affect the ACTUAL tone at its own frequency, not only a hardcoded
+    // legacy index. Synthetic low-amplitude PCM cannot prove physical audio.
+    for (std::size_t band = 0; band < AudioEngine::BandCount; ++band) {
+        AudioEngine engine(rate, 1);
+        std::array<float, AudioEngine::BandCount> gains{};
+        gains[band] = 8.0f;
+        engine.setEqBandsDb(gains);
+        engine.setEqEnabled(true);
+        std::vector<float> original(frames), treated(frames);
+        for (int frame = 0; frame < frames; ++frame) {
+            const float sample = 0.02f * static_cast<float>(
+                std::sin(2.0 * 3.14159265358979323846 *
+                         productBands[band] * frame / rate));
+            original[frame] = treated[frame] = sample;
+        }
+        engine.process(treated.data(), treated.size());
+        const double ratio = rms(treated, frames / 2) /
+                             rms(original, frames / 2);
+        check(ratio > 1.85 && ratio < 3.15,
+              "Configured EQ band fails response at advertised center Hz");
     }
-    std::array<float, AudioEngine::BandCount> eq{};
-    eq[4] = 8.0f;
-    engine.setEqBandsDb(eq);
-    engine.setEqEnabled(true);
-    engine.process(treated.data(), treated.size());
-    check(rms(treated, 24000) > 2.0 * rms(original, 24000),
-          "1kHz EQ peak not amplified");
-    engine.setEqEnabled(false);
+
+    AudioEngine bypassEngine(rate, 1);
+    std::array<float, AudioEngine::BandCount> oneKhz{};
+    oneKhz[3] = 8.0f; // index 3 is 1 kHz in all product EQs.
+    bypassEngine.setEqBandsDb(oneKhz);
+    bypassEngine.setEqEnabled(true);
+    std::vector<float> warm(frames, 0.05f);
+    bypassEngine.process(warm.data(), warm.size());
+    bypassEngine.setEqEnabled(false);
     std::vector<float> bypass(frames, 0.05f);
-    engine.process(bypass.data(), bypass.size());
+    bypassEngine.process(bypass.data(), bypass.size());
     check(std::abs(bypass.back() - 0.05f) < 0.0001f, "EQ bypass");
 }
 // An abrupt EQ bypass used to jump from a strongly boosted 1 kHz crest
@@ -73,7 +94,7 @@ void smoothEqBypassTransition() {
     constexpr int sampleRate = 48000;
     AudioEngine engine(sampleRate, 1);
     std::array<float, AudioEngine::BandCount> eq{};
-    eq[4] = 10.0f;
+    eq[3] = 10.0f;
     engine.setEqBandsDb(eq);
     engine.setEqEnabled(true);
 
@@ -122,7 +143,7 @@ void smoothEqBandUpdate() {
     constexpr int rate = 48000;
     AudioEngine engine(rate, 1);
     std::array<float, AudioEngine::BandCount> bands{};
-    bands[4] = 10.0f;
+    bands[3] = 10.0f;
     engine.setEqBandsDb(bands);
     engine.setEqEnabled(true);
 
@@ -133,7 +154,7 @@ void smoothEqBandUpdate() {
     engine.process(warm.data(), warm.size());
     check(warm.back() > 0.12f, "Live EQ baseline not established");
 
-    bands[4] = -10.0f;
+    bands[3] = -10.0f;
     engine.setEqBandsDb(bands);
     float first = 0.05f; // Continue the same tone at its crest.
     engine.process(&first, 1);
@@ -150,14 +171,14 @@ void smoothEqBandUpdate() {
 
     // The second channel must remain absolutely silent during dual-bank fade.
     AudioEngine stereo(rate, 2);
-    bands[4] = 10.0f;
+    bands[3] = 10.0f;
     stereo.setEqBandsDb(bands);
     stereo.setEqEnabled(true);
     std::vector<float> interleaved(4096 * 2, 0.0f);
     for (std::size_t i = 0; i < interleaved.size(); i += 2)
         interleaved[i] = 0.04f;
     stereo.process(interleaved.data(), 4096);
-    bands[4] = -10.0f;
+    bands[3] = -10.0f;
     stereo.setEqBandsDb(bands);
     stereo.process(interleaved.data(), 4096);
     for (std::size_t i = 1; i < interleaved.size(); i += 2)
@@ -170,7 +191,7 @@ void smoothEqBandUpdate() {
 void rapidEqTogglePreservesHistory() {
     AudioEngine steady(48000, 1), toggled(48000, 1);
     std::array<float, AudioEngine::BandCount> bands{};
-    bands[4] = 10.0f;
+    bands[3] = 10.0f;
     for (auto* engine : {&steady, &toggled}) {
         engine->setEqBandsDb(bands);
         engine->setEqEnabled(true);

@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 212,
-  "classified_files_total": 208,
-  "docs_content_inspected": 52,
+  "tracked_files_total": 214,
+  "classified_files_total": 210,
+  "docs_content_inspected": 53,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,18 +12,18 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 44,
+    "document": 45,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
     "source": 79,
-    "test": 18,
+    "test": 19,
     "text_metadata": 2,
     "workflow": 10
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "7c86c71619a616cf55653394d6d6c6fdf46d7527e0b333ac0b8b357d3cd6c432",
+  "inventory_fingerprint": "96141e3811248f9d9c18ac0b75b136e76864f0a9d4f1251812f9925c72958a89",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -101,7 +101,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "96bf54cd1d59868e239a343b78e360333d1a6f2d"
+      "blob": "c704ce49754147760c8152c27789e6f1ac1d0910"
     },
     {
       "path": ".github/workflows/native-physical-lab-manual.yml",
@@ -227,14 +227,14 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "09814a00852eaae2befae7a0a94ea2f75ba05903"
+      "blob": "61e0b662d0d322cbd955e8ce4b3493ed63d03f8c"
     },
     {
       "path": "README.md",
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "3d1459bafe88fb164ec0f8799f92dde3c2eec3a3"
+      "blob": "2b071c0c215e0967ee0611d077559d143e658351"
     },
     {
       "path": "app/build.gradle.kts",
@@ -969,7 +969,7 @@
       "role": "document",
       "purpose": "manual/decision/report/historical note",
       "certainty": "inferred",
-      "blob": "17aff46d34ac46d5a10fcb70315a0d249720a7b9"
+      "blob": "af75e103c1fab67d4f30652601e945fd91af940f"
     },
     {
       "path": "docs/PLAY_STORE_READINESS.md",
@@ -1112,6 +1112,13 @@
       "blob": "d41949517b7e3ef71c2b0ef83a8bed5f43a2063b"
     },
     {
+      "path": "docs/audits/GRANADA_2026-10-21_NATIVE_EQ_PARITY.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "7f39bddd5647c336ee158ef9357485d73f0f5809"
+    },
+    {
       "path": "docs/audits/GRANADA_2026-10-21_NATIVE_SESSION_EVIDENCE.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -1158,7 +1165,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "0e266d7a283fae70114997b29f22ecb751c43479"
+      "blob": "012b689d3788156ca5cfd8c3043fde5eac8408d4"
     },
     {
       "path": "native/audio-engine/include/louderme/AudioEngineC.h",
@@ -1193,7 +1200,7 @@
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "409c513e9bea9601fe87e086807d7c98132c96a9"
+      "blob": "ad3af85ecce05bfde16ad648c7901fc45a84262a"
     },
     {
       "path": "native/independent-tone/LouderMeIndependentTone.csproj",
@@ -1326,7 +1333,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "61528ce5d88e60d1369d0e97c27c0ce52efa8c5e"
+      "blob": "cc5d355398faf99663c3c4ded62f2d5518aa8e6b"
     },
     {
       "path": "native/windows-bridge/LoopbackToneVerifier.cs",
@@ -1368,14 +1375,14 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "7bc1d5daab73ad2672b268aa298c23b6be33dba5"
+      "blob": "9b833963857725eb54f5a4702dd2172994b7a12e"
     },
     {
       "path": "native/windows-bridge/README.md",
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "0a4f31c8527705406896bda4bfe2b46d8e50242e"
+      "blob": "a8f6fae758cffd5e2fb5ac849c5741f572df919c"
     },
     {
       "path": "native/windows-bridge/StreamingDownsampleLowPass.cs",
@@ -1439,6 +1446,13 @@
       "purpose": "code/test implementation",
       "certainty": "rule",
       "blob": "679780ed68099972820d6c6af55e784578cc98c8"
+    },
+    {
+      "path": "tools/test_louderme_eq_band_contract.py",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "fffbd4e22e9c370ef0475b1622858ac12e5e0b78"
     },
     {
       "path": "tools/test_repository_file_auditor.py",

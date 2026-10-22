@@ -67,7 +67,6 @@ internal sealed class MainForm : Form
         Font = new Font("Segoe UI", 10f);
         AutoScaleMode = AutoScaleMode.Dpi;
 
-        BuildUi();
         // The four-second listening probe can outlive the process after a
         // crash or forced shutdown. Only an EXACT generated LouderMe test
         // is eligible for automatic restoration; never discard external edits.
@@ -85,6 +84,9 @@ internal sealed class MainForm : Form
                 "A previous audio-path test could not be restored safely: " +
                 ex.Message;
         }
+        // Recover before building controls: UI setup must never accidentally
+        // apply defaults over a still-pending legacy diagnostic suffix.
+        BuildUi();
         LoadState();
         if (_startupProbeRecoveryNotice is not null)
         {

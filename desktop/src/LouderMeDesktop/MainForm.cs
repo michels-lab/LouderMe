@@ -936,12 +936,23 @@ internal sealed class MainForm : Form
             MessageBoxIcon.Question) != DialogResult.Yes)
             return;
 
+        // Bind the temporary effect and its restoration to the SAME
+        // immutable values even if a deferred UI event arrives mid-test.
+        var testSettings = new DesktopAudioSettings
+        {
+            BoostEnabled = _settings.BoostEnabled,
+            BoostPercent = _settings.BoostPercent,
+            EqualizerEnabled = _settings.EqualizerEnabled,
+            Preset = _settings.Preset,
+            EqualizerGainsDb = (float[])_settings.EqualizerGainsDb.Clone(),
+        };
         _diagnosticRunning = true;
         _audioPathTestAction.Enabled = false;
+        RefreshEngineStatus(); // lock Boost/EQ controls for the 4-second probe
         var performed = false;
         try
         {
-            _apo.ApplyDiagnosticAttenuation(_settings);
+            _apo.ApplyDiagnosticAttenuation(testSettings);
             performed = true;
             _engineStatus.ForeColor = Gold;
             _engineStatus.Text = "TESTING -18 dB ATTENUATION · Your playing audio should " +
@@ -958,7 +969,7 @@ internal sealed class MainForm : Form
             // APO file is preserved instead of being silently overwritten.
             try
             {
-                if (!_apo.RecoverInterruptedDiagnostic(_settings) && performed)
+                if (!_apo.RecoverInterruptedDiagnostic(testSettings) && performed)
                     throw new InvalidOperationException(
                         "The temporary audio test was changed externally. " +
                         "Original settings were not overwritten; inspect Equalizer APO.");
@@ -1060,13 +1071,16 @@ internal sealed class MainForm : Form
             && !_diagnosticRunning;
         // Do not offer apparently functional effect controls when no processing
         // backend exists. Endpoint volume remains usable.
-        _boostEnabled.Enabled = status.Installed;
-        _boost.Enabled = status.Installed;
-        if (_boostQuickActions is not null) _boostQuickActions.Enabled = status.Installed;
-        _eqEnabled.Enabled = status.Installed;
-        _preset.Enabled = status.Installed;
+        // A listening test must not allow slider edits to change the saved
+        // settings or regenerate the APO file before it has been restored.
+        var controlsEnabled = status.Installed && !_diagnosticRunning;
+        _boostEnabled.Enabled = controlsEnabled;
+        _boost.Enabled = controlsEnabled;
+        if (_boostQuickActions is not null) _boostQuickActions.Enabled = controlsEnabled;
+        _eqEnabled.Enabled = controlsEnabled;
+        _preset.Enabled = controlsEnabled;
         foreach (var band in _eqBands)
-            if (band is not null) band.Enabled = status.Installed;
+            if (band is not null) band.Enabled = controlsEnabled;
 
         if (!status.Installed)
         {

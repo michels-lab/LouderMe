@@ -27,6 +27,7 @@ internal sealed class MainForm : Form
     private FlowLayoutPanel? _boostQuickActions;
     private bool _diagnosticRunning;
     private bool? _lastAudioTestHeard;
+    private string? _startupProbeRecoveryNotice;
     private readonly CheckBox _eqEnabled = new();
     private readonly ComboBox _preset = new();
     private readonly NumericUpDown[] _eqBands = new NumericUpDown[7];
@@ -67,7 +68,29 @@ internal sealed class MainForm : Form
         AutoScaleMode = AutoScaleMode.Dpi;
 
         BuildUi();
+        // The four-second listening probe can outlive the process after a
+        // crash or forced shutdown. Only an EXACT generated LouderMe test
+        // is eligible for automatic restoration; never discard external edits.
+        try
+        {
+            if (_apo.RecoverInterruptedDiagnostic(_settings))
+                _startupProbeRecoveryNotice =
+                    "Recovered a previously interrupted -18 dB audio-path test. " +
+                    "Original Boost/EQ configuration restored; physical audio remains unverified.";
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+                                   or InvalidOperationException)
+        {
+            _startupProbeRecoveryNotice =
+                "A previous audio-path test could not be restored safely: " +
+                ex.Message;
+        }
         LoadState();
+        if (_startupProbeRecoveryNotice is not null)
+        {
+            _engineStatus.ForeColor = Gold;
+            _engineStatus.Text = _startupProbeRecoveryNotice;
+        }
         _deviceVolumeSyncTimer.Tick += (_, _) => SyncDeviceVolume();
         _deviceVolumeSyncTimer.Start();
 
@@ -931,7 +954,15 @@ internal sealed class MainForm : Form
         }
         finally
         {
-            try { _apo.Apply(_settings); }
+            // Restore ONLY the exact temporary test configuration. A changed
+            // APO file is preserved instead of being silently overwritten.
+            try
+            {
+                if (!_apo.RecoverInterruptedDiagnostic(_settings) && performed)
+                    throw new InvalidOperationException(
+                        "The temporary audio test was changed externally. " +
+                        "Original settings were not overwritten; inspect Equalizer APO.");
+            }
             catch (Exception ex) { ShowEngineError(ex); performed = false; }
             _diagnosticRunning = false;
             _audioPathTestAction.Enabled = true;

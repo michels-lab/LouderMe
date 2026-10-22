@@ -258,6 +258,33 @@ internal sealed class EqualizerApoEngine
             if (engine.RecoverInterruptedDiagnostic(settings))
                 throw new InvalidOperationException("A completed probe was recovered twice.");
 
+            // A late UI change must never retarget recovery to different
+            // settings. The app holds an immutable snapshot and disables its
+            // Boost/EQ controls while the four-second effect is active.
+            var captureSettings = new DesktopAudioSettings
+            {
+                BoostEnabled = settings.BoostEnabled,
+                BoostPercent = settings.BoostPercent,
+                EqualizerEnabled = settings.EqualizerEnabled,
+                Preset = settings.Preset,
+                EqualizerGainsDb = (float[])settings.EqualizerGainsDb.Clone(),
+            };
+            engine.ApplyDiagnosticAttenuation(captureSettings);
+            settings.BoostPercent = 175;
+            var oldProbe = File.ReadAllText(engine.LouderMeConfigPath);
+            var changedSettingsRejected = false;
+            try { engine.RecoverInterruptedDiagnostic(settings); }
+            catch (InvalidOperationException) { changedSettingsRejected = true; }
+            if (!changedSettingsRejected ||
+                File.ReadAllText(engine.LouderMeConfigPath) != oldProbe)
+                throw new InvalidOperationException(
+                    "Changed live UI settings incorrectly overwrote the running test.");
+            if (!engine.RecoverInterruptedDiagnostic(captureSettings))
+                throw new InvalidOperationException(
+                    "Captured settings did not restore their own pending audio test.");
+            settings.BoostPercent = 200;
+            engine.Apply(settings);
+
             // If another program/user edits the file during the test, never
             // silently clobber the edit at exit or on the next start.
             engine.ApplyDiagnosticAttenuation(settings);

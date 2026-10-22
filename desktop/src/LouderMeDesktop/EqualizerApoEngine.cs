@@ -62,9 +62,45 @@ internal sealed class EqualizerApoEngine
         }
     }
 
+    private const string DiagnosticMarker =
+        "# LouderMe temporary audio-path attenuation; restart recovery guard";
+    private const string DiagnosticAttenuation = "Preamp: -18.0 dB";
+
+    private static string DiagnosticContent(DesktopAudioSettings settings) =>
+        EqualizerApoConfigBuilder.Build(settings) +
+        DiagnosticMarker + Environment.NewLine +
+        DiagnosticAttenuation + Environment.NewLine;
+
+    private static string LegacyDiagnosticContent(DesktopAudioSettings settings) =>
+        EqualizerApoConfigBuilder.Build(settings) +
+        DiagnosticAttenuation + Environment.NewLine;
+
     private static string NormalizeNewlines(string value) =>
         value.Replace("\r\n", "\n", StringComparison.Ordinal)
             .TrimEnd('\r', '\n');
+
+    // Recover ONLY an exact LouderMe-owned 4-second attenuation file after
+    // an application crash. Never overwrite user changes to an APO file.
+    // Also recover v0.1.13's unmarked suffix when the whole file matches.
+    public bool RecoverInterruptedDiagnostic(DesktopAudioSettings settings)
+    {
+        if (!File.Exists(LouderMeConfigPath)) return false;
+        var current = File.ReadAllText(LouderMeConfigPath);
+        var knownTagged = NormalizeNewlines(DiagnosticContent(settings));
+        var knownLegacy = NormalizeNewlines(LegacyDiagnosticContent(settings));
+        var normalized = NormalizeNewlines(current);
+        if (normalized == knownTagged || normalized == knownLegacy)
+        {
+            File.WriteAllText(LouderMeConfigPath, EqualizerApoConfigBuilder.Build(settings));
+            return true;
+        }
+        if (current.Contains(DiagnosticMarker, StringComparison.Ordinal))
+            throw new InvalidOperationException(
+                "The temporary LouderMe audio test file changed outside the app. " +
+                "Automatic recovery stopped to preserve the modified APO configuration. " +
+                "Inspect LouderMe.txt manually; no sound path can be certified.");
+        return false;
+    }
 
     // Normal edits intentionally do not elevate. The user consents separately
     // to the one-time privileged setup; after that only LouderMe.txt is user-writable.
@@ -79,6 +115,15 @@ internal sealed class EqualizerApoEngine
 
         var updated = EqualizerApoConfigBuilder.EnsureInclude(existing);
         var generated = EqualizerApoConfigBuilder.Build(settings);
+
+        // An interrupted tagged probe is *not* a normal stale-settings write.
+        // Refuse to discard unknown external edits until it is safely recovered.
+        if (File.Exists(LouderMeConfigPath) &&
+            File.ReadAllText(LouderMeConfigPath)
+                .Contains(DiagnosticMarker, StringComparison.Ordinal))
+            throw new InvalidOperationException(
+                "A temporary LouderMe audio-path test is still present. " +
+                "Recover it first; modified third-party configuration will not be overwritten.");
 
         if (!File.Exists(LouderMeConfigPath) ||
             !NormalizeNewlines(File.ReadAllText(LouderMeConfigPath))
@@ -96,14 +141,22 @@ internal sealed class EqualizerApoEngine
         }
     }
 
-    // Temporary, exclusively attenuating probe. It cannot prove loopback
-    // audio itself; the owner listens for a volume decrease on their device.
-    // Caller MUST restore Apply(settings) in a finally block.
+    // Temporary, exclusively attenuating probe: no microphone, recording,
+    // endpoint switching or elevation. Caller must recover via the exact
+    // fingerprinted content check in finally; a process crash is recovered
+    // again on next launch before showing Boost/EQ as applied.
     public void ApplyDiagnosticAttenuation(DesktopAudioSettings settings)
     {
+        if (File.Exists(LouderMeConfigPath) &&
+            File.ReadAllText(LouderMeConfigPath)
+                .Contains(DiagnosticMarker, StringComparison.Ordinal))
+            throw new InvalidOperationException(
+                "Finish recovery of the previous audio-path diagnostic first.");
+
         Apply(settings);
         File.AppendAllText(LouderMeConfigPath,
-            "Preamp: -18.0 dB" + Environment.NewLine);
+            DiagnosticMarker + Environment.NewLine +
+            DiagnosticAttenuation + Environment.NewLine);
     }
 
     // Run only after a user explicitly confirms a Windows UAC prompt.
@@ -190,15 +243,59 @@ internal sealed class EqualizerApoEngine
             if (!File.Exists(engine.MainConfigPath + ".louderme.bak"))
                 throw new InvalidOperationException("Original APO config was not backed up.");
 
+            // Reproduce the previous failure: process dies before finally,
+            // leaving a -18 dB Preamp in Equalizer APO. Next startup must
+            // restore ONLY an unmodified, exact LouderMe diagnostic suffix.
             engine.ApplyDiagnosticAttenuation(settings);
-            if (!File.ReadAllText(engine.LouderMeConfigPath)
-                    .Contains("Preamp: -18.0 dB", StringComparison.Ordinal) ||
+            var exactProbe = File.ReadAllText(engine.LouderMeConfigPath);
+            if (!exactProbe.Contains(DiagnosticMarker, StringComparison.Ordinal) ||
+                !exactProbe.Contains(DiagnosticAttenuation, StringComparison.Ordinal) ||
                 engine.GetStatus(settings).MatchesSettings)
                 throw new InvalidOperationException("Diagnostic attenuation was not applied.");
-            engine.Apply(settings);
-            if (File.ReadAllText(engine.LouderMeConfigPath)
-                    .Contains("Preamp: -18.0 dB", StringComparison.Ordinal))
-                throw new InvalidOperationException("Temporary attenuation was not restored.");
+            if (!engine.RecoverInterruptedDiagnostic(settings) ||
+                engine.GetStatus(settings).MatchesSettings is false)
+                throw new InvalidOperationException("Interrupted attenuation was not recovered on startup.");
+            if (engine.RecoverInterruptedDiagnostic(settings))
+                throw new InvalidOperationException("A completed probe was recovered twice.");
+
+            // If another program/user edits the file during the test, never
+            // silently clobber the edit at exit or on the next start.
+            engine.ApplyDiagnosticAttenuation(settings);
+            File.AppendAllText(engine.LouderMeConfigPath, "# legitimate external edit" + Environment.NewLine);
+            var changed = File.ReadAllText(engine.LouderMeConfigPath);
+            var blocked = false;
+            try { engine.RecoverInterruptedDiagnostic(settings); }
+            catch (InvalidOperationException) { blocked = true; }
+            if (!blocked || File.ReadAllText(engine.LouderMeConfigPath) != changed)
+                throw new InvalidOperationException("Modified diagnostic file was silently overwritten.");
+            blocked = false;
+            try { engine.Apply(settings); }
+            catch (InvalidOperationException) { blocked = true; }
+            if (!blocked || File.ReadAllText(engine.LouderMeConfigPath) != changed)
+                throw new InvalidOperationException("Normal apply overwrote modified probe content.");
+
+            // Explicit test-only repair to resume ordinary product contract.
+            File.WriteAllText(engine.LouderMeConfigPath, exactProbe);
+            if (!engine.RecoverInterruptedDiagnostic(settings))
+                throw new InvalidOperationException("Exact marked diagnostic could not be repaired.");
+
+            // v0.1.13 used an unmarked -18 dB suffix; only byte-equivalent
+            // legacy generated content is eligible for safe recovery.
+            File.WriteAllText(engine.LouderMeConfigPath, LegacyDiagnosticContent(settings));
+            if (!engine.RecoverInterruptedDiagnostic(settings) ||
+                !engine.GetStatus(settings).MatchesSettings)
+                throw new InvalidOperationException("Original v0.1.13 diagnostic was not recovered.");
+            File.WriteAllText(engine.LouderMeConfigPath,
+                LegacyDiagnosticContent(settings) + "# external legacy edit" + Environment.NewLine);
+            var legacyEdited = File.ReadAllText(engine.LouderMeConfigPath);
+            if (engine.RecoverInterruptedDiagnostic(settings) ||
+                File.ReadAllText(engine.LouderMeConfigPath) != legacyEdited)
+                throw new InvalidOperationException("Legacy foreign edit was overwritten.");
+            File.WriteAllText(engine.LouderMeConfigPath, EqualizerApoConfigBuilder.Build(settings));
+
+            // No out-of-process endpoint or hardware proof is implied.
+            if (engine.RecoverInterruptedDiagnostic(settings))
+                throw new InvalidOperationException("Ordinary APO config was misidentified as a probe.");
 
             settings.BoostPercent = 175;
             var stale = engine.GetStatus(settings);

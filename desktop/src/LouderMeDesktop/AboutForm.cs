@@ -8,6 +8,8 @@ internal sealed class AboutForm : Form
     private DesktopUpdateCheck? _lastCheck;
     private readonly Label _updateStatus = new();
     private readonly Button _updateButton = new();
+    private FlowLayoutPanel? _page;
+    private Panel[] _cards = [];
 
     private static readonly Color Bg = BrandColors.Bg;
     private static readonly Color Surface = BrandColors.Surface;
@@ -40,78 +42,136 @@ internal sealed class AboutForm : Form
 
     private void BuildUi()
     {
-        var root = new FlowLayoutPanel
+        // The previous autosized Panel + Dock=Top + autosized child creates
+        // a circular PreferredSize dependency. On real Windows installations
+        // the four 800px cards collapsed into 30-50px-wide empty strips.
+        // Use a fixed-width, explicitly measured, single scroll owner.
+        var page = new FlowLayoutPanel
         {
+            Name = "about-scroll-page",
             Dock = DockStyle.Fill,
             AutoScroll = true,
-            FlowDirection = FlowDirection.TopDown,
             WrapContents = false,
-            Padding = new Padding(22),
+            FlowDirection = FlowDirection.TopDown,
+            Padding = new Padding(18, 18, 18, 18),
+            Margin = Padding.Empty,
             BackColor = Bg,
         };
+        _page = page;
+        _cards =
+        [
+            (Panel)BuildProductHero(),
+            (Panel)BuildAuthorCard(),
+            (Panel)BuildUpdateCard(),
+            (Panel)BuildPrivacyCard(),
+        ];
+        var titles = new[] { "about-product", "about-author", "about-updates", "about-legal" };
+        for (var i = 0; i < _cards.Length; i++)
+        {
+            _cards[i].Name = titles[i];
+            page.Controls.Add(_cards[i]);
+        }
+        var close = BrandButton("Close", Cyan);
+        close.Click += (_, _) => Close();
+        close.Margin = new Padding(0, 4, 0, 24);
+        page.Controls.Add(close);
+        Controls.Add(page);
 
-        root.Controls.Add(BuildProductHero());
-        root.Controls.Add(BuildAuthorCard());
-        root.Controls.Add(BuildUpdateCard());
-        root.Controls.Add(BuildPrivacyCard());
-
-        // Widths are based on the actual client viewport, never an 800px card
-        // on a narrower monitor. The root remains vertically scrollable.
-        var fittingCards = false;
+        var fitting = false;
         void FitCardsToViewport()
         {
-            if (root.IsDisposed || fittingCards) return;
-            fittingCards = true;
-            var available = Math.Max(340, root.ClientSize.Width - root.Padding.Horizontal - 22);
-            root.SuspendLayout();
+            if (page.IsDisposed || fitting || page.ClientSize.Width <= 0) return;
+            fitting = true;
+            page.SuspendLayout();
             try
             {
-                foreach (Control card in root.Controls)
+                var width = Math.Max(300,
+                    page.ClientSize.Width - page.Padding.Horizontal -
+                    SystemInformation.VerticalScrollBarWidth - 8);
+                foreach (var card in _cards)
                 {
-                    if (card is not Panel) continue;
-                    card.Width = available;
-                    foreach (var row in card.Controls.OfType<TableLayoutPanel>())
+                    card.SuspendLayout();
+                    card.AutoSize = false;
+                    card.Width = width;
+                    var body = card.Controls.Cast<Control>().Single();
+                    body.SuspendLayout();
+                    body.Dock = DockStyle.None;
+                    body.Location = new Point(card.Padding.Left, card.Padding.Top);
+                    body.Width = Math.Max(260, width - card.Padding.Horizontal - 2);
+
+                    // Cards with two columns, author/social buttons and text
+                    // must measure against the actual available width.
+                    foreach (var social in body.Controls.OfType<FlowLayoutPanel>())
                     {
-                        foreach (var mark in row.Controls.OfType<WaveformMarkControl>())
-                            mark.Width = Math.Max(170, Math.Min(540, available - card.Padding.Horizontal - 18));
-                        foreach (var author in row.Controls.OfType<FlowLayoutPanel>())
+                        if (social.Controls.OfType<Panel>().Any())
                         {
-                            foreach (var studioLogo in author.Controls.OfType<PictureBox>())
-                                studioLogo.Width = Math.Max(145, Math.Min(260, available - card.Padding.Horizontal - 134));
-                        }
-                        foreach (var social in row.Controls.OfType<FlowLayoutPanel>())
-                        {
-                            if (social.Controls.OfType<Panel>().Any())
+                            social.Width = body.Width;
+                            foreach (var link in social.Controls.OfType<Panel>())
                             {
-                                foreach (var panel in social.Controls.OfType<Panel>())
-                                {
-                                    panel.Width = Math.Max(260, available - card.Padding.Horizontal - 12);
-                                    foreach (var label in panel.Controls.OfType<Label>())
-                                    {
-                                        if (label.Text is "Instagram" or "Facebook" or "LinkedIn" or "GitHub" or "Email")
-                                            label.Width = Math.Max(120, panel.Width - 102);
-                                    }
-                                }
+                                link.Width = body.Width - 2;
+                                foreach (var label in link.Controls.OfType<Label>())
+                                    if (label.Text is "Instagram" or "Facebook" or
+                                        "LinkedIn" or "GitHub" or "Email")
+                                        label.Width = Math.Max(120, link.Width - 100);
                             }
                         }
+                        else
+                        {
+                            social.Width = Math.Max(140, body.Width - 122);
+                            foreach (var label in social.Controls.OfType<Label>())
+                                if (label.Font.Size >= 18f)
+                                    label.MaximumSize = new Size(social.Width - 8, 0);
+                        }
                     }
+                    foreach (var label in body.Controls.OfType<Label>())
+                        if (label.MaximumSize.Width > 0)
+                            label.MaximumSize = new Size(body.Width - 8, 0);
+                    body.ResumeLayout(true);
+                    body.PerformLayout();
+                    var preferred = body.GetPreferredSize(new Size(body.Width, 0));
+                    // Give the card an explicit non-zero height; the previous
+                    // AutoSize Panel collapsed to a narrow painted rectangle.
+                    body.Height = Math.Max(160, preferred.Height);
+                    card.Height = body.Bottom + card.Padding.Bottom + 2;
+                    card.ResumeLayout(true);
                 }
+                page.PerformLayout();
             }
             finally
             {
-                root.ResumeLayout(true);
-                fittingCards = false;
+                page.ResumeLayout(true);
+                fitting = false;
             }
         }
-        root.ClientSizeChanged += (_, _) => FitCardsToViewport();
+
+        page.ClientSizeChanged += (_, _) => FitCardsToViewport();
         Shown += (_, _) => FitCardsToViewport();
+    }
 
-        var close = BrandButton("Close", Cyan);
-        close.Click += (_, _) => Close();
-        close.Margin = new Padding(0, 2, 0, 20);
-        root.Controls.Add(close);
-
-        Controls.Add(root);
+    internal void AssertVisualLayout()
+    {
+        if (_page is null || _cards.Length != 4)
+            throw new InvalidOperationException("About cards were not initialized.");
+        PerformLayout();
+        Application.DoEvents();
+        foreach (var card in _cards)
+        {
+            if (card.Width < 300 || card.Height < 160)
+                throw new InvalidOperationException(
+                    $"About card {card.Name} collapsed: {card.Width}x{card.Height}.");
+            if (card.Controls.Count != 1 ||
+                card.Controls[0].Width < 260 ||
+                card.Controls[0].Height < 150)
+                throw new InvalidOperationException(
+                    $"About card {card.Name} lost its content.");
+        }
+        var product = _cards[0];
+        if (product.Controls[0] is not TableLayoutPanel hero ||
+            !hero.Controls.OfType<PictureBox>().Any(p =>
+                p.Image is not null && p.Width > 200 && p.Height > 70))
+            throw new InvalidOperationException("About logo hero is missing.");
+        if (!_page.AutoScroll || !_page.VerticalScroll.Visible)
+            throw new InvalidOperationException("About content is not scrollable.");
     }
 
     private Control BuildProductHero()
@@ -450,7 +510,8 @@ internal sealed class AboutForm : Form
         var panel = new Panel
         {
             Width = width,
-            AutoSize = true,
+            AutoSize = false,
+            Height = 220,
             BackColor = Surface,
             Padding = new Padding(18),
             Margin = new Padding(0, 0, 0, 14),

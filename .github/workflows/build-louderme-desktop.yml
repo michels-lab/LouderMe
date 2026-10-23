@@ -131,7 +131,7 @@ jobs:
           }
 
           $about=Get-Content 'desktop/src/LouderMeDesktop/AboutForm.cs' -Raw
-          foreach ($required in @('ABOUT THE AUTHOR','Instagram','Facebook','LinkedIn','GitHub','Email','MichelsLabLockup','Proprietary','Equalizer APO')) {
+          foreach ($required in @('ABOUT THE AUTHOR','Instagram','Facebook','LinkedIn','GitHub','Email','studio-attribution','about-hero-description','Proprietary','Equalizer APO')) {
             if ($about -notmatch [regex]::Escape($required)) { throw "Desktop About contract missing: $required" }
           }
 

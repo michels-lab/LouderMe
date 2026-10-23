@@ -137,7 +137,7 @@ internal sealed class AboutForm : Form
             Width = 280,
             Height = 120,
             Dock = DockStyle.Top,
-            BackColor = Color.FromArgb(247, 250, 254),
+            BackColor = BrandColors.Bg,
             SizeMode = PictureBoxSizeMode.Zoom,
             Margin = new Padding(0, 2, 0, 6),
             AccessibleName = "Official LouderMe logo",

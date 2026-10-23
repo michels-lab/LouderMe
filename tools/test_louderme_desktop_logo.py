@@ -33,17 +33,20 @@ def main() -> None:
     with Image.open(PNG) as image:
         if image.format != "PNG" or image.width < 600 or image.height < 200:
             raise AssertionError("Missing/low-resolution official lockup raster")
-        if abs(image.width / image.height - 1600 / 600) > 0.04:
-            raise AssertionError("Official logo was distorted or cropped")
+        if not (1.4 < image.width / image.height < 5.0):
+            raise AssertionError("Dark-surface canonical logo crop/aspect ratio invalid")
         rgba = image.convert("RGBA")
         actual = [p for p in rgba.getdata() if p[3] > 180]
         if len(actual) < 2500:
             raise AssertionError("Official lockup rendered blank/transparent")
-        navy = sum(r < 65 and g < 105 and b < 135 for r, g, b, _ in actual)
+        light_wordmark = sum(r > 205 and g > 215 and b > 220
+                             for r, g, b, _ in actual)
         blue = sum(b > 175 and b > r * 1.35 and b > g * 1.06
                    for r, g, b, _ in actual)
-        if navy < 600 or blue < 500:
-            raise AssertionError("Official LouderMe navy/blue wordmark missing")
+        if light_wordmark < 600 or blue < 500:
+            raise AssertionError("Official LouderMe light wordmark/blue mark missing")
+        if rgba.getpixel((0, 0))[3] > 30:
+            raise AssertionError("Dark-surface lockup must have a transparent background")
 
     with Image.open(ICON) as image:
         if image.format != "ICO" or max(image.size) < 32:
@@ -63,7 +66,7 @@ def main() -> None:
             raise AssertionError(f"{source.name} does not render approved lockup")
     if "new[] { 480, 600 }" not in main_code or "lockupBounds.IntersectsWith(about)" not in main_code:
         raise AssertionError("Missing live compact-logo layout regression")
-    print("PASS: approved canonical SVG text/geometry, rendered navy+blue lockup,"
+    print("PASS: canonical SVG text/geometry, transparent dark-surface lockup,"
           " official ICO, embedded resources, all three real screens and"
           " 480/600px WinForms layout guard")
 

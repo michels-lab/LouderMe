@@ -1,5 +1,9 @@
 # LouderMe
 
+## Operación Granada — audio de aplicaciones externas en Windows (2026-10-22)
+
+[Ver investigación y corrección de inicialización nula del puente nativo](docs/audits/GRANADA_2026-10-22_EXTERNAL_AUDIO_NULL_ROUTE.md). Ambos modos de prueba quedan separados en el código. **Aún no hay evidencia de audio físico ni una versión nativa publicada.**
+
 ## Operación Granada — ecualizador nativo, contrato de siete bandas (2026-10-21)
 
 [Ver auditoría de alineación de frecuencias entre Android/Windows y el DSP experimental](docs/audits/GRANADA_2026-10-21_NATIVE_EQ_PARITY.md). **No modifica la versión pública** ni demuestra audio físico del driver virtual.

@@ -27,6 +27,8 @@ def source_contract() -> None:
         "card.Width = width",
         "card.Height = body.Bottom",
         "body.GetPreferredSize",
+        "source.MakeTransparent(Color.FromArgb(201, 34, 92))",
+        "page.AutoScrollPosition = Point.Empty",
         "internal void AssertVisualLayout()",
         '"about-author"',
         '"about-updates"',
@@ -84,6 +86,11 @@ def check_installed_screenshots(directory: Path) -> None:
             px = list(crop.getdata())
             bright = sum(max(r, g, b) > 178 and r + g + b > 360
                          for r, g, b in px)
+            matte = sum(185 <= r <= 215 and 20 <= g <= 52
+                        and 72 <= b <= 115 for r, g, b in img.getdata())
+            if matte > 100:
+                raise AssertionError(
+                    f"About {layout} still displays the Michel's Lab magenta matte")
             if bright < 250:
                 raise AssertionError(
                     f"About {layout} screenshot appears blank "

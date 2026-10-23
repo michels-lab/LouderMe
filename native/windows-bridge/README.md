@@ -280,3 +280,9 @@ The physical route test is intentionally **not** accepted if a 440 Hz tone is pr
 The **experimental** native C++ processor now uses the same slider-index center frequencies as Android and the stable Windows APO UI: **60, 150, 400, 1000, 2500, 6000, 12000 Hz**. It formerly applied its seven peaking filters to 60/170/310/600/1000/3000/12000 Hz, so an experimental control index (notably index 4) did not correspond to the user-visible Hz label. The source mapping is fixed; previously stored seven dB values retain their indices as *product-labeled* values. This experimental native engine is not distributed as the current official Windows backend.
 
 C++ tests now measure low-level synthetic sine response at **every** advertised center and 1 kHz native interop controls target index 3. A dependency-free contract test compares the Android, Desktop and C++ source frequency arrays in CI. An actual signed virtual endpoint, independent application routing, physical sound measurements and user-facing native boost remain unverified, and no public binary has changed.
+
+## Granada 2026-10-22 — external-app null-initialization blocker
+
+The `--probe-app-route` branch previously entered the common physical route monitor and **unconditionally** called `sourceToneOutput.Init(toneStream)`. Both are intentionally `null` when audio is supplied by a separate Windows application. This threw before `EXTERNAL_SOURCE_READY` and blocked genuine independent-source and no-source control experiments. The bridge now uses `PhysicalRouteStimulus.Initialize` to set up only its own `--probe-route` tone; external mode intentionally skips it and listens for separate Windows process PCM. `--check-route-tone` now tests the mode separation and failure on double/missing sources without audio devices.
+
+This corrects a deterministic lifecycle bug only. Actual virtual-driver installation, real external PCM, physical gain, system-wide support and release distribution remain unverified.

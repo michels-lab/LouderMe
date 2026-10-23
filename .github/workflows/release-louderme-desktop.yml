@@ -104,7 +104,14 @@ jobs:
 
           $brand=Get-Content 'desktop/src/LouderMeDesktop/BrandingControls.cs' -Raw
           $transparentStyleCount=([regex]::Matches($brand, 'SetStyle\(ControlStyles\.SupportsTransparentBackColor, true\)')).Count
-          if ($transparentStyleCount -lt 4) { throw 'Transparent custom controls are missing SupportsTransparentBackColor.' }
+          # The new EQ canvas/faders intentionally use opaque Surface instead of
+          # the old transparent fake waveform. Keep the three remaining
+          # transparent brand controls and explicitly guard real EQ drawing.
+          if ($transparentStyleCount -lt 3) { throw 'Original transparent brand controls missing.' }
+          if ($brand -notmatch 'internal sealed class EqBandFaderControl' -or
+              $brand -notmatch 'DoubleBuffered = true') {
+            throw 'Real buffered graphical seven-band equalizer control missing.'
+          }
 
           $program=Get-Content 'desktop/src/LouderMeDesktop/Program.cs' -Raw
           foreach ($required in @('startup-crash.log','--smoke-test','LouderMe startup error')) {

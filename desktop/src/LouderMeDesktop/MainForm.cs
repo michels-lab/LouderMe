@@ -321,11 +321,18 @@ internal sealed class MainForm : Form
                 _aboutAction.RectangleToScreen(_aboutAction.ClientRectangle)))
             throw new InvalidOperationException("About disappeared while workspace scrolled.");
         // Exercise real live About cards, not merely screenshot existence.
-        using var about = new AboutForm(_updates) { Size = new Size(600, 520) };
-        about.Show(this);
-        Application.DoEvents();
-        about.AssertVisibleLayout();
-        about.Close();
+        foreach (var aboutWidth in new[] { 480, 600, 860 })
+        {
+            using var about = new AboutForm(_updates)
+            {
+                StartPosition = FormStartPosition.CenterParent,
+                Size = new Size(aboutWidth, 520),
+            };
+            about.Show(this);
+            Application.DoEvents();
+            about.AssertVisibleLayout();
+            about.Close();
+        }
         _eqWave.AssertMixerContract();
     }
 

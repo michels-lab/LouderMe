@@ -34,31 +34,19 @@ internal sealed class SplashForm : Form
             BackColor = Color.Transparent,
         };
 
-        stack.Controls.Add(new WaveformMarkControl
+        // Render the official approved lockup, rather than two independent
+        // labels and a waveform mark with differing logo proportions.
+        stack.Controls.Add(new PictureBox
         {
+            Name = "splash-official-louderme-lockup",
             Width = 490,
-            Height = 130,
-            Margin = new Padding(0, 6, 0, 0),
-        });
-        stack.Controls.Add(new Label
-        {
-            AutoSize = true,
-            Width = 490,
-            Text = "LouderMe",
-            TextAlign = ContentAlignment.MiddleCenter,
-            ForeColor = BrandColors.Text,
-            Font = new Font("Segoe UI Semibold", 29f, FontStyle.Bold),
-            Margin = new Padding(0, 0, 0, 2),
-        });
-        stack.Controls.Add(new Label
-        {
-            AutoSize = false,
-            Width = 490,
-            Height = 28,
-            Text = "SOUND THAT LIFTS YOU",
-            TextAlign = ContentAlignment.MiddleCenter,
-            ForeColor = BrandColors.Gold,
-            Font = new Font("Consolas", 10f, FontStyle.Bold),
+            Height = 206,
+            Image = BrandAssets.LoadBitmap(
+                "LouderMeDesktop.Assets.LouderMeOfficialLockup.png"),
+            SizeMode = PictureBoxSizeMode.Zoom,
+            BackColor = Color.FromArgb(247, 250, 254),
+            Margin = new Padding(0, 6, 0, 10),
+            AccessibleName = "Official LouderMe logo",
         });
         stack.Controls.Add(new Label
         {

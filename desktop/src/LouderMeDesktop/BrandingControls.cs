@@ -186,7 +186,7 @@ internal sealed class EqCurveControl : Control
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public float[] Gains
     {
-        get => _gains;
+        get => _gains.ToArray();
         set
         {
             _gains = value?.Take(7).Concat(Enumerable.Repeat(0f, 7)).Take(7).ToArray()
@@ -197,57 +197,235 @@ internal sealed class EqCurveControl : Control
 
     public EqCurveControl()
     {
-        SetStyle(ControlStyles.SupportsTransparentBackColor, true);
         DoubleBuffered = true;
-        BackColor = Color.Transparent;
-        Height = 68;
+        BackColor = BrandColors.Surface;
+        MinimumSize = new Size(270, 164);
+        Height = 182;
     }
 
     protected override void OnPaint(PaintEventArgs e)
     {
         base.OnPaint(e);
-        e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-        if (Width < 10) return;
+        var g = e.Graphics;
+        g.SmoothingMode = SmoothingMode.AntiAlias;
+        if (Width < 120 || Height < 110) return;
+        var left = 38f;
+        var right = Width - 18f;
+        var top = 20f;
+        var bottom = Height - 26f;
+        var middle = (top + bottom) / 2f;
+        var amplitude = (bottom - top) / 20f;
 
-        var center = Height / 2f;
-        using var axis = new Pen(Color.FromArgb(90, BrandColors.Line), 1f);
-        e.Graphics.DrawLine(axis, 0, center, Width, center);
-
-        var points = _gains.Select((gain, index) => new PointF(
-            index * (Width - 1f) / 6f,
-            center - Math.Clamp(gain, -10f, 10f) / 10f * Height * .34f)).ToArray();
-
-        using var path = new GraphicsPath();
-        path.StartFigure();
-        for (var i = 1; i < points.Length; i++)
+        using var gridPen = new Pen(Color.FromArgb(70, BrandColors.Line), 1f);
+        using var zeroPen = new Pen(Color.FromArgb(130, BrandColors.Muted), 1f)
+            { DashStyle = DashStyle.Dash };
+        using var axisFont = new Font("Consolas", 8f, FontStyle.Regular);
+        using var labelBrush = new SolidBrush(BrandColors.Muted);
+        foreach (var db in new[] { 10, 5, 0, -5, -10 })
         {
-            var a = points[i - 1];
-            var b = points[i];
-            var mid = (a.X + b.X) / 2f;
-            path.AddBezier(a, new PointF(mid, a.Y), new PointF(mid, b.Y), b);
+            var y = middle - db * amplitude;
+            g.DrawLine(db == 0 ? zeroPen : gridPen, left, y, right, y);
+            g.DrawString(db > 0 ? $"+{db}" : db.ToString(),
+                axisFont, labelBrush, 2, y - 7);
         }
 
-        using var brush = new LinearGradientBrush(
-            ClientRectangle,
-            BrandColors.Cyan,
-            BrandColors.Violet,
-            LinearGradientMode.Horizontal);
-        using var pen = new Pen(brush, 3f)
+        var points = _gains.Select((gain, i) => new PointF(
+            left + i * (right - left) / 6f,
+            middle - Math.Clamp(gain, -10f, 10f) * amplitude)).ToArray();
+        using var curve = new GraphicsPath();
+        curve.StartFigure();
+        for (var i = 1; i < points.Length; i++)
         {
-            StartCap = LineCap.Round,
-            EndCap = LineCap.Round,
-        };
-        e.Graphics.DrawPath(pen, path);
+            var previous = points[i - 1];
+            var current = points[i];
+            var midpoint = (previous.X + current.X) / 2f;
+            curve.AddBezier(previous,
+                new PointF(midpoint, previous.Y),
+                new PointF(midpoint, current.Y), current);
+        }
+        using var fill = (GraphicsPath)curve.Clone();
+        fill.AddLine(points[^1], new PointF(right, bottom));
+        fill.AddLine(right, bottom, left, bottom);
+        fill.CloseFigure();
+        using var shade = new LinearGradientBrush(
+            new RectangleF(left, top, Math.Max(1f, right - left),
+                Math.Max(1f, bottom - top)),
+            Color.FromArgb(66, BrandColors.Cyan),
+            Color.FromArgb(8, BrandColors.Violet),
+            LinearGradientMode.Vertical);
+        g.FillPath(shade, fill);
 
+        using var glow = new Pen(Color.FromArgb(60, BrandColors.Cyan), 9f)
+            { StartCap = LineCap.Round, EndCap = LineCap.Round };
+        using var strokeBrush = new LinearGradientBrush(
+            new RectangleF(left, top, Math.Max(1f, right - left),
+                Math.Max(1f, bottom - top)),
+            BrandColors.Cyan, BrandColors.Violet,
+            LinearGradientMode.Horizontal);
+        using var stroke = new Pen(strokeBrush, 3.4f)
+            { StartCap = LineCap.Round, EndCap = LineCap.Round };
+        g.DrawPath(glow, curve);
+        g.DrawPath(stroke, curve);
         foreach (var point in points)
         {
-            e.Graphics.FillEllipse(brush, point.X - 4f, point.Y - 4f, 8f, 8f);
-            using var inner = new SolidBrush(BrandColors.Surface);
-            e.Graphics.FillEllipse(inner, point.X - 1.7f, point.Y - 1.7f, 3.4f, 3.4f);
+            using var dot = new SolidBrush(BrandColors.Surface);
+            g.FillEllipse(dot, point.X - 5f, point.Y - 5f, 10f, 10f);
+            g.DrawEllipse(stroke, point.X - 5f, point.Y - 5f, 10f, 10f);
         }
     }
 }
 
+/// <summary>
+/// Real interactive seven-band EQ fader, synchronized with the exact decimal
+/// control and underlying APO settings. Pointer, keyboard and reset supported.
+/// All changes remain disabled when the backend is not installed.
+/// </summary>
+internal sealed class EqBandFaderControl : Control
+{
+    private float _gainDb;
+    private bool _dragging;
+    [Browsable(false)]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public int FrequencyHz { get; set; }
+    public event Action<float>? GainEdited;
+
+    [Browsable(false)]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public float GainDb
+    {
+        get => _gainDb;
+        set
+        {
+            _gainDb = Math.Clamp(value, -10f, 10f);
+            Invalidate();
+        }
+    }
+
+    public EqBandFaderControl()
+    {
+        DoubleBuffered = true;
+        SetStyle(ControlStyles.Selectable, true);
+        TabStop = true;
+        Cursor = Cursors.Hand;
+        MinimumSize = new Size(41, 150);
+        Height = 188;
+        BackColor = BrandColors.Surface;
+    }
+
+    private float TopTrack => 34f;
+    private float BottomTrack => Math.Max(TopTrack + 30f, Height - 39f);
+    private float ValueY => TopTrack + (10f - GainDb) / 20f *
+        (BottomTrack - TopTrack);
+
+    protected override void OnPaint(PaintEventArgs e)
+    {
+        base.OnPaint(e);
+        if (Width < 35 || Height < 90) return;
+        var g = e.Graphics;
+        g.SmoothingMode = SmoothingMode.AntiAlias;
+        var center = Width / 2f;
+        using var mutedFont = new Font("Consolas", 8f, FontStyle.Bold);
+        using var valueFont = new Font("Consolas", 9f, FontStyle.Bold);
+        var freq = FrequencyHz >= 1000
+            ? $"{FrequencyHz / 1000f:0.#}k" : FrequencyHz.ToString();
+        using var text = new SolidBrush(Enabled ? BrandColors.Text : BrandColors.Muted);
+        using var accent = new SolidBrush(Enabled ? BrandColors.Cyan : BrandColors.Muted);
+        var valueLabel = $"{GainDb:+0.#;-0.#;0} dB";
+        var size = g.MeasureString(valueLabel, valueFont);
+        g.DrawString(valueLabel, valueFont, accent,
+            Math.Max(0, center - size.Width / 2), 5);
+        var h = BottomTrack - TopTrack;
+        using var rail = new Pen(BrandColors.Line, 8f)
+            { StartCap = LineCap.Round, EndCap = LineCap.Round };
+        g.DrawLine(rail, center, TopTrack, center, BottomTrack);
+        using var zero = new Pen(Color.FromArgb(120, BrandColors.Muted), 1f);
+        var zeroY = (TopTrack + BottomTrack) / 2f;
+        g.DrawLine(zero, center - 10, zeroY, center + 10, zeroY);
+        using var active = new LinearGradientBrush(
+            new RectangleF(center - 4, TopTrack, 8, Math.Max(1f, h)),
+            Enabled ? BrandColors.Cyan : BrandColors.Muted,
+            Enabled ? BrandColors.Violet : BrandColors.Line,
+            LinearGradientMode.Vertical);
+        using var live = new Pen(active, 6f)
+            { StartCap = LineCap.Round, EndCap = LineCap.Round };
+        g.DrawLine(live, center, zeroY, center, ValueY);
+        using var thumb = new SolidBrush(Enabled ? BrandColors.Text : BrandColors.Muted);
+        g.FillEllipse(thumb, center - 10, ValueY - 7, 20, 14);
+        using var ring = new Pen(Enabled ? BrandColors.Cyan : BrandColors.Line, 2f);
+        g.DrawEllipse(ring, center - 10, ValueY - 7, 20, 14);
+        var fs = g.MeasureString(freq, mutedFont);
+        g.DrawString(freq, mutedFont, text, center - fs.Width / 2f, Height - 24);
+        if (Focused && Enabled)
+        {
+            using var focus = new Pen(BrandColors.Gold, 1f)
+                { DashStyle = DashStyle.Dot };
+            g.DrawRectangle(focus, 1, 1, Width - 3, Height - 3);
+        }
+    }
+
+    private void EditAt(float y)
+    {
+        if (!Enabled) return;
+        var ratio = Math.Clamp((y - TopTrack) /
+            (BottomTrack - TopTrack), 0f, 1f);
+        var next = Math.Clamp(MathF.Round((10f - ratio * 20f) * 2f) / 2f,
+            -10f, 10f);
+        if (MathF.Abs(next - GainDb) < .001f) return;
+        GainDb = next;
+        GainEdited?.Invoke(next);
+    }
+
+    protected override void OnMouseDown(MouseEventArgs e)
+    {
+        base.OnMouseDown(e);
+        if (!Enabled || e.Button != MouseButtons.Left) return;
+        Focus();
+        _dragging = true;
+        Capture = true;
+        EditAt(e.Y);
+    }
+    protected override void OnMouseMove(MouseEventArgs e)
+    {
+        base.OnMouseMove(e);
+        if (_dragging) EditAt(e.Y);
+    }
+    protected override void OnMouseUp(MouseEventArgs e)
+    {
+        base.OnMouseUp(e);
+        if (e.Button != MouseButtons.Left) return;
+        if (_dragging) EditAt(e.Y);
+        _dragging = false;
+        Capture = false;
+    }
+    protected override void OnMouseDoubleClick(MouseEventArgs e)
+    {
+        base.OnMouseDoubleClick(e);
+        if (Enabled && e.Button == MouseButtons.Left)
+        {
+            GainDb = 0f;
+            GainEdited?.Invoke(0f);
+        }
+    }
+    protected override bool IsInputKey(Keys keyData) =>
+        keyData is Keys.Up or Keys.Down or Keys.Home || base.IsInputKey(keyData);
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        base.OnKeyDown(e);
+        if (!Enabled) return;
+        float? next = e.KeyCode switch
+        {
+            Keys.Up => Math.Clamp(GainDb + 0.5f, -10f, 10f),
+            Keys.Down => Math.Clamp(GainDb - 0.5f, -10f, 10f),
+            Keys.Home => 0f,
+            _ => null,
+        };
+        if (next is null) return;
+        GainDb = next.Value;
+        GainEdited?.Invoke(next.Value);
+        e.Handled = true;
+        e.SuppressKeyPress = true;
+    }
+}
 
 internal enum SocialNetwork
 {

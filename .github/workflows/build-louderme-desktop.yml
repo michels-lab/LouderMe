@@ -60,6 +60,8 @@ jobs:
           pwsh -File desktop/installer/prepare-branding.ps1 -MagickPath $magickPath
           python tools/test_louderme_desktop_logo.py
           if ($LASTEXITCODE -ne 0) { throw 'Official LouderMe logo raster/icon contract failed.' }
+          python tools/test_louderme_desktop_redesign.py
+          if ($LASTEXITCODE -ne 0) { throw 'LouderMe About/Logo/interactive EQ regression contract failed.' }
 
       - name: Restore and build native desktop app
         shell: pwsh
@@ -255,6 +257,9 @@ jobs:
             -OutDir desktop/artifacts/visual-windows
           if ($LASTEXITCODE -ne 0) { throw "Rendered Windows UI evidence capture failed" }
           python tools/visual_release_gate.py --manifest desktop/artifacts/visual-windows/manifest.json --source-sha $env:GITHUB_SHA --platforms windows-desktop --surfaces home,about
+          if ($LASTEXITCODE -ne 0) { throw 'Windows visual release gate failed.' }
+          python tools/test_louderme_desktop_redesign.py --evidence desktop/artifacts/visual-windows
+          if ($LASTEXITCODE -ne 0) { throw 'Installed About/Logo/EQ pixel regression failed.' }
           if ($LASTEXITCODE -ne 0) { throw "Rendered Windows UI gate failed" }
 
           $uninstaller=Join-Path $target 'unins000.exe'

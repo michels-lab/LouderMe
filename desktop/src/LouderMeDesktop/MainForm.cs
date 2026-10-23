@@ -27,6 +27,7 @@ internal sealed class MainForm : Form
     private FlowLayoutPanel? _boostQuickActions;
     private bool _diagnosticRunning;
     private bool? _lastAudioTestHeard;
+    private string? _startupProbeRecoveryNotice;
     private readonly CheckBox _eqEnabled = new();
     private readonly ComboBox _preset = new();
     private readonly NumericUpDown[] _eqBands = new NumericUpDown[7];
@@ -66,8 +67,32 @@ internal sealed class MainForm : Form
         Font = new Font("Segoe UI", 10f);
         AutoScaleMode = AutoScaleMode.Dpi;
 
+        // The four-second listening probe can outlive the process after a
+        // crash or forced shutdown. Only an EXACT generated LouderMe test
+        // is eligible for automatic restoration; never discard external edits.
+        try
+        {
+            if (_apo.RecoverInterruptedDiagnostic(_settings))
+                _startupProbeRecoveryNotice =
+                    "Recovered a previously interrupted -18 dB audio-path test. " +
+                    "Original Boost/EQ configuration restored; physical audio remains unverified.";
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException
+                                   or InvalidOperationException)
+        {
+            _startupProbeRecoveryNotice =
+                "A previous audio-path test could not be restored safely: " +
+                ex.Message;
+        }
+        // Recover before building controls: UI setup must never accidentally
+        // apply defaults over a still-pending legacy diagnostic suffix.
         BuildUi();
         LoadState();
+        if (_startupProbeRecoveryNotice is not null)
+        {
+            _engineStatus.ForeColor = Gold;
+            _engineStatus.Text = _startupProbeRecoveryNotice;
+        }
         _deviceVolumeSyncTimer.Tick += (_, _) => SyncDeviceVolume();
         _deviceVolumeSyncTimer.Start();
 
@@ -913,12 +938,23 @@ internal sealed class MainForm : Form
             MessageBoxIcon.Question) != DialogResult.Yes)
             return;
 
+        // Bind the temporary effect and its restoration to the SAME
+        // immutable values even if a deferred UI event arrives mid-test.
+        var testSettings = new DesktopAudioSettings
+        {
+            BoostEnabled = _settings.BoostEnabled,
+            BoostPercent = _settings.BoostPercent,
+            EqualizerEnabled = _settings.EqualizerEnabled,
+            Preset = _settings.Preset,
+            EqualizerGainsDb = (float[])_settings.EqualizerGainsDb.Clone(),
+        };
         _diagnosticRunning = true;
         _audioPathTestAction.Enabled = false;
+        RefreshEngineStatus(); // lock Boost/EQ controls for the 4-second probe
         var performed = false;
         try
         {
-            _apo.ApplyDiagnosticAttenuation(_settings);
+            _apo.ApplyDiagnosticAttenuation(testSettings);
             performed = true;
             _engineStatus.ForeColor = Gold;
             _engineStatus.Text = "TESTING -18 dB ATTENUATION · Your playing audio should " +
@@ -931,7 +967,15 @@ internal sealed class MainForm : Form
         }
         finally
         {
-            try { _apo.Apply(_settings); }
+            // Restore ONLY the exact temporary test configuration. A changed
+            // APO file is preserved instead of being silently overwritten.
+            try
+            {
+                if (!_apo.RecoverInterruptedDiagnostic(testSettings) && performed)
+                    throw new InvalidOperationException(
+                        "The temporary audio test was changed externally. " +
+                        "Original settings were not overwritten; inspect Equalizer APO.");
+            }
             catch (Exception ex) { ShowEngineError(ex); performed = false; }
             _diagnosticRunning = false;
             _audioPathTestAction.Enabled = true;
@@ -1029,13 +1073,16 @@ internal sealed class MainForm : Form
             && !_diagnosticRunning;
         // Do not offer apparently functional effect controls when no processing
         // backend exists. Endpoint volume remains usable.
-        _boostEnabled.Enabled = status.Installed;
-        _boost.Enabled = status.Installed;
-        if (_boostQuickActions is not null) _boostQuickActions.Enabled = status.Installed;
-        _eqEnabled.Enabled = status.Installed;
-        _preset.Enabled = status.Installed;
+        // A listening test must not allow slider edits to change the saved
+        // settings or regenerate the APO file before it has been restored.
+        var controlsEnabled = status.Installed && !_diagnosticRunning;
+        _boostEnabled.Enabled = controlsEnabled;
+        _boost.Enabled = controlsEnabled;
+        if (_boostQuickActions is not null) _boostQuickActions.Enabled = controlsEnabled;
+        _eqEnabled.Enabled = controlsEnabled;
+        _preset.Enabled = controlsEnabled;
         foreach (var band in _eqBands)
-            if (band is not null) band.Enabled = status.Installed;
+            if (band is not null) band.Enabled = controlsEnabled;
 
         if (!status.Installed)
         {

@@ -1,5 +1,9 @@
 # LouderMe
 
+## Operación Granada — recuperación segura del test de audio Windows (2026-10-22)
+
+[Ver auditoría del test de atenuación temporal de −18 dB](docs/audits/GRANADA_2026-10-22_APO_DIAGNOSTIC_RECOVERY.md): el código nuevo recupera al reiniciar solo una prueba identificada con exactitud, preservando ediciones externas. La integración no prueba el audio físico ni actualiza el instalador público.
+
 ## Operación Granada — ecualizador nativo, contrato de siete bandas (2026-10-21)
 
 [Ver auditoría de alineación de frecuencias entre Android/Windows y el DSP experimental](docs/audits/GRANADA_2026-10-21_NATIVE_EQ_PARITY.md). **No modifica la versión pública** ni demuestra audio físico del driver virtual.

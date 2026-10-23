@@ -34,6 +34,7 @@ internal sealed class MainForm : Form
     private readonly Label[] _eqBandValues = new Label[7];
     private readonly AudioPulseControl _boostWave = new();
     private readonly EqCurveControl _eqWave = new();
+    private Panel? _equalizerCard;
     private readonly Label _updateStatus = new();
     private readonly Button _updateAction = new();
     private readonly PictureBox _officialLogo = new();
@@ -237,6 +238,20 @@ internal sealed class MainForm : Form
                 throw new InvalidOperationException("About action is clipped in the rendered Home window.");
 
             SaveRenderedForm(this, Path.Combine(destination, $"home-{viewport}.png"));
+            var eqCard = _equalizerCard ??
+                throw new InvalidOperationException("Visual EQ card is missing from rendered Home");
+            var scroller = _contentViewport ??
+                throw new InvalidOperationException("Scrollable audio workspace missing");
+            _eqWave.AssertMixerContract();
+            // Additional real running-form evidence: visually inspect the
+            // actual EQ, which Home-at-scroll-top cannot possibly show.
+            var maxScroll = Math.Max(0, scroller.DisplayRectangle.Height - scroller.ClientSize.Height);
+            scroller.AutoScrollPosition = new Point(0,
+                Math.Clamp(eqCard.Top + 35, 0, maxScroll));
+            Application.DoEvents();
+            SaveRenderedForm(this, Path.Combine(destination, $"equalizer-{viewport}.png"));
+            scroller.AutoScrollPosition = Point.Empty;
+            Application.DoEvents();
 
             using var about = new AboutForm(_updates)
             {
@@ -795,6 +810,7 @@ internal sealed class MainForm : Form
             advancedRows.Controls.Add(bandRow, 0, i);
         }
 
+        _equalizerCard = card;
         root.Controls.Add(card);
     }
 

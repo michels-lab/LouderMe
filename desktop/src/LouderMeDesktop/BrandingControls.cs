@@ -284,6 +284,8 @@ internal sealed class EqBandFaderControl : Control
 {
     private float _gainDb;
     private bool _dragging;
+    [Browsable(false)]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public int FrequencyHz { get; set; }
     public event Action<float>? GainEdited;
 

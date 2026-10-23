@@ -178,15 +178,23 @@ internal sealed class AudioPulseControl : Control
     }
 }
 
+// A real visual seven-band mixer: responsive curve + individually interactive
+// faders. Numeric fine-tuning remains available in an optional advanced panel.
+// Values are UI commands only; MainForm keeps the original APO state machine.
 internal sealed class EqCurveControl : Control
 {
+    private static readonly string[] Frequencies = ["60", "150", "400", "1k", "2.5k", "6k", "12k"];
     private float[] _gains = new float[7];
+    private int _selected = 3;
+    private bool _dragging;
+
+    public event Action<int, float>? BandGainChanged;
 
     [Browsable(false)]
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public float[] Gains
     {
-        get => _gains;
+        get => (float[])_gains.Clone();
         set
         {
             _gains = value?.Take(7).Concat(Enumerable.Repeat(0f, 7)).Take(7).ToArray()
@@ -197,57 +205,201 @@ internal sealed class EqCurveControl : Control
 
     public EqCurveControl()
     {
-        SetStyle(ControlStyles.SupportsTransparentBackColor, true);
         DoubleBuffered = true;
-        BackColor = Color.Transparent;
-        Height = 68;
+        SetStyle(ControlStyles.Selectable | ControlStyles.SupportsTransparentBackColor, true);
+        BackColor = BrandColors.Surface;
+        ForeColor = BrandColors.Text;
+        Height = 300;
+        MinimumSize = new Size(280, 290);
+        TabStop = true;
+        AccessibleName = "Interactive seven-band equalizer";
+        AccessibleDescription = "Select a frequency band and drag vertically, or use arrow keys to adjust by half a decibel";
+        Cursor = Cursors.Hand;
+    }
+
+    private RectangleF Plot => new(
+        38f, 48f, Math.Max(100, Width - 64f), Math.Max(110, Height - 122f));
+
+    private float BandX(int index)
+    {
+        var plot = Plot;
+        return plot.Left + index * plot.Width / 6f;
+    }
+
+    private float BandY(float db)
+    {
+        var plot = Plot;
+        return plot.Top + (10f - Math.Clamp(db, -10f, 10f)) * plot.Height / 20f;
+    }
+
+    private float DbAt(float y)
+    {
+        var plot = Plot;
+        var db = 10f - (y - plot.Top) / plot.Height * 20f;
+        return Math.Clamp(MathF.Round(db * 2f) / 2f, -10f, 10f);
     }
 
     protected override void OnPaint(PaintEventArgs e)
     {
         base.OnPaint(e);
-        e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-        if (Width < 10) return;
+        var g = e.Graphics;
+        g.SmoothingMode = SmoothingMode.AntiAlias;
+        var plot = Plot;
 
-        var center = Height / 2f;
-        using var axis = new Pen(Color.FromArgb(90, BrandColors.Line), 1f);
-        e.Graphics.DrawLine(axis, 0, center, Width, center);
+        using var background = new SolidBrush(BrandColors.Surface);
+        g.FillRectangle(background, ClientRectangle);
+        using var headline = new Font("Segoe UI Semibold", 10.5f, FontStyle.Bold);
+        using var small = new Font("Consolas", 8.5f, FontStyle.Bold);
+        using var titleBrush = new SolidBrush(BrandColors.Text);
+        using var mutedBrush = new SolidBrush(BrandColors.Muted);
+        using var cyanBrush = new SolidBrush(BrandColors.Cyan);
+        g.DrawString("FREQUENCY RESPONSE", headline, titleBrush, 8f, 3f);
+        g.DrawString("DRAG BANDS TO SHAPE THE SOUND", small, mutedBrush,
+            Math.Max(8f, Width - 264f), 28f);
 
-        var points = _gains.Select((gain, index) => new PointF(
-            index * (Width - 1f) / 6f,
-            center - Math.Clamp(gain, -10f, 10f) / 10f * Height * .34f)).ToArray();
+        foreach (var db in new[] { 10, 5, 0, -5, -10 })
+        {
+            var y = BandY(db);
+            using var grid = new Pen(db == 0 ? BrandColors.Line : Color.FromArgb(30, 48, 70), db == 0 ? 1.4f : 1f)
+            {
+                DashStyle = db == 0 ? DashStyle.Solid : DashStyle.Dot
+            };
+            g.DrawLine(grid, plot.Left, y, plot.Right, y);
+            g.DrawString(db > 0 ? $"+{db}" : db.ToString(), small, mutedBrush, 1f, y - 9f);
+        }
 
         using var path = new GraphicsPath();
-        path.StartFigure();
-        for (var i = 1; i < points.Length; i++)
+        for (var i = 0; i < 7; i++)
         {
-            var a = points[i - 1];
-            var b = points[i];
-            var mid = (a.X + b.X) / 2f;
-            path.AddBezier(a, new PointF(mid, a.Y), new PointF(mid, b.Y), b);
+            var current = new PointF(BandX(i), BandY(_gains[i]));
+            if (i == 0) path.StartFigure();
+            if (i == 0) continue;
+            var previous = new PointF(BandX(i - 1), BandY(_gains[i - 1]));
+            var mid = (previous.X + current.X) / 2f;
+            path.AddBezier(previous,
+                new PointF(mid, previous.Y),
+                new PointF(mid, current.Y), current);
         }
 
-        using var brush = new LinearGradientBrush(
-            ClientRectangle,
-            BrandColors.Cyan,
-            BrandColors.Violet,
-            LinearGradientMode.Horizontal);
-        using var pen = new Pen(brush, 3f)
+        // Gradient wash below the actual response curve.
+        using var fillPath = (GraphicsPath)path.Clone();
+        fillPath.AddLine(BandX(6), BandY(_gains[6]), plot.Right, plot.Bottom);
+        fillPath.AddLine(plot.Right, plot.Bottom, plot.Left, plot.Bottom);
+        fillPath.CloseFigure();
+        using var wash = new LinearGradientBrush(
+            plot, Color.FromArgb(95, BrandColors.Cyan),
+            Color.FromArgb(4, BrandColors.Blue), LinearGradientMode.Vertical);
+        g.FillPath(wash, fillPath);
+
+        using var lineGradient = new LinearGradientBrush(
+            plot, BrandColors.Cyan, BrandColors.Violet, LinearGradientMode.Horizontal);
+        using var response = new Pen(lineGradient, 3.5f)
         {
             StartCap = LineCap.Round,
-            EndCap = LineCap.Round,
+            EndCap = LineCap.Round
         };
-        e.Graphics.DrawPath(pen, path);
+        g.DrawPath(response, path);
 
-        foreach (var point in points)
+        for (var i = 0; i < 7; i++)
         {
-            e.Graphics.FillEllipse(brush, point.X - 4f, point.Y - 4f, 8f, 8f);
-            using var inner = new SolidBrush(BrandColors.Surface);
-            e.Graphics.FillEllipse(inner, point.X - 1.7f, point.Y - 1.7f, 3.4f, 3.4f);
+            var x = BandX(i);
+            var y = BandY(_gains[i]);
+            var selected = i == _selected;
+            using var guide = new Pen(Color.FromArgb(selected ? 100 : 53,
+                BrandColors.Cyan), selected ? 2.6f : 1.2f);
+            g.DrawLine(guide, x, plot.Top, x, plot.Bottom);
+            using var outer = new SolidBrush(selected ? BrandColors.Gold : BrandColors.Cyan);
+            using var core = new SolidBrush(BrandColors.Surface);
+            var radius = selected ? 8.5f : 6f;
+            g.FillEllipse(outer, x - radius, y - radius, radius * 2, radius * 2);
+            g.FillEllipse(core, x - radius + 3f, y - radius + 3f,
+                radius * 2 - 6f, radius * 2 - 6f);
+            var valueText = _gains[i].ToString("+0.0;-0.0;0.0") + "dB";
+            var vsize = g.MeasureString(valueText, small);
+            using var valueColor = new SolidBrush(selected ? BrandColors.Gold : BrandColors.Text);
+            g.DrawString(valueText, small, valueColor,
+                Math.Clamp(x - vsize.Width / 2, 0f, Width - vsize.Width),
+                plot.Bottom + 11f);
+            var label = Frequencies[i];
+            var lsize = g.MeasureString(label, small);
+            g.DrawString(label, small, mutedBrush,
+                Math.Clamp(x - lsize.Width / 2, 0f, Width - lsize.Width),
+                plot.Bottom + 36f);
         }
+        g.DrawString("Hz", small, mutedBrush, Math.Max(0, Width - 18f), Height - 16f);
+    }
+
+    private void AdjustAt(Point point)
+    {
+        if (!Enabled) return;
+        var index = Enumerable.Range(0, 7)
+            .MinBy(i => Math.Abs(BandX(i) - point.X));
+        _selected = index;
+        var value = DbAt(point.Y);
+        if (Math.Abs(_gains[index] - value) >= 0.01f)
+        {
+            _gains[index] = value;
+            BandGainChanged?.Invoke(index, value);
+        }
+        Invalidate();
+    }
+
+    protected override void OnMouseDown(MouseEventArgs e)
+    {
+        base.OnMouseDown(e);
+        if (e.Button != MouseButtons.Left || !Enabled) return;
+        Focus();
+        _dragging = true;
+        Capture = true;
+        AdjustAt(e.Location);
+    }
+
+    protected override void OnMouseMove(MouseEventArgs e)
+    {
+        base.OnMouseMove(e);
+        if (_dragging) AdjustAt(e.Location);
+    }
+
+    protected override void OnMouseUp(MouseEventArgs e)
+    {
+        base.OnMouseUp(e);
+        _dragging = false;
+        Capture = false;
+    }
+
+    protected override bool IsInputKey(Keys keyData) =>
+        keyData.HasFlag(Keys.Up) || keyData.HasFlag(Keys.Down) ||
+        keyData.HasFlag(Keys.Left) || keyData.HasFlag(Keys.Right) ||
+        base.IsInputKey(keyData);
+
+    protected override void OnKeyDown(KeyEventArgs e)
+    {
+        base.OnKeyDown(e);
+        if (!Enabled) return;
+        if (e.KeyCode == Keys.Left) _selected = Math.Max(0, _selected - 1);
+        else if (e.KeyCode == Keys.Right) _selected = Math.Min(6, _selected + 1);
+        else if (e.KeyCode is Keys.Up or Keys.Down)
+        {
+            var db = Math.Clamp(_gains[_selected] +
+                (e.KeyCode == Keys.Up ? 0.5f : -0.5f), -10f, 10f);
+            _gains[_selected] = db;
+            BandGainChanged?.Invoke(_selected, db);
+        }
+        else return;
+        e.Handled = true;
+        Invalidate();
+    }
+
+    internal void AssertMixerContract()
+    {
+        if (!Visible || Height < 280 || Width < 275 || _gains.Length != 7)
+            throw new InvalidOperationException("Visual seven-band equalizer collapsed");
+        var points = Enumerable.Range(0, 7).Select(BandX).ToArray();
+        if (points.Zip(points.Skip(1), (a, b) => b - a).Any(d => d < 28f) ||
+            !(BandY(10f) < BandY(0f) && BandY(0f) < BandY(-10f)))
+            throw new InvalidOperationException("EQ band geometry is not usable");
     }
 }
-
 
 internal enum SocialNetwork
 {

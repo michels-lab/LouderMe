@@ -2129,3 +2129,10 @@ Updated only the managed blocks in AGENTS.md and .github/copilot-instructions.md
 - B. Test real synthetic response at each of seven center frequencies at 48 kHz, preserve existing bypass/live click-attenuation/channel tests; correct Windows bridge C# 1-kHz index.
 - C. Add permanent Python source-contract guard comparing three product source arrays and wire into native CI; Android/Desktop EQ source changes also trigger verification. Detailed root-cause and limits: `docs/audits/GRANADA_2026-10-21_NATIVE_EQ_PARITY.md`.
 - QA: exact-head checks to be recorded on PR; physical device and driver acceptance not performed. No stable release or version bump. Issue #46/#48 remain open.
+
+## 2026-10-22 — Granada: external-app WASAPI route null dereference (source only)
+
+- **Root cause:** external-app `--probe-app-route` creates no internal `sourceToneOutput` or `toneStream`, but the shared `provePhysicalRoute` branch called `sourceToneOutput.Init(toneStream)` anyway, throwing before `EXTERNAL_SOURCE_READY` and blocking both positive and no-source controls.
+- **Fix:** `PhysicalRouteStimulus.Initialize` selects exactly one route: internal tone only when `--probe-route`; external app must remain external. The real monitor setup now uses that mode guard.
+- **Regression:** `--check-route-tone` runs additional hardware-free lifecycle fixtures: null internal tone for external-app, exactly one internal initialization for own-tone mode, reject missing/mixed modes. Exact-head Windows native CI required.
+- **Release:** no public update, device installation, signed virtual driver, physical playback or user-route switch. Hardware integration remains #46/#48. Detailed audit: `docs/audits/GRANADA_2026-10-22_EXTERNAL_AUDIO_NULL_ROUTE.md`.

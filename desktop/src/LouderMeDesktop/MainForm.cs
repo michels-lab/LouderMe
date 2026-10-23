@@ -31,7 +31,7 @@ internal sealed class MainForm : Form
     private readonly CheckBox _eqEnabled = new();
     private readonly ComboBox _preset = new();
     private readonly NumericUpDown[] _eqBands = new NumericUpDown[7];
-    private readonly Label[] _eqBandValues = new Label[7];
+    private readonly EqBandFaderControl[] _eqFaders = new EqBandFaderControl[7];
     private readonly AudioPulseControl _boostWave = new();
     private readonly EqCurveControl _eqWave = new();
     private readonly Label _updateStatus = new();
@@ -248,6 +248,7 @@ internal sealed class MainForm : Form
             Application.DoEvents();
             if (!about.Visible || !about.IsHandleCreated)
                 throw new InvalidOperationException("Real WinForms About could not be shown.");
+            about.AssertVisualLayout();
             SaveRenderedForm(about, Path.Combine(destination, $"about-{viewport}.png"));
             about.Close();
         }
@@ -305,6 +306,18 @@ internal sealed class MainForm : Form
         if (!_aboutAction.Visible || !_aboutAction.Enabled || aboutBounds.IsEmpty ||
             !windowBounds.Contains(aboutBounds) || aboutBounds.Bottom > viewport.RectangleToScreen(viewport.ClientRectangle).Top)
             throw new InvalidOperationException("About is not visibly anchored in the fixed top header.");
+
+        foreach (var fader in _eqFaders)
+            if (fader is null || fader.Width < 40 || fader.Height < 150)
+                throw new InvalidOperationException("One of the seven visual EQ faders is clipped.");
+
+        using (var about = new AboutForm(_updates) { Size = new Size(600, 520) })
+        {
+            about.Show(this);
+            Application.DoEvents();
+            about.AssertVisualLayout();
+            about.Close();
+        }
 
         var maxScroll = Math.Max(0, viewport.DisplayRectangle.Height - viewport.ClientSize.Height);
         if (maxScroll <= 0)
@@ -609,7 +622,7 @@ internal sealed class MainForm : Form
         var card = Card("7-BAND EQUALIZER");
         card.Name = "equalizer-card";
         var layout = (TableLayoutPanel)card.Controls[0];
-        layout.RowCount = 12;
+        layout.RowCount = 5;
 
         _eqEnabled.Text = "Enable equalizer";
         _eqEnabled.AutoSize = true;
@@ -660,52 +673,86 @@ internal sealed class MainForm : Form
         };
         layout.Controls.Add(_preset, 1, 1);
 
-        _eqWave.Dock = DockStyle.Fill;
-        _eqWave.Height = 68;
-        _eqWave.Margin = new Padding(0, 8, 0, 8);
+        // The response plot is the main EQ visual, not a 68px line.
+        _eqWave.Name = "eq-response-curve";
+        _eqWave.Dock = DockStyle.Top;
+        _eqWave.Height = 182;
+        _eqWave.MinimumSize = new Size(270, 164);
+        _eqWave.Margin = new Padding(0, 12, 0, 9);
         layout.SetColumnSpan(_eqWave, 2);
         layout.Controls.Add(_eqWave, 0, 2);
+
+        var faders = new TableLayoutPanel
+        {
+            Name = "eq-vertical-faders",
+            Dock = DockStyle.Top,
+            ColumnCount = 7,
+            RowCount = 1,
+            AutoSize = false,
+            Height = 192,
+            Margin = new Padding(0, 0, 0, 0),
+            BackColor = Surface,
+        };
+        faders.RowStyles.Add(new RowStyle(SizeType.Absolute, 192));
+        var precision = new TableLayoutPanel
+        {
+            Name = "eq-precision-inputs",
+            Dock = DockStyle.Top,
+            ColumnCount = 7,
+            RowCount = 1,
+            AutoSize = false,
+            Height = 36,
+            Margin = new Padding(0, 2, 0, 9),
+            BackColor = Surface,
+        };
+        precision.RowStyles.Add(new RowStyle(SizeType.Absolute, 36));
 
         for (var i = 0; i < EqualizerPresets.FrequenciesHz.Length; i++)
         {
             var index = i;
-            var bandRow = new TableLayoutPanel
-            {
-                AutoSize = true,
-                Dock = DockStyle.Fill,
-                ColumnCount = 3,
-                Margin = new Padding(0, 4, 0, 4),
-            };
-            bandRow.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 75));
-            bandRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            bandRow.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 70));
+            var frequency = EqualizerPresets.FrequenciesHz[index];
+            faders.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f / 7f));
+            precision.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f / 7f));
 
-            var frequency = EqualizerPresets.FrequenciesHz[i];
-            var label = new Label
+            var fader = new EqBandFaderControl
             {
-                AutoSize = true,
-                ForeColor = TextPrimary,
-                Font = new Font("Consolas", 9f, FontStyle.Bold),
-                Text = frequency >= 1000
-                    ? $"{frequency / 1000d:0.#}k"
-                    : frequency.ToString(),
-                Anchor = AnchorStyles.Left,
+                Name = $"eq-fader-{frequency}",
+                FrequencyHz = frequency,
+                Dock = DockStyle.Fill,
+                Margin = new Padding(1, 1, 1, 1),
+                AccessibleName = $"{frequency} Hz equalizer gain",
+                AccessibleDescription = "Adjust from minus 10 to plus 10 dB. Arrow keys change by 0.5 dB; Home resets.",
             };
+            _eqFaders[index] = fader;
+            fader.GainEdited += gain =>
+            {
+                if (_loading || !fader.Enabled) return;
+                // One validated source of truth: NumericUpDown.ValueChanged
+                // handles Custom preset, settings, curve, persistence + APO.
+                _eqBands[index].Value = (decimal)gain;
+            };
+            faders.Controls.Add(fader, index, 0);
 
             var value = new NumericUpDown
             {
+                Name = $"eq-band-{frequency}",
                 Minimum = -10,
                 Maximum = 10,
                 DecimalPlaces = 1,
                 Increment = 0.5M,
-                Width = 110,
+                Width = 51,
+                Anchor = AnchorStyles.Top,
+                TextAlign = HorizontalAlignment.Center,
+                Font = new Font("Segoe UI", 8.5f),
                 BackColor = Surface,
                 ForeColor = TextPrimary,
                 BorderStyle = BorderStyle.FixedSingle,
+                Margin = new Padding(0, 1, 0, 0),
+                AccessibleName = $"Exact {frequency} Hz gain in dB",
             };
             value.ValueChanged += (_, _) =>
             {
-                _eqBandValues[index].Text = $"{value.Value:+0.0;-0.0;0.0} dB";
+                fader.GainDb = (float)value.Value;
                 if (_loading) return;
 
                 _settings.Preset = "Custom";
@@ -721,25 +768,14 @@ internal sealed class MainForm : Form
                 _eqWave.Gains = _settings.EqualizerGainsDb;
                 ApplyProcessing();
             };
-            value.Name = $"eq-band-{EqualizerPresets.FrequenciesHz[i]}";
-            _eqBands[i] = value;
-
-            var valueLabel = new Label
-            {
-                AutoSize = true,
-                ForeColor = Cyan,
-                Font = new Font("Consolas", 9f),
-                Text = "0.0 dB",
-                Anchor = AnchorStyles.Right,
-            };
-            _eqBandValues[i] = valueLabel;
-
-            bandRow.Controls.Add(label, 0, 0);
-            bandRow.Controls.Add(value, 1, 0);
-            bandRow.Controls.Add(valueLabel, 2, 0);
-            layout.SetColumnSpan(bandRow, 2);
-            layout.Controls.Add(bandRow, 0, 3 + i);
+            _eqBands[index] = value;
+            precision.Controls.Add(value, index, 0);
         }
+
+        layout.SetColumnSpan(faders, 2);
+        layout.Controls.Add(faders, 0, 3);
+        layout.SetColumnSpan(precision, 2);
+        layout.Controls.Add(precision, 0, 4);
 
         root.Controls.Add(card);
     }
@@ -1085,6 +1121,8 @@ internal sealed class MainForm : Form
         _preset.Enabled = controlsEnabled;
         foreach (var band in _eqBands)
             if (band is not null) band.Enabled = controlsEnabled;
+        foreach (var fader in _eqFaders)
+            if (fader is not null) fader.Enabled = controlsEnabled;
 
         if (!status.Installed)
         {
@@ -1116,7 +1154,7 @@ internal sealed class MainForm : Form
     private void UpdateEqValueLabels()
     {
         for (var i = 0; i < _eqBands.Length; i++)
-            _eqBandValues[i].Text = $"{_eqBands[i].Value:+0.0;-0.0;0.0} dB";
+            _eqFaders[i].GainDb = (float)_eqBands[i].Value;
     }
 
     private async Task CheckForUpdatesAsync(bool silent)

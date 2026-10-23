@@ -311,8 +311,9 @@ internal sealed class MainForm : Form
             if (fader is null || fader.Width < 40 || fader.Height < 150)
                 throw new InvalidOperationException("One of the seven visual EQ faders is clipped.");
 
-        using (var about = new AboutForm(_updates) { Size = new Size(600, 520) })
+        foreach (var width in new[] { 480, 600 })
         {
+            using var about = new AboutForm(_updates) { Size = new Size(width, 520) };
             about.Show(this);
             Application.DoEvents();
             about.AssertVisualLayout();

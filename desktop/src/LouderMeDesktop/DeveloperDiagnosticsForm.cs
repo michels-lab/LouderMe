@@ -33,6 +33,7 @@ internal sealed class DeveloperDiagnosticsForm : Form
         _filter = new DeveloperInspectFilter(this, SelectLiveControl);
 
         Text = "LouderMe · Developer Edition · Inspector";
+        Icon = BrandAssets.LoadIcon("LouderMeDesktop.Assets.LouderMe.ico");
         StartPosition = FormStartPosition.Manual;
         var area = Screen.FromControl(application).WorkingArea;
         Bounds = new Rectangle(Math.Max(area.Left, area.Right - 610), area.Top + 28,

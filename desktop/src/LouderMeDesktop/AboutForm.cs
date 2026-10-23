@@ -22,6 +22,7 @@ internal sealed class AboutForm : Form
         _updates = updates;
 
         Text = "About LouderMe";
+        Icon = BrandAssets.LoadIcon("LouderMeDesktop.Assets.LouderMe.ico");
         StartPosition = FormStartPosition.CenterParent;
         MinimumSize = new Size(480, 440);
         var workArea = Screen.FromPoint(Cursor.Position).WorkingArea;
@@ -123,18 +124,25 @@ internal sealed class AboutForm : Form
             Dock = DockStyle.Top,
             AutoSize = true,
             ColumnCount = 1,
-            RowCount = 5,
+            RowCount = 4,
             BackColor = Color.Transparent,
         };
 
-        var wave = new WaveformMarkControl
+        // Display the same canonical SVG-derived logo as the main window.
+        // Never reconstruct the LouderMe wordmark from loose labels.
+        var officialLockup = new PictureBox
         {
-            Width = 540,
+            Name = "about-official-louderme-lockup",
+            Image = BrandAssets.LoadBitmap("LouderMeDesktop.Assets.LouderMeOfficialLockup.png"),
+            Width = 280,
             Height = 120,
-            Anchor = AnchorStyles.None,
+            Dock = DockStyle.Top,
+            BackColor = Color.FromArgb(247, 250, 254),
+            SizeMode = PictureBoxSizeMode.Zoom,
             Margin = new Padding(0, 2, 0, 6),
+            AccessibleName = "Official LouderMe logo",
         };
-        layout.Controls.Add(wave);
+        layout.Controls.Add(officialLockup);
 
         layout.Controls.Add(new Label
         {
@@ -153,16 +161,6 @@ internal sealed class AboutForm : Form
             Font = new Font("Consolas", 9f, FontStyle.Bold),
             Anchor = AnchorStyles.None,
             Margin = new Padding(0, 6, 0, 4),
-        });
-
-        layout.Controls.Add(new Label
-        {
-            AutoSize = true,
-            Text = "SOUND THAT LIFTS YOU",
-            ForeColor = Gold,
-            Font = new Font("Consolas", 10f, FontStyle.Bold),
-            Anchor = AnchorStyles.None,
-            Margin = new Padding(0, 5, 0, 6),
         });
 
         layout.Controls.Add(new Label

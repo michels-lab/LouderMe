@@ -12,4 +12,13 @@ internal static class BrandAssets
         using var source = new Bitmap(stream);
         return new Bitmap(source);
     }
+
+    public static Icon LoadIcon(string logicalName)
+    {
+        var assembly = Assembly.GetExecutingAssembly();
+        using var stream = assembly.GetManifestResourceStream(logicalName)
+            ?? throw new InvalidOperationException($"Embedded product icon not found: {logicalName}");
+        using var original = new Icon(stream);
+        return (Icon)original.Clone();
+    }
 }

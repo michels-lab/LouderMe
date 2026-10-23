@@ -7,9 +7,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>LouderMe</AssemblyName>
     <RootNamespace>LouderMeDesktop</RootNamespace>
-    <Version>0.1.14</Version>
-    <AssemblyVersion>0.1.14.0</AssemblyVersion>
-    <FileVersion>0.1.14.0</FileVersion>
+    <Version>0.1.15</Version>
+    <AssemblyVersion>0.1.15.0</AssemblyVersion>
+    <FileVersion>0.1.15.0</FileVersion>
     <Product>LouderMe Desktop</Product>
     <Company>Michel's Lab</Company>
     <Authors>Michel Armando Duarte Flores</Authors>
@@ -22,6 +22,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Assets\LouderMeOfficialLockup.png" LogicalName="LouderMeDesktop.Assets.LouderMeOfficialLockup.png" />
+    <EmbeddedResource Include="Assets\LouderMe.ico" LogicalName="LouderMeDesktop.Assets.LouderMe.ico" />
     <EmbeddedResource Include="Assets\MichelDuarte.jpg" LogicalName="LouderMeDesktop.Assets.MichelDuarte.jpg" />
     <EmbeddedResource Include="Assets\MichelsLabMark.png" LogicalName="LouderMeDesktop.Assets.MichelsLabMark.png" />
     <EmbeddedResource Include="Assets\MichelsLabLockup.png" LogicalName="LouderMeDesktop.Assets.MichelsLabLockup.png" />

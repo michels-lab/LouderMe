@@ -36,6 +36,7 @@ internal sealed class MainForm : Form
     private readonly EqCurveControl _eqWave = new();
     private readonly Label _updateStatus = new();
     private readonly Button _updateAction = new();
+    private readonly PictureBox _officialLogo = new();
     private readonly Button _aboutAction = new();
     private IMessageFilter? _wheelFilter;
     private Panel? _contentViewport;
@@ -56,6 +57,7 @@ internal sealed class MainForm : Form
     public MainForm()
     {
         Text = "LouderMe";
+        Icon = BrandAssets.LoadIcon("LouderMeDesktop.Assets.LouderMe.ico");
         StartPosition = FormStartPosition.CenterScreen;
         MinimumSize = new Size(480, 440);
         var workArea = Screen.FromPoint(Cursor.Position).WorkingArea;
@@ -138,48 +140,31 @@ internal sealed class MainForm : Form
         shell.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         shell.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
+        // Use the real official LouderMe lockup (Option 4), not separate
+        // text and a WaveformMarkControl forced into an 88 px column.
+        // That 150 px MinimumSize was painting over the L ("auderMe").
+        // The approved lockup has navy text, so display it on a light plate.
         var header = new TableLayoutPanel
         {
-            AutoSize = true,
+            Height = 112,
             Dock = DockStyle.Top,
             ColumnCount = 3,
             RowCount = 1,
             Margin = new Padding(0, 0, 0, 8),
         };
-        header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 88));
+        header.RowStyles.Add(new RowStyle(SizeType.Absolute, 112));
         header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 0));
         header.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
-        header.Controls.Add(new WaveformMarkControl
-        {
-            Width = 82,
-            Height = 58,
-            Margin = new Padding(0, 0, 6, 0),
-        }, 0, 0);
-        var titleStack = new FlowLayoutPanel
-        {
-            AutoSize = true,
-            FlowDirection = FlowDirection.TopDown,
-            WrapContents = false,
-            Dock = DockStyle.Fill,
-            Margin = new Padding(0),
-        };
-        titleStack.Controls.Add(new Label
-        {
-            AutoSize = true,
-            Text = "LouderMe",
-            Font = new Font("Segoe UI Semibold", 22f, FontStyle.Bold),
-            ForeColor = TextPrimary,
-            Margin = new Padding(0, 0, 0, 1),
-        });
-        titleStack.Controls.Add(new Label
-        {
-            AutoSize = true,
-            Text = "SOUND THAT LIFTS YOU",
-            ForeColor = Gold,
-            Font = new Font("Consolas", 8f, FontStyle.Bold),
-            Margin = new Padding(0),
-        });
-        header.Controls.Add(titleStack, 1, 0);
+        _officialLogo.Name = "official-louderme-lockup";
+        _officialLogo.Image = BrandAssets.LoadBitmap(
+            "LouderMeDesktop.Assets.LouderMeOfficialLockup.png");
+        _officialLogo.SizeMode = PictureBoxSizeMode.Zoom;
+        _officialLogo.Dock = DockStyle.Fill;
+        _officialLogo.BackColor = Color.FromArgb(247, 250, 254);
+        _officialLogo.Margin = new Padding(0, 0, 12, 0);
+        _officialLogo.AccessibleName = "Official LouderMe logo";
+        header.Controls.Add(_officialLogo, 0, 0);
 
         _aboutAction.Text = "About";
         _aboutAction.AutoSize = true;
@@ -289,9 +274,26 @@ internal sealed class MainForm : Form
     {
         // Invoked by an installed/runtime smoke invocation after Shown.
         // This tests actual WinForms bounds and scrolling, not only source strings.
-        Size = new Size(600, 520);
-        PerformLayout();
-        Application.DoEvents();
+        // Test the compact minimum width as well as the standard 600px
+        // layout. The official lockup and About must never overlap or clip.
+        foreach (var width in new[] { 480, 600 })
+        {
+            Size = new Size(width, 520);
+            PerformLayout();
+            Application.DoEvents();
+            var lockupBounds = _officialLogo.RectangleToScreen(_officialLogo.ClientRectangle);
+            var about = _aboutAction.RectangleToScreen(_aboutAction.ClientRectangle);
+            var available = RectangleToScreen(ClientRectangle);
+            if (_officialLogo.Image is null || !_officialLogo.Visible ||
+                lockupBounds.Width < 180 || lockupBounds.Height < 90 ||
+                !available.Contains(lockupBounds) ||
+                lockupBounds.IntersectsWith(about) ||
+                !available.Contains(about))
+                throw new InvalidOperationException(
+                    "Official LouderMe lockup overlaps About or leaves the header.");
+            if (Icon is null || Icon.Width < 16)
+                throw new InvalidOperationException("Official LouderMe window icon is missing.");
+        }
 
         var viewport = _contentViewport
             ?? throw new InvalidOperationException("Scrollable workspace not initialized.");

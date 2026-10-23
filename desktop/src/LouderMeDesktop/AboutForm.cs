@@ -148,6 +148,14 @@ internal sealed class AboutForm : Form
             x.Name == "about-official-louderme-lockup");
         if (logo?.Image is null || logo.Width < 240 || logo.Height < 90)
             throw new InvalidOperationException("About product hero/logo is missing");
+        foreach (var body in FindDescendants<Label>(hero)
+                     .Where(x => x.Visible && x.AutoSize))
+        {
+            var screenBounds = body.RectangleToScreen(body.ClientRectangle);
+            var cardBounds = hero.RectangleToScreen(hero.ClientRectangle);
+            if (screenBounds.Height > 4 && screenBounds.Bottom > cardBounds.Bottom - 8)
+                throw new InvalidOperationException("About hero copy is clipped outside its card");
+        }
         if (viewport.DisplayRectangle.Height <= viewport.ClientSize.Height)
             throw new InvalidOperationException("About viewport has no scrollable content");
         var max = viewport.DisplayRectangle.Height - viewport.ClientSize.Height;
@@ -160,7 +168,7 @@ internal sealed class AboutForm : Form
 
     private Control BuildProductHero()
     {
-        var card = CardPanel(248);
+        var card = CardPanel(310);
         card.Name = "about-hero-card";
         card.Padding = new Padding(18);
 
@@ -179,8 +187,8 @@ internal sealed class AboutForm : Form
         {
             Name = "about-official-louderme-lockup",
             Image = BrandAssets.LoadBitmap("LouderMeDesktop.Assets.LouderMeDarkLockup.png"),
-            Width = 460,
-            Height = 110,
+            Width = 290,
+            Height = 125,
             Dock = DockStyle.Fill,
             BackColor = Surface,
             SizeMode = PictureBoxSizeMode.Zoom,
@@ -224,7 +232,7 @@ internal sealed class AboutForm : Form
 
     private Control BuildAuthorCard()
     {
-        var card = CardPanel(580);
+        var card = CardPanel(620);
         card.Name = "about-author-card";
         var layout = new TableLayoutPanel
         {
@@ -362,7 +370,7 @@ internal sealed class AboutForm : Form
 
     private Control BuildPrivacyCard()
     {
-        var card = CardPanel(330);
+        var card = CardPanel(390);
         card.Name = "about-privacy-card";
         var stack = new FlowLayoutPanel
         {

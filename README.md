@@ -1,5 +1,9 @@
 # LouderMe
 
+## Operación Granada — Windows About, branding y ecualizador visual (2026-10-23)
+
+[Auditoría y regresiones de las capturas reales del usuario](docs/audits/GRANADA_2026-10-23_WINDOWS_ABOUT_VISUAL_EQ.md). Reconstrucción de About con tarjetas medibles y scroll, logo oficial integrado sobre fondo transparente y ecualizador real con siete faders verticales y curva interactiva. El código está propuesto como **Windows v0.1.16**; no es un release público hasta completar las pruebas y publicación independientes.
+
 ## Granada — restablecer el logotipo oficial de Windows (2026-10-23)
 
 [Auditoría del error visual `auderMe` y de los recursos oficiales](docs/audits/GRANADA_2026-10-23_OFFICIAL_WINDOWS_LOGO.md): el encabezado, Splash, About y la barra de título usarán el branding aprobado, sin ondas ni palabras reconstruidas. **Windows v0.1.15 es una propuesta hasta que se validen el instalador y el release estable**.

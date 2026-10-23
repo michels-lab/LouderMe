@@ -38,86 +38,131 @@ internal sealed class AboutForm : Form
         BuildUi();
     }
 
+    private Panel? _aboutViewport;
+    private TableLayoutPanel? _aboutStack;
+
     private void BuildUi()
     {
-        var root = new FlowLayoutPanel
+        // An AutoSize Panel whose sole child is Dock=Top reports only its
+        // padding as PreferredSize. Nested inside FlowLayoutPanel this made
+        // every About card collapse into the 48px empty vertical strips.
+        // One scroll owner + one full-width table prevents that regression.
+        var viewport = new Panel
         {
+            Name = "about-scroll-viewport",
             Dock = DockStyle.Fill,
             AutoScroll = true,
-            FlowDirection = FlowDirection.TopDown,
-            WrapContents = false,
-            Padding = new Padding(22),
             BackColor = Bg,
         };
-
-        root.Controls.Add(BuildProductHero());
-        root.Controls.Add(BuildAuthorCard());
-        root.Controls.Add(BuildUpdateCard());
-        root.Controls.Add(BuildPrivacyCard());
-
-        // Widths are based on the actual client viewport, never an 800px card
-        // on a narrower monitor. The root remains vertically scrollable.
-        var fittingCards = false;
-        void FitCardsToViewport()
+        var stack = new TableLayoutPanel
         {
-            if (root.IsDisposed || fittingCards) return;
-            fittingCards = true;
-            var available = Math.Max(340, root.ClientSize.Width - root.Padding.Horizontal - 22);
-            root.SuspendLayout();
+            Name = "about-card-stack",
+            Dock = DockStyle.Top,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            ColumnCount = 1,
+            RowCount = 5,
+            Padding = new Padding(18, 18, 18, 24),
+            Margin = Padding.Empty,
+            BackColor = Bg,
+        };
+        stack.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        var cards = new[]
+        {
+            BuildProductHero(),
+            BuildAuthorCard(),
+            BuildUpdateCard(),
+            BuildPrivacyCard()
+        };
+        for (var i = 0; i < cards.Length; i++)
+        {
+            cards[i].Dock = DockStyle.Fill;
+            stack.Controls.Add(cards[i], 0, i);
+        }
+        var close = BrandButton("Close", Cyan);
+        close.Anchor = AnchorStyles.Right;
+        close.Click += (_, _) => Close();
+        close.Margin = new Padding(0, 8, 0, 8);
+        stack.Controls.Add(close, 0, 4);
+
+        _aboutViewport = viewport;
+        _aboutStack = stack;
+        viewport.Controls.Add(stack);
+        Controls.Add(viewport);
+
+        // Resize social links and labels inside the actual available card
+        // width, never their historical 720px fixed design width.
+        var resizing = false;
+        void FitContent()
+        {
+            if (resizing || IsDisposed || viewport.IsDisposed) return;
+            resizing = true;
             try
             {
-                foreach (Control card in root.Controls)
+                var innerWidth = Math.Max(300,
+                    viewport.ClientSize.Width - stack.Padding.Horizontal -
+                    SystemInformation.VerticalScrollBarWidth - 4);
+                foreach (var row in FindDescendants<Panel>(stack)
+                             .Where(x => x.Name == "social-link-row"))
                 {
-                    if (card is not Panel) continue;
-                    card.Width = available;
-                    foreach (var row in card.Controls.OfType<TableLayoutPanel>())
-                    {
-                        foreach (var mark in row.Controls.OfType<WaveformMarkControl>())
-                            mark.Width = Math.Max(170, Math.Min(540, available - card.Padding.Horizontal - 18));
-                        foreach (var author in row.Controls.OfType<FlowLayoutPanel>())
-                        {
-                            foreach (var studioLogo in author.Controls.OfType<PictureBox>())
-                                studioLogo.Width = Math.Max(145, Math.Min(260, available - card.Padding.Horizontal - 134));
-                        }
-                        foreach (var social in row.Controls.OfType<FlowLayoutPanel>())
-                        {
-                            if (social.Controls.OfType<Panel>().Any())
-                            {
-                                foreach (var panel in social.Controls.OfType<Panel>())
-                                {
-                                    panel.Width = Math.Max(260, available - card.Padding.Horizontal - 12);
-                                    foreach (var label in panel.Controls.OfType<Label>())
-                                    {
-                                        if (label.Text is "Instagram" or "Facebook" or "LinkedIn" or "GitHub" or "Email")
-                                            label.Width = Math.Max(120, panel.Width - 102);
-                                    }
-                                }
-                            }
-                        }
-                    }
+                    row.Width = Math.Max(230, innerWidth - 38);
+                    foreach (var label in row.Controls.OfType<Label>()
+                                 .Where(x => x.Name == "social-link-title"))
+                        label.Width = Math.Max(130, row.Width - 98);
                 }
+                foreach (var body in FindDescendants<Label>(stack)
+                             .Where(x => x.Name == "about-wrapping-body"))
+                    body.MaximumSize = new Size(Math.Max(225, innerWidth - 42), 0);
             }
-            finally
-            {
-                root.ResumeLayout(true);
-                fittingCards = false;
-            }
+            finally { resizing = false; }
         }
-        root.ClientSizeChanged += (_, _) => FitCardsToViewport();
-        Shown += (_, _) => FitCardsToViewport();
+        viewport.ClientSizeChanged += (_, _) => FitContent();
+        Shown += (_, _) => FitContent();
+    }
 
-        var close = BrandButton("Close", Cyan);
-        close.Click += (_, _) => Close();
-        close.Margin = new Padding(0, 2, 0, 20);
-        root.Controls.Add(close);
+    private static IEnumerable<T> FindDescendants<T>(Control parent) where T : Control
+    {
+        foreach (Control child in parent.Controls)
+        {
+            if (child is T match) yield return match;
+            foreach (var descendant in FindDescendants<T>(child))
+                yield return descendant;
+        }
+    }
 
-        Controls.Add(root);
+    internal void AssertVisibleLayout()
+    {
+        var viewport = _aboutViewport ?? throw new InvalidOperationException("About scroll owner missing");
+        var stack = _aboutStack ?? throw new InvalidOperationException("About content table missing");
+        if (!viewport.AutoScroll || stack.Controls.Count < 5)
+            throw new InvalidOperationException("About needs four cards and a Close action");
+        foreach (var card in stack.Controls.OfType<Panel>())
+        {
+            if (!card.Visible || card.Width < 310 || card.Height < 130 ||
+                card.Right > stack.ClientSize.Width + 1)
+                throw new InvalidOperationException(
+                    $"About card {card.Name} has collapsed or clipped: {card.Bounds}");
+        }
+        var hero = stack.Controls.OfType<Panel>().First();
+        var logo = FindDescendants<PictureBox>(hero).FirstOrDefault(x =>
+            x.Name == "about-official-louderme-lockup");
+        if (logo?.Image is null || logo.Width < 240 || logo.Height < 90)
+            throw new InvalidOperationException("About product hero/logo is missing");
+        if (viewport.DisplayRectangle.Height <= viewport.ClientSize.Height)
+            throw new InvalidOperationException("About viewport has no scrollable content");
+        var max = viewport.DisplayRectangle.Height - viewport.ClientSize.Height;
+        viewport.AutoScrollPosition = new Point(0, max);
+        Application.DoEvents();
+        if (-viewport.AutoScrollPosition.Y <= 0)
+            throw new InvalidOperationException("About cards cannot be scrolled");
+        viewport.AutoScrollPosition = Point.Empty;
     }
 
     private Control BuildProductHero()
     {
-        var card = CardPanel(800);
-        card.Padding = new Padding(24);
+        var card = CardPanel(248);
+        card.Name = "about-hero-card";
+        card.Padding = new Padding(18);
 
         var layout = new TableLayoutPanel
         {
@@ -133,11 +178,11 @@ internal sealed class AboutForm : Form
         var officialLockup = new PictureBox
         {
             Name = "about-official-louderme-lockup",
-            Image = BrandAssets.LoadBitmap("LouderMeDesktop.Assets.LouderMeOfficialLockup.png"),
-            Width = 280,
-            Height = 120,
-            Dock = DockStyle.Top,
-            BackColor = Color.FromArgb(247, 250, 254),
+            Image = BrandAssets.LoadBitmap("LouderMeDesktop.Assets.LouderMeDarkLockup.png"),
+            Width = 460,
+            Height = 110,
+            Dock = DockStyle.Fill,
+            BackColor = Surface,
             SizeMode = PictureBoxSizeMode.Zoom,
             Margin = new Padding(0, 2, 0, 6),
             AccessibleName = "Official LouderMe logo",
@@ -149,7 +194,7 @@ internal sealed class AboutForm : Form
             AutoSize = true,
             Text = "LouderMe Desktop",
             ForeColor = TextPrimary,
-            Font = new Font("Segoe UI Semibold", 26f, FontStyle.Bold),
+            Font = new Font("Segoe UI Semibold", 19f, FontStyle.Bold),
             Anchor = AnchorStyles.None,
         });
 
@@ -179,7 +224,8 @@ internal sealed class AboutForm : Form
 
     private Control BuildAuthorCard()
     {
-        var card = CardPanel(800);
+        var card = CardPanel(580);
+        card.Name = "about-author-card";
         var layout = new TableLayoutPanel
         {
             Dock = DockStyle.Top,
@@ -215,7 +261,8 @@ internal sealed class AboutForm : Form
             AutoSize = true,
             Text = DeveloperProfile.Developer,
             ForeColor = TextPrimary,
-            Font = new Font("Segoe UI Semibold", 20f, FontStyle.Bold),
+            Font = new Font("Segoe UI Semibold", 16f, FontStyle.Bold),
+            MaximumSize = new Size(265, 0),
             Margin = new Padding(0, 7, 0, 2),
         });
         author.Controls.Add(new Label
@@ -266,7 +313,8 @@ internal sealed class AboutForm : Form
 
     private Control BuildUpdateCard()
     {
-        var card = CardPanel(800);
+        var card = CardPanel(210);
+        card.Name = "about-update-card";
         var layout = new TableLayoutPanel
         {
             Dock = DockStyle.Top,
@@ -314,7 +362,8 @@ internal sealed class AboutForm : Form
 
     private Control BuildPrivacyCard()
     {
-        var card = CardPanel(800);
+        var card = CardPanel(330);
+        card.Name = "about-privacy-card";
         var stack = new FlowLayoutPanel
         {
             Dock = DockStyle.Top,
@@ -399,7 +448,8 @@ internal sealed class AboutForm : Form
     {
         var row = new Panel
         {
-            Width = 720,
+            Name = "social-link-row",
+            Width = 390,
             Height = 46,
             BackColor = Surface2,
             Margin = new Padding(0, 4, 0, 0),
@@ -414,9 +464,10 @@ internal sealed class AboutForm : Form
         };
         var label = new Label
         {
+            Name = "social-link-title",
             Text = name,
             Location = new Point(50, 0),
-            Width = 600,
+            Width = 290,
             Height = 46,
             TextAlign = ContentAlignment.MiddleLeft,
             ForeColor = TextPrimary,
@@ -445,12 +496,12 @@ internal sealed class AboutForm : Form
         return row;
     }
 
-    private static Panel CardPanel(int width)
+    private static Panel CardPanel(int height)
     {
         var panel = new Panel
         {
-            Width = width,
-            AutoSize = true,
+            Height = height,
+            AutoSize = false,
             BackColor = Surface,
             Padding = new Padding(18),
             Margin = new Padding(0, 0, 0, 14),
@@ -477,7 +528,8 @@ internal sealed class AboutForm : Form
     private static Label Body(string text) => new()
     {
         AutoSize = true,
-        MaximumSize = new Size(720, 0),
+        Name = "about-wrapping-body",
+        MaximumSize = new Size(360, 0),
         Text = text,
         ForeColor = Muted,
         Margin = new Padding(0, 9, 0, 0),

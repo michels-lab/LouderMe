@@ -146,7 +146,14 @@ internal sealed class AboutForm : Form
         }
 
         page.ClientSizeChanged += (_, _) => FitCardsToViewport();
-        Shown += (_, _) => FitCardsToViewport();
+        Shown += (_, _) =>
+        {
+            FitCardsToViewport();
+            // Never inherit an automatic scroll to the last focusable child
+            // (Close); initial compact About must show the entire product hero.
+            page.AutoScrollPosition = Point.Empty;
+            page.PerformLayout();
+        };
     }
 
     internal void AssertVisualLayout()
@@ -155,6 +162,13 @@ internal sealed class AboutForm : Form
             throw new InvalidOperationException("About cards were not initialized.");
         PerformLayout();
         Application.DoEvents();
+        _page.AutoScrollPosition = Point.Empty;
+        _page.PerformLayout();
+        Application.DoEvents();
+        var heroPosition = _cards[0].RectangleToScreen(_cards[0].ClientRectangle);
+        var visiblePage = _page.RectangleToScreen(_page.ClientRectangle);
+        if (heroPosition.Top < visiblePage.Top - 3)
+            throw new InvalidOperationException("About hero starts scrolled off-screen.");
         foreach (var card in _cards)
         {
             if (card.Width < 300 || card.Height < 160)
@@ -288,10 +302,14 @@ internal sealed class AboutForm : Form
 
         var studio = new PictureBox
         {
+            Name = "about-michels-lab-lockup",
+            BackColor = Surface,
             Width = 260,
             Height = 82,
             SizeMode = PictureBoxSizeMode.Zoom,
-            Image = BrandAssets.LoadBitmap("LouderMeDesktop.Assets.MichelsLabLockup.png"),
+            // Canonical Michel's Lab PNG carries a chroma-key magenta
+            // backing; remove only that flat matte without changing artwork.
+            Image = LoadStudioLockup(),
             Margin = new Padding(0, 10, 0, 0),
         };
         author.Controls.Add(studio);
@@ -323,6 +341,16 @@ internal sealed class AboutForm : Form
 
         card.Controls.Add(layout);
         return card;
+    }
+
+    private static Bitmap LoadStudioLockup()
+    {
+        var source = BrandAssets.LoadBitmap(
+            "LouderMeDesktop.Assets.MichelsLabLockup.png");
+        // Historic canonical studio logo PNG includes a magenta matte, which
+        // WinForms displayed as an intrusive opaque pink block in real About.
+        source.MakeTransparent(Color.FromArgb(201, 34, 92));
+        return source;
     }
 
     private Control BuildUpdateCard()

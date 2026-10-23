@@ -54,6 +54,7 @@ internal static class Program
             if (args.Contains("--check-route-tone"))
             {
                 PhysicalRouteTone.RunSelfTests();
+                PhysicalRouteStimulus.RunSelfTests();
                 return 0;
             }
             if (args.Contains("--check-timing"))
@@ -240,7 +241,18 @@ internal static class Program
                         }
                     }
                 };
-                sourceToneOutput.Init(toneStream);
+                // External-app mode intentionally has NO owned toneStream or
+                // tone WasapiOut. The old unconditional Init(null) aborted
+                // every independent-source proof before EXTERNAL_SOURCE_READY.
+                PhysicalRouteStimulus.Initialize(
+                    ownTone, proveExternalAppRoute,
+                    initializeOwnTone: () =>
+                    {
+                        if (sourceToneOutput is null || toneStream is null)
+                            throw new InvalidOperationException(
+                                "Internal tone mode is missing its sound source.");
+                        sourceToneOutput.Init(toneStream);
+                    });
             }
 
             long processedFrames = 0;

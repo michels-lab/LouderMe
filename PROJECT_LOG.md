@@ -2139,3 +2139,10 @@ Updated only the managed blocks in AGENTS.md and .github/copilot-instructions.md
 - **PR / CI:** `granada/windows-apo-probe-crash-recovery-20261022`; Windows desktop CI is mandatory before merge. No version bump, driver release or public update. Details in [audio recovery audit](docs/audits/GRANADA_2026-10-22_APO_DIAGNOSTIC_RECOVERY.md).
 
 - **D — Interacción durante la prueba:** clonar la configuración de Boost y siete bandas al iniciar la atenuación, suspender los controles Boost/EQ durante esos cuatro segundos y restaurar contra la copia exacta. Nueva regresión impide recuperar usando ajustes mutados durante el test.
+
+## 2026-10-22 — Granada: external-app WASAPI route null dereference (source only)
+
+- **Root cause:** external-app `--probe-app-route` creates no internal `sourceToneOutput` or `toneStream`, but the shared `provePhysicalRoute` branch called `sourceToneOutput.Init(toneStream)` anyway, throwing before `EXTERNAL_SOURCE_READY` and blocking both positive and no-source controls.
+- **Fix:** `PhysicalRouteStimulus.Initialize` selects exactly one route: internal tone only when `--probe-route`; external app must remain external. The real monitor setup now uses that mode guard.
+- **Regression:** `--check-route-tone` runs additional hardware-free lifecycle fixtures: null internal tone for external-app, exactly one internal initialization for own-tone mode, reject missing/mixed modes. Exact-head Windows native CI required.
+- **Release:** no public update, device installation, signed virtual driver, physical playback or user-route switch. Hardware integration remains #46/#48. Detailed audit: `docs/audits/GRANADA_2026-10-22_EXTERNAL_AUDIO_NULL_ROUTE.md`.

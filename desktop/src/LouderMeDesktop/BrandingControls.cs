@@ -390,6 +390,25 @@ internal sealed class EqCurveControl : Control
         Invalidate();
     }
 
+    internal static void AssertInteractiveContract()
+    {
+        // Device-free UI proof: exercise the same pointer and keyboard path
+        // without touching the installed Equalizer APO or owner settings.
+        using var test = new EqCurveControl { Size = new Size(480, 300) };
+        var edits = new List<(int Band, float Db)>();
+        test.BandGainChanged += (band, db) => edits.Add((band, db));
+        test.AdjustAt(new Point((int)test.BandX(5), (int)test.BandY(4f)));
+        if (edits.Count != 1 || edits[0].Band != 5 ||
+            Math.Abs(edits[0].Db - 4f) > 0.001f)
+            throw new InvalidOperationException(
+                "Visual EQ pointer was not mapped to the correct frequency band");
+        test.OnKeyDown(new KeyEventArgs(Keys.Down));
+        if (edits.Count != 2 || edits[1].Band != 5 ||
+            Math.Abs(edits[1].Db - 3.5f) > 0.001f)
+            throw new InvalidOperationException(
+                "Visual EQ keyboard 0.5 dB fine change did not reach original value event");
+    }
+
     internal void AssertMixerContract()
     {
         if (!Visible || Height < 280 || Width < 275 || _gains.Length != 7)

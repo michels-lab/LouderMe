@@ -2130,6 +2130,16 @@ Updated only the managed blocks in AGENTS.md and .github/copilot-instructions.md
 - C. Add permanent Python source-contract guard comparing three product source arrays and wire into native CI; Android/Desktop EQ source changes also trigger verification. Detailed root-cause and limits: `docs/audits/GRANADA_2026-10-21_NATIVE_EQ_PARITY.md`.
 - QA: exact-head checks to be recorded on PR; physical device and driver acceptance not performed. No stable release or version bump. Issue #46/#48 remain open.
 
+## 2026-10-22 — Granada: Windows listening-test interruption recovery (source branch)
+
+- **Defect:** `ApplyDiagnosticAttenuation` appended -18 dB to Equalizer APO and relied entirely on `finally`. A killed/crashed app could leave this attenuation in effect indefinitely until someone manually rewrote `LouderMe.txt`.
+- **A — Recovery:** a distinctive tagged, temporary -18 dB segment is restored when the app next opens, but only when the complete file matches generated LouderMe config for saved settings. The old v0.1.13 unmarked suffix is recovered only with an exact entire-file match.
+- **B — Data safety:** third-party changes within a tagged probe are never overwritten by automatic recovery, the finally handler, or later ordinary Apply; show a warning rather than claiming processing works.
+- **C — Regression:** `--check-apo-contract` covers crash-style omission of finally, repeat no-op, manual-file conflicts, normal Apply refusal, legacy exact match, legacy foreign edit, and ordinary configuration. No physical audio proof.
+- **PR / CI:** `granada/windows-apo-probe-crash-recovery-20261022`; Windows desktop CI is mandatory before merge. No version bump, driver release or public update. Details in [audio recovery audit](docs/audits/GRANADA_2026-10-22_APO_DIAGNOSTIC_RECOVERY.md).
+
+- **D — Interacción durante la prueba:** clonar la configuración de Boost y siete bandas al iniciar la atenuación, suspender los controles Boost/EQ durante esos cuatro segundos y restaurar contra la copia exacta. Nueva regresión impide recuperar usando ajustes mutados durante el test.
+
 ## 2026-10-22 — Granada: external-app WASAPI route null dereference (source only)
 
 - **Root cause:** external-app `--probe-app-route` creates no internal `sourceToneOutput` or `toneStream`, but the shared `provePhysicalRoute` branch called `sourceToneOutput.Init(toneStream)` anyway, throwing before `EXTERNAL_SOURCE_READY` and blocking both positive and no-source controls.

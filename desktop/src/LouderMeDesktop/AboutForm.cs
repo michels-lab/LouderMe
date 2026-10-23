@@ -300,19 +300,18 @@ internal sealed class AboutForm : Form
             ForeColor = Muted,
         });
 
-        var studio = new PictureBox
+        // The legacy MichelsLabLockup.png is retained as a project asset but
+        // repeatedly paints an opaque magenta rectangle in the actual
+        // installed Windows About. Use an accessible branded text treatment.
+        author.Controls.Add(new Label
         {
-            Name = "about-michels-lab-lockup",
-            BackColor = Surface,
-            Width = 260,
-            Height = 82,
-            SizeMode = PictureBoxSizeMode.Zoom,
-            // Canonical Michel's Lab PNG carries a chroma-key magenta
-            // backing; remove only that flat matte without changing artwork.
-            Image = LoadStudioLockup(),
-            Margin = new Padding(0, 10, 0, 0),
-        };
-        author.Controls.Add(studio);
+            Name = "michels-lab-wordmark",
+            AutoSize = true,
+            Text = "MICHEL'S LAB",
+            ForeColor = Cyan,
+            Font = new Font("Segoe UI Semibold", 16f, FontStyle.Bold),
+            Margin = new Padding(0, 12, 0, 0),
+        });
         author.Controls.Add(new Label
         {
             AutoSize = true,
@@ -341,16 +340,6 @@ internal sealed class AboutForm : Form
 
         card.Controls.Add(layout);
         return card;
-    }
-
-    private static Bitmap LoadStudioLockup()
-    {
-        var source = BrandAssets.LoadBitmap(
-            "LouderMeDesktop.Assets.MichelsLabLockup.png");
-        // Historic canonical studio logo PNG includes a magenta matte, which
-        // WinForms displayed as an intrusive opaque pink block in real About.
-        source.MakeTransparent(Color.FromArgb(201, 34, 92));
-        return source;
     }
 
     private Control BuildUpdateCard()

@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 215,
-  "classified_files_total": 211,
-  "docs_content_inspected": 54,
+  "tracked_files_total": 217,
+  "classified_files_total": 213,
+  "docs_content_inspected": 55,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,18 +12,18 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 46,
+    "document": 47,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
-    "source": 79,
+    "source": 80,
     "test": 19,
     "text_metadata": 2,
     "workflow": 10
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "6adaa2dc46fb1da5a9c6dc9075d2c58403624ebdb6324f4234e8c06ae8a548f2",
+  "inventory_fingerprint": "560a166744302854dbab9d693c8c71a8a8fb2be55228d46910922cfc7c5cd717",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -227,14 +227,14 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "1e304b5e807a323d1cbcc7586661549f2b80a528"
+      "blob": "7f9e3a9905225f2d9b1491ed8f277cdd36217aba"
     },
     {
       "path": "README.md",
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "fbe4eae45d0cc0aac9f5162a710904678dd1dadd"
+      "blob": "aae541a14c57e9efc873ddcb5ecc5cc897ab0678"
     },
     {
       "path": "app/build.gradle.kts",
@@ -1133,6 +1133,13 @@
       "blob": "a6b8898a60ac1157c84dc84a63273c6051e4cb17"
     },
     {
+      "path": "docs/audits/GRANADA_2026-10-22_EXTERNAL_AUDIO_NULL_ROUTE.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "d2b2e5d5b939eaa83a8a3b1467bcd1fbf548c01a"
+    },
+    {
       "path": "docs/product-reviews/2026-10-21-native-windows-audio-evidence.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -1371,6 +1378,13 @@
       "blob": "c2b9174195591817ceb799d0f511bf666f4ece73"
     },
     {
+      "path": "native/windows-bridge/PhysicalRouteStimulus.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "29091bbc89a438317071a66c2a3fa8e2c0b85fc7"
+    },
+    {
       "path": "native/windows-bridge/PhysicalRouteTone.cs",
       "role": "source",
       "purpose": "code/test implementation",
@@ -1382,14 +1396,14 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "9b833963857725eb54f5a4702dd2172994b7a12e"
+      "blob": "e3ff3ad46ae1c524d61bb6624942c606778fb60f"
     },
     {
       "path": "native/windows-bridge/README.md",
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "a8f6fae758cffd5e2fb5ac849c5741f572df919c"
+      "blob": "e7d7b82a8dd48dd6dfa46917a40c6833d6199f66"
     },
     {
       "path": "native/windows-bridge/StreamingDownsampleLowPass.cs",

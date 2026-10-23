@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 218,
-  "classified_files_total": 214,
-  "docs_content_inspected": 56,
+  "tracked_files_total": 221,
+  "classified_files_total": 217,
+  "docs_content_inspected": 58,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,18 +12,18 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 48,
+    "document": 50,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
     "source": 80,
-    "test": 19,
+    "test": 20,
     "text_metadata": 2,
     "workflow": 10
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "0de0076a2dace853cd491815f39150765dcfcc50e900f3dc14b9c77e51c67d13",
+  "inventory_fingerprint": "a14ecae6f5349a29f0b31b98644250572fdd46cd885c635e39ab697ad80f14fc",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -80,7 +80,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "c3ba4abc6a036602e33f7f6e7e82d36fbd9aee14"
+      "blob": "0a92efbcc3e4f680ab4ac76a727d4e65bd4d512c"
     },
     {
       "path": ".github/workflows/file-governance-audit.yml",
@@ -122,7 +122,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "143e8f936eddc7dd0c53612422cc25037258567c"
+      "blob": "ce44144b4043e75fe36ea5adc054698b3d0d431a"
     },
     {
       "path": ".github/workflows/restore-canonical-android-asset.yml",
@@ -227,14 +227,14 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "1c8152045db249724a1f3ca50072a1245a2c8f1e"
+      "blob": "b9933a476524dad42fab01989702c74cba676823"
     },
     {
       "path": "README.md",
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "aae541a14c57e9efc873ddcb5ecc5cc897ab0678"
+      "blob": "013b8453afeb8da3a531cba0e768e20b70ede570"
     },
     {
       "path": "app/build.gradle.kts",
@@ -668,7 +668,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "92ce585f49fadd93d3b9e9db8b469e52bd728f3f"
+      "blob": "bf3a6765375d38526675406c56f34419b51df11c"
     },
     {
       "path": "desktop/releases/v0.1.0.md",
@@ -713,6 +713,13 @@
       "blob": "b2084efb0f0f6ed76c5ed306e5614e9f1865cd7b"
     },
     {
+      "path": "desktop/releases/v0.1.15.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "117510ad8f0ada5a595085277b49ba9d942fc738"
+    },
+    {
       "path": "desktop/releases/v0.1.2.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -745,7 +752,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "9d8093e9929665218334b690bab0315b9590409f"
+      "blob": "545c7ca4465f4ccdcff3063e2624779616027f3c"
     },
     {
       "path": "desktop/src/LouderMeDesktop/Assets/MichelDuarte.jpg",
@@ -787,7 +794,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "198b057fd829dde508dea795b3e83cf1a10805fb"
+      "blob": "47471583e5426269acc0751bc15793ed4f41d1ff"
     },
     {
       "path": "desktop/src/LouderMeDesktop/BrandingControls.cs",
@@ -822,7 +829,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "390439a84a40992c727b0d1918936c614f9cfc4f"
+      "blob": "9bd87b52adb7059787f33a677c66bc599d972b84"
     },
     {
       "path": "desktop/src/LouderMeDesktop/DeveloperProfile.cs",
@@ -857,14 +864,14 @@
       "role": "build_script",
       "purpose": "platform build/project/installer script",
       "certainty": "inferred",
-      "blob": "4e5be252e43141d6f6ef8c865d6c270e4a4630b2"
+      "blob": "a7516c21f16814908e99010985f3f28dfb0fae21"
     },
     {
       "path": "desktop/src/LouderMeDesktop/MainForm.cs",
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "846c2d41c5858396813b353f80e412905ac1cdda"
+      "blob": "f56f3b3a9b7e7085311525c0c57e623be6b3bef1"
     },
     {
       "path": "desktop/src/LouderMeDesktop/Program.cs",
@@ -878,7 +885,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "ee4f4576ab65cbc84cee32f77ccd3f2cf56e7eb8"
+      "blob": "71174be4018bf216ba0fa974cb11478ff7068700"
     },
     {
       "path": "desktop/src/LouderMeDesktop/StartupManager.cs",
@@ -1145,6 +1152,13 @@
       "purpose": "manual/decision/report/historical note",
       "certainty": "inferred",
       "blob": "d2b2e5d5b939eaa83a8a3b1467bcd1fbf548c01a"
+    },
+    {
+      "path": "docs/audits/GRANADA_2026-10-23_OFFICIAL_WINDOWS_LOGO.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "7857f306c0574432c2f004ff121682c3a31cbef5"
     },
     {
       "path": "docs/product-reviews/2026-10-21-native-windows-audio-evidence.md",
@@ -1474,6 +1488,13 @@
       "purpose": "code/test implementation",
       "certainty": "rule",
       "blob": "679780ed68099972820d6c6af55e784578cc98c8"
+    },
+    {
+      "path": "tools/test_louderme_desktop_logo.py",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "0caf7ca4d86b9de1fa2b6c4a4f1e67262b6baf1e"
     },
     {
       "path": "tools/test_louderme_eq_band_contract.py",

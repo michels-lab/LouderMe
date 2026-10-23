@@ -5,7 +5,7 @@ No file is auto-deleted or declared unused.
 
 ## Coverage
 
-Tracked: 218; classified: 214; readable documents: 56; above read cap: 0; findings: 0.
+Tracked: 221; classified: 217; readable documents: 58; above read cap: 0; findings: 0.
 
 ## File roles
 
@@ -16,12 +16,12 @@ Tracked: 218; classified: 214; readable documents: 56; above read cap: 0; findin
 | bitacora | 2 |
 | build_script | 7 |
 | config | 20 |
-| document | 48 |
+| document | 50 |
 | index | 6 |
 | installer_metadata | 1 |
 | license | 1 |
 | source | 80 |
-| test | 19 |
+| test | 20 |
 | text_metadata | 2 |
 | workflow | 10 |
 

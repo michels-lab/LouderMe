@@ -238,6 +238,22 @@ internal sealed class MainForm : Form
 
             SaveRenderedForm(this, Path.Combine(destination, $"home-{viewport}.png"));
 
+            // Dedicated live response/fader screenshot. The seven interactive
+            // controls otherwise sit below the first Home viewport.
+            if (_contentViewport is not null)
+            {
+                var eqCard = _contentViewport.Controls.OfType<TableLayoutPanel>()
+                    .SelectMany(x => x.Controls.OfType<Panel>())
+                    .FirstOrDefault(x => x.Name == "equalizer-card")
+                    ?? throw new InvalidOperationException("Visual EQ card missing.");
+                _contentViewport.AutoScrollPosition =
+                    new Point(0, Math.Max(0, eqCard.Top - 12));
+                Application.DoEvents();
+                SaveRenderedForm(this, Path.Combine(destination, $"equalizer-{viewport}.png"));
+                _contentViewport.AutoScrollPosition = Point.Empty;
+                Application.DoEvents();
+            }
+
             using var about = new AboutForm(_updates)
             {
                 StartPosition = FormStartPosition.CenterParent,

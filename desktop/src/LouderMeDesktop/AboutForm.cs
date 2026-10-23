@@ -113,6 +113,9 @@ internal sealed class AboutForm : Form
                 foreach (var body in FindDescendants<Label>(stack)
                              .Where(x => x.Name == "about-wrapping-body"))
                     body.MaximumSize = new Size(Math.Max(225, innerWidth - 42), 0);
+                foreach (var summary in FindDescendants<Label>(stack)
+                             .Where(x => x.Name == "about-hero-description"))
+                    summary.MaximumSize = new Size(Math.Max(280, innerWidth - 54), 0);
             }
             finally { resizing = false; }
         }
@@ -219,7 +222,8 @@ internal sealed class AboutForm : Form
         layout.Controls.Add(new Label
         {
             AutoSize = true,
-            MaximumSize = new Size(700, 0),
+            Name = "about-hero-description",
+            MaximumSize = new Size(420, 0),
             TextAlign = ContentAlignment.MiddleCenter,
             Text = "System-wide gain, equalization and transparent diagnostics in a focused Michel's Lab audio workspace.",
             ForeColor = Muted,
@@ -280,15 +284,18 @@ internal sealed class AboutForm : Form
             ForeColor = Muted,
         });
 
-        var studio = new PictureBox
+        // The previous bitmap rendered as a solid magenta bar on a real
+        // dark WinForms About screenshot. Keep the studio attribution as
+        // readable native text instead of a broken image swatch.
+        author.Controls.Add(new Label
         {
-            Width = 260,
-            Height = 82,
-            SizeMode = PictureBoxSizeMode.Zoom,
-            Image = BrandAssets.LoadBitmap("LouderMeDesktop.Assets.MichelsLabLockup.png"),
-            Margin = new Padding(0, 10, 0, 0),
-        };
-        author.Controls.Add(studio);
+            Name = "studio-attribution",
+            AutoSize = true,
+            Text = "MICHEL'S LAB",
+            Font = new Font("Segoe UI Semibold", 13.5f, FontStyle.Bold),
+            ForeColor = Cyan,
+            Margin = new Padding(0, 12, 0, 0),
+        });
         author.Controls.Add(new Label
         {
             AutoSize = true,

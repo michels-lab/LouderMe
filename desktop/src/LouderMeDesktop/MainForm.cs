@@ -143,16 +143,16 @@ internal sealed class MainForm : Form
         // Use the real official LouderMe lockup (Option 4), not separate
         // text and a WaveformMarkControl forced into an 88 px column.
         // That 150 px MinimumSize was painting over the L ("auderMe").
-        // The approved lockup has navy text, so display it on a light plate.
+        // Use a transparent dark-surface wordmark, never a contrasting sticker.
         var header = new TableLayoutPanel
         {
-            Height = 112,
+            Height = 92,
             Dock = DockStyle.Top,
             ColumnCount = 3,
             RowCount = 1,
             Margin = new Padding(0, 0, 0, 8),
         };
-        header.RowStyles.Add(new RowStyle(SizeType.Absolute, 112));
+        header.RowStyles.Add(new RowStyle(SizeType.Absolute, 92));
         header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 0));
         header.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
@@ -161,7 +161,7 @@ internal sealed class MainForm : Form
             "LouderMeDesktop.Assets.LouderMeOfficialLockup.png");
         _officialLogo.SizeMode = PictureBoxSizeMode.Zoom;
         _officialLogo.Dock = DockStyle.Fill;
-        _officialLogo.BackColor = Color.FromArgb(247, 250, 254);
+        _officialLogo.BackColor = BrandColors.Bg;
         _officialLogo.Margin = new Padding(0, 0, 12, 0);
         _officialLogo.AccessibleName = "Official LouderMe logo";
         header.Controls.Add(_officialLogo, 0, 0);
@@ -285,7 +285,7 @@ internal sealed class MainForm : Form
             var about = _aboutAction.RectangleToScreen(_aboutAction.ClientRectangle);
             var available = RectangleToScreen(ClientRectangle);
             if (_officialLogo.Image is null || !_officialLogo.Visible ||
-                lockupBounds.Width < 180 || lockupBounds.Height < 90 ||
+                lockupBounds.Width < 170 || lockupBounds.Height < 75 ||
                 !available.Contains(lockupBounds) ||
                 lockupBounds.IntersectsWith(about) ||
                 !available.Contains(about))

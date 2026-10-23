@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 214,
-  "classified_files_total": 210,
-  "docs_content_inspected": 53,
+  "tracked_files_total": 215,
+  "classified_files_total": 211,
+  "docs_content_inspected": 54,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,7 +12,7 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 45,
+    "document": 46,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
@@ -23,7 +23,7 @@
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "96141e3811248f9d9c18ac0b75b136e76864f0a9d4f1251812f9925c72958a89",
+  "inventory_fingerprint": "6adaa2dc46fb1da5a9c6dc9075d2c58403624ebdb6324f4234e8c06ae8a548f2",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -227,14 +227,14 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "61e0b662d0d322cbd955e8ce4b3493ed63d03f8c"
+      "blob": "1e304b5e807a323d1cbcc7586661549f2b80a528"
     },
     {
       "path": "README.md",
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "2b071c0c215e0967ee0611d077559d143e658351"
+      "blob": "fbe4eae45d0cc0aac9f5162a710904678dd1dadd"
     },
     {
       "path": "app/build.gradle.kts",
@@ -836,7 +836,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "0e17226b5097c3ed3a10b41c15c6c01196b4fd67"
+      "blob": "b9c1d0af296497d98fdad6d1c220a3c9c921c2f7"
     },
     {
       "path": "desktop/src/LouderMeDesktop/EqualizerPresets.cs",
@@ -857,7 +857,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "6dbc7cdc6f57c7ac70f0f003161507c69c124689"
+      "blob": "846c2d41c5858396813b353f80e412905ac1cdda"
     },
     {
       "path": "desktop/src/LouderMeDesktop/Program.cs",
@@ -1124,6 +1124,13 @@
       "purpose": "manual/decision/report/historical note",
       "certainty": "inferred",
       "blob": "354f37710467a30f6578a18b055d847d73d5bb0f"
+    },
+    {
+      "path": "docs/audits/GRANADA_2026-10-22_APO_DIAGNOSTIC_RECOVERY.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "a6b8898a60ac1157c84dc84a63273c6051e4cb17"
     },
     {
       "path": "docs/product-reviews/2026-10-21-native-windows-audio-evidence.md",

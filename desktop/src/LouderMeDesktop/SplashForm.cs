@@ -42,9 +42,9 @@ internal sealed class SplashForm : Form
             Width = 490,
             Height = 206,
             Image = BrandAssets.LoadBitmap(
-                "LouderMeDesktop.Assets.LouderMeOfficialLockup.png"),
+                "LouderMeDesktop.Assets.LouderMeDarkLockup.png"),
             SizeMode = PictureBoxSizeMode.Zoom,
-            BackColor = Color.FromArgb(247, 250, 254),
+            BackColor = BrandColors.Bg,
             Margin = new Padding(0, 6, 0, 10),
             AccessibleName = "Official LouderMe logo",
         });

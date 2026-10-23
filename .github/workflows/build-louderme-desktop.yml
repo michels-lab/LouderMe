@@ -131,7 +131,7 @@ jobs:
           }
 
           $about=Get-Content 'desktop/src/LouderMeDesktop/AboutForm.cs' -Raw
-          foreach ($required in @('ABOUT THE AUTHOR','Instagram','Facebook','LinkedIn','GitHub','Email','MichelsLabLockup','Proprietary','Equalizer APO')) {
+          foreach ($required in @('ABOUT THE AUTHOR','Instagram','Facebook','LinkedIn','GitHub','Email','studio-attribution','about-hero-description','Proprietary','Equalizer APO')) {
             if ($about -notmatch [regex]::Escape($required)) { throw "Desktop About contract missing: $required" }
           }
 
@@ -140,8 +140,21 @@ jobs:
 
           $brand=Get-Content 'desktop/src/LouderMeDesktop/BrandingControls.cs' -Raw
           if ($brand -notmatch 'WaveformMarkControl') { throw 'Desktop LouderMe waveform control is missing.' }
+          # The new keyboard-accessible EQ combines Selectable with
+          # SupportsTransparentBackColor in one SetStyle call. Validate its
+          # actual capability instead of counting syntactically identical calls.
           $transparentStyleCount=([regex]::Matches($brand, 'SetStyle\(ControlStyles\.SupportsTransparentBackColor, true\)')).Count
-          if ($transparentStyleCount -lt 4) { throw 'Transparent custom controls are missing SupportsTransparentBackColor.' }
+          if ($transparentStyleCount -lt 3) { throw 'Three original transparent controls are missing.' }
+          if ($brand -notmatch 'ControlStyles\.Selectable \| ControlStyles\.SupportsTransparentBackColor') {
+            throw 'Interactive EQ must support keyboard selection and transparent background.'
+          }
+          if ($brand -notmatch 'BandGainChanged' -or $brand -notmatch 'OnMouseDown' -or $brand -notmatch 'OnKeyDown') {
+            throw 'Interactive graphical EQ lost its mouse, keyboard or band-gain contract.'
+          }
+          $mainUI=Get-Content 'desktop/src/LouderMeDesktop/MainForm.cs' -Raw
+          if ($mainUI -notmatch 'eq-advanced-values' -or $mainUI -notmatch '_eqWave.BandGainChanged') {
+            throw 'Visual EQ is not connected to existing saved APO gain controls.'
+          }
 
           $updater=Get-Content 'desktop/src/LouderMeDesktop/DesktopUpdateService.cs' -Raw
           foreach ($required in @('louderme-desktop/latest.json','installerSha256','SHA256.HashDataAsync')) {
@@ -254,7 +267,7 @@ jobs:
             -SourceSha $env:GITHUB_SHA `
             -OutDir desktop/artifacts/visual-windows
           if ($LASTEXITCODE -ne 0) { throw "Rendered Windows UI evidence capture failed" }
-          python tools/visual_release_gate.py --manifest desktop/artifacts/visual-windows/manifest.json --source-sha $env:GITHUB_SHA --platforms windows-desktop --surfaces home,about
+          python tools/visual_release_gate.py --manifest desktop/artifacts/visual-windows/manifest.json --source-sha $env:GITHUB_SHA --platforms windows-desktop --surfaces home,about,equalizer
           if ($LASTEXITCODE -ne 0) { throw "Rendered Windows UI gate failed" }
 
           $uninstaller=Join-Path $target 'unins000.exe'

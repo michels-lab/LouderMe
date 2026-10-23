@@ -1,8 +1,9 @@
 # LouderMe
 
-## Granada — restablecer el logotipo oficial de Windows (2026-10-23)
+## Operación Granada — reparar About, integrar logo oscuro y EQ visual (2026-10-23)
 
-[Auditoría del error visual `auderMe` y de los recursos oficiales](docs/audits/GRANADA_2026-10-23_OFFICIAL_WINDOWS_LOGO.md): el encabezado, Splash, About y la barra de título usarán el branding aprobado, sin ondas ni palabras reconstruidas. **Windows v0.1.15 es una propuesta hasta que se validen el instalador y el release estable**.
+[Auditoría técnica y criterios visuales de LouderMe Windows v0.1.16](docs/audits/GRANADA_2026-10-23_ABOUT_DARK_LOGO_VISUAL_EQ.md). El About usa tarjetas de ancho completo y pruebas de scroll; la marca aprobada se presenta con transparencia sobre el tema oscuro; la gráfica del ecualizador tiene siete bandas interactivas y ajuste numérico opcional. **No es un cambio al motor de audio ni al APK Android.**
+
 
 ## Operación Granada — audio de aplicaciones externas en Windows (2026-10-22)
 

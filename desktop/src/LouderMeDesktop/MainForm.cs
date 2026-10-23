@@ -30,10 +30,12 @@ internal sealed class MainForm : Form
     private string? _startupProbeRecoveryNotice;
     private readonly CheckBox _eqEnabled = new();
     private readonly ComboBox _preset = new();
+    private readonly Label _presetUnavailable = new();
     private readonly NumericUpDown[] _eqBands = new NumericUpDown[7];
     private readonly Label[] _eqBandValues = new Label[7];
     private readonly AudioPulseControl _boostWave = new();
     private readonly EqCurveControl _eqWave = new();
+    private Panel? _equalizerCard;
     private readonly Label _updateStatus = new();
     private readonly Button _updateAction = new();
     private readonly PictureBox _officialLogo = new();
@@ -143,7 +145,7 @@ internal sealed class MainForm : Form
         // Use the real official LouderMe lockup (Option 4), not separate
         // text and a WaveformMarkControl forced into an 88 px column.
         // That 150 px MinimumSize was painting over the L ("auderMe").
-        // The approved lockup has navy text, so display it on a light plate.
+        // Keep the approved geometry with a transparent dark-theme variant.
         var header = new TableLayoutPanel
         {
             Height = 112,
@@ -158,10 +160,10 @@ internal sealed class MainForm : Form
         header.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         _officialLogo.Name = "official-louderme-lockup";
         _officialLogo.Image = BrandAssets.LoadBitmap(
-            "LouderMeDesktop.Assets.LouderMeOfficialLockup.png");
+            "LouderMeDesktop.Assets.LouderMeDarkLockup.png");
         _officialLogo.SizeMode = PictureBoxSizeMode.Zoom;
         _officialLogo.Dock = DockStyle.Fill;
-        _officialLogo.BackColor = Color.FromArgb(247, 250, 254);
+        _officialLogo.BackColor = Bg;
         _officialLogo.Margin = new Padding(0, 0, 12, 0);
         _officialLogo.AccessibleName = "Official LouderMe logo";
         header.Controls.Add(_officialLogo, 0, 0);
@@ -237,6 +239,20 @@ internal sealed class MainForm : Form
                 throw new InvalidOperationException("About action is clipped in the rendered Home window.");
 
             SaveRenderedForm(this, Path.Combine(destination, $"home-{viewport}.png"));
+            var eqCard = _equalizerCard ??
+                throw new InvalidOperationException("Visual EQ card is missing from rendered Home");
+            var scroller = _contentViewport ??
+                throw new InvalidOperationException("Scrollable audio workspace missing");
+            _eqWave.AssertMixerContract();
+            // Additional real running-form evidence: visually inspect the
+            // actual EQ, which Home-at-scroll-top cannot possibly show.
+            var maxScroll = Math.Max(0, scroller.DisplayRectangle.Height - scroller.ClientSize.Height);
+            scroller.AutoScrollPosition = new Point(0,
+                Math.Clamp(eqCard.Top + 35, 0, maxScroll));
+            Application.DoEvents();
+            SaveRenderedForm(this, Path.Combine(destination, $"equalizer-{viewport}.png"));
+            scroller.AutoScrollPosition = Point.Empty;
+            Application.DoEvents();
 
             using var about = new AboutForm(_updates)
             {
@@ -248,6 +264,9 @@ internal sealed class MainForm : Form
             Application.DoEvents();
             if (!about.Visible || !about.IsHandleCreated)
                 throw new InvalidOperationException("Real WinForms About could not be shown.");
+            about.AssertVisibleLayout();
+            _eqWave.AssertMixerContract();
+        EqCurveControl.AssertInteractiveContract();
             SaveRenderedForm(about, Path.Combine(destination, $"about-{viewport}.png"));
             about.Close();
         }
@@ -318,6 +337,21 @@ internal sealed class MainForm : Form
         if (!_aboutAction.Visible || !windowBounds.Contains(
                 _aboutAction.RectangleToScreen(_aboutAction.ClientRectangle)))
             throw new InvalidOperationException("About disappeared while workspace scrolled.");
+        // Exercise real live About cards, not merely screenshot existence.
+        foreach (var aboutWidth in new[] { 480, 600, 860 })
+        {
+            using var about = new AboutForm(_updates)
+            {
+                StartPosition = FormStartPosition.CenterParent,
+                Size = new Size(aboutWidth, 520),
+            };
+            about.Show(this);
+            Application.DoEvents();
+            about.AssertVisibleLayout();
+            about.Close();
+        }
+        _eqWave.AssertMixerContract();
+        EqCurveControl.AssertInteractiveContract();
     }
 
     // Wheel scrolling must work even while a nested slider/button has focus.
@@ -658,13 +692,73 @@ internal sealed class MainForm : Form
             UpdateEqValueLabels();
             ApplyProcessing();
         };
-        layout.Controls.Add(_preset, 1, 1);
+        // Disabled native WinForms ComboBox is rendered with an opaque WHITE
+        // system background. Use a readable dark placeholder whenever APO is
+        // unavailable, while retaining the actual ComboBox and all its events.
+        _preset.FlatStyle = FlatStyle.Flat;
+        _preset.Dock = DockStyle.Fill;
+        _presetUnavailable.Name = "eq-preset-inactive-state";
+        _presetUnavailable.Dock = DockStyle.Fill;
+        _presetUnavailable.Padding = new Padding(8, 3, 4, 3);
+        _presetUnavailable.TextAlign = ContentAlignment.MiddleLeft;
+        _presetUnavailable.ForeColor = Muted;
+        _presetUnavailable.BackColor = Surface;
+        _presetUnavailable.BorderStyle = BorderStyle.FixedSingle;
+        _presetUnavailable.Text = "EQ inactive";
+        var presetSurface = new Panel
+        {
+            Name = "eq-preset-surface",
+            Height = 30,
+            Width = 176,
+            Margin = new Padding(0),
+            BackColor = Surface,
+        };
+        presetSurface.Controls.Add(_preset);
+        presetSurface.Controls.Add(_presetUnavailable);
+        layout.Controls.Add(presetSurface, 1, 1);
 
-        _eqWave.Dock = DockStyle.Fill;
-        _eqWave.Height = 68;
-        _eqWave.Margin = new Padding(0, 8, 0, 8);
+        _eqWave.Name = "interactive-seven-band-mixer";
+        _eqWave.Height = 300;
+        _eqWave.MinimumSize = new Size(280, 290);
+        _eqWave.Dock = DockStyle.Top;
+        _eqWave.Margin = new Padding(0, 12, 0, 8);
+        _eqWave.BandGainChanged += (band, db) =>
+        {
+            // Go through the original NumericUpDown.ValueChanged event so
+            // presets, APO configuration, persistence and clipping limits
+            // remain identical across visual and precise input methods.
+            if (band < 0 || band >= _eqBands.Length || _loading) return;
+            _eqBands[band].Value = (decimal)Math.Clamp(db, -10f, 10f);
+        };
         layout.SetColumnSpan(_eqWave, 2);
         layout.Controls.Add(_eqWave, 0, 2);
+
+        var fineTune = Button("Fine-tune band values  + / - 0.5 dB", Cyan);
+        fineTune.Name = "eq-fine-tune-toggle";
+        fineTune.AutoSize = true;
+        fineTune.Margin = new Padding(0, 8, 0, 4);
+        var advancedRows = new TableLayoutPanel
+        {
+            Name = "eq-advanced-values",
+            Dock = DockStyle.Top,
+            AutoSize = true,
+            ColumnCount = 1,
+            RowCount = 7,
+            Visible = false,
+            Margin = Padding.Empty,
+        };
+        advancedRows.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        fineTune.Click += (_, _) =>
+        {
+            advancedRows.Visible = !advancedRows.Visible;
+            fineTune.Text = advancedRows.Visible
+                ? "Hide numeric fine-tuning" : "Fine-tune band values  + / - 0.5 dB";
+            card.PerformLayout();
+        };
+        layout.SetColumnSpan(fineTune, 2);
+        layout.Controls.Add(fineTune, 0, 3);
+        layout.SetColumnSpan(advancedRows, 2);
+        layout.Controls.Add(advancedRows, 0, 4);
 
         for (var i = 0; i < EqualizerPresets.FrequenciesHz.Length; i++)
         {
@@ -737,10 +831,10 @@ internal sealed class MainForm : Form
             bandRow.Controls.Add(label, 0, 0);
             bandRow.Controls.Add(value, 1, 0);
             bandRow.Controls.Add(valueLabel, 2, 0);
-            layout.SetColumnSpan(bandRow, 2);
-            layout.Controls.Add(bandRow, 0, 3 + i);
+            advancedRows.Controls.Add(bandRow, 0, i);
         }
 
+        _equalizerCard = card;
         root.Controls.Add(card);
     }
 
@@ -1083,6 +1177,12 @@ internal sealed class MainForm : Form
         if (_boostQuickActions is not null) _boostQuickActions.Enabled = controlsEnabled;
         _eqEnabled.Enabled = controlsEnabled;
         _preset.Enabled = controlsEnabled;
+        _preset.Visible = controlsEnabled;
+        _presetUnavailable.Visible = !controlsEnabled;
+        _presetUnavailable.Text = _diagnosticRunning
+            ? "Listening test · locked"
+            : $"{_preset.SelectedItem ?? "Flat"} · EQ inactive";
+        _eqWave.Enabled = controlsEnabled;
         foreach (var band in _eqBands)
             if (band is not null) band.Enabled = controlsEnabled;
 

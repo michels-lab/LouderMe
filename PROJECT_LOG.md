@@ -2171,3 +2171,8 @@ Updated only the managed blocks in AGENTS.md and .github/copilot-instructions.md
 - **True EQ UI:** plot 182px with grid, dB scale and responsive envelope, plus seven functional vertical faders, accessible keyboard and 0.5dB steps, compact NumericUpDown precise inputs; all routed through unchanged per-band EQ APO persistence and preset logic. No fake audio visualization.
 - **QA upgrades:** screenshots now include real scrolled EQ viewports and About card checks; Pillow tests reject blank About and large white header rectangle in actual installed compact/wide PNG; integrate checks in BOTH CI and source release workflow. Windows v0.1.16 only; Android 0.1.12 stays unchanged.
 - **Release state:** NOT RELEASED at this log entry; exact-head CI must pass before merge/source release. Hardware speaker/driver validation remains unverified. Audit: `docs/audits/GRANADA_2026-10-23_WINDOWS_ABOUT_VISUAL_EQ.md`.
+
+### 2026-10-23 — additional review of real v0.1.16 CI screenshots (About)
+- Downloaded exact-head installed WinForms Home/About/EQ screenshot artifacts rather than relying only on green superficial screenshot capture. Fixed first-view compact About scrolling so the hero begins visible.
+- **New issue caught by CI:** legacy embedded `MichelsLabLockup.png` draws an opaque `#C9225C` block in the actual About. Attempts to color-key the image failed the new pink-matte pixel gate; removed only its display from About, not the canonical source asset. The author card uses readable `MICHEL'S LAB` brand text and retains portrait, social links, updater, privacy/legal and original assets in the repository.
+- Exact-head Windows Build is blocked intentionally until installed screenshot rejects all large magenta backing; Android is not modified.

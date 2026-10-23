@@ -2139,3 +2139,11 @@ Updated only the managed blocks in AGENTS.md and .github/copilot-instructions.md
 - **PR / CI:** `granada/windows-apo-probe-crash-recovery-20261022`; Windows desktop CI is mandatory before merge. No version bump, driver release or public update. Details in [audio recovery audit](docs/audits/GRANADA_2026-10-22_APO_DIAGNOSTIC_RECOVERY.md).
 
 - **D — Interacción durante la prueba:** clonar la configuración de Boost y siete bandas al iniciar la atenuación, suspender los controles Boost/EQ durante esos cuatro segundos y restaurar contra la copia exacta. Nueva regresión impide recuperar usando ajustes mutados durante el test.
+
+## 2026-10-22 — Granada: Windows stable maintenance 0.1.14 packaging (proposed release gate)
+
+- Implemented safe crash recovery in PR #101, merged into main at `113fd10c5891053e1207f1ef577f13edb755d8cb`, with Windows installer/APO and Android CI passing at exact PR source.
+- Proposed a Windows **stable maintenance** bump from `0.1.13` to `0.1.14` in the existing desktop project version metadata, plus `desktop/releases/v0.1.14.md`. No Android version/signing/app UI change. The experimental native global-audio driver is *not shipped*.
+- Release trigger: new `desktop/releases/v0.1.14.md` committed to main would start the source repo's actual Windows stable release workflow. Do not treat proposed notes, source CI or a package artifact as a published release; verify installer self-tests, installed screenshot evidence and checksum sidecars at the exact release source SHA.
+- Unified distribution remains Android 0.1.12 + Windows 0.1.13 until an authenticated `desktop-v0.1.14` source tag, four real Windows release assets, and a separately validated public LouderME-Releases bundle exist. Do not update public manifests prematurely or reuse existing tags.
+- The −18 dB recovery is deterministic file-level protection, not actual measured loudness, own OS audio routing or signed driver integration. The user-reported issue of no audible global Boost on Windows remains under #46/#48.

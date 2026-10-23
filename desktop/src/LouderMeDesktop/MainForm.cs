@@ -30,6 +30,7 @@ internal sealed class MainForm : Form
     private string? _startupProbeRecoveryNotice;
     private readonly CheckBox _eqEnabled = new();
     private readonly ComboBox _preset = new();
+    private readonly Label _presetUnavailable = new();
     private readonly NumericUpDown[] _eqBands = new NumericUpDown[7];
     private readonly Label[] _eqBandValues = new Label[7];
     private readonly AudioPulseControl _boostWave = new();
@@ -691,7 +692,30 @@ internal sealed class MainForm : Form
             UpdateEqValueLabels();
             ApplyProcessing();
         };
-        layout.Controls.Add(_preset, 1, 1);
+        // Disabled native WinForms ComboBox is rendered with an opaque WHITE
+        // system background. Use a readable dark placeholder whenever APO is
+        // unavailable, while retaining the actual ComboBox and all its events.
+        _preset.FlatStyle = FlatStyle.Flat;
+        _preset.Dock = DockStyle.Fill;
+        _presetUnavailable.Name = "eq-preset-inactive-state";
+        _presetUnavailable.Dock = DockStyle.Fill;
+        _presetUnavailable.Padding = new Padding(8, 3, 4, 3);
+        _presetUnavailable.TextAlign = ContentAlignment.MiddleLeft;
+        _presetUnavailable.ForeColor = Muted;
+        _presetUnavailable.BackColor = Surface;
+        _presetUnavailable.BorderStyle = BorderStyle.FixedSingle;
+        _presetUnavailable.Text = "EQ inactive";
+        var presetSurface = new Panel
+        {
+            Name = "eq-preset-surface",
+            Height = 30,
+            Width = 176,
+            Margin = new Padding(0),
+            BackColor = Surface,
+        };
+        presetSurface.Controls.Add(_preset);
+        presetSurface.Controls.Add(_presetUnavailable);
+        layout.Controls.Add(presetSurface, 1, 1);
 
         _eqWave.Name = "interactive-seven-band-mixer";
         _eqWave.Height = 300;
@@ -1153,6 +1177,11 @@ internal sealed class MainForm : Form
         if (_boostQuickActions is not null) _boostQuickActions.Enabled = controlsEnabled;
         _eqEnabled.Enabled = controlsEnabled;
         _preset.Enabled = controlsEnabled;
+        _preset.Visible = controlsEnabled;
+        _presetUnavailable.Visible = !controlsEnabled;
+        _presetUnavailable.Text = _diagnosticRunning
+            ? "Listening test · locked"
+            : $"{_preset.SelectedItem ?? "Flat"} · EQ inactive";
         _eqWave.Enabled = controlsEnabled;
         foreach (var band in _eqBands)
             if (band is not null) band.Enabled = controlsEnabled;

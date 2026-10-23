@@ -250,6 +250,7 @@ internal sealed class MainForm : Form
                 throw new InvalidOperationException("Real WinForms About could not be shown.");
             about.AssertVisibleLayout();
             _eqWave.AssertMixerContract();
+        EqCurveControl.AssertInteractiveContract();
             SaveRenderedForm(about, Path.Combine(destination, $"about-{viewport}.png"));
             about.Close();
         }
@@ -334,6 +335,7 @@ internal sealed class MainForm : Form
             about.Close();
         }
         _eqWave.AssertMixerContract();
+        EqCurveControl.AssertInteractiveContract();
     }
 
     // Wheel scrolling must work even while a nested slider/button has focus.

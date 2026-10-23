@@ -1,5 +1,9 @@
 # LouderMe
 
+## Granada — restablecer el logotipo oficial de Windows (2026-10-23)
+
+[Auditoría del error visual `auderMe` y de los recursos oficiales](docs/audits/GRANADA_2026-10-23_OFFICIAL_WINDOWS_LOGO.md): el encabezado, Splash, About y la barra de título usarán el branding aprobado, sin ondas ni palabras reconstruidas. **Windows v0.1.15 es una propuesta hasta que se validen el instalador y el release estable**.
+
 ## Operación Granada — audio de aplicaciones externas en Windows (2026-10-22)
 
 [Ver investigación y corrección de inicialización nula del puente nativo](docs/audits/GRANADA_2026-10-22_EXTERNAL_AUDIO_NULL_ROUTE.md). Ambos modos de prueba quedan separados en el código. **Aún no hay evidencia de audio físico ni una versión nativa publicada.**
@@ -22,7 +26,7 @@ LouderMe is an Android audio utility by **Michel's Lab** for increasing quiet me
 
 ## Current public release bundle
 
-**Android v0.1.12 + Windows Desktop v0.1.13** (latest verified public unified bundle; GitHub release metadata checked 2026-10-21). Both source releases, final signed Android APK render gate, Windows installer launch checks, and dedicated Michel's Lab unified public publisher passed on 2026-10-12.
+**Android v0.1.12 + Windows Desktop v0.1.14** (latest verified public unified bundle; GitHub release and updater metadata checked 2026-10-23). Both Windows Setup/Portable and the unchanged Android APK are available with verified SHA-256 sidecars in [the official unified release](https://github.com/michels-lab/LouderME-Releases/releases/tag/louderme-android-v0.1.12-desktop-v0.1.14). This does not certify real acoustic gain.
 
 Michel's Lab publishes the current stable Android and Windows binaries together on one public GitHub release page. Platform versions remain explicit when their release lines differ.
 

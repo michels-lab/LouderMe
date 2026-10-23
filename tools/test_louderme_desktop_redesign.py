@@ -27,7 +27,7 @@ def source_contract() -> None:
         "card.Width = width",
         "card.Height = body.Bottom",
         "body.GetPreferredSize",
-        "source.MakeTransparent(Color.FromArgb(201, 34, 92))",
+        'Name = "michels-lab-wordmark"',
         "page.AutoScrollPosition = Point.Empty",
         "internal void AssertVisualLayout()",
         '"about-author"',

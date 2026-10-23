@@ -129,6 +129,7 @@ internal sealed class AboutForm : Form
                     body.ResumeLayout(true);
                     body.PerformLayout();
                     var preferred = body.GetPreferredSize(new Size(body.Width, 0));
+                    body.AutoSize = false;
                     // Give the card an explicit non-zero height; the previous
                     // AutoSize Panel collapsed to a narrow painted rectangle.
                     body.Height = Math.Max(160, preferred.Height);

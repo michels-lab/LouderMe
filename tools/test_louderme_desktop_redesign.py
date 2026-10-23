@@ -28,9 +28,9 @@ def source_contract() -> None:
         "card.Height = body.Bottom",
         "body.GetPreferredSize",
         "internal void AssertVisualLayout()",
-        'Name = "about-author"',
-        'Name = "about-updates"',
-        'Name = "about-legal"',
+        '"about-author"',
+        '"about-updates"',
+        '"about-legal"',
     ):
         if required not in about:
             raise AssertionError(f"About layout fix is missing: {required}")

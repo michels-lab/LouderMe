@@ -47,7 +47,7 @@ jobs:
           "version=$v" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           Write-Host "Building LouderMe Desktop v$v"
 
-      - name: Generate official Windows icon
+      - name: Generate and verify official LouderMe logo and Windows ICO
         shell: pwsh
         run: |
           choco install imagemagick --yes --no-progress
@@ -58,6 +58,8 @@ jobs:
             $magickPath = $exe.FullName
           } else { $magickPath = $magick.Source }
           pwsh -File desktop/installer/prepare-branding.ps1 -MagickPath $magickPath
+          python tools/test_louderme_desktop_logo.py
+          if ($LASTEXITCODE -ne 0) { throw 'Official LouderMe logo raster/icon contract failed.' }
 
       - name: Restore and build native desktop app
         shell: pwsh

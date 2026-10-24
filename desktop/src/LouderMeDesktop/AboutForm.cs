@@ -126,6 +126,34 @@ internal sealed class AboutForm : Form
         Controls.Add(root);
     }
 
+    internal void AssertVisibleContent()
+    {
+        PerformLayout();
+        Application.DoEvents();
+        var root = Controls.OfType<FlowLayoutPanel>().FirstOrDefault()
+            ?? throw new InvalidOperationException("About scroll container missing");
+        if (!root.AutoScroll)
+            throw new InvalidOperationException("About scroll is disabled");
+        var cards = root.Controls.OfType<Panel>().ToArray();
+        if (cards.Length != 4)
+            throw new InvalidOperationException("About must contain four visible sections");
+        foreach (var card in cards)
+        {
+            if (card.Width < 285 || card.Height < 105)
+                throw new InvalidOperationException(
+                    $"About card collapsed to {card.Width}x{card.Height}");
+            var inner = card.Controls.OfType<Control>().FirstOrDefault()
+                ?? throw new InvalidOperationException("About card is empty");
+            if (inner.Width < 220 || inner.Height < 30)
+                throw new InvalidOperationException("About content collapsed or invisible");
+        }
+        var product = cards[0].Controls.OfType<TableLayoutPanel>().First();
+        var logo = product.Controls.OfType<PictureBox>().FirstOrDefault()
+            ?? throw new InvalidOperationException("About official logo is missing");
+        if (logo.Image is null || logo.Width < 150 || logo.Height < 60)
+            throw new InvalidOperationException("About product hero is not rendered");
+    }
+
     private Control BuildProductHero()
     {
         var card = CardPanel(800);

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Bind real running LouderMe WinForms screenshots to the built executable SHA.
 
-This tool never generates images and accepts only the four output PNGs created
+This tool never generates images and accepts only the six output PNGs created
 by the actual installed/published Windows executable --visual-evidence mode.
 """
 from __future__ import annotations
@@ -26,7 +26,7 @@ def make_manifest(exe: Path, source_sha: str, output: Path) -> Path:
     digest = hash_file(exe)
     shots = []
     for viewport, dims in (("compact", (600, 520)), ("wide", (900, 700))):
-        for surface in ("home", "about"):
+        for surface in ("home", "about", "equalizer"):
             path = output / f"{surface}-{viewport}.png"
             if not path.is_file():
                 raise ValueError(f"Missing actual running-form screenshot: {path}")
@@ -53,7 +53,7 @@ def make_manifest(exe: Path, source_sha: str, output: Path) -> Path:
     output.mkdir(parents=True, exist_ok=True)
     target = output / "manifest.json"
     target.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
-    print("Windows real WinForms Home/About image bytes bound to exact executable SHA.")
+    print("Windows real WinForms Home/About/Equalizer image bytes bound to exact executable SHA.")
     return target
 
 

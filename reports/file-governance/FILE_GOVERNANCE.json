@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 221,
-  "classified_files_total": 217,
-  "docs_content_inspected": 58,
+  "tracked_files_total": 222,
+  "classified_files_total": 218,
+  "docs_content_inspected": 59,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,7 +12,7 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 50,
+    "document": 51,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
@@ -23,7 +23,7 @@
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "c3abda8cf9835a98ee2ed9036dcbdbbd76ffd09e5576d15ffc2a309dafd950fe",
+  "inventory_fingerprint": "df8296a9adca3efaa98c357dcecb7446329484e6214350a71db3f992ef5032a6",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -227,14 +227,14 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "d805ef4fbff16cc8779fcb52d14beb5a4db8625a"
+      "blob": "b1ed043983b30c7f8a81eb690e60af7ef27dae47"
     },
     {
       "path": "README.md",
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "013b8453afeb8da3a531cba0e768e20b70ede570"
+      "blob": "8dfd70799784b6e58b7c258994f3cd2391abdc7f"
     },
     {
       "path": "app/build.gradle.kts",
@@ -720,6 +720,13 @@
       "blob": "117510ad8f0ada5a595085277b49ba9d942fc738"
     },
     {
+      "path": "desktop/releases/v0.1.16.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "5f8f2abc6d9c6d6d689d570d84b2bc19fb914f1b"
+    },
+    {
       "path": "desktop/releases/v0.1.2.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -864,7 +871,7 @@
       "role": "build_script",
       "purpose": "platform build/project/installer script",
       "certainty": "inferred",
-      "blob": "06ef57fc50e9b5fcc5d4ae08b3e2a33c1cec1959"
+      "blob": "e8ae0576b66854a2e075e62432084b1c032e9b19"
     },
     {
       "path": "desktop/src/LouderMeDesktop/MainForm.cs",

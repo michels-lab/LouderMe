@@ -181,6 +181,9 @@ internal sealed class AudioPulseControl : Control
 internal sealed class EqCurveControl : Control
 {
     private float[] _gains = new float[7];
+    private int _draggedBand = -1;
+
+    public event Action<int, float>? BandEdited;
 
     [Browsable(false)]
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -195,59 +198,135 @@ internal sealed class EqCurveControl : Control
         }
     }
 
+    private RectangleF Plot => new(30f, 26f, Math.Max(70f, ClientSize.Width - 60f),
+        Math.Max(80f, ClientSize.Height - 72f));
+
     public EqCurveControl()
     {
-        SetStyle(ControlStyles.SupportsTransparentBackColor, true);
+        SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint |
+            ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
         DoubleBuffered = true;
-        BackColor = Color.Transparent;
-        Height = 68;
+        BackColor = BrandColors.Surface;
+        Height = 208;
+        MinimumSize = new Size(190, 178);
+        Cursor = Cursors.Cross;
+        AccessibleName = "Interactive seven-band equalizer, minus ten to plus ten decibels";
+    }
+
+    private int NearestBand(float x)
+    {
+        var plot = Plot;
+        return Math.Clamp((int)Math.Round((x - plot.Left) / plot.Width * 6d), 0, 6);
+    }
+
+    private void ChangeBand(Point pos)
+    {
+        if (_draggedBand < 0) return;
+        var plot = Plot;
+        var y = Math.Clamp((pos.Y - plot.Top) / plot.Height, 0, 1);
+        var db = (float)(Math.Round((10d - y * 20d) * 2d) / 2d);
+        if (Math.Abs(db - _gains[_draggedBand]) < 0.001f) return;
+        _gains[_draggedBand] = db;
+        BandEdited?.Invoke(_draggedBand, db);
+        Invalidate();
+    }
+
+    protected override void OnMouseDown(MouseEventArgs e)
+    {
+        base.OnMouseDown(e);
+        if (e.Button != MouseButtons.Left) return;
+        _draggedBand = NearestBand(e.X);
+        Capture = true;
+        ChangeBand(e.Location);
+    }
+
+    protected override void OnMouseMove(MouseEventArgs e)
+    {
+        base.OnMouseMove(e);
+        if (_draggedBand >= 0) ChangeBand(e.Location);
+    }
+
+    protected override void OnMouseUp(MouseEventArgs e)
+    {
+        base.OnMouseUp(e);
+        _draggedBand = -1;
+        Capture = false;
     }
 
     protected override void OnPaint(PaintEventArgs e)
     {
         base.OnPaint(e);
-        e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
-        if (Width < 10) return;
+        var g = e.Graphics;
+        g.SmoothingMode = SmoothingMode.AntiAlias;
+        g.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+        var p = Plot;
+        if (p.Width < 50 || p.Height < 50) return;
 
-        var center = Height / 2f;
-        using var axis = new Pen(Color.FromArgb(90, BrandColors.Line), 1f);
-        e.Graphics.DrawLine(axis, 0, center, Width, center);
-
-        var points = _gains.Select((gain, index) => new PointF(
-            index * (Width - 1f) / 6f,
-            center - Math.Clamp(gain, -10f, 10f) / 10f * Height * .34f)).ToArray();
-
-        using var path = new GraphicsPath();
-        path.StartFigure();
-        for (var i = 1; i < points.Length; i++)
+        using var gridPen = new Pen(Color.FromArgb(53, 94, 126), 1f);
+        using var zeroPen = new Pen(Color.FromArgb(105, 135, 164), 1.2f)
+        { DashStyle = DashStyle.Dash };
+        using var quiet = new SolidBrush(BrandColors.Muted);
+        using var textFont = new Font("Segoe UI", 8.3f, FontStyle.Regular);
+        using var valueFont = new Font("Consolas", 8.6f, FontStyle.Bold);
+        const string units = "dB";
+        var half = p.Top + p.Height / 2f;
+        for (var i = 0; i <= 4; i++)
         {
-            var a = points[i - 1];
-            var b = points[i];
-            var mid = (a.X + b.X) / 2f;
-            path.AddBezier(a, new PointF(mid, a.Y), new PointF(mid, b.Y), b);
+            var y = p.Top + p.Height * i / 4f;
+            g.DrawLine(i == 2 ? zeroPen : gridPen, p.Left, y, p.Right, y);
         }
+        foreach (var (v, y) in new[] { ("+10", p.Top), ("0", half), ("-10", p.Bottom) })
+            g.DrawString(v, textFont, quiet, 0, y - 7);
+        g.DrawString(units, textFont, quiet, 2, 3);
 
-        using var brush = new LinearGradientBrush(
-            ClientRectangle,
-            BrandColors.Cyan,
-            BrandColors.Violet,
-            LinearGradientMode.Horizontal);
-        using var pen = new Pen(brush, 3f)
+        var points = new PointF[7];
+        var wave = new GraphicsPath();
+        using (wave)
         {
-            StartCap = LineCap.Round,
-            EndCap = LineCap.Round,
-        };
-        e.Graphics.DrawPath(pen, path);
+            for (var i = 0; i < 7; i++)
+            {
+                var x = p.Left + p.Width * i / 6f;
+                var y = half - Math.Clamp(_gains[i], -10f, 10f) / 10f * p.Height / 2f;
+                points[i] = new PointF(x, y);
+                using var track = new Pen(Color.FromArgb(38, 59, 83), 4f);
+                g.DrawLine(track, x, p.Top, x, p.Bottom);
+                using var stem = new Pen(Color.FromArgb(42, 193, 241), 4f);
+                g.DrawLine(stem, x, half, x, y);
+            }
+            wave.StartFigure();
+            for (var i = 1; i < points.Length; i++)
+            {
+                var prev = points[i - 1];
+                var curr = points[i];
+                var mid = (prev.X + curr.X) / 2f;
+                wave.AddBezier(prev, new PointF(mid, prev.Y), new PointF(mid, curr.Y), curr);
+            }
 
-        foreach (var point in points)
-        {
-            e.Graphics.FillEllipse(brush, point.X - 4f, point.Y - 4f, 8f, 8f);
-            using var inner = new SolidBrush(BrandColors.Surface);
-            e.Graphics.FillEllipse(inner, point.X - 1.7f, point.Y - 1.7f, 3.4f, 3.4f);
+            using var gradient = new LinearGradientBrush(p, BrandColors.Cyan,
+                BrandColors.Violet, LinearGradientMode.Horizontal);
+            using var curve = new Pen(gradient, 3.6f)
+            { StartCap = LineCap.Round, EndCap = LineCap.Round };
+            g.DrawPath(curve, wave);
+
+            var labels = new[] { "60", "150", "400", "1k", "2.5k", "6k", "12k" };
+            for (var i = 0; i < 7; i++)
+            {
+                var pt = points[i];
+                g.FillEllipse(Brushes.White, pt.X - 6, pt.Y - 6, 12, 12);
+                g.FillEllipse(gradient, pt.X - 4, pt.Y - 4, 8, 8);
+                var freq = g.MeasureString(labels[i], textFont);
+                g.DrawString(labels[i], textFont, quiet,
+                    Math.Clamp(pt.X - freq.Width / 2, 0, Width - freq.Width),
+                    p.Bottom + 13);
+                var gain = $"{_gains[i]:+0.#;-0.#;0}"; 
+                var measured = g.MeasureString(gain, valueFont);
+                g.DrawString(gain, valueFont, Brushes.White,
+                    Math.Clamp(pt.X - measured.Width / 2, 0, Width - measured.Width),
+                    Math.Max(0, pt.Y - 25));
+            }
         }
     }
 }
-
 
 internal enum SocialNetwork
 {

@@ -23,7 +23,7 @@
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "a14ecae6f5349a29f0b31b98644250572fdd46cd885c635e39ab697ad80f14fc",
+  "inventory_fingerprint": "c3abda8cf9835a98ee2ed9036dcbdbbd76ffd09e5576d15ffc2a309dafd950fe",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -80,7 +80,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "0a92efbcc3e4f680ab4ac76a727d4e65bd4d512c"
+      "blob": "8bc2693a0532db7a9c459849401f7a5d8b0f23fc"
     },
     {
       "path": ".github/workflows/file-governance-audit.yml",
@@ -122,7 +122,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "ce44144b4043e75fe36ea5adc054698b3d0d431a"
+      "blob": "2b1a0cf1104e01e93b907c057f813323a7bb9d83"
     },
     {
       "path": ".github/workflows/restore-canonical-android-asset.yml",
@@ -227,7 +227,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "b9933a476524dad42fab01989702c74cba676823"
+      "blob": "d805ef4fbff16cc8779fcb52d14beb5a4db8625a"
     },
     {
       "path": "README.md",
@@ -668,7 +668,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "bf3a6765375d38526675406c56f34419b51df11c"
+      "blob": "d9a05449793cdfb9fe1d0cbe26d545acd6f0e96e"
     },
     {
       "path": "desktop/releases/v0.1.0.md",
@@ -752,7 +752,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "545c7ca4465f4ccdcff3063e2624779616027f3c"
+      "blob": "71e4d62d6488662ec9a8cbeaf022320ecf652f61"
     },
     {
       "path": "desktop/src/LouderMeDesktop/Assets/MichelDuarte.jpg",
@@ -801,7 +801,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "65c6eb2c5c239ce43f2053c855479cce2ace7fa0"
+      "blob": "1aed2345a20a09b886db6223d705e79db3423b61"
     },
     {
       "path": "desktop/src/LouderMeDesktop/DesktopAudioSettings.cs",
@@ -864,14 +864,14 @@
       "role": "build_script",
       "purpose": "platform build/project/installer script",
       "certainty": "inferred",
-      "blob": "a7516c21f16814908e99010985f3f28dfb0fae21"
+      "blob": "06ef57fc50e9b5fcc5d4ae08b3e2a33c1cec1959"
     },
     {
       "path": "desktop/src/LouderMeDesktop/MainForm.cs",
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "f56f3b3a9b7e7085311525c0c57e623be6b3bef1"
+      "blob": "93b4f09c0e7fb0752555bc64d197909caede684b"
     },
     {
       "path": "desktop/src/LouderMeDesktop/Program.cs",
@@ -885,7 +885,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "71174be4018bf216ba0fa974cb11478ff7068700"
+      "blob": "875ac8ef28c36ea2ad6c0abcffd3314659cb2caf"
     },
     {
       "path": "desktop/src/LouderMeDesktop/StartupManager.cs",
@@ -1445,7 +1445,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "15bf25872a979bf37cd25f2aee8450a5f136583f"
+      "blob": "348d273aa5881b0ec54678609312992f117898ea"
     },
     {
       "path": "tools/capture_android_developer.py",
@@ -1494,7 +1494,7 @@
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "0caf7ca4d86b9de1fa2b6c4a4f1e67262b6baf1e"
+      "blob": "e27b68b39a64cb2b365f449fcac2245b9efc383f"
     },
     {
       "path": "tools/test_louderme_eq_band_contract.py",

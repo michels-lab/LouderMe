@@ -48,6 +48,7 @@ internal sealed class AboutForm : Form
             WrapContents = false,
             Padding = new Padding(22),
             BackColor = Bg,
+            TabStop = true,
         };
 
         root.Controls.Add(BuildProductHero());
@@ -155,7 +156,14 @@ internal sealed class AboutForm : Form
             BeginInvoke((Action)(() =>
             {
                 FitCardsToViewport();
+                // WinForms initially focused a lower Check-for-updates/Close
+                // button, scrolling the entire About hero offscreen.
+                // Give initial focus to the top scroll container instead;
+                // Tab navigation of real buttons remains enabled afterward.
+                ActiveControl = root;
+                root.Focus();
                 root.AutoScrollPosition = Point.Empty;
+                root.PerformLayout();
             }));
         };
 
@@ -198,7 +206,8 @@ internal sealed class AboutForm : Form
         if (brand.Top < view.Top - 3 || brand.Left < view.Left - 3 ||
             brand.Right > view.Right + 3)
             throw new InvalidOperationException(
-                "About hero is clipped/automatically scrolled outside the compact window.");
+                $"About hero clipped: logo={brand}, viewport={view}, scroll={root.AutoScrollPosition}, " +
+                $"focus={ActiveControl?.Name ?? "(unnamed)"}");
         foreach (var label in product.Controls.OfType<Label>())
         {
             var bounds = label.RectangleToScreen(label.ClientRectangle);

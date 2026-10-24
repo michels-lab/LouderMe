@@ -251,6 +251,24 @@ internal sealed class MainForm : Form
             about.AssertVisibleContent();
             SaveRenderedForm(about, Path.Combine(destination, $"about-{viewport}.png"));
             about.Close();
+
+            // Capture the actual interactive 7-band EQ, not just a Home view
+            // where the chart is out of sight below the scroll viewport.
+            if (_contentViewport is null || _eqWave.Height < 178)
+                throw new InvalidOperationException("Seven-band EQ graph did not initialize.");
+            var eqCard = Controls.Find("equalizer-card", true).OfType<Panel>().FirstOrDefault()
+                ?? throw new InvalidOperationException("Equalizer card missing from live Home.");
+            _contentViewport.AutoScrollPosition = new Point(0, Math.Max(0, eqCard.Top - 10));
+            PerformLayout();
+            Application.DoEvents();
+            var chartBounds = _eqWave.RectangleToScreen(_eqWave.ClientRectangle);
+            var viewBounds = _contentViewport.RectangleToScreen(_contentViewport.ClientRectangle);
+            var visibleGraph = Rectangle.Intersect(chartBounds, viewBounds);
+            if (visibleGraph.Width < 170 || visibleGraph.Height < 90)
+                throw new InvalidOperationException(
+                    "Interactive EQ graph was clipped after scrolling to its card.");
+            SaveRenderedForm(this, Path.Combine(destination, $"equalizer-{viewport}.png"));
+            _contentViewport.AutoScrollPosition = Point.Empty;
         }
     }
 

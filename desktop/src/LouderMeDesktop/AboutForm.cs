@@ -62,7 +62,7 @@ internal sealed class AboutForm : Form
         {
             if (root.IsDisposed || fittingCards) return;
             fittingCards = true;
-            var available = Math.Max(340, root.ClientSize.Width - root.Padding.Horizontal - 22);
+            var available = Math.Max(310, root.ClientSize.Width - root.Padding.Horizontal - 22);
             root.SuspendLayout();
             try
             {
@@ -94,6 +94,18 @@ internal sealed class AboutForm : Form
                                 }
                             }
                         }
+                    }
+                    // AutoSize Panel + Dock.Top TableLayoutPanel formed a sizing
+                    // cycle and collapsed actual cards to ~35px width, leaving
+                    // nearly blank black About screen. Size by actual contents.
+                    card.PerformLayout();
+                    var inner = card.Controls.Cast<Control>().FirstOrDefault();
+                    if (inner is not null)
+                    {
+                        inner.Width = Math.Max(230, available - card.Padding.Horizontal);
+                        inner.PerformLayout();
+                        card.Height = Math.Max(150,
+                            inner.PreferredSize.Height + card.Padding.Vertical + 10);
                     }
                 }
             }
@@ -450,7 +462,8 @@ internal sealed class AboutForm : Form
         var panel = new Panel
         {
             Width = width,
-            AutoSize = true,
+            Height = 230,
+            AutoSize = false,
             BackColor = Surface,
             Padding = new Padding(18),
             Margin = new Padding(0, 0, 0, 14),

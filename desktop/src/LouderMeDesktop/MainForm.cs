@@ -248,6 +248,7 @@ internal sealed class MainForm : Form
             Application.DoEvents();
             if (!about.Visible || !about.IsHandleCreated)
                 throw new InvalidOperationException("Real WinForms About could not be shown.");
+            about.AssertVisibleContent();
             SaveRenderedForm(about, Path.Combine(destination, $"about-{viewport}.png"));
             about.Close();
         }

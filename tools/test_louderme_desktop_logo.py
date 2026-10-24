@@ -45,6 +45,16 @@ def main() -> None:
         if navy < 600 or blue < 500:
             raise AssertionError("Official LouderMe navy/blue wordmark missing")
 
+    dark_png = ROOT / "desktop/src/LouderMeDesktop/Assets/LouderMeOfficialDarkLockup.png"
+    with Image.open(dark_png) as dark:
+        if dark.format != "PNG" or dark.size != (image_width := 960, 360):
+            raise AssertionError("Dark lockup missing or resized incorrectly")
+        colors = [pixel for pixel in dark.convert("RGBA").getdata() if pixel[3] > 180]
+        white = sum(r > 190 and g > 190 and b > 190 for r, g, b, _ in colors)
+        blue = sum(b > 170 and b > r * 1.3 for r, g, b, _ in colors)
+        if white < 400 or blue < 300:
+            raise AssertionError("Transparent dark lockup lost white/blue identity")
+
     with Image.open(ICON) as image:
         if image.format != "ICO" or max(image.size) < 32:
             raise AssertionError("Official ICO missing from Windows title bar build")
@@ -59,11 +69,11 @@ def main() -> None:
         raise AssertionError("Old faux logo would paint over LouderMe title")
     for source in (MAIN, SPLASH, ABOUT):
         text = source.read_text(encoding="utf-8")
-        if "Assets.LouderMeOfficialLockup.png" not in text:
+        if "Assets.LouderMeOfficialDarkLockup.png" not in text:
             raise AssertionError(f"{source.name} does not render approved lockup")
     if "new[] { 480, 600 }" not in main_code or "lockupBounds.IntersectsWith(about)" not in main_code:
         raise AssertionError("Missing live compact-logo layout regression")
-    print("PASS: approved canonical SVG text/geometry, rendered navy+blue lockup,"
+    print("PASS: approved SVG, normal/dark transparent lockups and dark UI,"
           " official ICO, embedded resources, all three real screens and"
           " 480/600px WinForms layout guard")
 

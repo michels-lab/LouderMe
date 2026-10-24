@@ -158,10 +158,10 @@ internal sealed class MainForm : Form
         header.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         _officialLogo.Name = "official-louderme-lockup";
         _officialLogo.Image = BrandAssets.LoadBitmap(
-            "LouderMeDesktop.Assets.LouderMeOfficialLockup.png");
+            "LouderMeDesktop.Assets.LouderMeOfficialDarkLockup.png");
         _officialLogo.SizeMode = PictureBoxSizeMode.Zoom;
         _officialLogo.Dock = DockStyle.Fill;
-        _officialLogo.BackColor = Color.FromArgb(247, 250, 254);
+        _officialLogo.BackColor = BrandColors.Bg;
         _officialLogo.Margin = new Padding(0, 0, 12, 0);
         _officialLogo.AccessibleName = "Official LouderMe logo";
         header.Controls.Add(_officialLogo, 0, 0);
@@ -248,8 +248,27 @@ internal sealed class MainForm : Form
             Application.DoEvents();
             if (!about.Visible || !about.IsHandleCreated)
                 throw new InvalidOperationException("Real WinForms About could not be shown.");
+            about.AssertVisibleContent();
             SaveRenderedForm(about, Path.Combine(destination, $"about-{viewport}.png"));
             about.Close();
+
+            // Capture the actual interactive 7-band EQ, not just a Home view
+            // where the chart is out of sight below the scroll viewport.
+            if (_contentViewport is null || _eqWave.Height < 178)
+                throw new InvalidOperationException("Seven-band EQ graph did not initialize.");
+            var eqCard = Controls.Find("equalizer-card", true).OfType<Panel>().FirstOrDefault()
+                ?? throw new InvalidOperationException("Equalizer card missing from live Home.");
+            _contentViewport.AutoScrollPosition = new Point(0, Math.Max(0, eqCard.Top - 10));
+            PerformLayout();
+            Application.DoEvents();
+            var chartBounds = _eqWave.RectangleToScreen(_eqWave.ClientRectangle);
+            var viewBounds = _contentViewport.RectangleToScreen(_contentViewport.ClientRectangle);
+            var visibleGraph = Rectangle.Intersect(chartBounds, viewBounds);
+            if (visibleGraph.Width < 170 || visibleGraph.Height < 90)
+                throw new InvalidOperationException(
+                    "Interactive EQ graph was clipped after scrolling to its card.");
+            SaveRenderedForm(this, Path.Combine(destination, $"equalizer-{viewport}.png"));
+            _contentViewport.AutoScrollPosition = Point.Empty;
         }
     }
 
@@ -661,8 +680,14 @@ internal sealed class MainForm : Form
         layout.Controls.Add(_preset, 1, 1);
 
         _eqWave.Dock = DockStyle.Fill;
-        _eqWave.Height = 68;
-        _eqWave.Margin = new Padding(0, 8, 0, 8);
+        _eqWave.Height = 208;
+        _eqWave.MinimumSize = new Size(190, 178);
+        _eqWave.Margin = new Padding(0, 12, 0, 12);
+        _eqWave.BandEdited += (index, db) =>
+        {
+            if (_loading || index < 0 || index >= _eqBands.Length) return;
+            _eqBands[index].Value = (decimal)db;
+        };
         layout.SetColumnSpan(_eqWave, 2);
         layout.Controls.Add(_eqWave, 0, 2);
 

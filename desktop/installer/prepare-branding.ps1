@@ -21,9 +21,27 @@ if ($LASTEXITCODE -ne 0) { throw 'LouderMe ICO generation failed.' }
 & $MagickPath -background none -density 220 $lockupSource -resize '960x360' -strip "$assets/LouderMeOfficialLockup.png"
 if ($LASTEXITCODE -ne 0) { throw 'Official LouderMe lockup rasterization failed.' }
 
+# App-surface variant is derived deterministically from the OFFICIAL lockup.
+# Retain the exact wave, typography and brand-blue 'Me'; only recolor the
+# dark-navy 'Louder' text and tagline so they are legible on the dark UI.
+$darkSvg = Get-Content $lockupSource -Raw
+if (-not $darkSvg.Contains('fill="#06182d"') -or -not $darkSvg.Contains('fill="#486580"')) {
+  throw 'Canonical LouderMe SVG color contract changed: do not invent alternate logo.'
+}
+$darkSvg = $darkSvg.Replace('fill="#06182d"', 'fill="#eef6ff"').Replace('fill="#486580"', 'fill="#b3c6dc"')
+$darkPath = Join-Path $env:TEMP 'louderme-official-dark-lockup.svg'
+try {
+  [System.IO.File]::WriteAllText($darkPath, $darkSvg, [System.Text.UTF8Encoding]::new($false))
+  & $MagickPath -background none -density 220 $darkPath -resize '960x360' -strip "$assets/LouderMeOfficialDarkLockup.png"
+  if ($LASTEXITCODE -ne 0) { throw 'Official dark LouderMe lockup rasterization failed.' }
+} finally {
+  Remove-Item $darkPath -Force -ErrorAction SilentlyContinue
+}
+
 foreach ($file in @(
   "$assets/LouderMe.ico",
-  "$assets/LouderMeOfficialLockup.png"
+  "$assets/LouderMeOfficialLockup.png",
+  "$assets/LouderMeOfficialDarkLockup.png"
 )) {
   if (-not (Test-Path $file)) { throw "Windows branding asset missing: $file" }
   if ((Get-Item $file).Length -lt 1000) { throw "Windows branding asset is unexpectedly small: $file" }

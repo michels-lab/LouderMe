@@ -48,6 +48,7 @@ internal sealed class AboutForm : Form
             WrapContents = false,
             Padding = new Padding(22),
             BackColor = Bg,
+            TabStop = true,
         };
 
         root.Controls.Add(BuildProductHero());
@@ -62,7 +63,7 @@ internal sealed class AboutForm : Form
         {
             if (root.IsDisposed || fittingCards) return;
             fittingCards = true;
-            var available = Math.Max(340, root.ClientSize.Width - root.Padding.Horizontal - 22);
+            var available = Math.Max(310, root.ClientSize.Width - root.Padding.Horizontal - 22);
             root.SuspendLayout();
             try
             {
@@ -95,6 +96,49 @@ internal sealed class AboutForm : Form
                             }
                         }
                     }
+                    // Bound the inner table to the ACTUAL compact viewport.
+                    // The old auto-size calculation used unwrapped 700px hero
+                    // labels and centered text outside a 480-600px window.
+                    var inner = card.Controls.OfType<TableLayoutPanel>().FirstOrDefault();
+                    if (inner is not null)
+                    {
+                        var contentWidth = Math.Max(250, available - card.Padding.Horizontal);
+                        if (root.Controls.IndexOf(card) == 0)
+                        {
+                            foreach (var label in inner.Controls.OfType<Label>())
+                            {
+                                label.MaximumSize = new Size(contentWidth, 0);
+                                label.Width = contentWidth;
+                                if (label.Text == "LouderMe Desktop")
+                                {
+                                    label.AutoSize = false;
+                                    label.Height = 54;
+                                    label.Font = new Font("Segoe UI Semibold",
+                                        contentWidth < 490 ? 21f : 26f, FontStyle.Bold);
+                                    label.TextAlign = ContentAlignment.MiddleCenter;
+                                    label.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+                                }
+                                else if (label.Text.StartsWith("System-wide gain",
+                                    StringComparison.Ordinal))
+                                {
+                                    label.AutoSize = false;
+                                    label.Height = contentWidth < 490 ? 60 : 40;
+                                    label.TextAlign = ContentAlignment.MiddleCenter;
+                                    label.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+                                }
+                            }
+                        }
+                        inner.MaximumSize = new Size(contentWidth, 0);
+                        inner.Width = contentWidth;
+                        inner.PerformLayout();
+                        var height = inner.GetPreferredSize(new Size(contentWidth, 0)).Height;
+                        // Unlike AutoSize=True, these explicit bounds cannot
+                        // expand horizontally beyond a narrow About window.
+                        inner.AutoSize = false;
+                        inner.Dock = DockStyle.Top;
+                        inner.Height = Math.Max(100, height);
+                        card.Height = Math.Max(150, inner.Height + card.Padding.Vertical + 10);
+                    }
                 }
             }
             finally
@@ -104,7 +148,24 @@ internal sealed class AboutForm : Form
             }
         }
         root.ClientSizeChanged += (_, _) => FitCardsToViewport();
-        Shown += (_, _) => FitCardsToViewport();
+        Shown += (_, _) =>
+        {
+            FitCardsToViewport();
+            // An initially focused descendant must not open About scrolled
+            // past the first half of its brand hero on compact windows.
+            BeginInvoke((Action)(() =>
+            {
+                FitCardsToViewport();
+                // WinForms initially focused a lower Check-for-updates/Close
+                // button, scrolling the entire About hero offscreen.
+                // Give initial focus to the top scroll container instead;
+                // Tab navigation of real buttons remains enabled afterward.
+                ActiveControl = root;
+                root.Focus();
+                root.AutoScrollPosition = Point.Empty;
+                root.PerformLayout();
+            }));
+        };
 
         var close = BrandButton("Close", Cyan);
         close.Click += (_, _) => Close();
@@ -112,6 +173,48 @@ internal sealed class AboutForm : Form
         root.Controls.Add(close);
 
         Controls.Add(root);
+    }
+
+    internal void AssertVisibleContent()
+    {
+        PerformLayout();
+        Application.DoEvents();
+        var root = Controls.OfType<FlowLayoutPanel>().FirstOrDefault()
+            ?? throw new InvalidOperationException("About scroll container missing");
+        if (!root.AutoScroll)
+            throw new InvalidOperationException("About scroll is disabled");
+        var cards = root.Controls.OfType<Panel>().ToArray();
+        if (cards.Length != 4)
+            throw new InvalidOperationException("About must contain four visible sections");
+        foreach (var card in cards)
+        {
+            if (card.Width < 285 || card.Height < 105)
+                throw new InvalidOperationException(
+                    $"About card collapsed to {card.Width}x{card.Height}");
+            var inner = card.Controls.OfType<Control>().FirstOrDefault()
+                ?? throw new InvalidOperationException("About card is empty");
+            if (inner.Width < 220 || inner.Height < 30)
+                throw new InvalidOperationException("About content collapsed or invisible");
+        }
+        var product = cards[0].Controls.OfType<TableLayoutPanel>().First();
+        var logo = product.Controls.OfType<PictureBox>().FirstOrDefault()
+            ?? throw new InvalidOperationException("About official logo is missing");
+        if (logo.Image is null || logo.Width < 150 || logo.Height < 60)
+            throw new InvalidOperationException("About product hero is not rendered");
+        var view = root.RectangleToScreen(root.ClientRectangle);
+        var brand = logo.RectangleToScreen(logo.ClientRectangle);
+        if (brand.Top < view.Top - 3 || brand.Left < view.Left - 3 ||
+            brand.Right > view.Right + 3)
+            throw new InvalidOperationException(
+                $"About hero clipped: logo={brand}, viewport={view}, scroll={root.AutoScrollPosition}, " +
+                $"focus={ActiveControl?.Name ?? "(unnamed)"}");
+        foreach (var label in product.Controls.OfType<Label>())
+        {
+            var bounds = label.RectangleToScreen(label.ClientRectangle);
+            if (bounds.Left < view.Left - 3 || bounds.Right > view.Right + 3)
+                throw new InvalidOperationException(
+                    $"About text is horizontally clipped: {label.Text}");
+        }
     }
 
     private Control BuildProductHero()
@@ -133,11 +236,11 @@ internal sealed class AboutForm : Form
         var officialLockup = new PictureBox
         {
             Name = "about-official-louderme-lockup",
-            Image = BrandAssets.LoadBitmap("LouderMeDesktop.Assets.LouderMeOfficialLockup.png"),
+            Image = BrandAssets.LoadBitmap("LouderMeDesktop.Assets.LouderMeOfficialDarkLockup.png"),
             Width = 280,
             Height = 120,
             Dock = DockStyle.Top,
-            BackColor = Color.FromArgb(247, 250, 254),
+            BackColor = BrandColors.Bg,
             SizeMode = PictureBoxSizeMode.Zoom,
             Margin = new Padding(0, 2, 0, 6),
             AccessibleName = "Official LouderMe logo",
@@ -225,15 +328,17 @@ internal sealed class AboutForm : Form
             ForeColor = Muted,
         });
 
-        var studio = new PictureBox
+        // The canonical MichelsLabLockup.png raster produced a solid magenta
+        // rectangle in real DrawToBitmap evidence on Windows. Present the
+        // studio name as native text until the artwork is independently fixed.
+        author.Controls.Add(new Label
         {
-            Width = 260,
-            Height = 82,
-            SizeMode = PictureBoxSizeMode.Zoom,
-            Image = BrandAssets.LoadBitmap("LouderMeDesktop.Assets.MichelsLabLockup.png"),
-            Margin = new Padding(0, 10, 0, 0),
-        };
-        author.Controls.Add(studio);
+            AutoSize = true,
+            Text = "MICHEL'S LAB",
+            ForeColor = Cyan,
+            Font = new Font("Segoe UI Semibold", 15f, FontStyle.Bold),
+            Margin = new Padding(0, 12, 0, 2),
+        });
         author.Controls.Add(new Label
         {
             AutoSize = true,
@@ -450,7 +555,8 @@ internal sealed class AboutForm : Form
         var panel = new Panel
         {
             Width = width,
-            AutoSize = true,
+            Height = 230,
+            AutoSize = false,
             BackColor = Surface,
             Padding = new Padding(18),
             Margin = new Padding(0, 0, 0, 14),

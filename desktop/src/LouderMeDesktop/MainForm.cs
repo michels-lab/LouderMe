@@ -661,8 +661,14 @@ internal sealed class MainForm : Form
         layout.Controls.Add(_preset, 1, 1);
 
         _eqWave.Dock = DockStyle.Fill;
-        _eqWave.Height = 68;
-        _eqWave.Margin = new Padding(0, 8, 0, 8);
+        _eqWave.Height = 208;
+        _eqWave.MinimumSize = new Size(190, 178);
+        _eqWave.Margin = new Padding(0, 12, 0, 12);
+        _eqWave.BandEdited += (index, db) =>
+        {
+            if (_loading || index < 0 || index >= _eqBands.Length) return;
+            _eqBands[index].Value = (decimal)db;
+        };
         layout.SetColumnSpan(_eqWave, 2);
         layout.Controls.Add(_eqWave, 0, 2);
 

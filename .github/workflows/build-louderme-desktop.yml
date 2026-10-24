@@ -254,7 +254,7 @@ jobs:
             -SourceSha $env:GITHUB_SHA `
             -OutDir desktop/artifacts/visual-windows
           if ($LASTEXITCODE -ne 0) { throw "Rendered Windows UI evidence capture failed" }
-          python tools/visual_release_gate.py --manifest desktop/artifacts/visual-windows/manifest.json --source-sha $env:GITHUB_SHA --platforms windows-desktop --surfaces home,about
+          python tools/visual_release_gate.py --manifest desktop/artifacts/visual-windows/manifest.json --source-sha $env:GITHUB_SHA --platforms windows-desktop --surfaces home,about,equalizer
           if ($LASTEXITCODE -ne 0) { throw "Rendered Windows UI gate failed" }
 
           $uninstaller=Join-Path $target 'unins000.exe'

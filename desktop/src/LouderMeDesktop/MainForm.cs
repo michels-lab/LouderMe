@@ -158,10 +158,10 @@ internal sealed class MainForm : Form
         header.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         _officialLogo.Name = "official-louderme-lockup";
         _officialLogo.Image = BrandAssets.LoadBitmap(
-            "LouderMeDesktop.Assets.LouderMeOfficialLockup.png");
+            "LouderMeDesktop.Assets.LouderMeOfficialDarkLockup.png");
         _officialLogo.SizeMode = PictureBoxSizeMode.Zoom;
         _officialLogo.Dock = DockStyle.Fill;
-        _officialLogo.BackColor = Color.FromArgb(247, 250, 254);
+        _officialLogo.BackColor = BrandColors.Bg;
         _officialLogo.Margin = new Padding(0, 0, 12, 0);
         _officialLogo.AccessibleName = "Official LouderMe logo";
         header.Controls.Add(_officialLogo, 0, 0);

@@ -206,6 +206,8 @@ internal sealed class EqCurveControl : Control
         SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint |
             ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
         DoubleBuffered = true;
+        // Preserve existing WinForms custom-control transparency contract.
+        SetStyle(ControlStyles.SupportsTransparentBackColor, true);
         BackColor = BrandColors.Surface;
         Height = 208;
         MinimumSize = new Size(190, 178);

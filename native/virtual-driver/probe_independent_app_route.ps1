@@ -135,14 +135,14 @@ try {
   }
   $sourceOutput = $source.StandardOutput.ReadToEnd()
   $sourceError = $source.StandardError.ReadToEnd()
-  if ($source.ExitCode -ne 0 -or
-      $sourceOutput -notmatch 'EXTERNAL_APP_TONE_FINISHED') {
-    throw "Independent app PCM failed: exit=$($source.ExitCode), output=$sourceOutput, error=$sourceError"
+  if ($source.ExitCode -ne 0) {
+    throw "Independent app PCM failed (exit=$($source.ExitCode)); do not accept bridge-only evidence."
   }
   if (-not $bridge.WaitForExit(8000)) {
     throw 'Bridge did not finish physical monitor/evidence evaluation in time.'
   }
   $remainder = $bridge.StandardOutput.ReadToEnd()
+  $bridgeStdErr = $bridge.StandardError.ReadToEnd()
   $all = ($bridgeLines.ToArray() -join [Environment]::NewLine) +
     [Environment]::NewLine + $remainder
   # Logs contain numeric evidence only and must not store actual endpoint
@@ -151,19 +151,13 @@ try {
     $all = $all.Replace($endpoint, '[REDACTED_ENDPOINT_ID]')
   }
   Write-LouderMeLabTextOnce -Path (Join-Path $folder "independent-source-route-$BoostPercent.log") -Content $all
-  if ($bridge.ExitCode -ne 0 -or
-      $all -notmatch 'PASS: LAB independent source Windows process') {
-    throw "External application PCM failed route gate: bridge exit=$($bridge.ExitCode)."
-  }
-  $metric = [regex]::Match($all, 'Physical LAB proof: [^\r\n]*matched440=(?<amplitude>[0-9]+(?:\.[0-9]+)?)\s+coherence=(?<coherence>[0-9]+(?:\.[0-9]+)?)')
-  if (-not $metric.Success) {
-    throw 'Bridge claimed success without parseable numeric physical 440Hz evidence.'
-  }
-  $amplitude = [double]::Parse($metric.Groups['amplitude'].Value, [Globalization.CultureInfo]::InvariantCulture)
-  $coherence = [double]::Parse($metric.Groups['coherence'].Value, [Globalization.CultureInfo]::InvariantCulture)
-  if ($amplitude -le 0 -or $coherence -lt 0.5) {
-    throw 'Independent app produced invalid physical tone amplitude/coherence evidence.'
-  }
+  # Success banners alone are not proof. Require exactly one readiness,
+  # separate-source completion, complete physical WASAPI frame counters,
+  # coherent numeric 440 Hz identity, and zero dropped frames.
+  . (Join-Path $PSScriptRoot 'PositiveSourceCheck.ps1')
+  $checked = Test-LouderMePositiveSourceRoute -ExitCode $bridge.ExitCode `
+    -StdOut $all -StdErr $bridgeStdErr -SourceExitCode $source.ExitCode `
+    -SourceStdOut $sourceOutput -SourceStdErr $sourceError
   $result = [ordered]@{
     status = 'PASS'
     stimulus = 'separate Windows process'
@@ -173,8 +167,14 @@ try {
     physical_endpoint_sha256 = $proofIdentity.physical_endpoint_sha256
     bridge_binary_sha256 = $proofIdentity.bridge_binary_sha256
     source_binary_sha256 = $proofIdentity.source_binary_sha256
-    physical_matched440_amplitude = $amplitude
-    physical_coherence = $coherence
+    physical_matched440_amplitude = $checked.physical_matched440_amplitude
+    physical_coherence = $checked.physical_coherence
+    physical_monitor_frames = $checked.physical_monitor_frames
+    virtual_processed_frames = $checked.virtual_processed_frames
+    physical_emitted_frames = $checked.physical_emitted_frames
+    dropped_frames = $checked.dropped_frames
+    independent_source_frames = $checked.independent_source_frames
+    independent_source_channels = $checked.independent_source_channels
     general_third_party_audio_proven = $false
     acoustic_spl_proven = $false
   }

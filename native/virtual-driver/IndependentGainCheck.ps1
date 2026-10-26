@@ -111,6 +111,31 @@ function Test-LouderMeIndependentGain {
         throw "Nonfinite lab PCM measurement: $field"
       }
     }
+    # The trusted positive-source parser also emits frame-level evidence.
+    # Require it again here: a hand-edited JSON PASS without real capture
+    # counters must never survive the final 100/150 gain acceptance.
+    $pcmCounters = @{}
+    foreach ($field in @('physical_monitor_frames', 'virtual_processed_frames',
+                         'physical_emitted_frames', 'dropped_frames',
+                         'independent_source_frames', 'independent_source_channels')) {
+      $value = $record.$field
+      if ($null -eq $value -or $value -is [bool] -or
+          $value -isnot [ValueType] -or
+          -not [double]::IsFinite([double]$value) -or
+          ([double]$value % 1) -ne 0) {
+        throw "Missing or fractional physical PCM provenance: $field at $boost."
+      }
+      $pcmCounters[$field] = [double]$value
+    }
+    if ($pcmCounters.physical_monitor_frames -lt 44100 -or
+        $pcmCounters.virtual_processed_frames -lt 44100 -or
+        $pcmCounters.physical_emitted_frames -lt 44100 -or
+        $pcmCounters.dropped_frames -ne 0 -or
+        $pcmCounters.independent_source_frames -lt 88200 -or
+        $pcmCounters.independent_source_channels -lt 1 -or
+        $pcmCounters.independent_source_channels -gt 8) {
+      throw "Incomplete independent-source and physical-output PCM at $boost."
+    }
     $amp = [double]$record.physical_matched440_amplitude
     $coherence = [double]$record.physical_coherence
     if ($amp -le 0 -or $amp -ge 0.15 -or

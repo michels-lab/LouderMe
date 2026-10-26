@@ -20,6 +20,12 @@ function Get-Baseline([int]$boost) {
     source_binary_sha256 = ('d' * 64)
     physical_matched440_amplitude = $(if ($boost -eq 100) { 0.020 } else { 0.030 })
     physical_coherence = 0.81
+    physical_monitor_frames = 192000
+    virtual_processed_frames = 96000
+    physical_emitted_frames = 96000
+    dropped_frames = 0
+    independent_source_frames = 96000
+    independent_source_channels = 2
     general_third_party_audio_proven = $false
     acoustic_spl_proven = $false
   }
@@ -123,6 +129,34 @@ try {
   $b.Remove('physical_matched440_amplitude')
   Assert-Rejected 'missing physical measurement' $a $b
 
+  $a = Get-Baseline 100; $b = Get-Baseline 150
+  $b.Remove('physical_monitor_frames')
+  Assert-Rejected 'numeric gain without real physical monitor frame provenance' $a $b
+
+  $a = Get-Baseline 100; $b = Get-Baseline 150
+  $b.virtual_processed_frames = 0
+  Assert-Rejected 'gain forged while virtual source captured zero PCM' $a $b
+
+  $a = Get-Baseline 100; $b = Get-Baseline 150
+  $a.physical_emitted_frames = 0
+  Assert-Rejected 'gain forged without physical output frames' $a $b
+
+  $a = Get-Baseline 100; $b = Get-Baseline 150
+  $b.dropped_frames = 7
+  Assert-Rejected 'gain contaminated by dropped samples' $a $b
+
+  $a = Get-Baseline 100; $b = Get-Baseline 150
+  $b.independent_source_frames = 1
+  Assert-Rejected 'short or missing separately emitted tone' $a $b
+
+  $a = Get-Baseline 100; $b = Get-Baseline 150
+  $a.independent_source_channels = '2'
+  Assert-Rejected 'fabricated string independent source channels' $a $b
+
+  $a = Get-Baseline 100; $b = Get-Baseline 150
+  $b.physical_monitor_frames = 192000.5
+  Assert-Rejected 'fractional physical frame count' $a $b
+
   Write-Pair (Get-Baseline 100) (Get-Baseline 150)
   Remove-Item -LiteralPath (Join-Path $dir 'independent-source-result-150.json') -Force
   $missingRejected = $false
@@ -193,7 +227,7 @@ try {
   } catch { $wrongSessionRejected = $true }
   if (-not $wrongSessionRejected) { throw 'Wrong caller-supplied lab session ID was accepted.' }
 
-  Write-Host 'PASS: Windows source gain validates session-bound 100/150 records, before/after silence controls and 24+ adversarial fixtures; no audio device used.'
+  Write-Host 'PASS: Windows source gain validates session-bound 100/150 records, before/after silence controls and 31+ adversarial fixtures; no audio device used.'
 } finally {
   Remove-Item -LiteralPath $dir -Recurse -Force -ErrorAction SilentlyContinue
 }

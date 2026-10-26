@@ -38,7 +38,18 @@ try {
   Remove-Item $darkPath -Force -ErrorAction SilentlyContinue
 }
 
+# Preserve the actual approved Michel's Lab logo from the canonical tracked
+# PNG. Its transparent pixels produced a magenta WinForms DrawToBitmap artifact
+# in v0.1.15, so compose it onto the *exact* About-card dark surface before
+# embedding. This is NOT a substitute text label or a newly invented mark.
+$studioSource = "$assets/MichelsLabLockup.png"
+$studioPrepared = "$assets/MichelsLabDarkLockup.png"
+if (-not (Test-Path $studioSource)) { throw 'Canonical Michel''s Lab logo missing.' }
+& $MagickPath $studioSource -background '#0C1422' -alpha remove -alpha off -resize '640x240' -strip $studioPrepared
+if ($LASTEXITCODE -ne 0) { throw 'Official Michel''s Lab dark logo preparation failed.' }
+
 foreach ($file in @(
+  "$assets/MichelsLabDarkLockup.png",
   "$assets/LouderMe.ico",
   "$assets/LouderMeOfficialLockup.png",
   "$assets/LouderMeOfficialDarkLockup.png"

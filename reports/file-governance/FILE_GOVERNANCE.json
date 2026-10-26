@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 224,
-  "classified_files_total": 220,
-  "docs_content_inspected": 60,
+  "tracked_files_total": 225,
+  "classified_files_total": 221,
+  "docs_content_inspected": 61,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,7 +12,7 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 52,
+    "document": 53,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
@@ -23,7 +23,7 @@
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "d41a853163870ff3b73658899c6eddc9dbe3146eb02aece78ae8b21d5efce93d",
+  "inventory_fingerprint": "7d17d848e55a4c15dd54c0e507037eb42ef206b095880731f5a3551577e26151",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -227,7 +227,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "df545600cf38d9421e1b835a2902c011248e71a2"
+      "blob": "ff5b104401830753dbf747bd31c4be7b7ebf362a"
     },
     {
       "path": "README.md",
@@ -727,6 +727,13 @@
       "blob": "5f8f2abc6d9c6d6d689d570d84b2bc19fb914f1b"
     },
     {
+      "path": "desktop/releases/v0.1.17.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "f5c6e9fe0aa68f2fa59b99c96edb7023e02fafd0"
+    },
+    {
       "path": "desktop/releases/v0.1.2.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -878,7 +885,7 @@
       "role": "build_script",
       "purpose": "platform build/project/installer script",
       "certainty": "inferred",
-      "blob": "47fb8ab60d8f071d800762a2cd813b856aefc7e5"
+      "blob": "87ab1e496b40aa0e3e7590942eaa9b3d4ba908fc"
     },
     {
       "path": "desktop/src/LouderMeDesktop/MainForm.cs",

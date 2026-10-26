@@ -23,7 +23,7 @@
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "a9aee23f440dd2dfd58cd7ce333a6cb28be442588770e28bf0a17c78f3690061",
+  "inventory_fingerprint": "1b797a5f0b8332288331bd0ce82fa8ad42c10a00da79d9052761ede80d83a8dd",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -234,7 +234,7 @@
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "8dfd70799784b6e58b7c258994f3cd2391abdc7f"
+      "blob": "ff69ec65569400d5a0b44b42b7776495d3443435"
     },
     {
       "path": "app/build.gradle.kts",

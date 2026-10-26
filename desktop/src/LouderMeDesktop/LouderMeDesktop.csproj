@@ -28,5 +28,6 @@
     <EmbeddedResource Include="Assets\MichelDuarte.jpg" LogicalName="LouderMeDesktop.Assets.MichelDuarte.jpg" />
     <EmbeddedResource Include="Assets\MichelsLabMark.png" LogicalName="LouderMeDesktop.Assets.MichelsLabMark.png" />
     <EmbeddedResource Include="Assets\MichelsLabLockup.png" LogicalName="LouderMeDesktop.Assets.MichelsLabLockup.png" />
+    <EmbeddedResource Include="Assets\MichelsLabDarkLockup.png" LogicalName="LouderMeDesktop.Assets.MichelsLabDarkLockup.png" />
   </ItemGroup>
 </Project>

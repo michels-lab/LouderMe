@@ -1,18 +1,18 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 222,
-  "classified_files_total": 218,
-  "docs_content_inspected": 59,
+  "tracked_files_total": 224,
+  "classified_files_total": 220,
+  "docs_content_inspected": 60,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
     "agent": 9,
-    "asset": 9,
+    "asset": 10,
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 51,
+    "document": 52,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
@@ -23,7 +23,7 @@
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "df8296a9adca3efaa98c357dcecb7446329484e6214350a71db3f992ef5032a6",
+  "inventory_fingerprint": "d41a853163870ff3b73658899c6eddc9dbe3146eb02aece78ae8b21d5efce93d",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -80,7 +80,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "8bc2693a0532db7a9c459849401f7a5d8b0f23fc"
+      "blob": "a3c129dbeef9d8203bc844360e39246f50434be8"
     },
     {
       "path": ".github/workflows/file-governance-audit.yml",
@@ -227,7 +227,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "b1ed043983b30c7f8a81eb690e60af7ef27dae47"
+      "blob": "df545600cf38d9421e1b835a2902c011248e71a2"
     },
     {
       "path": "README.md",
@@ -668,7 +668,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "d9a05449793cdfb9fe1d0cbe26d545acd6f0e96e"
+      "blob": "09c55e5897b9331abda4959392cb9d5b9021c068"
     },
     {
       "path": "desktop/releases/v0.1.0.md",
@@ -759,7 +759,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "71e4d62d6488662ec9a8cbeaf022320ecf652f61"
+      "blob": "91281821c4c1b2d0ca855f0e0df8ab8235faba87"
     },
     {
       "path": "desktop/src/LouderMeDesktop/Assets/MichelDuarte.jpg",
@@ -767,6 +767,13 @@
       "purpose": "visual/audio/font asset",
       "certainty": "rule",
       "blob": "18fe1a68722850c3d8f918dc0799f46ffeb6dbaf"
+    },
+    {
+      "path": "desktop/src/LouderMeDesktop/Assets/MichelsLabCanonicalLockup.png",
+      "role": "asset",
+      "purpose": "visual/audio/font asset",
+      "certainty": "rule",
+      "blob": "7fd48093968b31ddacd3098f5b15d962de580652"
     },
     {
       "path": "desktop/src/LouderMeDesktop/Assets/MichelsLabLockup.png",
@@ -871,14 +878,14 @@
       "role": "build_script",
       "purpose": "platform build/project/installer script",
       "certainty": "inferred",
-      "blob": "e8ae0576b66854a2e075e62432084b1c032e9b19"
+      "blob": "47fb8ab60d8f071d800762a2cd813b856aefc7e5"
     },
     {
       "path": "desktop/src/LouderMeDesktop/MainForm.cs",
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "93b4f09c0e7fb0752555bc64d197909caede684b"
+      "blob": "7724a02871c955f9ea2d84566c5467f4607d60ed"
     },
     {
       "path": "desktop/src/LouderMeDesktop/Program.cs",
@@ -1166,6 +1173,13 @@
       "purpose": "manual/decision/report/historical note",
       "certainty": "inferred",
       "blob": "7857f306c0574432c2f004ff121682c3a31cbef5"
+    },
+    {
+      "path": "docs/audits/GRANADA_2026-10-26_WINDOWS_ABOUT_AUTHOR_AND_HEADER.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "4ae363c6e91e4d7242214f06edd7cf0a88b7c147"
     },
     {
       "path": "docs/product-reviews/2026-10-21-native-windows-audio-evidence.md",
@@ -1501,7 +1515,7 @@
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "e27b68b39a64cb2b365f449fcac2245b9efc383f"
+      "blob": "69797ecd24c749ed4c31a645cc6220efee808fad"
     },
     {
       "path": "tools/test_louderme_eq_band_contract.py",

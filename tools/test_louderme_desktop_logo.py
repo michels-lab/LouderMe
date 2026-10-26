@@ -5,6 +5,7 @@ Windows CI calls this after prepare-branding.ps1 and before build. The runtime
 WinForms smoke separately validates the real main-header geometry at 480/600px.
 """
 from pathlib import Path
+import hashlib
 import xml.etree.ElementTree as ET
 
 from PIL import Image
@@ -55,12 +56,40 @@ def main() -> None:
         if white < 400 or blue < 300:
             raise AssertionError("Transparent dark lockup lost white/blue identity")
 
+    canonical_studio = ROOT / "desktop/src/LouderMeDesktop/Assets/MichelsLabCanonicalLockup.png"
+    if not canonical_studio.is_file() or canonical_studio.stat().st_size != 526482:
+        raise AssertionError("Original verified Michel's Lab studio PNG missing")
+    if hashlib.sha256(canonical_studio.read_bytes()).hexdigest() != (
+        "d03e8549af2cbcb04c2329029a02f0cd078972ce1b1ff948ef66c3aebe7d10f4"
+    ):
+        raise AssertionError("Canonical Michel's Lab bytes modified or corrupted")
+    with Image.open(canonical_studio) as approved:
+        approved.load()
+        if approved.size != (2172, 724):
+            raise AssertionError("Michel's Lab official lockup dimensions modified")
+
+    studio = ROOT / "desktop/src/LouderMeDesktop/Assets/MichelsLabDarkLockup.png"
+    with Image.open(studio) as image:
+        if image.format != "PNG" or image.width < 180 or image.height < 60:
+            raise AssertionError("Prepared official Michel's Lab logo is missing")
+        rgb = image.convert("RGB")
+        colors = list(rgb.getdata())
+        surface = (12, 20, 34)
+        content = sum(sum(abs(p[i] - surface[i]) for i in range(3)) > 45 for p in colors)
+        magenta = sum(r > 220 and b > 220 and g < 70 for r, g, b in colors)
+        if content < 1000:
+            raise AssertionError("Michel's Lab actual logo rendered blank on dark surface")
+        if magenta > len(colors) // 10:
+            raise AssertionError("Michel's Lab logo retained broken magenta background")
+
     with Image.open(ICON) as image:
         if image.format != "ICO" or max(image.size) < 32:
             raise AssertionError("Official ICO missing from Windows title bar build")
 
     project = PROJECT.read_text(encoding="utf-8")
-    for required in ("LouderMeOfficialLockup.png", 'LogicalName="LouderMeDesktop.Assets.LouderMe.ico"'):
+    for required in ("LouderMeOfficialLockup.png", "MichelsLabCanonicalLockup.png",
+                     "MichelsLabDarkLockup.png",
+                     'LogicalName="LouderMeDesktop.Assets.LouderMe.ico"'):
         if required not in project:
             raise AssertionError(f"Windows did not embed official asset: {required}")
 
@@ -71,9 +100,13 @@ def main() -> None:
         text = source.read_text(encoding="utf-8")
         if "Assets.LouderMeOfficialDarkLockup.png" not in text:
             raise AssertionError(f"{source.name} does not render approved lockup")
-    if "new[] { 480, 600 }" not in main_code or "lockupBounds.IntersectsWith(about)" not in main_code:
-        raise AssertionError("Missing live compact-logo layout regression")
-    print("PASS: approved SVG, normal/dark transparent lockups and dark UI,"
+    if "new[] { 480, 600 }" not in main_code or "lockupBounds.IntersectsWith(about)" not in main_code or "SizeType.Absolute, 308" not in main_code:
+        raise AssertionError("Missing left-anchored header layout regression")
+    if "MichelsLabDarkLockup.png" not in ABOUT.read_text(encoding="utf-8"):
+        raise AssertionError("About must show canonical studio logo")
+    if "about-author-portrait" not in ABOUT.read_text(encoding="utf-8"):
+        raise AssertionError("About must feature large owner photo")
+    print("PASS: approved SVG, dark lockup, canonical Michel's Lab logo,"
           " official ICO, embedded resources, all three real screens and"
           " 480/600px WinForms layout guard")
 

@@ -126,12 +126,12 @@ jobs:
           if ((git hash-object desktop/src/LouderMeDesktop/Assets/MichelDuarte.jpg) -ne '18fe1a68722850c3d8f918dc0799f46ffeb6dbaf') {
             throw 'Desktop Michel Duarte portrait is not the canonical asset.'
           }
-          if ((git hash-object desktop/src/LouderMeDesktop/Assets/MichelsLabLockup.png) -ne '7819ef5c7d1a5c338c67c9bbd517e5448724a5cf') {
-            throw "Desktop Michel's Lab lockup is not canonical."
+          if ((Get-FileHash desktop/src/LouderMeDesktop/Assets/MichelsLabCanonicalLockup.png -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'd03e8549af2cbcb04c2329029a02f0cd078972ce1b1ff948ef66c3aebe7d10f4') {
+            throw "Desktop Michel's Lab approved parent-brand lockup is not the verified canonical image."
           }
 
           $about=Get-Content 'desktop/src/LouderMeDesktop/AboutForm.cs' -Raw
-          foreach ($required in @('ABOUT THE AUTHOR','Instagram','Facebook','LinkedIn','GitHub','Email',"MICHEL'S LAB",'Proprietary','Equalizer APO')) {
+          foreach ($required in @('ABOUT THE AUTHOR','Instagram','Facebook','LinkedIn','GitHub','Email','MichelsLabDarkLockup','MichelDuarte.jpg','Proprietary','Equalizer APO')) {
             if ($about -notmatch [regex]::Escape($required)) { throw "Desktop About contract missing: $required" }
           }
 

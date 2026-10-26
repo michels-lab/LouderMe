@@ -112,7 +112,8 @@ internal sealed class AboutForm : Form
                                 if (label.Text == "LouderMe Desktop")
                                 {
                                     label.AutoSize = false;
-                                    label.Height = 54;
+                                    label.Height = 70;
+                                    label.Padding = new Padding(0, 6, 0, 6);
                                     label.Font = new Font("Segoe UI Semibold",
                                         contentWidth < 490 ? 21f : 26f, FontStyle.Bold);
                                     label.TextAlign = ContentAlignment.MiddleCenter;
@@ -125,6 +126,41 @@ internal sealed class AboutForm : Form
                                     label.Height = contentWidth < 490 ? 60 : 40;
                                     label.TextAlign = ContentAlignment.MiddleCenter;
                                     label.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+                                }
+                            }
+                        }
+                        if (root.Controls.IndexOf(card) == 1)
+                        {
+                            // Responsive author spread: a large real portrait
+                            // and the approved studio logo, both beside the
+                            // developer name. Preserve the social links below.
+                            var portrait = inner.Controls.OfType<PictureBox>()
+                                .FirstOrDefault(p => p.Name == "about-author-portrait");
+                            var author = inner.Controls.OfType<FlowLayoutPanel>()
+                                .FirstOrDefault(p => p.Name == "about-author-details");
+                            var studio = author?.Controls.OfType<PictureBox>()
+                                .FirstOrDefault(p => p.Name == "about-michels-lab-logo");
+                            if (portrait is not null && author is not null && studio is not null)
+                            {
+                                var compact = contentWidth < 520;
+                                var portraitWidth = compact ? 148 : 196;
+                                var portraitHeight = compact ? 194 : 250;
+                                var leftWidth = portraitWidth + 18;
+                                inner.ColumnStyles[0].Width = leftWidth;
+                                inner.RowStyles[0].Height = compact ? 244 : 282;
+                                portrait.Size = new Size(portraitWidth, portraitHeight);
+                                author.Width = Math.Max(170, contentWidth - leftWidth - 2);
+                                author.Height = compact ? 242 : 280;
+                                studio.Size = new Size(Math.Min(285, author.Width - 8),
+                                    compact ? 80 : 110);
+                                var name = author.Controls.OfType<Label>()
+                                    .FirstOrDefault(p => p.Name == "about-author-name");
+                                if (name is not null)
+                                {
+                                    name.MaximumSize = new Size(author.Width - 4, 0);
+                                    name.Font = new Font("Segoe UI Semibold",
+                                        compact && author.Width < 245 ? 17f : 21f,
+                                        FontStyle.Bold);
                                 }
                             }
                         }
@@ -196,6 +232,22 @@ internal sealed class AboutForm : Form
             if (inner.Width < 220 || inner.Height < 30)
                 throw new InvalidOperationException("About content collapsed or invisible");
         }
+        var authorCard = cards[1].Controls.OfType<TableLayoutPanel>().First();
+        var portrait = authorCard.Controls.OfType<PictureBox>()
+            .FirstOrDefault(p => p.Name == "about-author-portrait")
+            ?? throw new InvalidOperationException("Large author photograph missing.");
+        var details = authorCard.Controls.OfType<FlowLayoutPanel>()
+            .FirstOrDefault(p => p.Name == "about-author-details");
+        var studio = details?.Controls.OfType<PictureBox>()
+            .FirstOrDefault(p => p.Name == "about-michels-lab-logo");
+        if (portrait.Image is null || portrait.Width < 145 || portrait.Height < 185 ||
+            studio?.Image is null || studio.Width < 160 || studio.Height < 70)
+            throw new InvalidOperationException(
+                "About must show large owner portrait and actual Michel's Lab logo.");
+        if (portrait.Right > authorCard.ClientSize.Width ||
+            details is null || details.Right > authorCard.ClientSize.Width)
+            throw new InvalidOperationException(
+                "About author portrait or official studio logo overflows the card.");
         var product = cards[0].Controls.OfType<TableLayoutPanel>().First();
         var logo = product.Controls.OfType<PictureBox>().FirstOrDefault()
             ?? throw new InvalidOperationException("About official logo is missing");
@@ -214,6 +266,11 @@ internal sealed class AboutForm : Form
             if (bounds.Left < view.Left - 3 || bounds.Right > view.Right + 3)
                 throw new InvalidOperationException(
                     $"About text is horizontally clipped: {label.Text}");
+            if (label.Text == "LouderMe Desktop" &&
+                (bounds.Top <= brand.Top || bounds.Top < brand.Bottom - 8 ||
+                 label.Height < label.Font.Height + 12))
+                throw new InvalidOperationException(
+                    "About product title is clipped or overlaps the product logo.");
         }
     }
 
@@ -254,6 +311,8 @@ internal sealed class AboutForm : Form
             ForeColor = TextPrimary,
             Font = new Font("Segoe UI Semibold", 26f, FontStyle.Bold),
             Anchor = AnchorStyles.None,
+            Margin = new Padding(0, 12, 0, 7),
+            Padding = new Padding(0, 4, 0, 4),
         });
 
         layout.Controls.Add(new Label
@@ -288,37 +347,45 @@ internal sealed class AboutForm : Form
             Dock = DockStyle.Top,
             AutoSize = true,
             ColumnCount = 2,
-            RowCount = 3,
+            RowCount = 2,
             BackColor = Color.Transparent,
         };
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 118));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 214));
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 282));
+        layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
         var portrait = new PictureBox
         {
-            Width = 96,
-            Height = 128,
+            Name = "about-author-portrait",
+            Width = 196,
+            Height = 250,
             SizeMode = PictureBoxSizeMode.Zoom,
+            BackColor = Surface,
             Image = BrandAssets.LoadBitmap("LouderMeDesktop.Assets.MichelDuarte.jpg"),
-            Margin = new Padding(0, 0, 16, 8),
+            Margin = new Padding(0, 0, 16, 10),
+            AccessibleName = "Michel Duarte portrait",
         };
-        layout.SetRowSpan(portrait, 2);
         layout.Controls.Add(portrait, 0, 0);
 
         var author = new FlowLayoutPanel
         {
+            Name = "about-author-details",
             Dock = DockStyle.Top,
-            AutoSize = true,
+            AutoSize = false,
+            Height = 280,
             FlowDirection = FlowDirection.TopDown,
             WrapContents = false,
+            Margin = new Padding(0),
         };
         author.Controls.Add(Eyebrow("ABOUT THE AUTHOR", Gold));
         author.Controls.Add(new Label
         {
             AutoSize = true,
+            Name = "about-author-name",
             Text = DeveloperProfile.Developer,
             ForeColor = TextPrimary,
-            Font = new Font("Segoe UI Semibold", 20f, FontStyle.Bold),
+            Font = new Font("Segoe UI Semibold", 21f, FontStyle.Bold),
             Margin = new Padding(0, 7, 0, 2),
         });
         author.Controls.Add(new Label
@@ -328,16 +395,20 @@ internal sealed class AboutForm : Form
             ForeColor = Muted,
         });
 
-        // The canonical MichelsLabLockup.png raster produced a solid magenta
-        // rectangle in real DrawToBitmap evidence on Windows. Present the
-        // studio name as native text until the artwork is independently fixed.
-        author.Controls.Add(new Label
+        // This is the canonical Michel's Lab lockup, not a typographic
+        // substitute. The build precomposites its alpha against the actual
+        // author-card surface to avoid WinForms magenta DrawToBitmap artifacts.
+        author.Controls.Add(new PictureBox
         {
-            AutoSize = true,
-            Text = "MICHEL'S LAB",
-            ForeColor = Cyan,
-            Font = new Font("Segoe UI Semibold", 15f, FontStyle.Bold),
+            Name = "about-michels-lab-logo",
+            Width = 285,
+            Height = 110,
+            Image = BrandAssets.LoadBitmap(
+                "LouderMeDesktop.Assets.MichelsLabDarkLockup.png"),
+            BackColor = Surface,
+            SizeMode = PictureBoxSizeMode.Zoom,
             Margin = new Padding(0, 12, 0, 2),
+            AccessibleName = "Official Michel's Lab logo",
         });
         author.Controls.Add(new Label
         {
@@ -363,7 +434,7 @@ internal sealed class AboutForm : Form
         socials.Controls.Add(SocialRow(SocialNetwork.GitHub, "GitHub", DeveloperProfile.GitHub));
         socials.Controls.Add(SocialRow(SocialNetwork.Email, "Email", $"mailto:{DeveloperProfile.Email}"));
         layout.SetColumnSpan(socials, 2);
-        layout.Controls.Add(socials, 0, 2);
+        layout.Controls.Add(socials, 0, 1);
 
         card.Controls.Add(layout);
         return card;

@@ -140,10 +140,9 @@ internal sealed class MainForm : Form
         shell.RowStyles.Add(new RowStyle(SizeType.AutoSize));
         shell.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
-        // Use the real official LouderMe lockup (Option 4), not separate
-        // text and a WaveformMarkControl forced into an 88 px column.
-        // That 150 px MinimumSize was painting over the L ("auderMe").
-        // The approved lockup has navy text, so display it on a light plate.
+        // Official transparent dark lockup lives in a *fixed left column*.
+        // Never put PictureBoxSizeMode.Zoom into a 100%-width column: its
+        // contents will appear awkwardly centered across the entire header.
         var header = new TableLayoutPanel
         {
             Height = 112,
@@ -153,8 +152,8 @@ internal sealed class MainForm : Form
             Margin = new Padding(0, 0, 0, 8),
         };
         header.RowStyles.Add(new RowStyle(SizeType.Absolute, 112));
+        header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 308));
         header.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        header.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 0));
         header.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         _officialLogo.Name = "official-louderme-lockup";
         _officialLogo.Image = BrandAssets.LoadBitmap(
@@ -162,7 +161,7 @@ internal sealed class MainForm : Form
         _officialLogo.SizeMode = PictureBoxSizeMode.Zoom;
         _officialLogo.Dock = DockStyle.Fill;
         _officialLogo.BackColor = BrandColors.Bg;
-        _officialLogo.Margin = new Padding(0, 0, 12, 0);
+        _officialLogo.Margin = new Padding(0, 0, 4, 0);
         _officialLogo.AccessibleName = "Official LouderMe logo";
         header.Controls.Add(_officialLogo, 0, 0);
 
@@ -307,6 +306,7 @@ internal sealed class MainForm : Form
                 lockupBounds.Width < 180 || lockupBounds.Height < 90 ||
                 !available.Contains(lockupBounds) ||
                 lockupBounds.IntersectsWith(about) ||
+                lockupBounds.Left - available.Left > 40 ||
                 !available.Contains(about))
                 throw new InvalidOperationException(
                     "Official LouderMe lockup overlaps About or leaves the header.");

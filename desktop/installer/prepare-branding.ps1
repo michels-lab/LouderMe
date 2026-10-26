@@ -38,7 +38,32 @@ try {
   Remove-Item $darkPath -Force -ErrorAction SilentlyContinue
 }
 
+# The former LouderMe 7,527-byte "MichelsLabLockup.png" is CORRUPTED
+# (libpng: PLTE CRC). The approved parent-brand PNG is now VENDORED unchanged
+# from the private Michel-Software-Standards Git blob (official source SHA
+# 7fd48093968b31ddacd3098f5b15d962de580652). Build fully offline.
+# Do not modify, recompress or overwrite the approved source bytes.
+$studioSha256 = 'd03e8549af2cbcb04c2329029a02f0cd078972ce1b1ff948ef66c3aebe7d10f4'
+$studioSource = "$assets/MichelsLabCanonicalLockup.png"
+$studioPrepared = "$assets/MichelsLabDarkLockup.png"
+if (-not (Test-Path $studioSource)) {
+  throw 'Approved Michel''s Lab canonical image is missing from LouderMe source.'
+}
+if ((Get-Item $studioSource).Length -ne 526482) {
+  throw 'Canonical Michel''s Lab PNG size changed: refusing a substitute.'
+}
+if ((Get-FileHash $studioSource -Algorithm SHA256).Hash.ToLowerInvariant() -ne $studioSha256) {
+  throw 'Canonical Michel''s Lab PNG SHA-256 mismatch.'
+}
+# Preserve the canonical file as an unchanged embedded resource. A separately
+# named UI derivative is flattened onto the precise About-card background
+# (WinForms DrawToBitmap can otherwise paint transparent PNGs magenta).
+& $MagickPath $studioSource -background '#0C1422' -alpha remove -alpha off -resize '640x240' -strip $studioPrepared
+if ($LASTEXITCODE -ne 0) { throw 'Official Michel''s Lab dark logo preparation failed.' }
+
 foreach ($file in @(
+  "$assets/MichelsLabCanonicalLockup.png",
+  "$assets/MichelsLabDarkLockup.png",
   "$assets/LouderMe.ico",
   "$assets/LouderMeOfficialLockup.png",
   "$assets/LouderMeOfficialDarkLockup.png"

@@ -1,12 +1,17 @@
 # LouderMe
 
+## Operación Granada — Windows v0.1.17 estable (2026-10-26)
+
+La [distribución oficial unificada Android v0.1.12 + Windows v0.1.17](https://github.com/michels-lab/LouderME-Releases/releases/tag/louderme-android-v0.1.12-desktop-v0.1.17) ya está publicada y verificada; Windows conserva las correcciones del About, fotografía grande, logotipo auténtico de Michel's Lab y encabezado LouderMe alineado a la izquierda. El [release de origen](https://github.com/michels-lab/LouderMe/releases/tag/desktop-v0.1.17) aprobó instalación, renderizado y checksums. Android v0.1.12 se conservó byte por byte; el motor global nativo independiente de Equalizer APO sigue sin validación física.
+
+
 ## Operación Granada — reparación visual de Windows (2026-10-24)
 
 El [PR #107](https://github.com/michels-lab/LouderMe/pull/107) integró la recuperación del About, logotipo transparente adaptado al tema oscuro y ecualizador de siete bandas más grande e interactivo. [Notas de mantenimiento Windows v0.1.16](desktop/releases/v0.1.16.md). El audio físico sigue pendiente; una gráfica funcional no demuestra audio nativo independiente.
 
 ## Granada — restablecer el logotipo oficial de Windows (2026-10-23)
 
-[Auditoría del error visual `auderMe` y de los recursos oficiales](docs/audits/GRANADA_2026-10-23_OFFICIAL_WINDOWS_LOGO.md): el encabezado, Splash, About y la barra de título usarán el branding aprobado, sin ondas ni palabras reconstruidas. **Windows v0.1.15 es una propuesta hasta que se validen el instalador y el release estable**.
+[Auditoría del error visual `auderMe` y de los recursos oficiales](docs/audits/GRANADA_2026-10-23_OFFICIAL_WINDOWS_LOGO.md): el encabezado, Splash, About y la barra de título usarán el branding aprobado, sin ondas ni palabras reconstruidas. Windows v0.1.15 se publicó el 23 de octubre de 2026 y fue sustituido posteriormente por v0.1.16 y v0.1.17.
 
 ## Operación Granada — audio de aplicaciones externas en Windows (2026-10-22)
 
@@ -30,7 +35,7 @@ LouderMe is an Android audio utility by **Michel's Lab** for increasing quiet me
 
 ## Current public release bundle
 
-**Android v0.1.12 + Windows Desktop v0.1.14** (latest verified public unified bundle; GitHub release and updater metadata checked 2026-10-23). Both Windows Setup/Portable and the unchanged Android APK are available with verified SHA-256 sidecars in [the official unified release](https://github.com/michels-lab/LouderME-Releases/releases/tag/louderme-android-v0.1.12-desktop-v0.1.14). This does not certify real acoustic gain.
+**Android v0.1.12 + Windows Desktop v0.1.17** (latest verified public unified bundle; GitHub release and updater metadata checked 2026-10-26). Both Windows Setup/Portable and the unchanged Android APK are available with verified SHA-256 sidecars in [the official unified release](https://github.com/michels-lab/LouderME-Releases/releases/tag/louderme-android-v0.1.12-desktop-v0.1.17). This does not certify real acoustic gain.
 
 Michel's Lab publishes the current stable Android and Windows binaries together on one public GitHub release page. Platform versions remain explicit when their release lines differ.
 
@@ -80,7 +85,7 @@ Versions through v0.1.3 were GitHub CI debug APKs. Hosted CI debug certificates 
 
 v0.1.11 established the current permanent Michel's Lab Direct signer (SHA-256 certificate starts `4a5bb9d9`), different from prior v0.1.10 and earlier. Versions v0.1.11 and later must retain this signer for in-place Direct updates. Earlier signers cannot update into this line in place.
 
-For Direct installations at v0.1.10 or earlier, back up settings, uninstall the old package (this may remove app-local data), then install v0.1.11 or later. Users already on v0.1.11 should be able to update to v0.1.12 with the SAME certificate if the signed release passes CI.
+For Direct installations at v0.1.10 or earlier, back up settings, uninstall the old package (this may remove app-local data), then install v0.1.11 or later. Users already on v0.1.11 can use the unchanged permanent-signing v0.1.12 Direct release; Android still requires installation confirmation.
 
 ## Visual system
 
@@ -92,7 +97,7 @@ near-black workspace, layered blue-black surfaces, cyan/blue operational accents
 - Studio: **Michel's Lab**
 - Android package: `com.michelslab.louderme`
 - Current verified public Android version: `0.1.12` (versionCode `13`)
-- Current verified public Windows Desktop version: `0.1.13`
+- Current verified public Windows Desktop version: `0.1.17`
 - Developer: Michel Duarte / Michel Armando Duarte Flores
 - License: Proprietary — All Rights Reserved
 
@@ -102,7 +107,7 @@ near-black workspace, layered blue-black surfaces, cyan/blue operational accents
 LouderMe now has two update channels:
 
 - **Google Play** builds use Play In-App Updates.
-- **Michel's Lab Direct** builds use a public manifest and stable signed APKs while keeping source private.
+- **Michel's Lab Direct** builds use a public manifest and stable signed APKs; the source repository is maintained separately from the public binary channel.
 
 Direct updates verify SHA-256, package identity, version and signing identity before Android receives the package.
 

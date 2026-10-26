@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 225,
-  "classified_files_total": 221,
+  "tracked_files_total": 226,
+  "classified_files_total": 222,
   "docs_content_inspected": 61,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
@@ -17,13 +17,13 @@
     "installer_metadata": 1,
     "license": 1,
     "source": 80,
-    "test": 20,
+    "test": 21,
     "text_metadata": 2,
     "workflow": 10
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "7d17d848e55a4c15dd54c0e507037eb42ef206b095880731f5a3551577e26151",
+  "inventory_fingerprint": "a9aee23f440dd2dfd58cd7ce333a6cb28be442588770e28bf0a17c78f3690061",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -80,7 +80,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "a3c129dbeef9d8203bc844360e39246f50434be8"
+      "blob": "d346bb694c8b73c07463c7e921d5861330daa027"
     },
     {
       "path": ".github/workflows/file-governance-audit.yml",
@@ -122,7 +122,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "2b1a0cf1104e01e93b907c057f813323a7bb9d83"
+      "blob": "45abbbad50334cc22098cd5b7c468601ddcf01b2"
     },
     {
       "path": ".github/workflows/restore-canonical-android-asset.yml",
@@ -227,7 +227,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "ff5b104401830753dbf747bd31c4be7b7ebf362a"
+      "blob": "454d8371140e5a7a86a34578e6ce25d54340e1b8"
     },
     {
       "path": "README.md",
@@ -731,7 +731,7 @@
       "role": "document",
       "purpose": "manual/decision/report/historical note",
       "certainty": "inferred",
-      "blob": "f5c6e9fe0aa68f2fa59b99c96edb7023e02fafd0"
+      "blob": "37f99059f58fa1799043eb7463c65df5f4673a0a"
     },
     {
       "path": "desktop/releases/v0.1.2.md",
@@ -1530,6 +1530,13 @@
       "purpose": "code/test implementation",
       "certainty": "rule",
       "blob": "fffbd4e22e9c370ef0475b1622858ac12e5e0b78"
+    },
+    {
+      "path": "tools/test_louderme_release_gate_parity.py",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "2b2fdfd19373466263c3a3c0c8dfb7e160fe7b60"
     },
     {
       "path": "tools/test_repository_file_auditor.py",

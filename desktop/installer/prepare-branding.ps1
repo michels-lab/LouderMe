@@ -38,17 +38,29 @@ try {
   Remove-Item $darkPath -Force -ErrorAction SilentlyContinue
 }
 
-# Preserve the actual approved Michel's Lab logo from the canonical tracked
-# PNG. Its transparent pixels produced a magenta WinForms DrawToBitmap artifact
-# in v0.1.15, so compose it onto the *exact* About-card dark surface before
-# embedding. This is NOT a substitute text label or a newly invented mark.
-$studioSource = "$assets/MichelsLabLockup.png"
+# The former LouderMe 7,527-byte "MichelsLabLockup.png" is CORRUPTED
+# (libpng: PLTE CRC). Recover canonical parent-brand BYTES from its actual
+# source of truth, not the broken in-app copy. Pin source commit + SHA-256.
+# Do not modify, recompress or overwrite the approved source bytes.
+$studioSha256 = 'd03e8549af2cbcb04c2329029a02f0cd078972ce1b1ff948ef66c3aebe7d10f4'
+$studioSource = "$assets/MichelsLabCanonicalLockup.png"
 $studioPrepared = "$assets/MichelsLabDarkLockup.png"
-if (-not (Test-Path $studioSource)) { throw 'Canonical Michel''s Lab logo missing.' }
+$studioUrl = 'https://raw.githubusercontent.com/michels-lab/Michel-Software-Standards/769d427b5307edb9f142ed36cdb1dc5ea005bbc7/shared-assets/michels-lab/official-lockup.png'
+Invoke-WebRequest -Uri $studioUrl -OutFile $studioSource
+if ((Get-Item $studioSource).Length -ne 526482) {
+  throw 'Canonical Michel''s Lab PNG size changed: refusing a substitute.'
+}
+if ((Get-FileHash $studioSource -Algorithm SHA256).Hash.ToLowerInvariant() -ne $studioSha256) {
+  throw 'Canonical Michel''s Lab PNG SHA-256 mismatch.'
+}
+# Preserve the canonical file as an unchanged embedded resource. A separately
+# named UI derivative is flattened onto the precise About-card background
+# (WinForms DrawToBitmap can otherwise paint transparent PNGs magenta).
 & $MagickPath $studioSource -background '#0C1422' -alpha remove -alpha off -resize '640x240' -strip $studioPrepared
 if ($LASTEXITCODE -ne 0) { throw 'Official Michel''s Lab dark logo preparation failed.' }
 
 foreach ($file in @(
+  "$assets/MichelsLabCanonicalLockup.png",
   "$assets/MichelsLabDarkLockup.png",
   "$assets/LouderMe.ico",
   "$assets/LouderMeOfficialLockup.png",

@@ -39,14 +39,16 @@ try {
 }
 
 # The former LouderMe 7,527-byte "MichelsLabLockup.png" is CORRUPTED
-# (libpng: PLTE CRC). Recover canonical parent-brand BYTES from its actual
-# source of truth, not the broken in-app copy. Pin source commit + SHA-256.
+# (libpng: PLTE CRC). The approved parent-brand PNG is now VENDORED unchanged
+# from the private Michel-Software-Standards Git blob (official source SHA
+# 7fd48093968b31ddacd3098f5b15d962de580652). Build fully offline.
 # Do not modify, recompress or overwrite the approved source bytes.
 $studioSha256 = 'd03e8549af2cbcb04c2329029a02f0cd078972ce1b1ff948ef66c3aebe7d10f4'
 $studioSource = "$assets/MichelsLabCanonicalLockup.png"
 $studioPrepared = "$assets/MichelsLabDarkLockup.png"
-$studioUrl = 'https://raw.githubusercontent.com/michels-lab/Michel-Software-Standards/769d427b5307edb9f142ed36cdb1dc5ea005bbc7/shared-assets/michels-lab/official-lockup.png'
-Invoke-WebRequest -Uri $studioUrl -OutFile $studioSource
+if (-not (Test-Path $studioSource)) {
+  throw 'Approved Michel''s Lab canonical image is missing from LouderMe source.'
+}
 if ((Get-Item $studioSource).Length -ne 526482) {
   throw 'Canonical Michel''s Lab PNG size changed: refusing a substitute.'
 }

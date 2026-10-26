@@ -12,11 +12,15 @@ on:
       - 'desktop/**'
       - 'app/src/main/assets/branding/louderme/**'
       - '.github/workflows/build-louderme-desktop.yml'
+      - '.github/workflows/release-louderme-desktop.yml'
+      - 'tools/test_louderme_release_gate_parity.py'
   pull_request:
     paths:
       - 'desktop/**'
       - 'app/src/main/assets/branding/louderme/**'
       - '.github/workflows/build-louderme-desktop.yml'
+      - '.github/workflows/release-louderme-desktop.yml'
+      - 'tools/test_louderme_release_gate_parity.py'
 
 permissions:
   contents: read
@@ -60,6 +64,8 @@ jobs:
           pwsh -File desktop/installer/prepare-branding.ps1 -MagickPath $magickPath
           python tools/test_louderme_desktop_logo.py
           if ($LASTEXITCODE -ne 0) { throw 'Official LouderMe logo raster/icon contract failed.' }
+          python tools/test_louderme_release_gate_parity.py
+          if ($LASTEXITCODE -ne 0) { throw 'Windows stable-release gate has drifted from its tested build.' }
 
       - name: Restore and build native desktop app
         shell: pwsh

@@ -56,6 +56,8 @@ jobs:
           pwsh -File desktop/installer/prepare-branding.ps1 -MagickPath $magickPath
           python tools/test_louderme_desktop_logo.py
           if ($LASTEXITCODE -ne 0) { throw 'Official LouderMe logo raster/icon contract failed.' }
+          python tools/test_louderme_release_gate_parity.py
+          if ($LASTEXITCODE -ne 0) { throw 'Release and build branding gates are inconsistent.' }
 
       - name: Restore, build and validate
         shell: pwsh
@@ -79,8 +81,8 @@ jobs:
           if ((git hash-object desktop/src/LouderMeDesktop/Assets/MichelDuarte.jpg) -ne '18fe1a68722850c3d8f918dc0799f46ffeb6dbaf') {
             throw 'Desktop Michel Duarte portrait is not canonical.'
           }
-          if ((git hash-object desktop/src/LouderMeDesktop/Assets/MichelsLabLockup.png) -ne '7819ef5c7d1a5c338c67c9bbd517e5448724a5cf') {
-            throw "Desktop Michel's Lab lockup is not canonical."
+          if ((Get-FileHash desktop/src/LouderMeDesktop/Assets/MichelsLabCanonicalLockup.png -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'd03e8549af2cbcb04c2329029a02f0cd078972ce1b1ff948ef66c3aebe7d10f4') {
+            throw "Desktop Michel's Lab approved parent-brand lockup is not the verified canonical image."
           }
 
           foreach ($file in @(
@@ -93,7 +95,7 @@ jobs:
           }
 
           $about=Get-Content 'desktop/src/LouderMeDesktop/AboutForm.cs' -Raw
-          foreach ($required in @('ABOUT THE AUTHOR','Instagram','Facebook','LinkedIn','GitHub','Email','MichelsLabLockup')) {
+          foreach ($required in @('ABOUT THE AUTHOR','Instagram','Facebook','LinkedIn','GitHub','Email','MichelsLabDarkLockup','MichelDuarte.jpg','Proprietary','Equalizer APO')) {
             if ($about -notmatch [regex]::Escape($required)) { throw "Desktop About contract missing: $required" }
           }
 

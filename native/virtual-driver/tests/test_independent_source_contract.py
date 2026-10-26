@@ -40,14 +40,19 @@ class IndependentSourceBoundaryTests(unittest.TestCase):
 
     def test_runner_waits_for_bridge_ready_and_exact_app_exit(self):
         text = RUNNER.read_text()
-        for marker in ('EXTERNAL_SOURCE_READY', 'EXTERNAL_APP_TONE_FINISHED',
-                       'independent-source-result-', 'physical_matched440_amplitude', '--probe-app-route',
-                       'Start-Process', 'separate'):
-            if marker == 'Start-Process': continue
+        parser = (ROOT / "native/virtual-driver/PositiveSourceCheck.ps1").read_text()
+        for marker in ('EXTERNAL_SOURCE_READY', 'independent-source-result-',
+                       'physical_matched440_amplitude', '--probe-app-route',
+                       'Test-LouderMePositiveSourceRoute', '-StdOut $all',
+                       '-ExitCode $bridge.ExitCode', '-SourceExitCode $source.ExitCode',
+                       '-SourceStdOut $sourceOutput', 'separate'):
             self.assertIn(marker, text)
+        for marker in ('EXTERNAL_APP_TONE_FINISHED', 'Physical LAB proof:',
+                       'virtualProcessed=', 'physicalEmitted=', 'dropped=',
+                       'Test-LouderMePositiveSourceRoute'):
+            self.assertIn(marker, parser)
         self.assertIn('$bridge.HasExited', text)
         self.assertIn('$source.ExitCode -ne 0', text)
-        self.assertIn('$bridge.ExitCode -ne 0', text)
         self.assertIn('Get-CimInstance -ClassName Win32_ComputerSystem', text)
         self.assertIn('$process.Kill($true)', text)
         self.assertNotIn('Stop-Process -Name', text)

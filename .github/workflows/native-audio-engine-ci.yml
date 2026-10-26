@@ -14,6 +14,8 @@ on:
       - 'native/virtual-driver/test_IndependentGainCheck.ps1'
       - 'native/virtual-driver/NoSourceControlCheck.ps1'
       - 'native/virtual-driver/test_NoSourceControlCheck.ps1'
+      - 'native/virtual-driver/PositiveSourceCheck.ps1'
+      - 'native/virtual-driver/test_PositiveSourceCheck.ps1'
       - 'native/virtual-driver/probe_independent_app_route.ps1'
       - 'native/virtual-driver/run_disposable_lab.ps1'
       - '.github/workflows/native-audio-engine-ci.yml'
@@ -31,6 +33,8 @@ on:
       - 'native/virtual-driver/test_IndependentGainCheck.ps1'
       - 'native/virtual-driver/NoSourceControlCheck.ps1'
       - 'native/virtual-driver/test_NoSourceControlCheck.ps1'
+      - 'native/virtual-driver/PositiveSourceCheck.ps1'
+      - 'native/virtual-driver/test_PositiveSourceCheck.ps1'
       - 'native/virtual-driver/probe_independent_app_route.ps1'
       - 'native/virtual-driver/run_disposable_lab.ps1'
       - '.github/workflows/native-audio-engine-ci.yml'
@@ -98,6 +102,13 @@ jobs:
           pwsh -NoProfile -File native/virtual-driver/test_NoSourceControlCheck.ps1
           if ($LASTEXITCODE -ne 0) {
             throw 'Silence negative control accepted missing listener, contaminated output or fake proof.'
+          }
+      - name: Reject fake independent source/physical-loopback successes
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File native/virtual-driver/test_PositiveSourceCheck.ps1
+          if ($LASTEXITCODE -ne 0) {
+            throw 'Independent 440Hz source completion and physical PCM report safety fixtures failed.'
           }
       - name: Validate native C ABI from managed code
         shell: pwsh

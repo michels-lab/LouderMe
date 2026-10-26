@@ -5,6 +5,7 @@ Windows CI calls this after prepare-branding.ps1 and before build. The runtime
 WinForms smoke separately validates the real main-header geometry at 480/600px.
 """
 from pathlib import Path
+import hashlib
 import xml.etree.ElementTree as ET
 
 from PIL import Image
@@ -55,6 +56,18 @@ def main() -> None:
         if white < 400 or blue < 300:
             raise AssertionError("Transparent dark lockup lost white/blue identity")
 
+    canonical_studio = ROOT / "desktop/src/LouderMeDesktop/Assets/MichelsLabCanonicalLockup.png"
+    if not canonical_studio.is_file() or canonical_studio.stat().st_size != 526482:
+        raise AssertionError("Original verified Michel's Lab studio PNG missing")
+    if hashlib.sha256(canonical_studio.read_bytes()).hexdigest() != (
+        "d03e8549af2cbcb04c2329029a02f0cd078972ce1b1ff948ef66c3aebe7d10f4"
+    ):
+        raise AssertionError("Canonical Michel's Lab bytes modified or corrupted")
+    with Image.open(canonical_studio) as approved:
+        approved.load()
+        if approved.size != (2172, 724):
+            raise AssertionError("Michel's Lab official lockup dimensions modified")
+
     studio = ROOT / "desktop/src/LouderMeDesktop/Assets/MichelsLabDarkLockup.png"
     with Image.open(studio) as image:
         if image.format != "PNG" or image.width < 180 or image.height < 60:
@@ -74,7 +87,8 @@ def main() -> None:
             raise AssertionError("Official ICO missing from Windows title bar build")
 
     project = PROJECT.read_text(encoding="utf-8")
-    for required in ("LouderMeOfficialLockup.png", "MichelsLabDarkLockup.png",
+    for required in ("LouderMeOfficialLockup.png", "MichelsLabCanonicalLockup.png",
+                     "MichelsLabDarkLockup.png",
                      'LogicalName="LouderMeDesktop.Assets.LouderMe.ico"'):
         if required not in project:
             raise AssertionError(f"Windows did not embed official asset: {required}")

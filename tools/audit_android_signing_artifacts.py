@@ -24,7 +24,8 @@ NAMES_SUSPICIOUS = re.compile(
 )
 BAN_UPLOAD = re.compile(
     r"(?i)(?:signing[/\\]|\.jks\b|"
-    r"github-actions-secrets\.txt|legacy[-_]vault|secrets[/\\])"
+    r"github-actions-secrets\.txt|legacy[-_]vault|secrets[/\\]|"
+    r"credentials[/\\]|secret[-_]?backup)"
 )
 REPO = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
 
@@ -45,7 +46,13 @@ def verify_workflow(workflow: str) -> None:
         if text not in workflow:
             raise ValueError("Permanent signer hardening or owner-approved cert was removed")
     pins = re.findall(
-        r'(?m)^\\s*EXPECTED_CERT_SHA256="([0-9a-f]{64})"\\s*
+        r'(?m)^\s*EXPECTED_CERT_SHA256="([0-9a-f]{64})"\s*$', workflow
+    )
+    if len(pins) != 2 or set(pins) != {SIGNER_CERT}:
+        raise ValueError("Both keystore and final APK must check the approved public certificate")
+    if not re.search(r'apksigner[^\n]*verify', workflow) or "APK_CERT" not in workflow:
+        raise ValueError("Final signed APK certificate verification was removed")
+    # Only inspect the upload-artifact steps, not safe sign_sideload local
     # workfiles. Never treat normal published .apk / .sha256 as a private key.
     steps = re.split(r"(?m)^      - name: ", workflow)
     for step in steps:

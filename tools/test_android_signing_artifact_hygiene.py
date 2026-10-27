@@ -63,8 +63,8 @@ class AndroidSigningArtifactHygieneTests(unittest.TestCase):
 
     def test_real_metadata_inventory_runs_after_first_merge_and_then_weekly(self):
         source = (ROOT / ".github/workflows/android-signing-artifact-hygiene.yml").read_text()
-        self.assertIn("  push:\\n    branches: [main]", source)
-        self.assertIn("  schedule:\\n    - cron:", source)
+        self.assertIn("  push:\n    branches: [main]", source)
+        self.assertIn("  schedule:\n    - cron:", source)
         self.assertIn("  workflow_dispatch:", source)
         self.assertIn("  actions: read", source)
         self.assertIn("|| github.event_name == 'push'", source)

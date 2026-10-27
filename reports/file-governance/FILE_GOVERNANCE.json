@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 230,
-  "classified_files_total": 226,
-  "docs_content_inspected": 63,
+  "tracked_files_total": 234,
+  "classified_files_total": 230,
+  "docs_content_inspected": 64,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,18 +12,18 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 55,
+    "document": 56,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
-    "source": 81,
-    "test": 22,
+    "source": 82,
+    "test": 24,
     "text_metadata": 2,
     "workflow": 10
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "87a26afd98631690f5779ea8f11be80029449c6ed448885696e600c051a60908",
+  "inventory_fingerprint": "1c846608265b4515fd82193ef8dd0b6c01d621aa75169903c485dcefa4c3b37e",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -101,7 +101,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "bc685b31158f61fe328533580b0a2e04330ba500"
+      "blob": "4bf7fd43e99a5d5091c222831affa0f033690096"
     },
     {
       "path": ".github/workflows/native-physical-lab-manual.yml",
@@ -227,7 +227,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "966eea7f601273c8c7f0aacdfe9cd384d5f3d04f"
+      "blob": "22ee358ba9163b2679ca07e8c37c90c71ad09185"
     },
     {
       "path": "README.md",
@@ -1196,6 +1196,13 @@
       "blob": "4ae363c6e91e4d7242214f06edd7cf0a88b7c147"
     },
     {
+      "path": "docs/audits/GRANADA_2026-10-27_DEFAULT_RENDER_LAB_GUARD.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "ba92bee181d28048b54d446bc55569d14eff663c"
+    },
+    {
       "path": "docs/audits/GRANADA_2026-10-27_RENDER_CONSUMPTION_PROVENANCE.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -1294,6 +1301,13 @@
       "blob": "7586ead809d45665b6ec7786df20e8628c2b6c79"
     },
     {
+      "path": "native/virtual-driver/DefaultRenderGuard.ps1",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "5baea6f12a82be880be3e48e2305aca806815b40"
+    },
+    {
       "path": "native/virtual-driver/IndependentGainCheck.ps1",
       "role": "source",
       "purpose": "code/test implementation",
@@ -1326,7 +1340,7 @@
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "30b9bea05cd34d739d16a23b9914d31595c10a74"
+      "blob": "e03ddd449da42e512e3e290b8f9ca478098d33c0"
     },
     {
       "path": "native/virtual-driver/prepare_sysvad.py",
@@ -1347,7 +1361,14 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "8d0e07fe7d45d8dd547246c42e056e62594b8fa3"
+      "blob": "d6e30207d112d9094bc9c20ec32fc2e67d87a55a"
+    },
+    {
+      "path": "native/virtual-driver/test_DefaultRenderGuard.ps1",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "25cd2a3ae0a5add237977e8d2650b298601ad765"
     },
     {
       "path": "native/virtual-driver/test_IndependentGainCheck.ps1",
@@ -1376,6 +1397,13 @@
       "purpose": "code/test implementation",
       "certainty": "rule",
       "blob": "6c599c35f8dd50c1b53d26a1e26a773a9ec893b0"
+    },
+    {
+      "path": "native/virtual-driver/tests/test_default_render_guard.py",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "7e886aa65a0a59c446f022b52cf97f2900ed026b"
     },
     {
       "path": "native/virtual-driver/tests/test_independent_source_contract.py",
@@ -1473,7 +1501,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "91defaa863586bbc7f35695a638453cd2580a86b"
+      "blob": "dea2b074827cfa526766559e1dd97217e1e3a36f"
     },
     {
       "path": "native/windows-bridge/README.md",

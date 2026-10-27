@@ -104,8 +104,10 @@ try {
   }
   if ($runner.Contains('LAB instance: $createdInstance') -or
       $runner.Contains('device instance: $id') -or
-      $runner.Contains('LAB device $id')) {
-    throw 'Physical Windows private PnP device instance ID would be printed to CI.'
+      $runner.Contains('LAB device $id') -or
+      -not $runner.Contains('& $DevconExe install $inf $hardwareId *> $null') -or
+      -not $runner.Contains('& pnputil /remove-device "$id" *> $null')) {
+    throw 'Private PnP instance IDs may escape through script or native driver installer output.'
   }
   Write-Host 'PASS: seven lab inputs pinned; same-size tamper, deleted driver, missing/alias/empty files rejected; every real VM phase and cleanup gated (no devices).'
 } finally {

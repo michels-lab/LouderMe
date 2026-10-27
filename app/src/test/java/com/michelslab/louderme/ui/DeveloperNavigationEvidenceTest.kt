@@ -27,7 +27,7 @@ class DeveloperNavigationEvidenceTest {
         val confirmed = DeveloperNavigationEvidence.confirm(pending, "About", "about.profile",
             bounds, viewport, 210L)!!
         assertEquals(210L, confirmed.verifiedUtcMs)
-        assertEquals("Verified on the live rendered control",
+        assertEquals("Verified on-screen at recorded UTC time",
             DeveloperNavigationEvidence.status(confirmed, "About", emptySet()))
     }
 

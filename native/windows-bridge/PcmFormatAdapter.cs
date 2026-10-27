@@ -139,7 +139,11 @@ internal sealed class PcmFormatAdapter
     /// </summary>
     public int RequiredOutputCapacity(int inputFrames)
     {
-        if (inputFrames < 0 || inputFrames > _input.SampleRate)
+        // Offline route-tone probes legitimately encode a full 2-second
+        // packet. The 500-ms limit belongs ONLY to the live capture callback,
+        // not this reusable capacity helper or the existing 4-MB Encode API.
+        if (inputFrames < 0 ||
+            inputFrames > (4 * 1024 * 1024) / (_channels * sizeof(float)))
             throw new ArgumentOutOfRangeException(nameof(inputFrames));
         int frames = checked((int)Math.Ceiling(
             (inputFrames + 4.0) * _output.SampleRate /

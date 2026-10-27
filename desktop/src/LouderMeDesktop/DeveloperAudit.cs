@@ -301,6 +301,32 @@ internal static class DeveloperAudit
                 if (File.ReadAllText(NotesPath) != "{corrupted")
                     throw new InvalidOperationException("Corrupt annotation evidence was overwritten.");
             }
+            // Even a semantically bad note cannot replace the preserved file,
+            // and recovery must fail closed rather than treating it as blank.
+            try
+            {
+                SaveNotes(new[] { note with { Severity = "P9" } });
+                throw new InvalidOperationException("Invalid note incorrectly saved.");
+            }
+            catch (InvalidDataException)
+            {
+                if (File.ReadAllText(NotesPath) != "{corrupted")
+                    throw new InvalidOperationException("Invalid save overwrote original annotations.");
+            }
+            File.WriteAllText(NotesPath, JsonSerializer.Serialize(new[]
+            {
+                note with { UpdatedAtUtc = note.CreatedAtUtc.AddDays(-1) }
+            }, Json));
+            try
+            {
+                LoadNotes();
+                throw new InvalidOperationException("Chronologically invalid saved note was accepted.");
+            }
+            catch (InvalidDataException)
+            {
+                if (!File.Exists(NotesPath))
+                    throw new InvalidOperationException("Invalid note file was deleted.");
+            }
         }
         finally
         {

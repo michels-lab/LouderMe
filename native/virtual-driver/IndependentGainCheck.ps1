@@ -85,6 +85,22 @@ function Test-LouderMeIndependentGain {
         [double]$record.physical_monitor_frames % 1 -ne 0) {
       throw "Invalid $phase no-source physical monitor evidence."
     }
+    foreach ($field in @('virtual_processed_frames', 'physical_queued_frames',
+                         'render_consumed_frames', 'render_starved_reads')) {
+      $value = $record.$field
+      if ($null -eq $value -or $value -is [bool] -or
+          $value -isnot [ValueType] -or
+          -not [double]::IsFinite([double]$value) -or
+          ([double]$value % 1) -ne 0) {
+        throw "Missing no-source callback/queue counter: $field at $phase."
+      }
+    }
+    if ([double]$record.virtual_processed_frames -ne 0 -or
+        [double]$record.physical_queued_frames -ne 0 -or
+        [double]$record.render_consumed_frames -ne 0 -or
+        [double]$record.render_starved_reads -lt 0) {
+      throw "Source-free $phase control was contaminated by application PCM."
+    }
   }
   $m = @{}
   foreach ($boost in @(100, 150)) {

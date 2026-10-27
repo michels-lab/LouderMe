@@ -1,6 +1,13 @@
 name: Android Signing Artifact Hygiene
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/audit_android_signing_artifacts.py'
+      - 'tools/test_android_signing_artifact_hygiene.py'
+      - '.github/workflows/android-signing-artifact-hygiene.yml'
+      - '.github/workflows/android-ci-release.yml'
   pull_request:
     branches: [main]
     paths:
@@ -38,9 +45,10 @@ jobs:
 
   artifact_metadata_inventory:
     name: Audit historical Actions artifact names and optional legacy vault ID (read only)
-    # Normal PR CI performs offline tests only. A scheduled/explicit audit can
+    # Normal PR CI performs offline tests only. The first source merge,
+    # subsequent scheduled runs or an explicit dispatch audit can
     # list metadata with ephemeral Actions:read without downloading archives.
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event_name == 'push'
     needs: [signing_contract]
     runs-on: ubuntu-latest
     steps:

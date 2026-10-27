@@ -128,7 +128,7 @@ internal static class DeveloperNotesBackup
         var created = new DateTimeOffset(2026, 10, 27, 12, 0, 0, TimeSpan.Zero);
         var first = new DeveloperAnnotation(Guid.NewGuid(), "Home",
             "MainForm#Home/TrackBar#Volume", "Volume",
-            "Exact multiline owner text\n"quoted" and Unicode á", created, created,
+            "Exact multiline owner text\n\"quoted\" and Unicode á", created, created,
             "P1", "Investigating");
         var second = new DeveloperAnnotation(Guid.NewGuid(), "About",
             "AboutForm#About/Label#Brand", "Brand",

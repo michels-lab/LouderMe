@@ -33,13 +33,15 @@ function Test-LouderMeNoSourceControl {
   $coherence = [double]::Parse($m.Groups['coherence'].Value, $culture)
   $frames = [long]::Parse($m.Groups['frames'].Value, $culture)
   $drops = [long]::Parse($m.Groups['drops'].Value, $culture)
+  $virtual = [long]::Parse($m.Groups['virtual'].Value, $culture)
   $queued = [long]::Parse($m.Groups['queued'].Value, $culture)
   $consumed = [long]::Parse($m.Groups['consumed'].Value, $culture)
   $starved = [long]::Parse($m.Groups['starved'].Value, $culture)
   if (-not [double]::IsFinite($tone) -or $tone -lt 0 -or $tone -gt 0.003 -or
       -not [double]::IsFinite($coherence) -or $coherence -lt 0 -or $coherence -gt 1.05 -or
       $frames -le 0 -or $drops -ne 0 -or $consumed -gt $queued -or
-      $queued -lt 0 -or $consumed -lt 0 -or $starved -lt 0) {
+      $virtual -ne 0 -or $queued -ne 0 -or $consumed -ne 0 -or
+      $starved -lt 0) {
     throw 'No physical monitor data, lost packets, or external 440 Hz contamination detected.'
   }
   return [ordered]@{
@@ -49,6 +51,7 @@ function Test-LouderMeNoSourceControl {
     bridge_failed_for_missing_tone = $true
     matched440_amplitude = $tone
     physical_monitor_frames = $frames
+    virtual_processed_frames = $virtual
     physical_queued_frames = $queued
     render_consumed_frames = $consumed
     render_starved_reads = $starved

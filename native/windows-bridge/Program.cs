@@ -181,6 +181,15 @@ internal static class Program
             // actual physical mix format; explicit mono/stereo mapping is
             // supported. Multichannel conversion still fails closed.
             var adapter = new PcmFormatAdapter(inputFormat, outputFormat);
+            // One reusable pair of scratch arrays per isolated route.
+            // Reserve 500 ms of input outside WASAPI callbacks; an abnormal
+            // larger callback fails closed rather than allocating on a
+            // timing-sensitive audio thread. No source PCM is persisted.
+            int maxCaptureFrames = checked(inputFormat.SampleRate / 2 + 16);
+            var decodedScratch = new byte[checked(maxCaptureFrames *
+                inputFormat.Channels * sizeof(float))];
+            var outputScratch = new byte[
+                adapter.RequiredOutputCapacity(maxCaptureFrames)];
             var clockController = new AdaptiveBufferClock();
             var processingTelemetry = new AudioProcessingTelemetry();
             if (provePhysicalRoute && inputFormat.Channels is < 1 or > 2)
@@ -307,18 +316,23 @@ internal static class Program
                     if (e.BytesRecorded == 0) return;
                     // Never mutate NAudio's recycled event buffer. Native DSP
                     // receives an independent float32 copy even for PCM16 input.
-                    byte[] decoded = adapter.Decode(e.Buffer, e.BytesRecorded);
+                    int sourceFrames = e.BytesRecorded / inputFormat.BlockAlign;
+                    if (sourceFrames > maxCaptureFrames)
+                        throw new InvalidDataException(
+                            "Unexpected >500 ms WASAPI capture packet; stop instead of allocating.");
+                    int decodedLength = adapter.DecodeInto(
+                        e.Buffer, e.BytesRecorded, decodedScratch);
                     // The ONLY reader and native-state writer is the PCM
                     // callback. The control worker publishes immutable data.
                     liveControlQueue.ApplyPending(engine);
-                    engine.Process(decoded, decoded.Length, inputFormat.Channels);
-                    byte[] converted = adapter.Encode(decoded, decoded.Length);
-                    if (converted.Length == 0) return;
-                    var sourceFrames = e.BytesRecorded / inputFormat.BlockAlign;
-                    if (converted.Length > buffer.BufferLength)
+                    engine.Process(decodedScratch, decodedLength, inputFormat.Channels);
+                    int convertedLength = adapter.EncodeInto(
+                        decodedScratch, decodedLength, outputScratch);
+                    if (convertedLength == 0) return;
+                    if (convertedLength > buffer.BufferLength)
                         throw new InvalidDataException(
                             "One PCM packet is larger than the entire output queue.");
-                    if (buffer.BufferLength - buffer.BufferedBytes < converted.Length)
+                    if (buffer.BufferLength - buffer.BufferedBytes < convertedLength)
                     {
                         Interlocked.Increment(ref overflowPackets);
                         switch (queueRecovery.OnOverflow(Stopwatch.GetTimestamp()))
@@ -341,10 +355,10 @@ internal static class Program
                                     "Output queue overflow persisted despite bounded resets.");
                         }
                     }
-                    buffer.AddSamples(converted, 0, converted.Length);
+                    buffer.AddSamples(outputScratch, 0, convertedLength);
                     queueRecovery.OnHealthyWrite();
                     Interlocked.Add(ref processedFrames, sourceFrames);
-                    Interlocked.Add(ref outputFrames, converted.Length / outputFormat.BlockAlign);
+                    Interlocked.Add(ref outputFrames, convertedLength / outputFormat.BlockAlign);
                 }
                 catch (Exception error)
                 {
@@ -380,6 +394,7 @@ internal static class Program
                     (eqText is null ? "disabled" : $"enabled ({eqText} dB)"));
                 Console.WriteLine($"Formats: virtual {inputFormat}; physical {outputFormat}");
                 Console.WriteLine("PCM16/float32 conversion + linear rate adaptation; matching channels or mono/stereo map.");
+                Console.WriteLine("Reusable callback PCM scratch; maximum 500ms capture packet, no per-packet managed PCM buffer allocation.");
                 Console.WriteLine("Press Ctrl+C to stop; this is not a shipped system driver.");
                 if (args.Contains("--interactive-controls"))
                 {

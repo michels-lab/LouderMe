@@ -22,7 +22,9 @@ function Get-Baseline([int]$boost) {
     physical_coherence = 0.81
     physical_monitor_frames = 192000
     virtual_processed_frames = 96000
-    physical_emitted_frames = 96000
+    physical_queued_frames = 96000
+    render_consumed_frames = 90000
+    render_starved_reads = 8
     dropped_frames = 0
     independent_source_frames = 96000
     independent_source_channels = 2
@@ -138,8 +140,29 @@ try {
   Assert-Rejected 'gain forged while virtual source captured zero PCM' $a $b
 
   $a = Get-Baseline 100; $b = Get-Baseline 150
-  $a.physical_emitted_frames = 0
-  Assert-Rejected 'gain forged without physical output frames' $a $b
+  $a.render_consumed_frames = 0
+  Assert-Rejected 'gain forged without physical callback reads' $a $b
+
+  $a = Get-Baseline 100; $b = Get-Baseline 150
+  $a.physical_queued_frames = 0
+  Assert-Rejected 'physical PCM was never enqueued' $a $b
+
+  $a = Get-Baseline 100; $b = Get-Baseline 150
+  $b.render_consumed_frames = 96001
+  Assert-Rejected 'render callback consumed more than enqueued PCM' $a $b
+
+  $a = Get-Baseline 100; $b = Get-Baseline 150
+  $a.Remove('render_starved_reads')
+  Assert-Rejected 'render underflow provenance missing' $a $b
+
+  $a = Get-Baseline 100; $b = Get-Baseline 150
+  $b.render_consumed_frames = '90000'
+  Assert-Rejected 'renderer frames forged as string' $a $b
+
+  $a = Get-Baseline 100; $b = Get-Baseline 150
+  $b.physical_emitted_frames = 90000
+  $b.Remove('render_consumed_frames')
+  Assert-Rejected 'obsolete physicalEmitted queue-only report' $a $b
 
   $a = Get-Baseline 100; $b = Get-Baseline 150
   $b.dropped_frames = 7

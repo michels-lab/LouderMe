@@ -15,7 +15,7 @@ internal sealed record DeveloperNoteBackup(
 
 internal sealed record DeveloperNoteImportPreview(
     List<DeveloperAnnotation> Incoming, int NewCount, int ExactDuplicates,
-    int Conflicts, int UnresolvedScreens);
+    int Conflicts);
 
 internal static class DeveloperNotesBackup
 {
@@ -73,8 +73,7 @@ internal static class DeveloperNotesBackup
             incoming,
             incoming.Count(n => !current.ContainsKey(n.Id)),
             incoming.Count(n => current.TryGetValue(n.Id, out var old) && old == n),
-            incoming.Count(n => current.TryGetValue(n.Id, out var old) && old != n),
-            incoming.Count(n => n.Screen is not ("Home" or "About")));
+            incoming.Count(n => current.TryGetValue(n.Id, out var old) && old != n));
     }
 
     internal static List<DeveloperAnnotation> Merge(

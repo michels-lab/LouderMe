@@ -9,6 +9,8 @@ on:
       - 'native/windows-bridge/**'
       - 'native/independent-tone/**'
       - 'native/virtual-driver/LabEvidenceDirectory.ps1'
+      - 'native/virtual-driver/DefaultRenderGuard.ps1'
+      - 'native/virtual-driver/test_DefaultRenderGuard.ps1'
       - 'native/virtual-driver/test_LabEvidenceDirectory.ps1'
       - 'native/virtual-driver/IndependentGainCheck.ps1'
       - 'native/virtual-driver/test_IndependentGainCheck.ps1'
@@ -28,6 +30,8 @@ on:
       - 'native/windows-bridge/**'
       - 'native/independent-tone/**'
       - 'native/virtual-driver/LabEvidenceDirectory.ps1'
+      - 'native/virtual-driver/DefaultRenderGuard.ps1'
+      - 'native/virtual-driver/test_DefaultRenderGuard.ps1'
       - 'native/virtual-driver/test_LabEvidenceDirectory.ps1'
       - 'native/virtual-driver/IndependentGainCheck.ps1'
       - 'native/virtual-driver/test_IndependentGainCheck.ps1'
@@ -86,6 +90,13 @@ jobs:
         run: |
           dotnet "native/independent-tone/bin/Release/net10.0-windows/LouderMeIndependentTone.dll" --check-tone
           if ($LASTEXITCODE -ne 0) { throw 'Independent source PCM16/float32 test vectors failed.' }
+      - name: Refuse silent Windows default playback reassignment during virtual driver lab
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File native/virtual-driver/test_DefaultRenderGuard.ps1
+          if ($LASTEXITCODE -ne 0) {
+            throw 'A changed, unknown or raw Windows default playback endpoint passed the lab safeguard.'
+          }
       - name: Reject stale LAB evidence directories and overwrite attempts without hardware
         shell: pwsh
         run: |
@@ -159,7 +170,9 @@ jobs:
         run: |
           $t = $null
           $errors = $null
-          foreach ($path in @('native/virtual-driver/LabEvidenceDirectory.ps1',
+          foreach ($path in @('native/virtual-driver/DefaultRenderGuard.ps1',
+                              'native/virtual-driver/test_DefaultRenderGuard.ps1',
+                              'native/virtual-driver/LabEvidenceDirectory.ps1',
                               'native/virtual-driver/test_LabEvidenceDirectory.ps1',
                               'native/virtual-driver/run_disposable_lab.ps1',
                               'native/virtual-driver/probe_independent_app_route.ps1',

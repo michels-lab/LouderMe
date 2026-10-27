@@ -294,3 +294,16 @@ The experimental bridge now separately prints `virtualProcessed`, `physicalQueue
 A before/after **no-stimulus** control is now invalid if *any* virtual PCM, physical enqueue or render consumption appears. The 100/150 ratio validator requires these fields in both positive phases and both negative controls. Old `physicalEmitted`-only JSON is intentionally rejected, even if the 440 Hz amplitude looks plausible. Do not migrate or reuse old positive LAB evidence folders; start a fresh unique VM session.
 
 Full root-cause and no-hardware CI acceptance: [2026-10-27 render-consumption audit](../../docs/audits/GRANADA_2026-10-27_RENDER_CONSUMPTION_PROVENANCE.md). Physical driver bring-up, signing, audio hotplug/CPU/latency and user validation remain pending (#46/#48).
+
+
+## Granada: Windows default-playback identity guard (2026-10-27)
+
+Windows **may change the active default output without the lab script ever calling an audio-setting API**, when a new PnP render device appears. The disposable VM lab now reads a SHA-256 fingerprint of the three Windows default render endpoint roles (Console, Multimedia, Communications) using:
+
+```powershell
+dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --default-render-fingerprint
+```
+
+The command is **read-only**; it prints only one SHA-256 and returns a failure when any render role is unavailable. Raw device IDs, names, audio samples, recordings and microphone capture are not printed. The lab records that fingerprint before privileged installation, verifies it immediately after install **before any tone**, after the source probes, and after uninstall in `finally`. It refuses to certify a run that switched/loses the original Windows default output. It never automatically chooses another playback device or silently changes Windows preferences; restore the VM snapshot if default identity differs. Multiple unexpected partial LAB devices likewise require snapshot reversion rather than a broad PnP cleanup sweep.
+
+**Limit:** sampling default state at these checkpoints is not a continuous telemetry guarantee. This is device/configuration safety, **not** evidence of sound amplification, production driver signing or physical speaker SPL. The Windows CI runs a parser and 14 adversarial fixtures without installing drivers or reading local host endpoints. See [root-cause audit](../../docs/audits/GRANADA_2026-10-27_DEFAULT_RENDER_LAB_GUARD.md).

@@ -91,6 +91,12 @@ if ($signature.Status -ne 'Valid') {
 if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
   throw 'dotnet runtime/SDK is missing; cannot execute native bridge.'
 }
+# Installing a new render device may cause Windows to pick it as the
+# default even though the app NEVER asks to change that setting. Snapshot
+# the current Multimedia default BEFORE any privileged PnP operation.
+. (Join-Path $PSScriptRoot 'DefaultRenderGuard.ps1')
+$defaultBefore = Get-LouderMeDefaultRenderFingerprint -BridgeDll $BridgeDll
+Write-Host 'Preflight: existing Windows default multimedia playback identity captured (SHA256 only).'
 
 . (Join-Path $PSScriptRoot 'LabEvidenceDirectory.ps1')
 $sessionId = [guid]::NewGuid().ToString('D')
@@ -107,7 +113,9 @@ $metadata = @(
   "CAT_SHA256=$((Get-FileHash -LiteralPath $cat -Algorithm SHA256).Hash.ToLowerInvariant())",
   "SYS_SHA256=$((Get-FileHash -LiteralPath $sys -Algorithm SHA256).Hash.ToLowerInvariant())",
   'SPEAKER_AUDIO_MEASUREMENT=NOT_PERFORMED',
-  'PRODUCTION_SIGNING=NOT_VERIFIED'
+  'PRODUCTION_SIGNING=NOT_VERIFIED',
+  "DEFAULT_RENDER_SHA256_BEFORE=$defaultBefore",
+  'WINDOWS_DEFAULT_DEVICE_CHANGE=NOT_REQUESTED'
 )
 Write-LouderMeLabTextOnce -Path (Join-Path $evidence 'lab-metadata.txt') -Content (($metadata -join [Environment]::NewLine) + [Environment]::NewLine)
 
@@ -129,6 +137,10 @@ try {
     throw 'Virtual LAB PnP device did not become healthy within 30 seconds.'
   }
   Write-Host "Installed only new virtual LAB instance: $createdInstance"
+  # Abort BEFORE opening capture/physical speaker if PnP auto-switched the
+  # user's default render endpoint during driver installation.
+  $defaultAfterInstall = Get-LouderMeDefaultRenderFingerprint -BridgeDll $BridgeDll
+  Assert-LouderMeDefaultRenderUnchanged -Expected $defaultBefore -Actual $defaultAfterInstall -Phase 'driver installation'
 
   $list = @(Invoke-Bridge -BridgeArgs @('--list-devices') -Label 'list-devices')
   $virtualIds = @()
@@ -202,12 +214,32 @@ try {
   # native CI adversarial fixtures. Only accepted comparisons can leave a PASS.
   $ratio = Test-LouderMeIndependentGain -EvidenceDir $evidence -ExpectedSessionId $sessionId
   Write-LouderMeLabTextOnce -Path (Join-Path $evidence 'independent-app-boost-ratio.txt') -Content ($ratio.ToString('F3', [Globalization.CultureInfo]::InvariantCulture) + [Environment]::NewLine)
+  # Even after a successful measurement, a Windows audio policy change by
+  # another component invalidates the claim that this LAB never displaced
+  # the pre-existing multimedia playback device.
+  $defaultAfterProbe = Get-LouderMeDefaultRenderFingerprint -BridgeDll $BridgeDll
+  Assert-LouderMeDefaultRenderUnchanged -Expected $defaultBefore -Actual $defaultAfterProbe -Phase 'completed audio probes'
   Write-Host (("LAB_ROUTE_INDEPENDENT_APP_100_150_GAIN=PASS ratio={0:F3}; " +
     "NOT consumer sound, physical SPL or general app compatibility.") -f $ratio)
 } finally {
   # Even a failed probe must clean up the exact disposable test device.
   # If a partial devcon install returned an error, detect that new instance.
-  $toRemove = @(Get-LabDevices)
+  # Prefer the exact instance created by this run; never remove an
+  # unrelated PnP instance discovered through a broad hardware-ID query.
+  $allLabDevices = @(Get-LabDevices)
+  if ($createdInstance) {
+    $toRemove = @($allLabDevices | Where-Object { $_.InstanceId -ceq $createdInstance })
+    if ($allLabDevices.Count -ne $toRemove.Count) {
+      $cleanupFailure = 'Unexpected additional LAB devices detected; leave unrelated instances alone and restore VM snapshot.'
+    }
+  } elseif ($allLabDevices.Count -le 1) {
+    # A failed devcon install can leave precisely one newly created
+    # instance. Preflight proved none existed before this run.
+    $toRemove = $allLabDevices
+  } else {
+    $toRemove = @()
+    $cleanupFailure = 'Ambiguous partial LAB installs detected; refusing broad device removal; restore VM snapshot.'
+  }
   foreach ($device in $toRemove) {
     $id = $device.InstanceId
     Write-Warning "Removing ONLY LouderME LAB device instance: $id"
@@ -220,6 +252,16 @@ try {
   if ((Get-LabDevices).Count -ne 0) {
     $cleanupFailure = 'LAB device still present after cleanup; revert VM snapshot immediately.'
   }
+  # Device removal can also change the Windows default. Never report
+  # cleanup SUCCESS without checking it again. Do NOT set defaults here:
+  # changing the user's device behind their back is unacceptable.
+  try {
+    $defaultAfterCleanup = Get-LouderMeDefaultRenderFingerprint -BridgeDll $BridgeDll
+    Assert-LouderMeDefaultRenderUnchanged -Expected $defaultBefore -Actual $defaultAfterCleanup -Phase 'driver cleanup'
+    Write-LouderMeLabTextOnce -Path (Join-Path $evidence 'default-render-identity-after-cleanup.txt') -Content ("DEFAULT_RENDER_UNCHANGED=PASS" + [Environment]::NewLine + "SHA256=$defaultAfterCleanup" + [Environment]::NewLine)
+  } catch {
+    $cleanupFailure = "Windows default playback was changed or cannot be verified after cleanup: $($_.Exception.Message). Restore VM snapshot."
+  }
   if ($cleanupFailure) { throw $cleanupFailure }
-  Write-Host 'LAB root device removed. Check Windows default output; restore VM snapshot.'
+  Write-Host 'LAB root device removed; original default multimedia playback SHA256 retained. Restore VM snapshot.'
 }

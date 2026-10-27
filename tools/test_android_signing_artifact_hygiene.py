@@ -47,8 +47,8 @@ class AndroidSigningArtifactHygieneTests(unittest.TestCase):
         urls = []
         def api(path):
             urls.append(path)
-            if "page=1" in path: return 200, {"artifacts": [{"name":"normal"}] * 100}
-            if "page=2" in path: return 200, {"artifacts": [{"name":"signing-vault"}]}
+            if path.endswith("&page=1"): return 200, {"artifacts": [{"name":"normal"}] * 100}
+            if path.endswith("&page=2"): return 200, {"artifacts": [{"name":"signing-vault"}]}
             return 404, {}
         result = fetch_artifacts("michels-lab/LouderMe", api)
         self.assertEqual(101, len(result))

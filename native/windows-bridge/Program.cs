@@ -81,6 +81,11 @@ internal static class Program
                 PcmFormatAdapter.RunSelfTests();
                 return 0;
             }
+            if (args.Contains("--check-scratch"))
+            {
+                PcmFormatAdapter.RunScratchSelfTests();
+                return 0;
+            }
 
             using var enumerator = new MMDeviceEnumerator();
             if (args.Contains("--default-render-fingerprint"))

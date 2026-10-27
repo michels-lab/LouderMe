@@ -135,6 +135,11 @@ jobs:
         run: |
           dotnet "native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll" --check-formats
           if ($LASTEXITCODE -ne 0) { throw 'Windows PCM adapter numeric tests failed.' }
+      - name: Reject callback PCM allocations and prove reusable sample equivalence
+        shell: pwsh
+        run: |
+          dotnet "native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll" --check-scratch
+          if ($LASTEXITCODE -ne 0) { throw 'Preallocated WASAPI PCM buffer parity/GC allocation threshold failed.' }
       - name: Test PCM16 to native boost to 48k float output pipeline in memory
         shell: pwsh
         run: |

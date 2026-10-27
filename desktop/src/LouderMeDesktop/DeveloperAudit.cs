@@ -235,6 +235,10 @@ internal static class DeveloperAudit
     internal static void RunContractSelfTests()
     {
         DeveloperMode.Configure(true);
+        // Includes the complete Windows notes backup/restore migration,
+        // dangerous input rejection and explicit conflict-handling contract.
+        // No public data, accounts, endpoints or real annotations accessed.
+        DeveloperNotesBackup.RunContractSelfTests();
         var states = new[]
         {
             (new ApoEngineStatus(false, false, false, "absent"), "APO_NOT_INSTALLED"),

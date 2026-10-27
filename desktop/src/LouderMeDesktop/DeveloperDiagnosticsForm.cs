@@ -55,7 +55,7 @@ internal sealed class DeveloperDiagnosticsForm : Form
         };
         var actions = new FlowLayoutPanel
         {
-            Dock = DockStyle.Top, Height = 86, AutoScroll = true,
+            Dock = DockStyle.Top, Height = 128, AutoScroll = true,
             WrapContents = true, Padding = new Padding(8, 4, 8, 4),
         };
         actions.Controls.Add(Action("Run audit", (_, _) => RunAudit()));
@@ -67,6 +67,8 @@ internal sealed class DeveloperDiagnosticsForm : Form
         actions.Controls.Add(Action("Delete selected", (_, _) => DeleteSelected()));
         actions.Controls.Add(Action("Export JSON", (_, _) => Export(false)));
         actions.Controls.Add(Action("Export AI prompt", (_, _) => Export(true)));
+        actions.Controls.Add(Action("Backup notes", (_, _) => BackupNotes()));
+        actions.Controls.Add(Action("Restore notes", (_, _) => RestoreNotes()));
 
         var accountInfo = new Label
         {
@@ -296,6 +298,115 @@ internal sealed class DeveloperDiagnosticsForm : Form
         return new DeveloperAnnotation(existing?.Id ?? Guid.NewGuid(), screen, locator, label,
             comment.Text, existing?.CreatedAtUtc ?? now, now,
             severity.SelectedItem?.ToString() ?? "P1", status.SelectedItem?.ToString() ?? "Open");
+    }
+
+    private void BackupNotes()
+    {
+        if (!_canSave)
+        {
+            MessageBox.Show(this, "Saved notes are unreadable; the original file is preserved. " +
+                "Do not back up an empty replacement.", "Developer note recovery",
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+        if (MessageBox.Show(this,
+            "This backup includes every original owner comment verbatim, including anything " +
+            "private you typed. Some selected folders may synchronize to cloud services. " +
+            "Only export to a location you trust. Continue?",
+            "Review private Developer notes backup", MessageBoxButtons.YesNo,
+            MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.Yes)
+            return;
+        try
+        {
+            // Build and validate BEFORE offering a destination: oversize/corrupt
+            // exports must never create an un-restorable or partial backup file.
+            var payload = DeveloperNotesBackup.Export(_annotations);
+            using var picker = new SaveFileDialog
+            {
+                Title = "Save owner-authorized Developer notes backup",
+                Filter = "Developer notes backup (*.json)|*.json",
+                FileName = "LouderMe-Windows-Developer-notes.json",
+                OverwritePrompt = true,
+                AddExtension = true,
+                DefaultExt = "json",
+                RestoreDirectory = true,
+            };
+            if (picker.ShowDialog(this) != DialogResult.OK) return;
+            File.WriteAllText(picker.FileName, payload, new UTF8Encoding(false));
+            MessageBox.Show(this,
+                "Developer-only notes saved to your selected location. No automatic upload.",
+                "Backup completed", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or
+            InvalidDataException)
+        {
+            MessageBox.Show(this,
+                "Could not save Developer notes backup; existing annotations were not modified.",
+                "Backup failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private void RestoreNotes()
+    {
+        if (!_canSave)
+        {
+            MessageBox.Show(this, "Existing Developer notes cannot be read safely. " +
+                "Repair the preserved annotations file before restoring, to avoid losing data.",
+                "Restore blocked", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+        using var picker = new OpenFileDialog
+        {
+            Title = "Open LouderMe Windows Developer notes backup",
+            Filter = "Developer notes backup (*.json)|*.json",
+            CheckFileExists = true,
+            Multiselect = false,
+            RestoreDirectory = true,
+        };
+        if (picker.ShowDialog(this) != DialogResult.OK) return;
+        try
+        {
+            // Bound both the file and the decoded JSON, and compare note IDs
+            // before writing anything to disk or touching the running UI.
+            if (new FileInfo(picker.FileName).Length > DeveloperNotesBackup.MaxBytes)
+                throw new InvalidDataException("Developer backup exceeds the 2 MB import limit.");
+            var raw = File.ReadAllText(picker.FileName, new UTF8Encoding(false, true));
+            var preview = DeveloperNotesBackup.Preview(raw, _annotations);
+            var approval = MessageBox.Show(this,
+                $"Backup contains {preview.Incoming.Count} owner notes.\n" +
+                $"New: {preview.NewCount}; identical: {preview.ExactDuplicates}; " +
+                $"same ID but different: {preview.Conflicts}.\n\n" +
+                "YES = Import new notes and explicitly replace conflicting IDs.\n" +
+                "NO = Import only new notes; preserve every existing note.\n" +
+                "CANCEL = Do nothing.\n\n" +
+                "Notes missing from this backup are NEVER deleted. No public app data is accessed.",
+                "Review non-destructive Developer notes restoration",
+                MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning,
+                MessageBoxDefaultButton.Button3);
+            if (approval == DialogResult.Cancel) return;
+            var merged = DeveloperNotesBackup.Merge(
+                _annotations, preview, replaceConflicts: approval == DialogResult.Yes);
+            // Persist first; failed file write MUST NOT change the in-memory
+            // notes or replace a previous unreadable production/developer file.
+            DeveloperAudit.SaveNotes(merged);
+            _annotations.Clear();
+            _annotations.AddRange(merged);
+            RefreshList();
+            RunAudit();
+            MessageBox.Show(this,
+                $"Restored {preview.NewCount} new notes and " +
+                $"{(approval == DialogResult.Yes ? preview.Conflicts : 0)} explicitly replaced notes. " +
+                "No other existing Developer notes were removed.",
+                "Restore completed", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or
+            InvalidDataException or DecoderFallbackException)
+        {
+            MessageBox.Show(this,
+                "The selected backup is invalid, incompatible or could not be written. " +
+                "Existing annotations were preserved and no public data was touched.",
+                "Restore rejected", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 
     private void Export(bool aiPrompt)

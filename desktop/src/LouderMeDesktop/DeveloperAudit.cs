@@ -46,8 +46,14 @@ internal static class DeveloperAudit
         // Corrupt data must be reported, not silently replaced by a blank set.
         try
         {
-            return JsonSerializer.Deserialize<List<DeveloperAnnotation>>(File.ReadAllText(NotesPath), Json)
+            var recovered = JsonSerializer.Deserialize<List<DeveloperAnnotation>>(
+                File.ReadAllText(NotesPath), Json)
                 ?? throw new InvalidDataException("Annotation file contains null.");
+            // Local files can also be truncated, structurally valid but
+            // semantically corrupt. Preserve them and disable editing,
+            // rather than silently accepting an overwritten note list.
+            DeveloperNotesBackup.Validate(recovered);
+            return recovered;
         }
         catch (JsonException ex)
         {
@@ -59,6 +65,9 @@ internal static class DeveloperAudit
     {
         if (!DeveloperMode.Enabled)
             throw new InvalidOperationException("Developer annotations cannot be saved from the public edition.");
+        // Never overwrite a readable annotations file with a malformed or
+        // oversized note set, whether from the inspector or a restore.
+        DeveloperNotesBackup.Validate(notes);
         Directory.CreateDirectory(DeveloperMode.DataDirectory);
         var temp = NotesPath + ".tmp";
         try
@@ -235,6 +244,10 @@ internal static class DeveloperAudit
     internal static void RunContractSelfTests()
     {
         DeveloperMode.Configure(true);
+        // Includes the complete Windows notes backup/restore migration,
+        // dangerous input rejection and explicit conflict-handling contract.
+        // No public data, accounts, endpoints or real annotations accessed.
+        DeveloperNotesBackup.RunContractSelfTests();
         var states = new[]
         {
             (new ApoEngineStatus(false, false, false, "absent"), "APO_NOT_INSTALLED"),
@@ -287,6 +300,32 @@ internal static class DeveloperAudit
             {
                 if (File.ReadAllText(NotesPath) != "{corrupted")
                     throw new InvalidOperationException("Corrupt annotation evidence was overwritten.");
+            }
+            // Even a semantically bad note cannot replace the preserved file,
+            // and recovery must fail closed rather than treating it as blank.
+            try
+            {
+                SaveNotes(new[] { note with { Severity = "P9" } });
+                throw new InvalidOperationException("Invalid note incorrectly saved.");
+            }
+            catch (InvalidDataException)
+            {
+                if (File.ReadAllText(NotesPath) != "{corrupted")
+                    throw new InvalidOperationException("Invalid save overwrote original annotations.");
+            }
+            File.WriteAllText(NotesPath, JsonSerializer.Serialize(new[]
+            {
+                note with { UpdatedAtUtc = note.CreatedAtUtc.AddDays(-1) }
+            }, Json));
+            try
+            {
+                LoadNotes();
+                throw new InvalidOperationException("Chronologically invalid saved note was accepted.");
+            }
+            catch (InvalidDataException)
+            {
+                if (!File.Exists(NotesPath))
+                    throw new InvalidOperationException("Invalid note file was deleted.");
             }
         }
         finally

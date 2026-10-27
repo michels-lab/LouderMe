@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 247,
-  "classified_files_total": 243,
-  "docs_content_inspected": 68,
+  "tracked_files_total": 251,
+  "classified_files_total": 247,
+  "docs_content_inspected": 69,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,18 +12,18 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 60,
+    "document": 61,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
-    "source": 87,
-    "test": 28,
+    "source": 88,
+    "test": 29,
     "text_metadata": 2,
-    "workflow": 10
+    "workflow": 11
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "14e5c048da77135d9e9e39e46e9857a2e2ea46bac3e61315a9dd9ba160276925",
+  "inventory_fingerprint": "023c803aeba85d895f0959a6e1a4d1dd25100d03587f5879a26d0f68dff68ba5",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -67,6 +67,13 @@
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
       "blob": "b0acbdacc9895fad1151d08ddc4caec5e77b1412"
+    },
+    {
+      "path": ".github/workflows/android-signing-artifact-hygiene.yml",
+      "role": "workflow",
+      "purpose": "GitHub Actions automation",
+      "certainty": "rule",
+      "blob": "f8b6db2d56373af27211dc30a2cec8278307bdf4"
     },
     {
       "path": ".github/workflows/android-visual-navigation-contract.yml",
@@ -227,7 +234,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "17c023ac267d3dd7c7f63ee409a2467eadf18458"
+      "blob": "80b5af44d51d934c66a6db23a3acfdb5deb1f87b"
     },
     {
       "path": "README.md",
@@ -1273,6 +1280,13 @@
       "blob": "867bd2f5e365cf10e965f64dc954fc9cca20461b"
     },
     {
+      "path": "docs/audits/GRANADA_2026-10-27_SIGNER_VAULT_ARTIFACT_HYGIENE.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "d9cea6cad72027f418e96ce13df1b68e2a38306e"
+    },
+    {
       "path": "docs/audits/GRANADA_2026-10-27_WINDOWS_DEVELOPER_NOTES_MIGRATION.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -1595,6 +1609,13 @@
       "blob": "fa3bf620e23eb2b2e5b5ef8e996c7bbd54b9fe55"
     },
     {
+      "path": "tools/audit_android_signing_artifacts.py",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "cea2cd2198e516197499bc52b978e0686a05e9cb"
+    },
+    {
       "path": "tools/build_windows_visual_manifest.py",
       "role": "source",
       "purpose": "code/test implementation",
@@ -1642,6 +1663,13 @@
       "purpose": "code/test implementation",
       "certainty": "rule",
       "blob": "679780ed68099972820d6c6af55e784578cc98c8"
+    },
+    {
+      "path": "tools/test_android_signing_artifact_hygiene.py",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "a870248906644f0c9e06ac6d01275857f71cc90f"
     },
     {
       "path": "tools/test_louderme_desktop_logo.py",

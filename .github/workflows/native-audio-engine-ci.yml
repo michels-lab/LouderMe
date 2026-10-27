@@ -9,6 +9,8 @@ on:
       - 'native/windows-bridge/**'
       - 'native/independent-tone/**'
       - 'native/virtual-driver/LabEvidenceDirectory.ps1'
+      - 'native/virtual-driver/LabInputIntegrity.ps1'
+      - 'native/virtual-driver/test_LabInputIntegrity.ps1'
       - 'native/virtual-driver/DefaultRenderGuard.ps1'
       - 'native/virtual-driver/test_DefaultRenderGuard.ps1'
       - 'native/virtual-driver/test_LabEvidenceDirectory.ps1'
@@ -30,6 +32,8 @@ on:
       - 'native/windows-bridge/**'
       - 'native/independent-tone/**'
       - 'native/virtual-driver/LabEvidenceDirectory.ps1'
+      - 'native/virtual-driver/LabInputIntegrity.ps1'
+      - 'native/virtual-driver/test_LabInputIntegrity.ps1'
       - 'native/virtual-driver/DefaultRenderGuard.ps1'
       - 'native/virtual-driver/test_DefaultRenderGuard.ps1'
       - 'native/virtual-driver/test_LabEvidenceDirectory.ps1'
@@ -97,6 +101,11 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
             throw 'A changed, unknown or raw Windows default playback endpoint passed the lab safeguard.'
           }
+      - name: Verify immutable signed-driver/DSP/bridge VM inputs without real PnP or sound
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File native/virtual-driver/test_LabInputIntegrity.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'LAB executable provenance/immutable-input contract rejected unsafe source.' }
       - name: Reject stale LAB evidence directories and overwrite attempts without hardware
         shell: pwsh
         run: |
@@ -178,6 +187,8 @@ jobs:
           foreach ($path in @('native/virtual-driver/DefaultRenderGuard.ps1',
                               'native/virtual-driver/test_DefaultRenderGuard.ps1',
                               'native/virtual-driver/LabEvidenceDirectory.ps1',
+                              'native/virtual-driver/LabInputIntegrity.ps1',
+                              'native/virtual-driver/test_LabInputIntegrity.ps1',
                               'native/virtual-driver/test_LabEvidenceDirectory.ps1',
                               'native/virtual-driver/run_disposable_lab.ps1',
                               'native/virtual-driver/probe_independent_app_route.ps1',

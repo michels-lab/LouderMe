@@ -98,14 +98,16 @@ internal sealed class PcmFormatAdapter
                 "The experimental route requires PCM16 or IEEE float32, mono to eight channels.");
     }
 
-    /// <summary>Make a private interleaved float32 copy before invoking the native DSP.</summary>
-    public byte[] Decode(byte[] source, int sourceBytes)
+    /// <summary>Decode into a caller-owned scratch buffer. No allocation per packet.</summary>
+    public int DecodeInto(byte[] source, int sourceBytes, Span<byte> destination)
     {
-        if (sourceBytes < 0 || sourceBytes > source.Length ||
+        if (source is null || sourceBytes < 0 || sourceBytes > source.Length ||
             sourceBytes % _input.BlockAlign != 0 || sourceBytes > 4 * 1024 * 1024)
             throw new ArgumentException("Invalid source PCM packet size.", nameof(sourceBytes));
         int samples = checked(sourceBytes / _input.BlockAlign * _channels);
-        var decoded = new byte[checked(samples * sizeof(float))];
+        int bytesNeeded = checked(samples * sizeof(float));
+        if (destination.Length < bytesNeeded)
+            throw new ArgumentException("Preallocated PCM decode scratch too small.", nameof(destination));
         for (int i = 0; i < samples; i++)
         {
             var sample = _inputFloat
@@ -113,9 +115,40 @@ internal sealed class PcmFormatAdapter
                 : BinaryPrimitives.ReadInt16LittleEndian(source.AsSpan(i * sizeof(short))) / 32768f;
             if (!float.IsFinite(sample))
                 throw new InvalidDataException("Nonfinite input PCM.");
-            BinaryPrimitives.WriteSingleLittleEndian(decoded.AsSpan(i * sizeof(float)), sample);
+            BinaryPrimitives.WriteSingleLittleEndian(destination.Slice(i * sizeof(float)), sample);
         }
+        return bytesNeeded;
+    }
+
+    /// <summary>Compatibility wrapper for offline probes; real callbacks use DecodeInto.</summary>
+    public byte[] Decode(byte[] source, int sourceBytes)
+    {
+        if (source is null || sourceBytes < 0 || sourceBytes > source.Length ||
+            sourceBytes % _input.BlockAlign != 0 || sourceBytes > 4 * 1024 * 1024)
+            throw new ArgumentException("Invalid source PCM packet size.", nameof(sourceBytes));
+        var decoded = new byte[checked(sourceBytes / _input.BlockAlign *
+            _channels * sizeof(float))];
+        DecodeInto(source, sourceBytes, decoded);
         return decoded;
+    }
+
+    /// <summary>
+    /// Conservative upper bound for output scratch across maximum ±250 ppm
+    /// clock corrections and packet-edge history. Used ONCE when a route
+    /// starts, outside the capture callback. Frames above this fail closed.
+    /// </summary>
+    public int RequiredOutputCapacity(int inputFrames)
+    {
+        // Offline route-tone probes legitimately encode a full 2-second
+        // packet. The 500-ms limit belongs ONLY to the live capture callback,
+        // not this reusable capacity helper or the existing 4-MB Encode API.
+        if (inputFrames < 0 ||
+            inputFrames > (4 * 1024 * 1024) / (_channels * sizeof(float)))
+            throw new ArgumentOutOfRangeException(nameof(inputFrames));
+        int frames = checked((int)Math.Ceiling(
+            (inputFrames + 4.0) * _output.SampleRate /
+            _input.SampleRate * (1.0 + AdaptiveBufferClock.MaximumCorrectionPpm * 1e-6)) + 16);
+        return checked(frames * _output.BlockAlign);
     }
 
     /// <summary>
@@ -126,28 +159,30 @@ internal sealed class PcmFormatAdapter
     /// applies a streaming anti-alias FIR in-place to the caller-owned PCM
     /// buffer before interpolation; input buffers must not be reused afterward.
     /// </summary>
-    public byte[] Encode(byte[] floatPcm, int byteCount)
+    public int EncodeInto(byte[] floatPcm, int byteCount, Span<byte> output)
     {
         int floatFrameBytes = _channels * sizeof(float);
         if (byteCount < 0 || byteCount > floatPcm.Length ||
             byteCount % floatFrameBytes != 0 || byteCount > 4 * 1024 * 1024)
             throw new ArgumentException("Invalid native DSP packet size.", nameof(byteCount));
         int frames = byteCount / floatFrameBytes;
-        if (frames == 0) return Array.Empty<byte>();
-        _antiAlias?.ProcessInPlace(floatPcm, byteCount);
+        if (frames == 0) return 0;
+        // A bad scratch reservation cannot mutate FIR history or emit a
+        // partially written render packet. The callback aborts this route.
+        if (output.Length < RequiredOutputCapacity(frames))
+            throw new ArgumentException(
+                "Preallocated render PCM scratch too small.", nameof(output));
+        _antiAlias?.ProcessInPlace(floatPcm.AsSpan(0, byteCount));
 
         // Capture side is the sole owner of Encode; the control loop
         // updates only the atomic correction once per 250 ms.
         double packetStep = _inputFramesPerOutputFrame *
             (1.0 + Volatile.Read(ref _rateAdjustmentPpm) * 0.000001);
-        // A frequent production case is matching virtual/physical rates,
-        // with no clock correction. Allocate precisely once rather than
-        // resizing/copying an over-provisioned PCM buffer per callback.
-        bool sameRateFastPath = packetStep == 1.0 && _nextPosition == 0.0;
-        int capacityFrames = sameRateFastPath ? frames :
-            checked((int)Math.Ceiling(
-                (frames + 2.0) * _output.SampleRate / _input.SampleRate) + 8);
-        var output = new byte[checked(capacityFrames * _output.BlockAlign)];
+        // The caller reserves a bound before entering WASAPI's callback.
+        // Never allocate, resize, or wait for a larger output buffer here.
+        if (output.Length % _output.BlockAlign != 0)
+            throw new ArgumentException("Output scratch must hold complete PCM frames.", nameof(output));
+        int capacityFrames = output.Length / _output.BlockAlign;
         int emitted = 0;
         while (_nextPosition <= frames - 1)
         {
@@ -160,6 +195,8 @@ internal sealed class PcmFormatAdapter
             // up padding; _lastFrame bridges the packet boundary.
             if (leftIndex + 1 >= frames && fraction > 0f)
                 break;
+            if (emitted >= capacityFrames)
+                throw new InvalidDataException("Preallocated output scratch overflow; stop unsafe route.");
             for (int channel = 0; channel < _outputChannels; channel++)
             {
                 float left = leftIndex < 0
@@ -177,18 +214,16 @@ internal sealed class PcmFormatAdapter
                 if (_outputFloat)
                 {
                     BinaryPrimitives.WriteSingleLittleEndian(
-                        output.AsSpan(byteOffset), value);
+                        output.Slice(byteOffset), value);
                 }
                 else
                 {
                     float scaled = value < 0f ? value * 32768f : value * 32767f;
                     BinaryPrimitives.WriteInt16LittleEndian(
-                        output.AsSpan(byteOffset), (short)MathF.Round(scaled));
+                        output.Slice(byteOffset), (short)MathF.Round(scaled));
                 }
             }
             emitted++;
-            if (emitted > capacityFrames)
-                throw new InvalidOperationException("Resampler output capacity exceeded.");
             _nextPosition += packetStep;
         }
 
@@ -197,15 +232,27 @@ internal sealed class PcmFormatAdapter
         _hasLastFrame = true;
         _nextPosition -= frames;
 
-        int bytesEmitted = emitted * _output.BlockAlign;
-        if (bytesEmitted != output.Length)
-            Array.Resize(ref output, bytesEmitted);
+        return checked(emitted * _output.BlockAlign);
+    }
+
+    /// <summary>Legacy offline test wrapper; WASAPI callback uses EncodeInto.</summary>
+    public byte[] Encode(byte[] floatPcm, int byteCount)
+    {
+        if (floatPcm is null || byteCount < 0 || byteCount > floatPcm.Length ||
+            byteCount % (_channels * sizeof(float)) != 0 || byteCount > 4 * 1024 * 1024)
+            throw new ArgumentException("Invalid native DSP packet size.", nameof(byteCount));
+        if (byteCount == 0) return Array.Empty<byte>();
+        int frames = byteCount / (_channels * sizeof(float));
+        byte[] output = new byte[RequiredOutputCapacity(frames)];
+        int written = EncodeInto(floatPcm, byteCount, output);
+        if (written != output.Length)
+            Array.Resize(ref output, written);
         return output;
     }
 
-    private float ReadFloat(byte[] pcm, int frame, int channel) =>
+    private float ReadFloat(ReadOnlySpan<byte> pcm, int frame, int channel) =>
         BinaryPrimitives.ReadSingleLittleEndian(
-            pcm.AsSpan((frame * _channels + channel) * sizeof(float)));
+            pcm.Slice((frame * _channels + channel) * sizeof(float)));
 
     private float ReadMappedHistory(int sinkChannel)
     {
@@ -217,7 +264,7 @@ internal sealed class PcmFormatAdapter
         return _lastFrame[_channels == 1 ? 0 : sinkChannel];
     }
 
-    private float ReadMappedFloat(byte[] pcm, int frame, int sinkChannel)
+    private float ReadMappedFloat(ReadOnlySpan<byte> pcm, int frame, int sinkChannel)
     {
         if (_channels == 2 && _outputChannels == 1)
             return (ReadFloat(pcm, frame, 0) +
@@ -269,6 +316,7 @@ internal sealed class PcmFormatAdapter
         TestDownsampleChannelIsolation();
         TestAdjustableRateContinuity();
         TestSameRateFastPath();
+        RunScratchSelfTests();
 
         try
         {
@@ -285,6 +333,123 @@ internal sealed class PcmFormatAdapter
             "windowed-sinc anti-alias rejection at 96->48 and 48->44.1 kHz, " +
             "channel isolation, same-rate allocation fast path, bounded clock " +
             "adjustment and unsupported 5.1 rejection.");
+    }
+
+    // Same real streaming implementation: old allocating convenience calls
+    // versus new bounded callback buffers, including frame history, rate
+    // correction, mono/stereo and eight-channel channel alignment.
+    public static void RunScratchSelfTests()
+    {
+        foreach ((int inputRate, int outputRate, int sourceChannels,
+                  int sinkChannels, bool pcm16) in new[]
+        {
+            (44100, 48000, 2, 2, true),
+            (48000, 44100, 2, 2, false),
+            (96000, 48000, 2, 2, false),
+            (48000, 96000, 1, 2, false),
+            (48000, 48000, 2, 1, true),
+            (48000, 48000, 8, 8, false)
+        })
+        {
+            var input = pcm16
+                ? new WaveFormat(inputRate, 16, sourceChannels)
+                : WaveFormat.CreateIeeeFloatWaveFormat(inputRate, sourceChannels);
+            var output = WaveFormat.CreateIeeeFloatWaveFormat(outputRate, sinkChannels);
+            var allocating = new PcmFormatAdapter(input, output);
+            var scratch = new PcmFormatAdapter(input, output);
+            var monoPacket = new byte[checked(1024 * input.BlockAlign)];
+            var decoded = new byte[checked(1024 * sourceChannels * sizeof(float))];
+            var rendered = new byte[scratch.RequiredOutputCapacity(1024)];
+            int[] fragments = [1, 3, 511, 15, 7, 487];
+            long comparedBytes = 0;
+            int absoluteFrame = 0;
+            for (int packet = 0; packet < 60; packet++)
+            {
+                int frames = fragments[packet % fragments.Length];
+                for (int frame = 0; frame < frames; frame++)
+                {
+                    for (int ch = 0; ch < sourceChannels; ch++)
+                    {
+                        float sample = 0.125f * MathF.Sin(2f * MathF.PI * 1000f *
+                            (absoluteFrame + frame) / inputRate);
+                        if (ch % 2 != 0) sample = -sample;
+                        int offset = frame * input.BlockAlign +
+                            ch * (pcm16 ? sizeof(short) : sizeof(float));
+                        if (pcm16)
+                            BinaryPrimitives.WriteInt16LittleEndian(
+                                monoPacket.AsSpan(offset),
+                                (short)MathF.Round(sample * 32767));
+                        else
+                            BinaryPrimitives.WriteSingleLittleEndian(
+                                monoPacket.AsSpan(offset), sample);
+                    }
+                }
+                absoluteFrame += frames;
+                int inputLength = frames * input.BlockAlign;
+                byte[] oldDecoded = allocating.Decode(monoPacket, inputLength);
+                int decodedLength = scratch.DecodeInto(
+                    monoPacket, inputLength, decoded);
+                // Encoding (downsample FIR) MUTATES decoded PCM in-place, so
+                // compare both decoders BEFORE asking either to resample.
+                if (decodedLength != oldDecoded.Length ||
+                    !decoded.AsSpan(0, decodedLength).SequenceEqual(oldDecoded))
+                    throw new InvalidOperationException("Scratch decoding differs from original float32 PCM.");
+                byte[] oldEncoded = allocating.Encode(oldDecoded, oldDecoded.Length);
+                int actual = scratch.EncodeInto(decoded, decodedLength, rendered);
+                if (!rendered.AsSpan(0, actual).SequenceEqual(oldEncoded))
+                    throw new InvalidOperationException(
+                        "Reused scratch differs from original streaming conversion at packet boundaries.");
+                comparedBytes += actual;
+            }
+            if (comparedBytes < 1000)
+                throw new InvalidOperationException("No meaningful native bridge PCM was compared.");
+
+            // Fail closed BEFORE altering buffers or any FIR/stream state.
+            try
+            {
+                scratch.DecodeInto(monoPacket, 5 * input.BlockAlign,
+                    new byte[sizeof(float)]);
+                throw new InvalidOperationException("Undersized decode scratch was accepted.");
+            }
+            catch (ArgumentException) { }
+            try
+            {
+                scratch.EncodeInto(decoded, 5 * sourceChannels * sizeof(float),
+                    new byte[output.BlockAlign]);
+                throw new InvalidOperationException("Undersized render scratch was accepted.");
+            }
+            catch (ArgumentException) { }
+        }
+
+        // Validate that the actual repeated float32 converter path is
+        // allocation-free once the scratch and JIT are warmed up. This is
+        // an in-memory managed heap measurement, NOT a physical WASAPI
+        // callback deadline or an end-to-end low latency benchmark.
+        var fmt = WaveFormat.CreateIeeeFloatWaveFormat(48000, 2);
+        var reuse = new PcmFormatAdapter(fmt, fmt);
+        var packetBytes = new byte[480 * fmt.BlockAlign];
+        var decodeScratch = new byte[packetBytes.Length];
+        var outScratch = new byte[reuse.RequiredOutputCapacity(480)];
+        for (int i = 0; i < 96; i++)
+        {
+            int size = reuse.DecodeInto(packetBytes, packetBytes.Length, decodeScratch);
+            reuse.EncodeInto(decodeScratch, size, outScratch);
+        }
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        for (int i = 0; i < 256; i++)
+        {
+            int size = reuse.DecodeInto(packetBytes, packetBytes.Length, decodeScratch);
+            reuse.EncodeInto(decodeScratch, size, outScratch);
+        }
+        long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+        if (allocated > 256)
+            throw new InvalidOperationException(
+                "Audio callback PCM scratch path allocated managed heap memory: " +
+                allocated + " bytes over 256 warm packets.");
+        Console.WriteLine(
+            "PASS: 6 PCM16/float32 44.1/48/96k mono/stereo/8ch equivalence " +
+            "matrices x60 fragmented packets, scratch overflow guards and " +
+            "256 warm conversion packets without managed PCM allocations.");
     }
 
     private static void TestMonoStereoMapping()

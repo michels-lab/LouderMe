@@ -55,10 +55,18 @@ internal sealed class StreamingDownsampleLowPass
 
     public void ProcessInPlace(byte[] packet, int byteCount)
     {
-        if (byteCount < 0 || byteCount > packet.Length ||
-            byteCount % (_channels * sizeof(float)) != 0)
+        if (packet is null || byteCount < 0 || byteCount > packet.Length)
+            throw new ArgumentException("Invalid interleaved PCM packet length.");
+        ProcessInPlace(packet.AsSpan(0, byteCount));
+    }
+
+    // Caller-owned reusable scratch. The FIR keeps channel history in
+    // construction-time arrays, with NO per-callback managed allocation.
+    public void ProcessInPlace(Span<byte> packet)
+    {
+        if (packet.Length % (_channels * sizeof(float)) != 0)
             throw new ArgumentException("Expected complete interleaved float32 frames.");
-        int frames = byteCount / (_channels * sizeof(float));
+        int frames = packet.Length / (_channels * sizeof(float));
         for (int frame = 0; frame < frames; frame++)
         {
             int packetFrame = frame * _channels * sizeof(float);
@@ -68,7 +76,7 @@ internal sealed class StreamingDownsampleLowPass
             for (int channel = 0; channel < _channels; channel++)
             {
                 float sample = BinaryPrimitives.ReadSingleLittleEndian(
-                    packet.AsSpan(packetFrame + channel * sizeof(float)));
+                    packet.Slice(packetFrame + channel * sizeof(float)));
                 if (!float.IsFinite(sample))
                     throw new InvalidDataException("Nonfinite PCM before anti-alias filtering.");
                 _history[historyFrame + channel] = sample;
@@ -85,7 +93,7 @@ internal sealed class StreamingDownsampleLowPass
                     if (--index < 0) index = _taps - 1;
                 }
                 BinaryPrimitives.WriteSingleLittleEndian(
-                    packet.AsSpan(packetFrame + channel * sizeof(float)),
+                    packet.Slice(packetFrame + channel * sizeof(float)),
                     (float)filtered);
             }
             if (++_position == _taps) _position = 0;

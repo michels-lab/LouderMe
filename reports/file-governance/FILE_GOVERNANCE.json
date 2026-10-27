@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 229,
-  "classified_files_total": 225,
-  "docs_content_inspected": 62,
+  "tracked_files_total": 230,
+  "classified_files_total": 226,
+  "docs_content_inspected": 63,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,7 +12,7 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 54,
+    "document": 55,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
@@ -23,7 +23,7 @@
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "0eb7f9b777556a5d7fcb080125f033e9e71452cacb38400d9f7a9f9f29112a32",
+  "inventory_fingerprint": "87a26afd98631690f5779ea8f11be80029449c6ed448885696e600c051a60908",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -227,7 +227,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "31c0160eb92ff4715c443a0730e2d16c4f95c07e"
+      "blob": "966eea7f601273c8c7f0aacdfe9cd384d5f3d04f"
     },
     {
       "path": "README.md",
@@ -1196,6 +1196,13 @@
       "blob": "4ae363c6e91e4d7242214f06edd7cf0a88b7c147"
     },
     {
+      "path": "docs/audits/GRANADA_2026-10-27_RENDER_CONSUMPTION_PROVENANCE.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "867bd2f5e365cf10e965f64dc954fc9cca20461b"
+    },
+    {
       "path": "docs/product-reviews/2026-10-21-native-windows-audio-evidence.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -1291,7 +1298,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "4fc43cb34bd8f87a42b2aec57c683652587b719c"
+      "blob": "88901695749e55403e807a698ad363b367fae544"
     },
     {
       "path": "native/virtual-driver/LabEvidenceDirectory.ps1",
@@ -1305,21 +1312,21 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "1d2c8df01acc21e768ea9d7bcf6f43dd7a8ce63e"
+      "blob": "bbaac8118327b2495e13e68a3af91754ce23f4a4"
     },
     {
       "path": "native/virtual-driver/PositiveSourceCheck.ps1",
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "28bb24a9042015e3725c689eaa4fe57a871e44f5"
+      "blob": "0b12f40ead7acc02d351beaba26cae55ff7eaa39"
     },
     {
       "path": "native/virtual-driver/README.md",
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "d0062242263c7ce80bdddb3053a6433cd8b10f1b"
+      "blob": "30b9bea05cd34d739d16a23b9914d31595c10a74"
     },
     {
       "path": "native/virtual-driver/prepare_sysvad.py",
@@ -1333,7 +1340,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "b668ebce81db53325620b701802579156ae71241"
+      "blob": "71d1e98ace4be0b4fc62f801c60b3803a6a7f24e"
     },
     {
       "path": "native/virtual-driver/run_disposable_lab.ps1",
@@ -1347,7 +1354,7 @@
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "25ea89b17eb6aa10c7d5230b01675353e8bc08de"
+      "blob": "e227d4f25c1bfa97df12fc0b36673f5858fc9241"
     },
     {
       "path": "native/virtual-driver/test_LabEvidenceDirectory.ps1",
@@ -1361,21 +1368,21 @@
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "142b36e04fc54dcd701bf895895b27fe707c658a"
+      "blob": "1c544fb803ed55c8da3cd4b21b1fc9e4e4a1a14b"
     },
     {
       "path": "native/virtual-driver/test_PositiveSourceCheck.ps1",
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "7520cce39690d745aad85dd8006e5fdb108a9c7b"
+      "blob": "6c599c35f8dd50c1b53d26a1e26a773a9ec893b0"
     },
     {
       "path": "native/virtual-driver/tests/test_independent_source_contract.py",
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "747aa8f5361709cd0fdc5e1e1c33aa2468f08f10"
+      "blob": "32efb7236c92a92632285435f9859869e12be438"
     },
     {
       "path": "native/virtual-driver/tests/test_prepare_sysvad.py",
@@ -1410,7 +1417,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "644fdcf7472344049b3e93ed248d2e300eaf61b5"
+      "blob": "07355a8c834152fc395643078ebefe0c78fd9932"
     },
     {
       "path": "native/windows-bridge/DspLiveControls.cs",
@@ -1466,7 +1473,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "e3ff3ad46ae1c524d61bb6624942c606778fb60f"
+      "blob": "91defaa863586bbc7f35695a638453cd2580a86b"
     },
     {
       "path": "native/windows-bridge/README.md",

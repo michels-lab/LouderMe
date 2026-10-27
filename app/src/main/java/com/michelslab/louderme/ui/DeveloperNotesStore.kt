@@ -291,7 +291,14 @@ internal class DeveloperNotesStore(context: Context) {
             selectionHint = "Saved note has an unsupported screen or old control anchor."
             return false
         }
-        locateEvidence = requested
+        // Same-screen Locate may not trigger another layout callback:
+        // consume already-measured, still-mounted geometry if it is visible.
+        val measured = visibleBounds[note.locator]
+        locateEvidence = if (measured != null)
+            DeveloperNavigationEvidence.confirm(requested, measured.screen,
+                measured.locator, measured.bounds, currentViewport,
+                System.currentTimeMillis().coerceAtLeast(requested.requestedUtcMs))
+        else requested
         focused = note.locator
         panel = false
         selectionHint = null

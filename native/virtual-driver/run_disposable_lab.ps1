@@ -133,7 +133,9 @@ Write-LouderMeLabTextOnce -Path (Join-Path $evidence 'lab-metadata.txt') -Conten
 try {
   Assert-LouderMeLabInputsUnchanged -Snapshot $inputSnapshot -Phase 'immediately before driver install'
   Write-Host "Installing LAB root device '$hardwareId' in disposable VM only."
-  & $DevconExe install $inf $hardwareId
+  # WDK tools can echo private generated PnP instance IDs in stdout/stderr.
+  # Keep only exit status; never upload their raw text to shared Actions logs.
+  & $DevconExe install $inf $hardwareId *> $null
   if ($LASTEXITCODE -ne 0) {
     throw 'Devcon root-device installation failed; inspect package signing / VM test policy.'
   }
@@ -262,7 +264,9 @@ try {
   foreach ($device in $toRemove) {
     $id = $device.InstanceId
     Write-Warning 'Removing only LouderME LAB-owned device instance (private ID withheld).'
-    & pnputil /remove-device "$id"
+    # pnputil prints the private instance ID by default. Suppress native
+    # output while preserving exit-code based rollback acceptance.
+    & pnputil /remove-device "$id" *> $null
     if ($LASTEXITCODE -ne 0) {
       $cleanupFailure = 'Failed to remove owned LAB device; revert VM snapshot immediately.'
     }

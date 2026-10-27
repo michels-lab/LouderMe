@@ -1,0 +1,73 @@
+name: Android Signing Artifact Hygiene
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/audit_android_signing_artifacts.py'
+      - 'tools/test_android_signing_artifact_hygiene.py'
+      - '.github/workflows/android-signing-artifact-hygiene.yml'
+      - '.github/workflows/android-ci-release.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tools/audit_android_signing_artifacts.py'
+      - 'tools/test_android_signing_artifact_hygiene.py'
+      - '.github/workflows/android-signing-artifact-hygiene.yml'
+      - '.github/workflows/android-ci-release.yml'
+  workflow_dispatch:
+    inputs:
+      legacy_artifact_id:
+        description: 'Optional historical credential-artifact ID to check WITHOUT downloading'
+        required: false
+        type: string
+  schedule:
+    - cron: '37 7 * * 1'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  signing_contract:
+    name: Test non-exfiltration and permanent Android certificate pin
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test current signing workflow against unsafe vault regressions
+        run: |
+          python3 -m py_compile tools/audit_android_signing_artifacts.py
+          python3 -m unittest discover -s tools -p test_android_signing_artifact_hygiene.py -v
+          python3 tools/audit_android_signing_artifacts.py
+
+  artifact_metadata_inventory:
+    name: Audit historical Actions artifact names and optional legacy vault ID (read only)
+    # Normal PR CI performs offline tests only. The first source merge,
+    # subsequent scheduled runs or an explicit dispatch audit can
+    # list metadata with ephemeral Actions:read without downloading archives.
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || github.event_name == 'push'
+    needs: [signing_contract]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify retained artifact metadata without accessing secret contents
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LEGACY_ARTIFACT_ID: ${{ inputs.legacy_artifact_id }}
+        run: |
+          python3 tools/audit_android_signing_artifacts.py \
+            --scan-actions \
+            --legacy-artifact-id "$LEGACY_ARTIFACT_ID"
+      - name: Document evidence limitations without publishing private credentials
+        if: always()
+        run: |
+          echo 'Audit scans artifact NAMES and optional owner-provided historic ID only.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'A green name scan cannot certify that innocently named ZIPs are key-free.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'A repository admin must manually inspect old private vault Actions runs and safely delete sensitive artifacts.' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Owner visual QA and acoustic audio tests are outside this security audit.' >> "$GITHUB_STEP_SUMMARY"

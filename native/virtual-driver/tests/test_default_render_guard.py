@@ -14,8 +14,11 @@ class DefaultRenderVMGuardTests(unittest.TestCase):
         for required in (
             '--default-render-fingerprint',
             'GetDefaultAudioEndpoint(',
-            'DataFlow.Render, Role.Multimedia',
-            'SHA256.HashData(Encoding.UTF8.GetBytes(defaultRender.ID))',
+            'Role.Console, Role.Multimedia, Role.Communications',
+            'DataFlow.Render, role',
+            "endpoint.ID.Length",
+            'identity.ToString()',
+            'SHA256.HashData(Encoding.UTF8.GetBytes(identity.ToString()))',
             'DEFAULT_RENDER_SHA256=',
             'args.Length != 1',
         ):

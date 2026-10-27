@@ -7,7 +7,7 @@ Set-StrictMode -Version Latest
 
 $goodOut = "EXTERNAL_SOURCE_READY`r`n" +
   "Physical LAB proof: frames=192000 RMS=0.01200 peak=0.03400 " +
-  "matched440=0.02000 coherence=0.810 virtualProcessed=96000 physicalEmitted=96000 dropped=0`r`n" +
+  "matched440=0.02000 coherence=0.810 virtualProcessed=96000 physicalQueued=96000 renderConsumed=90000 starvedRenderReads=8 dropped=0`r`n" +
   "PASS: LAB independent source Windows process -> selected virtual endpoint -> own C++ DSP -> " +
   "separate physical WASAPI loopback 440 Hz identity. " +
   "NOT general third-party/default-app audio proof or acoustic loudness.`r`n"
@@ -20,6 +20,9 @@ if ($passed.physical_matched440_amplitude -ne 0.020 -or
     $passed.physical_coherence -ne 0.810 -or
     $passed.physical_monitor_frames -ne 192000 -or
     $passed.independent_source_frames -ne 96000 -or
+    $passed.physical_queued_frames -ne 96000 -or
+    $passed.render_consumed_frames -ne 90000 -or
+    $passed.render_starved_reads -ne 8 -or
     $passed.dropped_frames -ne 0) {
   throw 'Valid independent app + physical measurement was rejected or misparsed.'
 }
@@ -62,7 +65,12 @@ Assert-Rejected -Reason 'no physical report' -BridgeOutput ($goodOut.Replace('Ph
 Assert-Rejected -Reason 'duplicate contradictory physical record' -BridgeOutput ($goodOut + ($goodOut -split 'Physical LAB proof:')[1].Insert(0,'Physical LAB proof:'))
 Assert-Rejected -Reason 'fake incomplete frames only' -BridgeOutput ($goodOut.Replace('virtualProcessed=96000','virtualFake=96000'))
 Assert-Rejected -Reason 'zero virtual PCM' -BridgeOutput ($goodOut.Replace('virtualProcessed=96000','virtualProcessed=0'))
-Assert-Rejected -Reason 'zero physical output' -BridgeOutput ($goodOut.Replace('physicalEmitted=96000','physicalEmitted=0'))
+Assert-Rejected -Reason 'no actual renderer PCM reads' -BridgeOutput ($goodOut.Replace('renderConsumed=90000','renderConsumed=0'))
+Assert-Rejected -Reason 'legacy queue-only physicalEmitted claim' -BridgeOutput ($goodOut.Replace('renderConsumed=90000','physicalEmitted=90000'))
+Assert-Rejected -Reason 'no PCM was enqueued to physical sink' -BridgeOutput ($goodOut.Replace('physicalQueued=96000','physicalQueued=0'))
+Assert-Rejected -Reason 'render consumption exceeds all enqueued PCM' -BridgeOutput ($goodOut.Replace('renderConsumed=90000','renderConsumed=96001'))
+Assert-Rejected -Reason 'missing render callback starvation provenance' -BridgeOutput ($goodOut.Replace('starvedRenderReads=8','starvedFake=8'))
+Assert-Rejected -Reason 'non-numeric render starvation count' -BridgeOutput ($goodOut.Replace('starvedRenderReads=8','starvedRenderReads=NaN'))
 Assert-Rejected -Reason 'no physical monitor' -BridgeOutput ($goodOut.Replace('frames=192000','frames=0'))
 Assert-Rejected -Reason 'dropped PCM' -BridgeOutput ($goodOut.Replace('dropped=0','dropped=9'))
 Assert-Rejected -Reason 'silent physical output' -BridgeOutput ($goodOut.Replace('matched440=0.02000','matched440=0.00000'))

@@ -242,6 +242,7 @@ internal sealed class DeveloperDiagnosticsForm : Form
         try { DeveloperAudit.SaveNotes(_annotations); }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
+            DeveloperRuntimeEvidence.TryRecord("DEVELOPER_NOTES_SAVE_FAILED");
             _canSave = false;
             MessageBox.Show("Unable to save annotations; verify the developer data directory before continuing.",
                 "Developer data error", MessageBoxButtons.OK, MessageBoxIcon.Error);
@@ -449,6 +450,7 @@ internal sealed class DeveloperDiagnosticsForm : Form
         try { File.WriteAllText(picker.FileName, text.Text, Encoding.UTF8); }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
+            DeveloperRuntimeEvidence.TryRecord("DEVELOPER_REPORT_SAVE_FAILED");
             MessageBox.Show("The report could not be written. Nothing was uploaded.",
                 "Developer export", MessageBoxButtons.OK, MessageBoxIcon.Error);
         }

@@ -2,6 +2,8 @@ using NAudio.CoreAudioApi;
 using NAudio.Wave;
 using System.Buffers.Binary;
 using System.Diagnostics;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace LouderMeAudioBridge;
 
@@ -81,6 +83,23 @@ internal static class Program
             }
 
             using var enumerator = new MMDeviceEnumerator();
+            if (args.Contains("--default-render-fingerprint"))
+            {
+                // Read-only metadata-only preflight for an isolated VM. Never
+                // print the raw WASAPI endpoint ID or select/change defaults.
+                // Installation can implicitly alter the Windows default even
+                // when our tools never call a SetDefaultDevice API.
+                if (args.Length != 1)
+                    throw new ArgumentException("Default-route preflight accepts no other arguments.");
+                var defaultRender = enumerator.GetDefaultAudioEndpoint(
+                    DataFlow.Render, Role.Multimedia);
+                if (defaultRender is null || defaultRender.State != DeviceState.Active ||
+                    string.IsNullOrWhiteSpace(defaultRender.ID))
+                    throw new InvalidOperationException("No active Windows default multimedia render endpoint.");
+                var hash = SHA256.HashData(Encoding.UTF8.GetBytes(defaultRender.ID));
+                Console.WriteLine($"DEFAULT_RENDER_SHA256={Convert.ToHexString(hash).ToLowerInvariant()}");
+                return 0;
+            }
             var devices = enumerator.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active);
             if (args.Contains("--list-devices"))
             {

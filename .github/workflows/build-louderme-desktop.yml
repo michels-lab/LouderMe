@@ -14,6 +14,8 @@ on:
       - '.github/workflows/build-louderme-desktop.yml'
       - '.github/workflows/release-louderme-desktop.yml'
       - 'tools/test_louderme_release_gate_parity.py'
+      - 'tools/test_windows_shipping_provenance.py'
+      - 'tools/verify_windows_shipping_provenance.py'
   pull_request:
     paths:
       - 'desktop/**'
@@ -21,6 +23,8 @@ on:
       - '.github/workflows/build-louderme-desktop.yml'
       - '.github/workflows/release-louderme-desktop.yml'
       - 'tools/test_louderme_release_gate_parity.py'
+      - 'tools/test_windows_shipping_provenance.py'
+      - 'tools/verify_windows_shipping_provenance.py'
 
 permissions:
   contents: read
@@ -40,6 +44,8 @@ jobs:
           python-version: '3.12'
       - name: Install canonical rendered-image verification dependency
         run: python -m pip install Pillow==11.3.0
+      - name: Reject forged Windows shipping executable/screenshots/checksums
+        run: python -m unittest discover -s tools -p test_windows_shipping_provenance.py -v
 
       - name: Resolve desktop version
         id: ver
@@ -262,6 +268,18 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Rendered Windows UI evidence capture failed" }
           python tools/visual_release_gate.py --manifest desktop/artifacts/visual-windows/manifest.json --source-sha $env:GITHUB_SHA --platforms windows-desktop --surfaces home,about,equalizer
           if ($LASTEXITCODE -ne 0) { throw "Rendered Windows UI gate failed" }
+          # This installed executable came from the EXACT final Inno Setup.
+          # Verify its bytes are identical to the separately-shipped portable
+          # and bind both binaries + QA screenshot manifest + source SHA.
+          $portable=(Resolve-Path "desktop/artifacts/LouderMe-Portable-v$v.exe").Path
+          python tools/verify_windows_shipping_provenance.py `
+            --installed-exe $installedExe `
+            --portable-exe $portable `
+            --installer-exe $setup `
+            --visual-manifest desktop/artifacts/visual-windows/manifest.json `
+            --source-sha $env:GITHUB_SHA `
+            --output desktop/artifacts/visual-windows/shipping-provenance.json
+          if ($LASTEXITCODE -ne 0) { throw "Final Windows Setup/Portable/capture artifact provenance failed" }
 
           $uninstaller=Join-Path $target 'unins000.exe'
           if (-not (Test-Path $uninstaller)) { throw 'Installer did not register an uninstaller.' }

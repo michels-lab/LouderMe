@@ -169,6 +169,7 @@ internal class DeveloperNotesStore(context: Context) {
     var selectionHint by mutableStateOf<String?>(null)
         private set
     private val visibleBounds = mutableMapOf<String, LiveTarget>()
+    private var currentViewport: Rect? = null
 
     init {
         check(BuildConfig.DEVELOPER_EDITION) { "Developer notes must not load in the public variant." }
@@ -264,7 +265,16 @@ internal class DeveloperNotesStore(context: Context) {
         }
         visibleBounds[locator] = LiveTarget(screen, locator, label, bounds)
         locateEvidence = DeveloperNavigationEvidence.confirm(
-            locateEvidence, screen, locator, bounds, System.currentTimeMillis())
+            locateEvidence, screen, locator, bounds, currentViewport, System.currentTimeMillis())
+    }
+
+    fun updateViewport(bounds: Rect) {
+        currentViewport = if (DeveloperNavigationEvidence.validBounds(bounds)) bounds else null
+        val request = locateEvidence ?: return
+        val measured = visibleBounds[request.locator] ?: return
+        locateEvidence = DeveloperNavigationEvidence.confirm(
+            request, measured.screen, measured.locator, measured.bounds,
+            currentViewport, System.currentTimeMillis())
     }
 
     // When a Compose control leaves the live hierarchy, its old coordinates

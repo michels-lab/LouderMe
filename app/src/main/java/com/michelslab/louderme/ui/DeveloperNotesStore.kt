@@ -356,7 +356,7 @@ internal class DeveloperNotesStore(context: Context) {
             .put("capturedUtcMs", System.currentTimeMillis())
             .put("evidence", "read-only local state and instrumented UI sections; sound unverified")
             .put("findings", findings(audio, eq))
-            .put("runtimeIncidents", DeveloperRuntimeLedger.encode(runtimeEvents))
+            .put("runtimeIncidents", JSONObject(DeveloperRuntimeLedger.encode(runtimeEvents)))
             .put("ownerAnnotations", saved).toString(2)
     }
 

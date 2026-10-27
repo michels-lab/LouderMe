@@ -284,3 +284,13 @@ Do **not** run `probe_independent_app_route.ps1` outside the disposable VM, use 
 The disposable VM runner now refuses **all existing evidence paths**, including empty directories, before any driver install. It claims a per-run GUID lock. The manual workflow uses a unique run-ID plus attempt folder. No lab evidence records are overwritten: per-phase JSON, logs, metadata and ratio use .NET FileMode.CreateNew. Each probe verifies the session lock before launching the bridge.
 
 Runner logs replace raw WASAPI device identifiers with [REDACTED_ENDPOINT_ID], while the actual device enumeration remains available only in memory to the lab code. The hardware-free test_LabEvidenceDirectory.ps1 covers freshness, collisions, write-once immutability, existing evidence preservation and redaction. CI parses lab PowerShell and exercises these tests. This is **not** proof that a signed driver, physical audio, or arbitrary third-party playback works. No public release changes.
+
+## Granada 2026-10-27 — actual WASAPI render-consumption evidence (source-only)
+
+**Fixed an acceptance defect:** the prior `physicalEmitted` field was only `outputFrames` counted when PCM was **enqueued**, not when Windows' `WasapiOut` provider read it. `ReadFully` can provide zero-filled buffers; zeros read from an empty queue **must not** count as real rendered source PCM.
+
+The experimental bridge now separately prints `virtualProcessed`, `physicalQueued`, `renderConsumed`, `starvedRenderReads`, and `dropped`. `renderConsumed` is a conservative lower bound of actual queued bytes handed to the Windows render callback and requires at least one second of physical-mix-format frames for a positive lab route. It does **not** prove acoustic SPL or even actual audio from a loudspeaker; the **independent physical WASAPI loopback** still must pass the 440 Hz identity check.
+
+A before/after **no-stimulus** control is now invalid if *any* virtual PCM, physical enqueue or render consumption appears. The 100/150 ratio validator requires these fields in both positive phases and both negative controls. Old `physicalEmitted`-only JSON is intentionally rejected, even if the 440 Hz amplitude looks plausible. Do not migrate or reuse old positive LAB evidence folders; start a fresh unique VM session.
+
+Full root-cause and no-hardware CI acceptance: [2026-10-27 render-consumption audit](../../docs/audits/GRANADA_2026-10-27_RENDER_CONSUMPTION_PROVENANCE.md). Physical driver bring-up, signing, audio hotplug/CPU/latency and user validation remain pending (#46/#48).

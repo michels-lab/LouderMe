@@ -104,7 +104,7 @@ internal static class Program
                         throw new InvalidOperationException(
                             "Missing active Windows default output for at least one render role.");
                     identity.Append(role).Append(':').Append(endpoint.ID.Length)
-                        .Append(':').Append(endpoint.ID).Append('\\n');
+                        .Append(':').Append(endpoint.ID).Append('\n');
                 }
                 var hash = SHA256.HashData(Encoding.UTF8.GetBytes(identity.ToString()));
                 Console.WriteLine($"DEFAULT_RENDER_SHA256={Convert.ToHexString(hash).ToLowerInvariant()}");

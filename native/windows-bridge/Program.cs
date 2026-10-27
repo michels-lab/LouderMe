@@ -452,6 +452,7 @@ internal static class Program
                         Console.WriteLine(
                             $"sourceFrames={Interlocked.Read(ref processedFrames)} " +
                             $"queuedPhysicalFrames={Interlocked.Read(ref outputFrames)} " +
+                            $"renderConsumedFrames={playbackReader.PayloadFramesRead} " +
                             $"droppedSourceFrames={Interlocked.Read(ref droppedFrames)} " +
                             $"queuedAudio={queuedMs:F1}ms (NOT acoustic latency) " +
                             $"clockCorrection={correctionPpm:+0.0;-0.0;0.0}ppm " +
@@ -495,16 +496,21 @@ internal static class Program
                     $"matched440={physicalProof.Matched440Amplitude:F5} " +
                     $"coherence={physicalProof.Coherence:F3} " +
                     $"virtualProcessed={Interlocked.Read(ref processedFrames)} " +
-                    $"physicalEmitted={Interlocked.Read(ref outputFrames)} " +
+                    $"physicalQueued={Interlocked.Read(ref outputFrames)} " +
+                    $"renderConsumed={playbackReader.PayloadFramesRead} " +
+                    $"starvedRenderReads={playbackReader.ReadsWithInsufficientPcm} " +
                     $"dropped={Interlocked.Read(ref droppedFrames)}");
                 if (!physicalProof.Passed ||
                     Interlocked.Read(ref processedFrames) < inputFormat.SampleRate ||
+                    playbackReader.PayloadFramesRead < outputFormat.SampleRate ||
+                    playbackReader.PayloadFramesRead > Interlocked.Read(ref outputFrames) ||
                     Interlocked.Read(ref droppedFrames) != 0 ||
                     Interlocked.Read(ref queueResets) != 0)
                 {
                     Console.Error.WriteLine(
                         "FAIL: no matching lab tone reached the physical render loopback " +
-                        "through the bridge, or virtual source PCM was insufficient. " +
+                        "through the bridge, real WASAPI render consumed under a second of " +
+                        "queued PCM, or the route reported inconsistent source frames. " +
                         "No native global sound proof.");
                     return 4;
                 }

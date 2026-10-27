@@ -48,9 +48,20 @@ class IndependentSourceBoundaryTests(unittest.TestCase):
                        '-SourceStdOut $sourceOutput', 'separate'):
             self.assertIn(marker, text)
         for marker in ('EXTERNAL_APP_TONE_FINISHED', 'Physical LAB proof:',
-                       'virtualProcessed=', 'physicalEmitted=', 'dropped=',
+                       'virtualProcessed=', 'physicalQueued=', 'renderConsumed=',
+                       'starvedRenderReads=', 'dropped=',
                        'Test-LouderMePositiveSourceRoute'):
             self.assertIn(marker, parser)
+        # A WASAPI source queue write is not physical output. The bridge
+        # must meter real callback reads, while physical loopback validates
+        # the signal separately (still not acoustic/SPL proof).
+        bridge = BRIDGE.read_text()
+        monitor = (ROOT / "native/windows-bridge/AudioQueueRecovery.cs").read_text()
+        self.assertIn('physicalQueued=', bridge)
+        self.assertIn('renderConsumed=', bridge)
+        self.assertIn('playbackReader.PayloadFramesRead', bridge)
+        self.assertIn('PayloadFramesRead =>', monitor)
+        self.assertNotIn('physicalEmitted=', bridge)
         self.assertIn('$bridge.HasExited', text)
         self.assertIn('$source.ExitCode -ne 0', text)
         self.assertIn('Get-CimInstance -ClassName Win32_ComputerSystem', text)
@@ -69,7 +80,7 @@ class IndependentSourceBoundaryTests(unittest.TestCase):
         self.assertIn("Test-LouderMeNoSourceControl", runner)
         self.assertIn("return", runner)
         self.assertIn("Assert-Rejected", fixture)
-        self.assertIn("11 adversarial", fixture)
+        self.assertIn("16 adversarial", fixture)
 
     def test_disposable_vm_and_explicit_manual_audio_proof_mandatory(self):
         text = LAB.read_text()

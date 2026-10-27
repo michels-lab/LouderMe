@@ -36,7 +36,7 @@ function Test-LouderMePositiveSourceRoute {
     throw 'Bridge emitted missing, duplicate, or inflated independent route PASS.'
   }
   $measurements = [regex]::Matches($StdOut,
-    '(?m)^Physical LAB proof: frames=(?<frames>\d+) RMS=(?<rms>\d+(?:\.\d+)?) peak=(?<peak>\d+(?:\.\d+)?) matched440=(?<tone>\d+(?:\.\d+)?) coherence=(?<coherence>\d+(?:\.\d+)?) virtualProcessed=(?<virtual>\d+) physicalEmitted=(?<physical>\d+) dropped=(?<drops>\d+)\r?$')
+    '(?m)^Physical LAB proof: frames=(?<frames>\d+) RMS=(?<rms>\d+(?:\.\d+)?) peak=(?<peak>\d+(?:\.\d+)?) matched440=(?<tone>\d+(?:\.\d+)?) coherence=(?<coherence>\d+(?:\.\d+)?) virtualProcessed=(?<virtual>\d+) physicalQueued=(?<queued>\d+) renderConsumed=(?<consumed>\d+) starvedRenderReads=(?<starved>\d+) dropped=(?<drops>\d+)\r?$')
   if ($measurements.Count -ne 1 -or
       [regex]::Matches($StdOut, '(?m)^Physical LAB proof:').Count -ne 1) {
     throw 'A unique, complete physical-route measurement is mandatory.'
@@ -45,7 +45,7 @@ function Test-LouderMePositiveSourceRoute {
   $metric = $measurements[0]
   $number = @{}
   foreach ($field in @('frames', 'rms', 'peak', 'tone', 'coherence',
-                        'virtual', 'physical', 'drops')) {
+                        'virtual', 'queued', 'consumed', 'starved', 'drops')) {
     $number[$field] = [double]::Parse($metric.Groups[$field].Value, $culture)
     if (-not [double]::IsFinite($number[$field])) {
       throw "Invalid physical monitor measurement: $field"
@@ -62,7 +62,9 @@ function Test-LouderMePositiveSourceRoute {
   }
   if ($number.frames -lt 44100 -or
       $number.virtual -lt 44100 -or
-      $number.physical -lt 44100 -or
+      $number.queued -lt 44100 -or
+      $number.consumed -lt 44100 -or
+      $number.consumed -gt $number.queued -or
       $number.drops -ne 0 -or
       $number.tone -le 0 -or $number.tone -ge 0.15 -or
       $number.coherence -lt 0.50 -or $number.coherence -gt 1.05 -or
@@ -75,7 +77,9 @@ function Test-LouderMePositiveSourceRoute {
     physical_coherence = $number.coherence
     physical_monitor_frames = [long]$number.frames
     virtual_processed_frames = [long]$number.virtual
-    physical_emitted_frames = [long]$number.physical
+    physical_queued_frames = [long]$number.queued
+    render_consumed_frames = [long]$number.consumed
+    render_starved_reads = [long]$number.starved
     dropped_frames = [long]$number.drops
     independent_source_frames = [long]$sourceFrames
     independent_source_channels = [int]$sourceChannels

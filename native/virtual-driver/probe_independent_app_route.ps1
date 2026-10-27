@@ -171,7 +171,9 @@ try {
     physical_coherence = $checked.physical_coherence
     physical_monitor_frames = $checked.physical_monitor_frames
     virtual_processed_frames = $checked.virtual_processed_frames
-    physical_emitted_frames = $checked.physical_emitted_frames
+    physical_queued_frames = $checked.physical_queued_frames
+    render_consumed_frames = $checked.render_consumed_frames
+    render_starved_reads = $checked.render_starved_reads
     dropped_frames = $checked.dropped_frames
     independent_source_frames = $checked.independent_source_frames
     independent_source_channels = $checked.independent_source_channels

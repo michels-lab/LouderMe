@@ -22,7 +22,9 @@ function Get-Baseline([int]$boost) {
     physical_coherence = 0.81
     physical_monitor_frames = 192000
     virtual_processed_frames = 96000
-    physical_emitted_frames = 96000
+    physical_queued_frames = 96000
+    render_consumed_frames = 90000
+    render_starved_reads = 8
     dropped_frames = 0
     independent_source_frames = 96000
     independent_source_channels = 2
@@ -39,6 +41,10 @@ function Get-Control([string]$phase) {
     bridge_failed_for_missing_tone = $true
     matched440_amplitude = 0.00001
     physical_monitor_frames = 96000
+    virtual_processed_frames = 0
+    physical_queued_frames = 0
+    render_consumed_frames = 0
+    render_starved_reads = 20
     general_third_party_audio_proven = $false
     acoustic_spl_proven = $false
     session_id = $SessionId
@@ -138,8 +144,29 @@ try {
   Assert-Rejected 'gain forged while virtual source captured zero PCM' $a $b
 
   $a = Get-Baseline 100; $b = Get-Baseline 150
-  $a.physical_emitted_frames = 0
-  Assert-Rejected 'gain forged without physical output frames' $a $b
+  $a.render_consumed_frames = 0
+  Assert-Rejected 'gain forged without physical callback reads' $a $b
+
+  $a = Get-Baseline 100; $b = Get-Baseline 150
+  $a.physical_queued_frames = 0
+  Assert-Rejected 'physical PCM was never enqueued' $a $b
+
+  $a = Get-Baseline 100; $b = Get-Baseline 150
+  $b.render_consumed_frames = 96001
+  Assert-Rejected 'render callback consumed more than enqueued PCM' $a $b
+
+  $a = Get-Baseline 100; $b = Get-Baseline 150
+  $a.Remove('render_starved_reads')
+  Assert-Rejected 'render underflow provenance missing' $a $b
+
+  $a = Get-Baseline 100; $b = Get-Baseline 150
+  $b.render_consumed_frames = '90000'
+  Assert-Rejected 'renderer frames forged as string' $a $b
+
+  $a = Get-Baseline 100; $b = Get-Baseline 150
+  $b.physical_emitted_frames = 90000
+  $b.Remove('render_consumed_frames')
+  Assert-Rejected 'obsolete physicalEmitted queue-only report' $a $b
 
   $a = Get-Baseline 100; $b = Get-Baseline 150
   $b.dropped_frames = 7
@@ -193,6 +220,18 @@ try {
   Assert-ControlRejected 'fabricated string listener frame count' $before $after
 
   $before = Get-Control before; $after = Get-Control after
+  $before.virtual_processed_frames = 44100
+  Assert-ControlRejected 'negative control captured unrelated source PCM' $before $after
+
+  $before = Get-Control before; $after = Get-Control after
+  $after.render_consumed_frames = 500
+  Assert-ControlRejected 'negative control silently rendered background audio' $before $after
+
+  $before = Get-Control before; $after = Get-Control after
+  $after.Remove('render_starved_reads')
+  Assert-ControlRejected 'missing renderer starvation accounting on negative control' $before $after
+
+  $before = Get-Control before; $after = Get-Control after
   $after.stimulus_launched = $true
   Assert-ControlRejected 'source erroneously launched in negative control' $before $after
 
@@ -227,7 +266,7 @@ try {
   } catch { $wrongSessionRejected = $true }
   if (-not $wrongSessionRejected) { throw 'Wrong caller-supplied lab session ID was accepted.' }
 
-  Write-Host 'PASS: Windows source gain validates session-bound 100/150 records, before/after silence controls and 31+ adversarial fixtures; no audio device used.'
+  Write-Host 'PASS: Windows source gain validates session-bound 100/150 records, before/after silence controls and 39+ adversarial fixtures; no audio device used.'
 } finally {
   Remove-Item -LiteralPath $dir -Recurse -Force -ErrorAction SilentlyContinue
 }

@@ -85,6 +85,22 @@ function Test-LouderMeIndependentGain {
         [double]$record.physical_monitor_frames % 1 -ne 0) {
       throw "Invalid $phase no-source physical monitor evidence."
     }
+    foreach ($field in @('virtual_processed_frames', 'physical_queued_frames',
+                         'render_consumed_frames', 'render_starved_reads')) {
+      $value = $record.$field
+      if ($null -eq $value -or $value -is [bool] -or
+          $value -isnot [ValueType] -or
+          -not [double]::IsFinite([double]$value) -or
+          ([double]$value % 1) -ne 0) {
+        throw "Missing no-source callback/queue counter: $field at $phase."
+      }
+    }
+    if ([double]$record.virtual_processed_frames -ne 0 -or
+        [double]$record.physical_queued_frames -ne 0 -or
+        [double]$record.render_consumed_frames -ne 0 -or
+        [double]$record.render_starved_reads -lt 0) {
+      throw "Source-free $phase control was contaminated by application PCM."
+    }
   }
   $m = @{}
   foreach ($boost in @(100, 150)) {
@@ -116,7 +132,8 @@ function Test-LouderMeIndependentGain {
     # counters must never survive the final 100/150 gain acceptance.
     $pcmCounters = @{}
     foreach ($field in @('physical_monitor_frames', 'virtual_processed_frames',
-                         'physical_emitted_frames', 'dropped_frames',
+                         'physical_queued_frames', 'render_consumed_frames',
+                         'render_starved_reads', 'dropped_frames',
                          'independent_source_frames', 'independent_source_channels')) {
       $value = $record.$field
       if ($null -eq $value -or $value -is [bool] -or
@@ -129,7 +146,9 @@ function Test-LouderMeIndependentGain {
     }
     if ($pcmCounters.physical_monitor_frames -lt 44100 -or
         $pcmCounters.virtual_processed_frames -lt 44100 -or
-        $pcmCounters.physical_emitted_frames -lt 44100 -or
+        $pcmCounters.physical_queued_frames -lt 44100 -or
+        $pcmCounters.render_consumed_frames -lt 44100 -or
+        $pcmCounters.render_consumed_frames -gt $pcmCounters.physical_queued_frames -or
         $pcmCounters.dropped_frames -ne 0 -or
         $pcmCounters.independent_source_frames -lt 88200 -or
         $pcmCounters.independent_source_channels -lt 1 -or

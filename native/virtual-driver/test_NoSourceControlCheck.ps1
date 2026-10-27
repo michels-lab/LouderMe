@@ -6,11 +6,12 @@ Set-StrictMode -Version Latest
 . (Join-Path $PSScriptRoot 'NoSourceControlCheck.ps1')
 $goodOut = "EXTERNAL_SOURCE_READY`r`n" +
   "Physical LAB proof: frames=96000 RMS=0.00001 peak=0.00002 " +
-  "matched440=0.00001 coherence=0.012 virtualProcessed=0 physicalEmitted=96000 dropped=0`r`n"
+  "matched440=0.00001 coherence=0.012 virtualProcessed=0 physicalQueued=0 renderConsumed=0 starvedRenderReads=20 dropped=0`r`n"
 $goodErr = 'FAIL: no matching lab tone reached the physical render loopback through the bridge, or virtual source PCM was insufficient.'
 $proof = Test-LouderMeNoSourceControl -ExitCode 4 -StdOut $goodOut -StdErr $goodErr
 if ($proof.status -ne 'PASS' -or $proof.stimulus_launched -ne $false -or
-    $proof.matched440_amplitude -gt .003) {
+    $proof.matched440_amplitude -gt .003 -or
+    $proof.render_consumed_frames -ne 0 -or $proof.render_starved_reads -ne 20) {
   throw 'Correct no-source physical capture negative control was rejected.'
 }
 function Assert-Rejected([string]$description, [int]$exit, [string]$out, [string]$err) {
@@ -30,4 +31,9 @@ Assert-Rejected 'dropped physical or virtual audio samples' 4 ($goodOut.Replace(
 Assert-Rejected 'nonfinite coherence' 4 ($goodOut.Replace('coherence=0.012', 'coherence=NaN')) $goodErr
 Assert-Rejected 'duplicate unrelated physical measurement' 4 ($goodOut + $goodOut) $goodErr
 Assert-Rejected 'missing monitor measurement' 4 'EXTERNAL_SOURCE_READY' $goodErr
-Write-Host 'PASS: no-stimulus independent route validator rejects 11 adversarial false positives; no hardware used.'
+Assert-Rejected 'legacy queue-only output metric' 4 ($goodOut.Replace('renderConsumed=0','physicalEmitted=0')) $goodErr
+Assert-Rejected 'cannot consume audio that was not enqueued' 4 ($goodOut.Replace('renderConsumed=0','renderConsumed=1')) $goodErr
+Assert-Rejected 'missing render underflow evidence' 4 ($goodOut.Replace('starvedRenderReads=20','starvedFake=20')) $goodErr
+Assert-Rejected 'unrelated virtual application PCM invalidates silence control' 4 ($goodOut.Replace('virtualProcessed=0','virtualProcessed=4800')) $goodErr
+Assert-Rejected 'physical queue contaminated by background PCM' 4 ($goodOut.Replace('physicalQueued=0','physicalQueued=4800')) $goodErr
+Write-Host 'PASS: no-stimulus independent route validator rejects 16 adversarial false positives; no hardware used.'

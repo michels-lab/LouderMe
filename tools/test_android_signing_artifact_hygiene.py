@@ -7,12 +7,12 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "tools"))
 from audit_android_signing_artifacts import (
     verify_workflow, suspicious_artifacts, fetch_artifacts, audit_legacy_id
 )
 
-WORKFLOW = (ROOT.parent / ".github/workflows/android-ci-release.yml").read_text()
+WORKFLOW = (ROOT / ".github/workflows/android-ci-release.yml").read_text()
 
 
 class AndroidSigningArtifactHygieneTests(unittest.TestCase):

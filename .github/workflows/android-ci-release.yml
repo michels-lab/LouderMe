@@ -127,7 +127,8 @@ jobs:
           PY
           python3 -m unittest discover -s tools/tests -p 'test_android_developer_signed_contract.py' -v
           python3 -m unittest discover -s tools/tests -p 'test_android_developer_harness.py' -v
-          python3 -m py_compile tools/capture_android_developer.py
+          python3 -m unittest discover -s tools/tests -p 'test_signed_android_evidence.py' -v
+          python3 -m py_compile tools/capture_android_developer.py tools/verify_signed_android_evidence.py
 
       - name: Run tests and build distribution flavors
         run: |
@@ -516,7 +517,8 @@ jobs:
             --source-sha "$GITHUB_SHA" --platforms android --surfaces home,about
           python3 tools/verify_signed_android_evidence.py \
             --manifest artifacts/visual/android-signed/manifest.json \
-            --signed-apk "signed-input/LouderMe-v${{ needs.validate.outputs.version }}-sideload.apk"
+            --signed-apk "signed-input/LouderMe-v${{ needs.validate.outputs.version }}-sideload.apk" \
+            --source-sha "$GITHUB_SHA"
       - name: Retain signed-APK proof and screenshots
         if: always()
         uses: actions/upload-artifact@v4

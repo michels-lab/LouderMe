@@ -19,6 +19,11 @@ internal object DeveloperNavigationEvidence {
             bounds.right.isFinite() && bounds.bottom.isFinite() &&
             bounds.width > 0f && bounds.height > 0f
 
+    fun intersectsViewport(bounds: Rect, viewport: Rect?): Boolean =
+        viewport != null && validBounds(bounds) && validBounds(viewport) &&
+            bounds.left < viewport.right && bounds.right > viewport.left &&
+            bounds.top < viewport.bottom && bounds.bottom > viewport.top
+
     fun request(
         screen: String, locator: String, known: Map<String, String>, timeUtcMs: Long,
     ): DeveloperLocateEvidence? {
@@ -30,11 +35,11 @@ internal object DeveloperNavigationEvidence {
 
     fun confirm(
         request: DeveloperLocateEvidence?, screen: String, locator: String,
-        bounds: Rect, timeUtcMs: Long,
+        bounds: Rect, viewport: Rect?, timeUtcMs: Long,
     ): DeveloperLocateEvidence? {
         if (request == null || request.verifiedUtcMs != null ||
             request.screen != screen || request.locator != locator ||
-            timeUtcMs < request.requestedUtcMs || !validBounds(bounds))
+            timeUtcMs < request.requestedUtcMs || !intersectsViewport(bounds, viewport))
             return request
         return request.copy(verifiedUtcMs = timeUtcMs)
     }

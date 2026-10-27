@@ -99,7 +99,7 @@ internal static class DeveloperNotesBackup
             throw new InvalidOperationException("Developer backups are unavailable in the public app.");
     }
 
-    private static void Validate(IReadOnlyList<DeveloperAnnotation> notes)
+    internal static void Validate(IReadOnlyList<DeveloperAnnotation> notes)
     {
         if (notes.Count > MaxNotes)
             throw new InvalidDataException("Backups can contain no more than 250 notes.");
@@ -177,6 +177,20 @@ internal static class DeveloperNotesBackup
         Reject("invalid status", () => Export(new[] { first with { Status = "Unknown" } }));
         Reject("too many records", () => Export(Enumerable.Range(0, MaxNotes + 1)
             .Select(_ => first with { Id = Guid.NewGuid() }).ToList()));
+        // The same real file guards must refuse public-mode access without
+        // changing the current Developer profile or opening user data.
+        DeveloperMode.Configure(false);
+        try
+        {
+            try
+            {
+                Export(new[] { first });
+                throw new InvalidOperationException("Public build may not export private Developer notes.");
+            }
+            catch (InvalidOperationException ex) when (
+                ex.Message.Contains("unavailable in the public app", StringComparison.Ordinal)) { }
+        }
+        finally { DeveloperMode.Configure(true); }
         if (Preview(Export(Array.Empty<DeveloperAnnotation>()), original).Incoming.Count != 0)
             throw new InvalidOperationException("Empty Developer backup must import nothing.");
         Console.WriteLine("PASS: Windows Developer backup UTF-8, explicit conflict resolution, 13 adversarial controls, no personal files.");

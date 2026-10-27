@@ -1,0 +1,20 @@
+# Granada 2026-10-27 — physical VM lab input integrity and private PnP identifiers
+
+## Verification baseline
+The experimental Windows virtual-render endpoint already has pinned SysVAD source derivation, a full-WDK INF/CAT build gate, device-free native DSP and independent source/negative 100% vs 150% gain tests. It has **not** been installed in a signed production configuration and has no verified physical hardware audio proof in repository CI. The manual-only lab runs on a self-hosted Windows VM, requires a preexisting snapshot, an already trusted LAB-signed CAT, explicit opt-in, exact user selected virtual vs physical endpoint separation, restores by *removing only the owned test instance*, and checks Windows default render identities before/during/after.
+
+## Specific uncovered issue
+The real lab's independent proof JSON already contained the bridge and external-app SHA-256, and preflight metadata stored the CAT/SYS SHA-256; however, it **did not fail** if either executable, the native C++ DSP, the INF, the CAT/SYS or WDK Devcon binary changed after first validation and between the source/monitor phases. A 100% and 150% comparison could therefore be attributed to two different LAB binaries even with a shared session ID. The script also printed raw Windows root-device InstanceIds in hosted workflow output.
+
+## Changes
+1. Added `native/virtual-driver/LabInputIntegrity.ps1`, a read-only seven-input preflight snapshot with canonical absolute paths, nonempty ordinary files, SHA-256, file sizes and rejection of alias paths or symlink/junction input paths. Frozen inputs: LAB INF, signed catalog CAT, kernel SYS, managed bridge, native C++ DSP DLL, independent Windows tone DLL, WDK Devcon.exe. No signing credentials, endpoint IDs or PCM read.
+2. Updated **real** `run_disposable_lab.ps1` to snapshot before privileged PnP and assert the exact seven bytes immediately before installation, endpoint discovery, both virtual and physical tones, pre/post silence controls, both 100 and 150 independent tone phases, after probes and **after the PnP instance is removed**. Mismatch throws and invokes the existing cleanup logic; a cleanup-stage mismatch fails rather than reports PASS. Existing default Windows audio route identity guard remains intact and unchanged. Metadata adds only seven SHA-256 values, not local paths. PnP instance IDs are withheld from workflow console and error messages.
+3. Hardware-free regression `test_LabInputIntegrity.ps1`: successful seven distinct file fingerprints, same-length modified managed bridge, shrunk C++ DLL, removed SYS, missing/duplicate/reused executable, empty CAT, sanitized metadata and source coverage checks for all real VM phases. No driver, PnP, keys or audio devices involved. The Windows/native DSP workflow runs this new script and parses both it and the integrity helper with the PowerShell parser.
+
+## Important limitations
+- The hash baseline verifies **same files across phases of one lab test**, not that any binary is trustworthy, source-build reproducible, unsigned vs Microsoft-signed, or loaded into the kernel. Pre-existing trusted CAT preflight and actual driver-install checks remain mandatory, and production signability is not certified.
+- No disposable Windows audio VM or hardware/physical speaker is available to these ordinary CI workers. An actual owner-consented VM run is still required before stating that another Windows application reaches a physical playback endpoint through the native DSP.
+- No account/driver version bump, no stable release, no changes to shipped Equalizer APO fallback, no private endpoint identifiers uploaded.
+
+## Merge gate
+Require native Linux + Windows C++ build, Windows managed bridge C ABI/numeric tests and exact source-head new PowerShell negative tests, with no driver installation in CI. Virtual-driver derivation/WDK workflow is independent and may take longer; check its exact-head conclusion before merging or explicitly leave this PR unmerged. The issue #48 and owner hardware checklist remain open until a **real** sound route and rollback can be measured.

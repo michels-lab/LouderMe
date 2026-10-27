@@ -91,12 +91,22 @@ internal static class Program
                 // when our tools never call a SetDefaultDevice API.
                 if (args.Length != 1)
                     throw new ArgumentException("Default-route preflight accepts no other arguments.");
-                var defaultRender = enumerator.GetDefaultAudioEndpoint(
-                    DataFlow.Render, Role.Multimedia);
-                if (defaultRender is null || defaultRender.State != DeviceState.Active ||
-                    string.IsNullOrWhiteSpace(defaultRender.ID))
-                    throw new InvalidOperationException("No active Windows default multimedia render endpoint.");
-                var hash = SHA256.HashData(Encoding.UTF8.GetBytes(defaultRender.ID));
+                // Windows tracks three independent render-default roles.
+                // PnP may alter only Console or Communications while leaving
+                // Multimedia alone. Fingerprint the ordered tuple, never
+                // disclose any raw endpoint ID or friendly name.
+                var identity = new StringBuilder();
+                foreach (var role in new[] { Role.Console, Role.Multimedia, Role.Communications })
+                {
+                    var endpoint = enumerator.GetDefaultAudioEndpoint(DataFlow.Render, role);
+                    if (endpoint is null || endpoint.State != DeviceState.Active ||
+                        string.IsNullOrWhiteSpace(endpoint.ID))
+                        throw new InvalidOperationException(
+                            "Missing active Windows default output for at least one render role.");
+                    identity.Append(role).Append(':').Append(endpoint.ID.Length)
+                        .Append(':').Append(endpoint.ID).Append('\\n');
+                }
+                var hash = SHA256.HashData(Encoding.UTF8.GetBytes(identity.ToString()));
                 Console.WriteLine($"DEFAULT_RENDER_SHA256={Convert.ToHexString(hash).ToLowerInvariant()}");
                 return 0;
             }

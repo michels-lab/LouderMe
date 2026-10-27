@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 243,
-  "classified_files_total": 239,
-  "docs_content_inspected": 67,
+  "tracked_files_total": 247,
+  "classified_files_total": 243,
+  "docs_content_inspected": 68,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,18 +12,18 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 59,
+    "document": 60,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
-    "source": 86,
-    "test": 26,
+    "source": 87,
+    "test": 28,
     "text_metadata": 2,
     "workflow": 10
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "8e0119d32cd4538679699317d362c3f11060452f7109fa7d578d938018efd82f",
+  "inventory_fingerprint": "14e5c048da77135d9e9e39e46e9857a2e2ea46bac3e61315a9dd9ba160276925",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -66,7 +66,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "0e7336479866254f2e8621dac9eb3fece313e43e"
+      "blob": "b0acbdacc9895fad1151d08ddc4caec5e77b1412"
     },
     {
       "path": ".github/workflows/android-visual-navigation-contract.yml",
@@ -80,7 +80,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "d346bb694c8b73c07463c7e921d5861330daa027"
+      "blob": "9558623eb8fe559a094463e677032da84344db6a"
     },
     {
       "path": ".github/workflows/file-governance-audit.yml",
@@ -122,7 +122,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "45abbbad50334cc22098cd5b7c468601ddcf01b2"
+      "blob": "4fddde76ff41ad7a196e0d183f99a740e978766c"
     },
     {
       "path": ".github/workflows/restore-canonical-android-asset.yml",
@@ -227,7 +227,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "865812a6725e5781700f8288ee13ece20c95e829"
+      "blob": "17c023ac267d3dd7c7f63ee409a2467eadf18458"
     },
     {
       "path": "README.md",
@@ -1252,6 +1252,13 @@
       "blob": "9237df84540ec625fd6c9063c3cf3e990fe42f72"
     },
     {
+      "path": "docs/audits/GRANADA_2026-10-27_FINAL_SHIPPING_VISUAL_PROVENANCE.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "0ce7285fa6fd3cfcfb51a4addc95a83bebac9683"
+    },
+    {
       "path": "docs/audits/GRANADA_2026-10-27_LIVE_NAVIGATION_EVIDENCE.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -1665,6 +1672,13 @@
       "blob": "dfbbfe2e18f212be20f53dd33718d8a8b1389ca2"
     },
     {
+      "path": "tools/test_windows_shipping_provenance.py",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "ed32c9bc96fb911f1c1c7bcb42dbf8f359116dca"
+    },
+    {
       "path": "tools/tests/test_android_developer_harness.py",
       "role": "test",
       "purpose": "code/test implementation",
@@ -1686,11 +1700,25 @@
       "blob": "62be9e9889f541ce4c61a1a6ec5346042091c1dd"
     },
     {
+      "path": "tools/tests/test_signed_android_evidence.py",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "2b8a437341bb5c4e1f3e7cc8924c6b3698e4cf3b"
+    },
+    {
       "path": "tools/verify_signed_android_evidence.py",
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "878734448b75f2dcdcc0e040b5d75a490890090e"
+      "blob": "e638d0ac54c3fbf321002ed1ad651efeddee1e83"
+    },
+    {
+      "path": "tools/verify_windows_shipping_provenance.py",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "3540127d2bbe542ff3a9b42db5acfe300c6cda67"
     },
     {
       "path": "tools/visual_release_gate.py",

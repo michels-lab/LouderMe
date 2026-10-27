@@ -46,8 +46,14 @@ internal static class DeveloperAudit
         // Corrupt data must be reported, not silently replaced by a blank set.
         try
         {
-            return JsonSerializer.Deserialize<List<DeveloperAnnotation>>(File.ReadAllText(NotesPath), Json)
+            var recovered = JsonSerializer.Deserialize<List<DeveloperAnnotation>>(
+                File.ReadAllText(NotesPath), Json)
                 ?? throw new InvalidDataException("Annotation file contains null.");
+            // Local files can also be truncated, structurally valid but
+            // semantically corrupt. Preserve them and disable editing,
+            // rather than silently accepting an overwritten note list.
+            DeveloperNotesBackup.Validate(recovered);
+            return recovered;
         }
         catch (JsonException ex)
         {
@@ -59,6 +65,9 @@ internal static class DeveloperAudit
     {
         if (!DeveloperMode.Enabled)
             throw new InvalidOperationException("Developer annotations cannot be saved from the public edition.");
+        // Never overwrite a readable annotations file with a malformed or
+        // oversized note set, whether from the inspector or a restore.
+        DeveloperNotesBackup.Validate(notes);
         Directory.CreateDirectory(DeveloperMode.DataDirectory);
         var temp = NotesPath + ".tmp";
         try

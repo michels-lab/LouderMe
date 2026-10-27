@@ -150,6 +150,7 @@ internal static class DeveloperAudit
         if (!DeveloperMode.Enabled)
             throw new InvalidOperationException("The public application cannot run developer audits.");
         var findings = new List<DeveloperFinding>();
+        findings.AddRange(DeveloperRuntimeEvidence.Diagnose());
         var allControls = Walk(application).ToArray();
         if (!application.IsHandleCreated)
             findings.Add(new("UI_WINDOW_NOT_READY", "P1", "runtime", "Main UI handle is not ready.", "local runtime"));
@@ -286,6 +287,7 @@ internal static class DeveloperAudit
             throw new InvalidOperationException("Private production file path exported.");
         try
         {
+            DeveloperRuntimeEvidence.RunContractSelfTests();
             SaveNotes(new[] { note });
             var loaded = LoadNotes();
             if (loaded.Count != 1 || loaded[0].Id != note.Id || loaded[0].Comment != note.Comment)

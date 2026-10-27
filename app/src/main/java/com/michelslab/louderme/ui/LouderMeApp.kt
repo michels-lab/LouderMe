@@ -65,6 +65,9 @@ fun LouderMeApp(
     // Activate the mounted screen BEFORE Compose measures section anchors;
     // running this in SideEffect could clear bounds after onGloballyPositioned.
     owner?.activateScreen(if (showAbout) "About" else "Home")
+    LaunchedEffect(owner, audioState, equalizerState) {
+        owner?.observeRuntime(audioState, equalizerState)
+    }
 
     LouderMeTheme {
         CompositionLocalProvider(LocalDeveloperNotes provides owner) {

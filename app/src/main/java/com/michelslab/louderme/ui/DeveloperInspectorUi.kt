@@ -144,6 +144,10 @@ internal fun DeveloperInspectorUi(
                     if (owner.error != null)
                         Text(owner.error ?: "", color = MaterialTheme.colorScheme.error)
                     Text("Saved section notes: " + owner.notes.size, fontWeight = FontWeight.Bold)
+                    Text("Observed runtime issue types: " + owner.runtimeEvents.size)
+                    if (owner.runtimeError != null) {
+                        Text(owner.runtimeError ?: "", color = MaterialTheme.colorScheme.error)
+                    }
                     Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState())) {
                         listOf("All", "Open", "Investigating", "Resolved").forEach { status ->
                             TextButton(onClick = { statusFilter = status }) {

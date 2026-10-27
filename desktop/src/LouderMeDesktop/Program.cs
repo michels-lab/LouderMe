@@ -194,6 +194,8 @@ internal static class Program
 
     private static void WriteStartupCrash(Exception exception)
     {
+        if (DeveloperMode.Enabled)
+            DeveloperRuntimeEvidence.TryRecord("APP_STARTUP_EXCEPTION");
         try
         {
             Directory.CreateDirectory(DiagnosticsDirectory);

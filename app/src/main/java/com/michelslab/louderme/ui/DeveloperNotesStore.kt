@@ -157,6 +157,11 @@ internal class DeveloperNotesStore(context: Context) {
     var focused by mutableStateOf<String?>(null)
     var export by mutableStateOf<String?>(null)
     var exportJson by mutableStateOf(false)
+    var runtimeEvents by mutableStateOf<List<DeveloperRuntimeIncident>>(emptyList())
+        private set
+    var runtimeError by mutableStateOf<String?>(null)
+        private set
+    private var activeRuntimeCodes: Set<String> = emptySet()
     var currentScreen: String = "Home"
         private set
     var selectionHint by mutableStateOf<String?>(null)
@@ -165,6 +170,16 @@ internal class DeveloperNotesStore(context: Context) {
 
     init {
         check(BuildConfig.DEVELOPER_EDITION) { "Developer notes must not load in the public variant." }
+        val savedRuntime = prefs.getString("runtime_incidents_v1", null)
+        if (savedRuntime != null) {
+            try {
+                runtimeEvents = DeveloperRuntimeLedger.decode(savedRuntime)
+            } catch (_: Exception) {
+                // Keep the corrupt original evidence; never overwrite it, and
+                // never prevent the owner from recovering unrelated notes.
+                runtimeError = "Runtime history is unreadable; its original data was preserved."
+            }
+        }
         val raw = prefs.getString("notes", null)
         if (raw != null) {
             try {
@@ -209,6 +224,25 @@ internal class DeveloperNotesStore(context: Context) {
         if (error != null) return false
         persist(mergeDeveloperNotes(notes, preview.incoming, replaceConflicts))
         return error == null
+    }
+
+    // This is invoked by the actual Developer Compose UI when live audio
+    // and EQ states change; it is never run by the public app and does not
+    // use incoming free-text error strings, route names or stack traces.
+    fun observeRuntime(audio: AudioEngineUiState, eq: EqualizerUiState) {
+        val active = DeveloperRuntimeLedger.detect(audio, eq)
+        val newlyObserved = active - activeRuntimeCodes
+        activeRuntimeCodes = active
+        if (newlyObserved.isEmpty() || runtimeError != null) return
+        var next = runtimeEvents
+        val now = System.currentTimeMillis().coerceAtLeast(1L)
+        for (code in newlyObserved) next = DeveloperRuntimeLedger.append(next, code, now)
+        val encoded = DeveloperRuntimeLedger.encode(next)
+        if (!prefs.edit().putString("runtime_incidents_v1", encoded).commit()) {
+            runtimeError = "Runtime audit history could not be saved; previous evidence preserved."
+            return
+        }
+        runtimeEvents = next
     }
 
     fun activateScreen(screen: String) {
@@ -293,6 +327,16 @@ internal class DeveloperNotesStore(context: Context) {
         if (eq.gainsDb.size != 7) finding("EQ_BAND_COUNT", "P1", "Expected seven bands.")
         if (audio.percent !in 100..250) finding("BOOST_OUT_OF_RANGE", "P1", "Expected target 100-250%.")
         if (error != null) finding("ANNOTATION_STORAGE_ERROR", "P1", "Notes cannot be loaded/written.")
+        if (runtimeError != null) finding("RUNTIME_HISTORY_UNAVAILABLE", "P1",
+            "Developer runtime evidence is unreadable or cannot be saved; original record retained.")
+        runtimeEvents.forEach { event ->
+            result.put(JSONObject().put("code", event.code)
+                .put("priority", "P1")
+                .put("detail", "Observed " + event.occurrences +
+                    " real state transition(s); first UTC ms " + event.firstUtcMs +
+                    ", last UTC ms " + event.lastUtcMs + ".")
+                .put("evidence", "saved Developer-only closed-code live state observation; no hardware proof"))
+        }
         notes.filter { !DeveloperTargets.known.containsKey(it.locator) }.forEach {
             finding("UNRESOLVED_SECTION", "P2", "Note " + it.id + " has an outdated locator.")
         }
@@ -312,6 +356,7 @@ internal class DeveloperNotesStore(context: Context) {
             .put("capturedUtcMs", System.currentTimeMillis())
             .put("evidence", "read-only local state and instrumented UI sections; sound unverified")
             .put("findings", findings(audio, eq))
+            .put("runtimeIncidents", DeveloperRuntimeLedger.encode(runtimeEvents))
             .put("ownerAnnotations", saved).toString(2)
     }
 
@@ -325,6 +370,7 @@ internal class DeveloperNotesStore(context: Context) {
             appendLine("[" + item.getString("priority") + "] " +
                 item.getString("code") + " -- " + item.getString("detail"))
         }
+        appendLine("Runtime findings are observed error states, not crash stack traces or acoustic evidence.")
         appendLine("OWNER COMMENTS: verbatim and section-anchored; not automated findings")
         notes.forEach { note ->
             appendLine("Note " + note.id + ": " + note.severity + " / " + note.status)

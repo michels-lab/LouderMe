@@ -426,6 +426,13 @@ internal class DeveloperNotesStore(context: Context) {
                 item.getString("code") + " -- " + item.getString("detail"))
         }
         appendLine("Runtime findings are observed error states, not crash stack traces or acoustic evidence.")
+        appendLine("NAVIGATION EVIDENCE (actual measured Compose viewport; not guaranteed navigation)")
+        locateEvidence?.let { event ->
+            appendLine("Screen: " + event.screen + "; exact target: " + event.locator)
+            appendLine("Requested UTC ms: " + event.requestedUtcMs)
+            appendLine("Verified UTC ms: " + (event.verifiedUtcMs?.toString() ?: "NOT VERIFIED"))
+            appendLine("Status: " + navigationStatus())
+        } ?: appendLine("No navigation probe requested in this Developer session.")
         appendLine("OWNER COMMENTS: verbatim and section-anchored; not automated findings")
         notes.forEach { note ->
             appendLine("Note " + note.id + ": " + note.severity + " / " + note.status)

@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 236,
-  "classified_files_total": 232,
-  "docs_content_inspected": 65,
+  "tracked_files_total": 240,
+  "classified_files_total": 236,
+  "docs_content_inspected": 66,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,18 +12,18 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 57,
+    "document": 58,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
-    "source": 83,
-    "test": 24,
+    "source": 85,
+    "test": 25,
     "text_metadata": 2,
     "workflow": 10
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "107472119873928646f2e4a822165cf2b715605d6d78882cdab53dfe0b1c6c05",
+  "inventory_fingerprint": "9062f2e126a86e75ff9aa3b260decb30332ce86fc83fa747d7b7e3c373bf05a0",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -227,7 +227,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "5255270254e30b092f0ad90cfc88d627c710625f"
+      "blob": "3f356637492369f2f3b6969f37d6f90a6a75cae7"
     },
     {
       "path": "README.md",
@@ -409,14 +409,14 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "204d91ae3055147fa01eaba8603df3ad5d336383"
+      "blob": "4895725255fdbd6de53579d575ac66efbe2a4e35"
     },
     {
       "path": "app/src/main/java/com/michelslab/louderme/ui/DeveloperNotesStore.kt",
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "8e3a4264f585a50938b9be0750fffeca449b1c23"
+      "blob": "db67c41bdb235032e8e9bf1518d83cadfcd31de8"
     },
     {
       "path": "app/src/main/java/com/michelslab/louderme/ui/DeveloperProfile.kt",
@@ -426,11 +426,18 @@
       "blob": "ec8bdc13680e723edf6dfcfbd2cdf76d832ab1b4"
     },
     {
+      "path": "app/src/main/java/com/michelslab/louderme/ui/DeveloperRuntimeLedger.kt",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "8bd737663dc0248b63fe27592378e86e080e72f0"
+    },
+    {
       "path": "app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt",
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "775a505d2947426d47d642d2019a054c14d98e24"
+      "blob": "7f7456a7b7f2509559880905e7596c8e4703083e"
     },
     {
       "path": "app/src/main/java/com/michelslab/louderme/ui/LouderMeTheme.kt",
@@ -606,6 +613,13 @@
       "purpose": "code/test implementation",
       "certainty": "rule",
       "blob": "abc539494f394f5a1c556775468055e66a1f16cc"
+    },
+    {
+      "path": "app/src/test/java/com/michelslab/louderme/ui/DeveloperRuntimeLedgerTest.kt",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "d180a3d4aa4d02623e8bbfff1281293df24df8ad"
     },
     {
       "path": "app/src/test/java/com/michelslab/louderme/ui/DeveloperTargetContractTest.kt",
@@ -843,14 +857,14 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "a590613e8addef13f3c2ccdeeb2b42af4fa98c3f"
+      "blob": "08cae911948e55bcf61dfdaafefba97ef7ba3810"
     },
     {
       "path": "desktop/src/LouderMeDesktop/DeveloperDiagnosticsForm.cs",
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "f6b533df9c92b79b293a1cc4bd530340f5c870c8"
+      "blob": "c6f75de3020e5f64068443ba5a4cf80707ef230d"
     },
     {
       "path": "desktop/src/LouderMeDesktop/DeveloperNotesBackup.cs",
@@ -865,6 +879,13 @@
       "purpose": "code/test implementation",
       "certainty": "rule",
       "blob": "85513c2e4d91077f3f843ced291a372538c80692"
+    },
+    {
+      "path": "desktop/src/LouderMeDesktop/DeveloperRuntimeEvidence.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "0510271e29897211ed65fdd17898f4cf50dc1361"
     },
     {
       "path": "desktop/src/LouderMeDesktop/EqualizerApoConfigBuilder.cs",
@@ -906,7 +927,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "017d1be64524c13e0c792dfa6c743260dabf0e2d"
+      "blob": "04ce8627d6811a17ba5922204a6d92b11debc941"
     },
     {
       "path": "desktop/src/LouderMeDesktop/SplashForm.cs",
@@ -1208,6 +1229,13 @@
       "purpose": "manual/decision/report/historical note",
       "certainty": "inferred",
       "blob": "ba92bee181d28048b54d446bc55569d14eff663c"
+    },
+    {
+      "path": "docs/audits/GRANADA_2026-10-27_DEVELOPER_RUNTIME_EVIDENCE.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "9237df84540ec625fd6c9063c3cf3e990fe42f72"
     },
     {
       "path": "docs/audits/GRANADA_2026-10-27_RENDER_CONSUMPTION_PROVENANCE.md",

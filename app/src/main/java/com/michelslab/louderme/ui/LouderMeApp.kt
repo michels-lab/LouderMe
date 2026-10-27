@@ -19,6 +19,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -74,7 +76,11 @@ fun LouderMeApp(
             BackHandler(enabled = showAbout && owner?.inspect != true) {
                 showAbout = false
             }
-            Box(Modifier.fillMaxSize()) {
+            Box(Modifier.fillMaxSize().onGloballyPositioned {
+                // Actual Android window bounds; a rendered but scrolled-away
+                // control is never claimed as navigated-to/visible.
+                owner?.updateViewport(it.boundsInWindow())
+            }) {
                 if (showAbout) {
                     AboutScreen(
                         updateStatus = updateStatus,

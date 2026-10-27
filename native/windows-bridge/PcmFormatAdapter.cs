@@ -383,12 +383,14 @@ internal sealed class PcmFormatAdapter
                 absoluteFrame += frames;
                 int inputLength = frames * input.BlockAlign;
                 byte[] oldDecoded = allocating.Decode(monoPacket, inputLength);
-                byte[] oldEncoded = allocating.Encode(oldDecoded, oldDecoded.Length);
                 int decodedLength = scratch.DecodeInto(
                     monoPacket, inputLength, decoded);
+                // Encoding (downsample FIR) MUTATES decoded PCM in-place, so
+                // compare both decoders BEFORE asking either to resample.
                 if (decodedLength != oldDecoded.Length ||
                     !decoded.AsSpan(0, decodedLength).SequenceEqual(oldDecoded))
                     throw new InvalidOperationException("Scratch decoding differs from original float32 PCM.");
+                byte[] oldEncoded = allocating.Encode(oldDecoded, oldDecoded.Length);
                 int actual = scratch.EncodeInto(decoded, decodedLength, rendered);
                 if (!rendered.AsSpan(0, actual).SequenceEqual(oldEncoded))
                     throw new InvalidOperationException(

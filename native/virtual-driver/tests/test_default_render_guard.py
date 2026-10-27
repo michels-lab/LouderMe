@@ -51,7 +51,7 @@ class DefaultRenderVMGuardTests(unittest.TestCase):
         self.assertIn("Ambiguous partial LAB installs", LAB)
 
     def test_parser_and_ci_are_hardware_free(self):
-        self.assertIn(r"\\ADEFAULT_RENDER_SHA256=", GUARD)
+        self.assertIn(r"\ADEFAULT_RENDER_SHA256=", GUARD)
         self.assertIn("Test-LouderMeDefaultRenderFingerprint", GUARD)
         self.assertIn("Test-LouderMeDefaultRenderFingerprint", FIXTURES)
         self.assertIn("14 false-positive controls", FIXTURES)

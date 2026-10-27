@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 251,
-  "classified_files_total": 247,
-  "docs_content_inspected": 69,
+  "tracked_files_total": 252,
+  "classified_files_total": 248,
+  "docs_content_inspected": 70,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,7 +12,7 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 61,
+    "document": 62,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
@@ -23,7 +23,7 @@
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "023c803aeba85d895f0959a6e1a4d1dd25100d03587f5879a26d0f68dff68ba5",
+  "inventory_fingerprint": "1d484a67ffcd703ce7c41404053c9a87198dd09d2818533e3921889ce641920d",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -108,7 +108,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "4bf7fd43e99a5d5091c222831affa0f033690096"
+      "blob": "4a9b2fea506f26828f1ed07fcd6e4f926caad4bf"
     },
     {
       "path": ".github/workflows/native-physical-lab-manual.yml",
@@ -234,7 +234,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "80b5af44d51d934c66a6db23a3acfdb5deb1f87b"
+      "blob": "6cf92fbf9339805c542c3efe0625c272302f8e31"
     },
     {
       "path": "README.md",
@@ -1273,6 +1273,13 @@
       "blob": "f09bcd244f0b3613d51e8c108a70a620b0560cb0"
     },
     {
+      "path": "docs/audits/GRANADA_2026-10-27_NATIVE_WASAPI_REUSABLE_PCM.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "455b63da032f2a6dd6e6a9a8cd02ced5084cb518"
+    },
+    {
       "path": "docs/audits/GRANADA_2026-10-27_RENDER_CONSUMPTION_PROVENANCE.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -1564,7 +1571,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "c2b9174195591817ceb799d0f511bf666f4ece73"
+      "blob": "920cf6ff06521fad1cb984835b45f3546b60f705"
     },
     {
       "path": "native/windows-bridge/PhysicalRouteStimulus.cs",
@@ -1585,7 +1592,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "dea2b074827cfa526766559e1dd97217e1e3a36f"
+      "blob": "3994885db1fa4ee425df74e9ee8a838b121f98ff"
     },
     {
       "path": "native/windows-bridge/README.md",
@@ -1599,7 +1606,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "e29834441947f2f105278f485c2d1b2cb536a17e"
+      "blob": "59028cac98fc49a6ccf037686f0ad2332986ec62"
     },
     {
       "path": "settings.gradle.kts",

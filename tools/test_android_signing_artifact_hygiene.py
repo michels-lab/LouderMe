@@ -61,6 +61,18 @@ class AndroidSigningArtifactHygieneTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             fetch_artifacts("michels-lab/LouderMe", lambda _: (200, {"artifacts": []}), 0)
 
+    def test_real_metadata_inventory_runs_after_first_merge_and_then_weekly(self):
+        source = (ROOT / ".github/workflows/android-signing-artifact-hygiene.yml").read_text()
+        self.assertIn("  push:\\n    branches: [main]", source)
+        self.assertIn("  schedule:\\n    - cron:", source)
+        self.assertIn("  workflow_dispatch:", source)
+        self.assertIn("  actions: read", source)
+        self.assertIn("|| github.event_name == 'push'", source)
+        self.assertIn("--scan-actions", source)
+        self.assertIn("--legacy-artifact-id", source)
+        self.assertNotIn("download_workflow_artifact", source)
+        self.assertNotIn("download-artifact@", source)
+
     def test_owner_controlled_legacy_artifact_id_never_downloads_archive(self):
         calls = []
         def api(path):

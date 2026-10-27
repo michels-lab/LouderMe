@@ -284,8 +284,23 @@ internal sealed class MainForm : Form
 
     private void OpenAbout()
     {
-        using var form = new AboutForm(_updates);
-        form.ShowDialog(this);
+        var displayed = false;
+        try
+        {
+            using var form = new AboutForm(_updates);
+            form.Shown += (_, _) => displayed = true;
+            form.ShowDialog(this);
+            // ShowDialog returning is not evidence that About was actually
+            // mounted: the form can close before its Shown event.
+            if (DeveloperMode.Enabled && !displayed)
+                DeveloperRuntimeEvidence.TryRecord("ABOUT_NAVIGATION_NOT_SHOWN");
+        }
+        catch
+        {
+            if (DeveloperMode.Enabled)
+                DeveloperRuntimeEvidence.TryRecord("ABOUT_NAVIGATION_EXCEPTION");
+            throw;
+        }
     }
 
     internal void AssertCompactLayout()

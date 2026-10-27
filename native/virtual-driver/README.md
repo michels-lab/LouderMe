@@ -1,3 +1,30 @@
+## Input identity across the entire disposable VM session (2026-10-27)
+
+The manual driver-VM lab snapshots **seven exact local files** with SHA-256
+*before* privileged PnP activity: the LAB INF, signed CAT, kernel SYS, managed
+bridge DLL, matching C++ DSP DLL, separate Windows tone application, and WDK
+Devcon.exe. Per-session metadata contains only the seven hashes, not
+private endpoints, installation paths, signing keys or audio PCM.
+
+The runner rechecks all seven inputs immediately before device installation,
+device discovery, virtual and physical loopback tone phases, each of the
+before/after silence controls, both independent 100%/150% source applications,
+and **after removing its own virtual device**. A missing, truncated, same-size
+modified, symlinked or substituted file fails closed. The guard does not
+change Windows' default playback or the device-removal policy. Raw PnP
+instance IDs are withheld from public CI logs.
+
+The source-only Windows CI runs the hardware-free
+native/virtual-driver/test_LabInputIntegrity.ps1 to simulate same-size
+bridge mutation, truncated C++ DSP, missing kernel binary, path aliasing,
+empty signed catalog and mandatory phase-check coverage.
+
+**Important distinction:** unchanged hashes prove only *same bytes across
+this one isolated session*, not trusted Microsoft production signing, a
+working virtual audio driver, tested acoustic loudness or reproducible
+source-to-binary provenance. A separately owner-consented VM with real
+hardware, trusted driver package and rollback evidence is still mandatory.
+
 # LouderME Virtual Render Endpoint — WDK lab prototype
 
 **Status: real driver SOURCE DERIVATION + WDK build experiment, not a signed or installed product.**

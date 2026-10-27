@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 234,
-  "classified_files_total": 230,
-  "docs_content_inspected": 64,
+  "tracked_files_total": 236,
+  "classified_files_total": 232,
+  "docs_content_inspected": 65,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,18 +12,18 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 56,
+    "document": 57,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
-    "source": 82,
+    "source": 83,
     "test": 24,
     "text_metadata": 2,
     "workflow": 10
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "1c846608265b4515fd82193ef8dd0b6c01d621aa75169903c485dcefa4c3b37e",
+  "inventory_fingerprint": "107472119873928646f2e4a822165cf2b715605d6d78882cdab53dfe0b1c6c05",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -227,7 +227,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "22ee358ba9163b2679ca07e8c37c90c71ad09185"
+      "blob": "5255270254e30b092f0ad90cfc88d627c710625f"
     },
     {
       "path": "README.md",
@@ -843,14 +843,21 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "22c9ecf75812617d5aea99e75eb8d55dd3646adc"
+      "blob": "a590613e8addef13f3c2ccdeeb2b42af4fa98c3f"
     },
     {
       "path": "desktop/src/LouderMeDesktop/DeveloperDiagnosticsForm.cs",
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "9bd87b52adb7059787f33a677c66bc599d972b84"
+      "blob": "f6b533df9c92b79b293a1cc4bd530340f5c870c8"
+    },
+    {
+      "path": "desktop/src/LouderMeDesktop/DeveloperNotesBackup.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "296962ad0f5e806b91c1f8dcab274ba59a903691"
     },
     {
       "path": "desktop/src/LouderMeDesktop/DeveloperProfile.cs",
@@ -1208,6 +1215,13 @@
       "purpose": "manual/decision/report/historical note",
       "certainty": "inferred",
       "blob": "867bd2f5e365cf10e965f64dc954fc9cca20461b"
+    },
+    {
+      "path": "docs/audits/GRANADA_2026-10-27_WINDOWS_DEVELOPER_NOTES_MIGRATION.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "6f62a47c92c2922905aa41660832b08b003b65ca"
     },
     {
       "path": "docs/product-reviews/2026-10-21-native-windows-audio-evidence.md",

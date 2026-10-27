@@ -41,6 +41,10 @@ function Get-Control([string]$phase) {
     bridge_failed_for_missing_tone = $true
     matched440_amplitude = 0.00001
     physical_monitor_frames = 96000
+    virtual_processed_frames = 0
+    physical_queued_frames = 0
+    render_consumed_frames = 0
+    render_starved_reads = 20
     general_third_party_audio_proven = $false
     acoustic_spl_proven = $false
     session_id = $SessionId
@@ -216,6 +220,18 @@ try {
   Assert-ControlRejected 'fabricated string listener frame count' $before $after
 
   $before = Get-Control before; $after = Get-Control after
+  $before.virtual_processed_frames = 44100
+  Assert-ControlRejected 'negative control captured unrelated source PCM' $before $after
+
+  $before = Get-Control before; $after = Get-Control after
+  $after.render_consumed_frames = 500
+  Assert-ControlRejected 'negative control silently rendered background audio' $before $after
+
+  $before = Get-Control before; $after = Get-Control after
+  $after.Remove('render_starved_reads')
+  Assert-ControlRejected 'missing renderer starvation accounting on negative control' $before $after
+
+  $before = Get-Control before; $after = Get-Control after
   $after.stimulus_launched = $true
   Assert-ControlRejected 'source erroneously launched in negative control' $before $after
 
@@ -250,7 +266,7 @@ try {
   } catch { $wrongSessionRejected = $true }
   if (-not $wrongSessionRejected) { throw 'Wrong caller-supplied lab session ID was accepted.' }
 
-  Write-Host 'PASS: Windows source gain validates session-bound 100/150 records, before/after silence controls and 31+ adversarial fixtures; no audio device used.'
+  Write-Host 'PASS: Windows source gain validates session-bound 100/150 records, before/after silence controls and 39+ adversarial fixtures; no audio device used.'
 } finally {
   Remove-Item -LiteralPath $dir -Recurse -Force -ErrorAction SilentlyContinue
 }

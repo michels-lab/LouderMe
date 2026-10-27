@@ -62,7 +62,7 @@ def verify_workflow(workflow: str) -> None:
             raise ValueError("Signing material might be exported as a GitHub Actions artifact")
     for banned in (
         "signing/legacy-vault", "github-actions-secrets.txt",
-        "actions/artifacts/11459101203/zip",
+        "actions/artifacts/",
         "legacy signer recovery", "fallback to the private signing vault",
     ):
         if banned.lower() in workflow.lower():

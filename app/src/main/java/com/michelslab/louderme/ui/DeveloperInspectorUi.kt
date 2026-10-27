@@ -41,6 +41,9 @@ internal fun Modifier.developerAnchor(screen: String, locator: String, label: St
     val highlight = if (owner.focused == locator)
         Modifier.border(2.dp, Color(0xFFFFC45A), RoundedCornerShape(12.dp))
     else Modifier
+    DisposableEffect(owner, screen, locator) {
+        onDispose { owner.unregister(screen, locator) }
+    }
     return this.then(highlight).onGloballyPositioned {
         owner.register(screen, locator, label, it.boundsInWindow())
     }
@@ -139,6 +142,10 @@ internal fun DeveloperInspectorUi(
                 Column(Modifier.heightIn(max = 400.dp).verticalScroll(rememberScrollState())) {
                     Text("Isolated Android installation; no external logs or automatic upload.")
                     if (owner.selectionHint != null) Text(owner.selectionHint ?: "")
+                    if (owner.locateEvidence != null) {
+                        Text("Locate proof: " + owner.navigationStatus(),
+                            style = MaterialTheme.typography.bodySmall)
+                    }
                     Text("LouderMe has no public sign-in/account workflow; none is mocked.",
                         style = MaterialTheme.typography.bodySmall)
                     if (owner.error != null)
@@ -166,9 +173,7 @@ internal fun DeveloperInspectorUi(
                             Row {
                                 TextButton(onClick = { owner.editNote(note) }) { Text("Edit") }
                                 TextButton(onClick = {
-                                    owner.focused = note.locator
-                                    owner.panel = false
-                                    onNavigate(note.screen)
+                                    if (owner.requestLocate(note)) onNavigate(note.screen)
                                 }) { Text("Locate") }
                                 TextButton(onClick = { pendingDelete = note }) { Text("Delete") }
                             }

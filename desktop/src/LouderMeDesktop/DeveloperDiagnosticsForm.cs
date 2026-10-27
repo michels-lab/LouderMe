@@ -137,7 +137,9 @@ internal sealed class DeveloperDiagnosticsForm : Form
             throw new InvalidOperationException("Developer inspector or actual app UI was not displayed.");
         var report = DeveloperAudit.Run(_application, _annotations);
         if (report.Findings.Any(f => f.Code is "UI_WINDOW_NOT_READY" or
-            "UI_VOLUME_SLIDER_MISSING" or "UI_EQ_BANDS_INCOMPLETE" or "UI_ABOUT_NOT_VISIBLE"))
+            "UI_VOLUME_SLIDER_MISSING" or "UI_EQ_BANDS_INCOMPLETE" or
+            "UI_ABOUT_NOT_VISIBLE" or "UI_ABOUT_OUTSIDE_VIEWPORT" or
+            "UI_ABOUT_MOUNTED_CONTENT_MISSING"))
             throw new InvalidOperationException("Developer runtime audit found a broken required control.");
         if (_items is null || !_inspect.Visible || !_summary.Visible)
             throw new InvalidOperationException("Developer controls are not visible in the launched application.");

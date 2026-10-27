@@ -1,3 +1,4 @@
+using System.Drawing;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -112,6 +113,34 @@ internal static class DeveloperAudit
             yield return nested;
     }
 
+    // A control existing in the WinForms tree does not prove that a user can
+    // reach it. Audit actual screen rectangles without clicking or scrolling.
+    internal static bool IsInViewport(Rectangle controlRect, Rectangle viewport) =>
+        controlRect.Width >= 24 && controlRect.Height >= 18 &&
+        viewport.Width > 0 && viewport.Height > 0 &&
+        viewport.Contains(controlRect);
+
+    // Pure geometry contract. Live audits below use the real rendered bounds,
+    // while these fixtures exercise failures without moving the desktop UI.
+    internal static void RunNavigationGeometryContracts()
+    {
+        var viewport = new Rectangle(0, 0, 600, 640);
+        if (!IsInViewport(new Rectangle(520, 16, 60, 38), viewport))
+            throw new InvalidOperationException("Valid About header was rejected.");
+        foreach (var invalid in new[]
+        {
+            new Rectangle(-8, 10, 64, 38),
+            new Rectangle(577, 10, 64, 38),
+            new Rectangle(520, -20, 64, 38),
+            new Rectangle(520, 625, 64, 38),
+            new Rectangle(10, 10, 0, 40),
+            new Rectangle(10, 10, 60, 0),
+            new Rectangle(10, 10, 18, 18),
+        })
+            if (IsInViewport(invalid, viewport))
+                throw new InvalidOperationException("Unreachable About control falsely passed viewport audit.");
+    }
+
     // Pure read-only classification: a linked config file cannot prove audible
     // playback, and an installed APO with mismatched LouderMe settings is NOT ready.
     internal static List<DeveloperFinding> DiagnoseApo(ApoEngineStatus apo)
@@ -161,7 +190,24 @@ internal static class DeveloperAudit
 
         var about = allControls.OfType<Button>().FirstOrDefault(b => b.Text == "About");
         if (about is null || !about.Visible || !about.Enabled || about.Width <= 0)
-            findings.Add(new("UI_ABOUT_NOT_VISIBLE", "P1", "navigation", "Persistent About control is missing or unavailable.", "live WinForms tree"));
+            findings.Add(new("UI_ABOUT_NOT_VISIBLE", "P1", "navigation",
+                "Persistent About control is missing or unavailable.", "live WinForms tree"));
+        else if (application.IsHandleCreated && about.IsHandleCreated &&
+                 !IsInViewport(about.RectangleToScreen(about.ClientRectangle),
+                     application.RectangleToScreen(application.ClientRectangle)))
+            findings.Add(new("UI_ABOUT_OUTSIDE_VIEWPORT", "P1", "navigation",
+                "About exists but its live interactive bounds are clipped outside the application window.",
+                "actual WinForms rendered geometry; no input or device changes"));
+
+        // An already visible About window must have actual controls mounted;
+        // a closed About form is NOT a navigation failure.
+        foreach (var aboutForm in Application.OpenForms.OfType<AboutForm>().Where(f => f.Visible))
+            if (!aboutForm.IsHandleCreated || aboutForm.ClientSize.Width < 120 ||
+                aboutForm.ClientSize.Height < 120 ||
+                !Walk(aboutForm).Any(c => c is Label && c.Visible))
+                findings.Add(new("UI_ABOUT_MOUNTED_CONTENT_MISSING", "P1", "navigation",
+                    "An open About screen lacks visible mounted content.",
+                    "read-only live WinForms tree; no screen navigation attempted"));
 
         // Read-only APO check must compare the isolated Developer profile's
         // expected config with the actual disk file; never write or elevate.
@@ -245,6 +291,7 @@ internal static class DeveloperAudit
     internal static void RunContractSelfTests()
     {
         DeveloperMode.Configure(true);
+        RunNavigationGeometryContracts();
         // Includes the complete Windows notes backup/restore migration,
         // dangerous input rejection and explicit conflict-handling contract.
         // No public data, accounts, endpoints or real annotations accessed.

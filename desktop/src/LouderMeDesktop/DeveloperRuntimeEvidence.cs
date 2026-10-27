@@ -18,6 +18,8 @@ internal static class DeveloperRuntimeEvidence
         "APP_STARTUP_EXCEPTION",
         "DEVELOPER_NOTES_SAVE_FAILED",
         "DEVELOPER_REPORT_SAVE_FAILED",
+        "ABOUT_NAVIGATION_NOT_SHOWN",
+        "ABOUT_NAVIGATION_EXCEPTION",
     };
     internal static string EvidencePath =>
         Path.Combine(DeveloperMode.DataDirectory, "runtime-incidents-v1.json");
@@ -148,6 +150,10 @@ internal static class DeveloperRuntimeEvidence
         File.WriteAllText(EvidencePath, original);
         if (Read()[0].Occurrences != 2)
             throw new InvalidOperationException("Clean diagnostic evidence could not be recovered.");
+        TryRecord("ABOUT_NAVIGATION_NOT_SHOWN");
+        TryRecord("ABOUT_NAVIGATION_EXCEPTION");
+        if (Read().Count != 3 || Diagnose().Count != 3)
+            throw new InvalidOperationException("Real About navigation failure codes not retained.");
         Console.WriteLine("PASS: privacy-safe Developer runtime audit, persisted fault counts and corrupt-history recovery.");
     }
 }

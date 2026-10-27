@@ -155,6 +155,8 @@ internal class DeveloperNotesStore(context: Context) {
     var panel by mutableStateOf(false)
     var edit by mutableStateOf<TargetSelection?>(null)
     var focused by mutableStateOf<String?>(null)
+    var locateEvidence by mutableStateOf<DeveloperLocateEvidence?>(null)
+        private set
     var export by mutableStateOf<String?>(null)
     var exportJson by mutableStateOf(false)
     var runtimeEvents by mutableStateOf<List<DeveloperRuntimeIncident>>(emptyList())
@@ -255,9 +257,39 @@ internal class DeveloperNotesStore(context: Context) {
     }
 
     fun register(screen: String, locator: String, label: String, bounds: Rect) {
-        if (screen == currentScreen && DeveloperTargets.known.containsKey(locator))
-            visibleBounds[locator] = LiveTarget(screen, locator, label, bounds)
+        if (screen != currentScreen || !DeveloperTargets.known.containsKey(locator)) return
+        if (!DeveloperNavigationEvidence.validBounds(bounds)) {
+            visibleBounds.remove(locator)
+            return
+        }
+        visibleBounds[locator] = LiveTarget(screen, locator, label, bounds)
+        locateEvidence = DeveloperNavigationEvidence.confirm(
+            locateEvidence, screen, locator, bounds, System.currentTimeMillis())
     }
+
+    // When a Compose control leaves the live hierarchy, its old coordinates
+    // cannot remain selectable as though the control were still rendered.
+    fun unregister(screen: String, locator: String) {
+        if (visibleBounds[locator]?.screen == screen) visibleBounds.remove(locator)
+    }
+
+    fun requestLocate(note: OwnerNote): Boolean {
+        val requested = DeveloperNavigationEvidence.request(
+            note.screen, note.locator, DeveloperTargets.known,
+            System.currentTimeMillis().coerceAtLeast(1L))
+        if (requested == null) {
+            selectionHint = "Saved note has an unsupported screen or old control anchor."
+            return false
+        }
+        locateEvidence = requested
+        focused = note.locator
+        panel = false
+        selectionHint = null
+        return true
+    }
+
+    fun navigationStatus(): String =
+        DeveloperNavigationEvidence.status(locateEvidence, currentScreen, visibleBounds.keys)
 
     fun pick(point: Offset) {
         if (!inspect) return
@@ -327,6 +359,13 @@ internal class DeveloperNotesStore(context: Context) {
         if (eq.gainsDb.size != 7) finding("EQ_BAND_COUNT", "P1", "Expected seven bands.")
         if (audio.percent !in 100..250) finding("BOOST_OUT_OF_RANGE", "P1", "Expected target 100-250%.")
         if (error != null) finding("ANNOTATION_STORAGE_ERROR", "P1", "Notes cannot be loaded/written.")
+        if (locateEvidence != null && locateEvidence?.verifiedUtcMs == null &&
+            locateEvidence?.screen == currentScreen && (
+                visibleBounds.containsKey(if (currentScreen == "About") "about.header" else "home.header")
+            )) {
+            finding("DEV_LOCATE_ANCHOR_UNVERIFIED", "P2",
+                "Requested section not observed in measured screen; may be offscreen or no longer mounted.")
+        }
         if (runtimeError != null) finding("RUNTIME_HISTORY_UNAVAILABLE", "P1",
             "Developer runtime evidence is unreadable or cannot be saved; original record retained.")
         runtimeEvents.forEach { event ->
@@ -357,6 +396,12 @@ internal class DeveloperNotesStore(context: Context) {
             .put("evidence", "read-only local state and instrumented UI sections; sound unverified")
             .put("findings", findings(audio, eq))
             .put("runtimeIncidents", JSONObject(DeveloperRuntimeLedger.encode(runtimeEvents)))
+            .put("navigationEvidence", locateEvidence?.let {
+                JSONObject().put("screen", it.screen).put("locator", it.locator)
+                    .put("requestedUtcMs", it.requestedUtcMs)
+                    .put("verifiedUtcMs", it.verifiedUtcMs ?: JSONObject.NULL)
+                    .put("status", navigationStatus())
+            } ?: JSONObject.NULL)
             .put("ownerAnnotations", saved).toString(2)
     }
 

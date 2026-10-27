@@ -34,4 +34,6 @@ Assert-Rejected 'missing monitor measurement' 4 'EXTERNAL_SOURCE_READY' $goodErr
 Assert-Rejected 'legacy queue-only output metric' 4 ($goodOut.Replace('renderConsumed=0','physicalEmitted=0')) $goodErr
 Assert-Rejected 'cannot consume audio that was not enqueued' 4 ($goodOut.Replace('renderConsumed=0','renderConsumed=1')) $goodErr
 Assert-Rejected 'missing render underflow evidence' 4 ($goodOut.Replace('starvedRenderReads=20','starvedFake=20')) $goodErr
-Write-Host 'PASS: no-stimulus independent route validator rejects 14 adversarial false positives; no hardware used.'
+Assert-Rejected 'unrelated virtual application PCM invalidates silence control' 4 ($goodOut.Replace('virtualProcessed=0','virtualProcessed=4800')) $goodErr
+Assert-Rejected 'physical queue contaminated by background PCM' 4 ($goodOut.Replace('physicalQueued=0','physicalQueued=4800')) $goodErr
+Write-Host 'PASS: no-stimulus independent route validator rejects 16 adversarial false positives; no hardware used.'

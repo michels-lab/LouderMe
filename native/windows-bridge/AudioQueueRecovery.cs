@@ -81,10 +81,19 @@ internal sealed class AudioQueueRecovery
             monitor.ReadsWithInsufficientPcm != 1)
             throw new InvalidOperationException("Playback underflow was not observed.");
         byte[] input = new byte[read.Length];
+        if (monitor.PayloadFramesRead != 0)
+            throw new InvalidOperationException("Zero-padded render read was misreported as actual queued PCM.");
         queued.AddSamples(input, 0, input.Length);
         monitor.Read(read, 0, read.Length);
-        if (monitor.ReadsWithInsufficientPcm != 1)
-            throw new InvalidOperationException("Fully supplied output must not count as underflow.");
+        if (monitor.ReadsWithInsufficientPcm != 1 || monitor.PayloadFramesRead != 10)
+            throw new InvalidOperationException("Fully supplied render read did not consume ten real queued frames.");
+        queued.AddSamples(input, 0, format.BlockAlign * 4);
+        monitor.Read(read.AsSpan());
+        if (monitor.ReadsWithInsufficientPcm != 2 || monitor.PayloadFramesRead != 14)
+            throw new InvalidOperationException("Span-based partial read counted silence padding as emitted PCM.");
+        monitor.Read(read.AsSpan());
+        if (monitor.PayloadFramesRead != 14 || monitor.ReadsWithInsufficientPcm != 3)
+            throw new InvalidOperationException("Empty render callback cannot create physical PCM proof.");
         Console.WriteLine("PASS: bounded queue flush, escalation, recovery window and playback starvation observations.");
     }
 }
@@ -98,17 +107,26 @@ internal sealed class MonitoredRenderBuffer : IWaveProvider
 {
     private readonly BufferedWaveProvider _source;
     private long _readsWithInsufficientPcm;
+    private long _realPayloadBytesRead;
 
     public MonitoredRenderBuffer(BufferedWaveProvider source) =>
         _source = source ?? throw new ArgumentNullException(nameof(source));
 
     public WaveFormat WaveFormat => _source.WaveFormat;
     public long ReadsWithInsufficientPcm => Interlocked.Read(ref _readsWithInsufficientPcm);
+    // Conservative lower bound on QUEUED PCM handed to WASAPI's renderer.
+    // NAudio ReadFully zero-pads underflow; only count bytes already in the
+    // queue before this read, never the zero padding. This is NOT acoustic
+    // output or proof that physical speakers moved.
+    public long PayloadFramesRead =>
+        Interlocked.Read(ref _realPayloadBytesRead) / WaveFormat.BlockAlign;
 
     public int Read(byte[] data, int offset, int count)
     {
         int available = _source.BufferedBytes;
         int read = _source.Read(data.AsSpan(offset, count));
+        if (read > 0)
+            Interlocked.Add(ref _realPayloadBytesRead, Math.Min(available, read));
         if (available < count)
             Interlocked.Increment(ref _readsWithInsufficientPcm);
         return read;
@@ -119,6 +137,8 @@ internal sealed class MonitoredRenderBuffer : IWaveProvider
     {
         int available = _source.BufferedBytes;
         int read = _source.Read(data);
+        if (read > 0)
+            Interlocked.Add(ref _realPayloadBytesRead, Math.Min(available, read));
         if (available < data.Length)
             Interlocked.Increment(ref _readsWithInsufficientPcm);
         return read;

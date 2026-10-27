@@ -49,7 +49,7 @@ internal object DeveloperNavigationEvidence {
         renderedLocators: Set<String>,
     ): String {
         if (request == null) return "No navigation requested"
-        if (request.verifiedUtcMs != null) return "Verified on the live rendered control"
+        if (request.verifiedUtcMs != null) return "Verified on-screen at recorded UTC time"
         if (request.screen != currentScreen) return "Waiting for requested screen"
         val root = if (currentScreen == "About") "about.header" else "home.header"
         if (!renderedLocators.contains(root)) return "Waiting for actual screen layout"

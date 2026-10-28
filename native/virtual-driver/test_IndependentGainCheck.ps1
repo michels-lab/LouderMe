@@ -111,6 +111,14 @@ try {
   Assert-Rejected 'inflated physical SPL certification claim' $a $b
 
   $a = Get-Baseline 100; $b = Get-Baseline 150
+  $b.physical_coherence = 1.01
+  Assert-Rejected 'impossible coherence above mathematical maximum one' $a $b
+
+  $a = Get-Baseline 100; $b = Get-Baseline 150
+  $a.render_starved_reads = -1
+  Assert-Rejected 'negative render starvation counter' $a $b
+
+  $a = Get-Baseline 100; $b = Get-Baseline 150
   $b.physical_coherence = '0.99'
   Assert-Rejected 'coherence provided as string' $a $b
 
@@ -266,7 +274,7 @@ try {
   } catch { $wrongSessionRejected = $true }
   if (-not $wrongSessionRejected) { throw 'Wrong caller-supplied lab session ID was accepted.' }
 
-  Write-Host 'PASS: Windows source gain validates session-bound 100/150 records, before/after silence controls and 39+ adversarial fixtures; no audio device used.'
+  Write-Host 'PASS: Windows source gain validates session-bound 100/150 records, before/after silence controls and 41+ adversarial fixtures; no audio device used.'
 } finally {
   Remove-Item -LiteralPath $dir -Recurse -Force -ErrorAction SilentlyContinue
 }

@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 252,
-  "classified_files_total": 248,
-  "docs_content_inspected": 70,
+  "tracked_files_total": 255,
+  "classified_files_total": 251,
+  "docs_content_inspected": 71,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,18 +12,18 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 62,
+    "document": 63,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
-    "source": 88,
-    "test": 29,
+    "source": 89,
+    "test": 30,
     "text_metadata": 2,
     "workflow": 11
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "1d484a67ffcd703ce7c41404053c9a87198dd09d2818533e3921889ce641920d",
+  "inventory_fingerprint": "fb6f47e9d7b3d5240d57de5d8c183c86c812d8f235fcfc1c737198f3d0447a4a",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -108,7 +108,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "4a9b2fea506f26828f1ed07fcd6e4f926caad4bf"
+      "blob": "d90ab5d95e1a779dbe544ceaf8c1f9e65cfdfb9e"
     },
     {
       "path": ".github/workflows/native-physical-lab-manual.yml",
@@ -234,7 +234,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "6cf92fbf9339805c542c3efe0625c272302f8e31"
+      "blob": "07308e156268986255f90f095f255fdbd4af4f42"
     },
     {
       "path": "README.md",
@@ -1266,6 +1266,13 @@
       "blob": "0ce7285fa6fd3cfcfb51a4addc95a83bebac9683"
     },
     {
+      "path": "docs/audits/GRANADA_2026-10-27_LAB_INPUT_IDENTITY.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "98c6bee5e6d7f87a49af3d229a951a9aa9eddac2"
+    },
+    {
       "path": "docs/audits/GRANADA_2026-10-27_LIVE_NAVIGATION_EVIDENCE.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -1413,6 +1420,13 @@
       "blob": "5203a77f40361c5db4aa0236bcf88783f3e06f8a"
     },
     {
+      "path": "native/virtual-driver/LabInputIntegrity.ps1",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "0576e54d73a288e060427a124d05ce7b0a0bca37"
+    },
+    {
       "path": "native/virtual-driver/NoSourceControlCheck.ps1",
       "role": "source",
       "purpose": "code/test implementation",
@@ -1431,7 +1445,7 @@
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "e03ddd449da42e512e3e290b8f9ca478098d33c0"
+      "blob": "a87bf1bd0e2265c21840754bd43bbe097e7c5d18"
     },
     {
       "path": "native/virtual-driver/prepare_sysvad.py",
@@ -1452,7 +1466,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "d6e30207d112d9094bc9c20ec32fc2e67d87a55a"
+      "blob": "207053e2aaa284cdd3e9b8288faee4fccc0c9c8e"
     },
     {
       "path": "native/virtual-driver/test_DefaultRenderGuard.ps1",
@@ -1474,6 +1488,13 @@
       "purpose": "code/test implementation",
       "certainty": "rule",
       "blob": "2ba6f5a1056b51e61da8a1f9e78874774881a94f"
+    },
+    {
+      "path": "native/virtual-driver/test_LabInputIntegrity.ps1",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "69443cc73806974596ca44947d6d4ba68eb44f59"
     },
     {
       "path": "native/virtual-driver/test_NoSourceControlCheck.ps1",

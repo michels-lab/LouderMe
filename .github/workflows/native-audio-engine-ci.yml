@@ -10,6 +10,8 @@ on:
       - 'native/independent-tone/**'
       - 'native/virtual-driver/LabEvidenceDirectory.ps1'
       - 'native/virtual-driver/LabInputIntegrity.ps1'
+      - 'native/virtual-driver/LabProcessGuard.ps1'
+      - 'native/virtual-driver/test_LabProcessGuard.ps1'
       - 'native/virtual-driver/test_LabInputIntegrity.ps1'
       - 'native/virtual-driver/DefaultRenderGuard.ps1'
       - 'native/virtual-driver/test_DefaultRenderGuard.ps1'
@@ -33,6 +35,8 @@ on:
       - 'native/independent-tone/**'
       - 'native/virtual-driver/LabEvidenceDirectory.ps1'
       - 'native/virtual-driver/LabInputIntegrity.ps1'
+      - 'native/virtual-driver/LabProcessGuard.ps1'
+      - 'native/virtual-driver/test_LabProcessGuard.ps1'
       - 'native/virtual-driver/test_LabInputIntegrity.ps1'
       - 'native/virtual-driver/DefaultRenderGuard.ps1'
       - 'native/virtual-driver/test_DefaultRenderGuard.ps1'
@@ -106,6 +110,11 @@ jobs:
         run: |
           pwsh -NoProfile -File native/virtual-driver/test_LabInputIntegrity.ps1
           if ($LASTEXITCODE -ne 0) { throw 'LAB executable provenance/immutable-input contract rejected unsafe source.' }
+      - name: Verify bounded subprocess output and owned cleanup on a synthetic Windows worker
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File native/virtual-driver/test_LabProcessGuard.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'VM subprocess deadline, dual-pipe reading, or child cleanup contract FAILED.' }
       - name: Reject stale LAB evidence directories and overwrite attempts without hardware
         shell: pwsh
         run: |
@@ -188,6 +197,8 @@ jobs:
                               'native/virtual-driver/test_DefaultRenderGuard.ps1',
                               'native/virtual-driver/LabEvidenceDirectory.ps1',
                               'native/virtual-driver/LabInputIntegrity.ps1',
+                              'native/virtual-driver/LabProcessGuard.ps1',
+                              'native/virtual-driver/test_LabProcessGuard.ps1',
                               'native/virtual-driver/test_LabInputIntegrity.ps1',
                               'native/virtual-driver/test_LabEvidenceDirectory.ps1',
                               'native/virtual-driver/run_disposable_lab.ps1',

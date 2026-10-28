@@ -28,6 +28,7 @@ $hardwareId = 'Root\LouderMe_VirtualRender_Lab'
 $instancePattern = 'ROOT\LOUDERME_VIRTUALRENDER_LAB\*'
 $createdInstance = $null
 $cleanupFailure = $null
+. (Join-Path $PSScriptRoot 'LabProcessGuard.ps1')
 
 function Get-LabDevices {
   return @(Get-PnpDevice -ErrorAction Stop |
@@ -40,8 +41,16 @@ function Require-File([string]$file) {
 }
 function Invoke-Bridge([string[]]$BridgeArgs, [string]$Label) {
   Write-Host "Running isolated lab phase: $Label"
-  $lines = @(& dotnet $script:BridgeDll @BridgeArgs 2>&1)
-  $code = $LASTEXITCODE
+  # Unlike synchronous '& dotnet', this launch has a local deadline.
+  # A stalled native bridge cannot consume the whole workflow timeout and
+  # prevent the outer finally from removing the kernel LAB device.
+  $milliseconds = if ($Label -eq 'list-devices') { 15000 } else { 20000 }
+  $result = Invoke-LouderMeLabFiniteProcess -Executable 'dotnet' `
+    -Arguments (@($script:BridgeDll) + $BridgeArgs) -TimeoutMs $milliseconds
+  $lines = @(($result.StdOut + [Environment]::NewLine +
+    $result.StdErr).Split([Environment]::NewLine,
+      [StringSplitOptions]::RemoveEmptyEntries))
+  $code = $result.ExitCode
   $logPath = Join-Path $script:EvidenceDir "$Label.log"
   $ids = @($PhysicalEndpointId)
   if (Get-Variable -Name virtualId -Scope Script -ErrorAction SilentlyContinue) {
@@ -135,8 +144,9 @@ try {
   Write-Host "Installing LAB root device '$hardwareId' in disposable VM only."
   # WDK tools can echo private generated PnP instance IDs in stdout/stderr.
   # Keep only exit status; never upload their raw text to shared Actions logs.
-  & $DevconExe install $inf $hardwareId *> $null
-  if ($LASTEXITCODE -ne 0) {
+  $install = Invoke-LouderMeLabFiniteProcess -Executable $DevconExe `
+    -Arguments @('install', $inf, $hardwareId) -TimeoutMs 45000
+  if ($install.ExitCode -ne 0) {
     throw 'Devcon root-device installation failed; inspect package signing / VM test policy.'
   }
   for ($tries = 0; $tries -lt 30; $tries++) {
@@ -266,10 +276,16 @@ try {
     Write-Warning 'Removing only LouderME LAB-owned device instance (private ID withheld).'
     # pnputil prints the private instance ID by default. Suppress native
     # output while preserving exit-code based rollback acceptance.
-    & pnputil /remove-device "$id" *> $null
-    if ($LASTEXITCODE -ne 0) {
-      $cleanupFailure = 'Failed to remove owned LAB device; revert VM snapshot immediately.'
+    try {
+      $remove = Invoke-LouderMeLabFiniteProcess -Executable 'pnputil.exe' `
+        -Arguments @('/remove-device', $id) -TimeoutMs 30000
+      if ($remove.ExitCode -ne 0) {
+        $cleanupFailure = 'PnPUtil failed to remove owned LAB device; restore VM snapshot.'
+      }
+    } catch {
+      $cleanupFailure = 'PnPUtil cleanup exceeded bounded execution or could not run; restore VM snapshot.'
     }
+
   }
   Start-Sleep -Seconds 1
   if ((Get-LabDevices).Count -ne 0) {

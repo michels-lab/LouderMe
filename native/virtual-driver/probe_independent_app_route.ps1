@@ -22,20 +22,7 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 . (Join-Path $PSScriptRoot 'LabEvidenceDirectory.ps1')
-
-function Make-Process([string]$dll, [string[]]$arguments) {
-  $start = [Diagnostics.ProcessStartInfo]::new('dotnet')
-  $start.ArgumentList.Add([IO.Path]::GetFullPath($dll))
-  foreach ($a in $arguments) { $start.ArgumentList.Add($a) }
-  $start.UseShellExecute = $false
-  $start.CreateNoWindow = $true
-  $start.RedirectStandardOutput = $true
-  $start.RedirectStandardError = $true
-  $p = [Diagnostics.Process]::new()
-  $p.StartInfo = $start
-  if (-not $p.Start()) { throw 'Could not launch isolated lab process.' }
-  return $p
-}
+. (Join-Path $PSScriptRoot 'LabProcessGuard.ps1')
 
 $vm = Get-CimInstance -ClassName Win32_ComputerSystem
 $who = "$($vm.Manufacturer) $($vm.Model)"
@@ -83,8 +70,8 @@ $bridge = $null
 $source = $null
 $bridgeLines = [Collections.Generic.List[string]]::new()
 try {
-  $bridge = Make-Process $BridgeDll @(
-    '--probe-app-route', '--source-id', $VirtualEndpointId,
+  $bridge = Start-LouderMeLabChild -Executable 'dotnet' -DeferStdOutDrain -Arguments @(
+    $BridgeDll, '--probe-app-route', '--source-id', $VirtualEndpointId,
     '--output-id', $PhysicalEndpointId, '--boost', "$BoostPercent",
     '--confirm-experimental'
   )
@@ -92,29 +79,36 @@ try {
   # readiness from a PID or from the presence of a Windows sound icon.
   $ready = $false
   $deadline = [DateTime]::UtcNow.AddSeconds(12)
-  while ([DateTime]::UtcNow -lt $deadline -and -not $bridge.HasExited) {
-    $pending = $bridge.StandardOutput.ReadLineAsync()
+  $readyChars = 0
+  while ([DateTime]::UtcNow -lt $deadline -and -not $bridge.Process.HasExited) {
+    $pending = $bridge.Process.StandardOutput.ReadLineAsync()
     $remaining = [Math]::Max(1, [int]($deadline - [DateTime]::UtcNow).TotalMilliseconds)
     if (-not $pending.Wait($remaining)) { break }
     $line = $pending.Result
     if ($null -eq $line) { break }
+    $readyChars += $line.Length
+    if ($bridgeLines.Count -ge 128 -or $readyChars -gt 32768) {
+      throw 'Bridge readiness log exceeded bounded output; no tone will be started.'
+    }
     $bridgeLines.Add($line)
     if ($line -eq 'EXTERNAL_SOURCE_READY') { $ready = $true; break }
   }
   if (-not $ready) {
     throw 'Bridge did not report actual capture+physical-monitor readiness. No source tone sent.'
   }
+  # Start draining the remaining stdout IMMEDIATELY, while stderr was
+  # already draining from process creation. No WaitForExit can now deadlock
+  # on a full pipe while the independent process emits tone.
+  $bridge.StdOutTask = $bridge.Process.StandardOutput.ReadToEndAsync()
   if ($ExpectNoSource) {
     # Control MUST run the actual full capture window with the correct VM
     # devices, but deliberately NEVER launch the independent tone process.
-    if (-not $bridge.WaitForExit(9000)) {
-      throw 'No-stimulus bridge capture failed to finish its complete time window.'
-    }
+    $negativeOutput = Receive-LouderMeLabChildOutput -Child $bridge -TimeoutMs 9000
     $bridgeStdOut = ($bridgeLines.ToArray() -join [Environment]::NewLine) +
-      [Environment]::NewLine + $bridge.StandardOutput.ReadToEnd()
-    $bridgeStdErr = $bridge.StandardError.ReadToEnd()
+      [Environment]::NewLine + $negativeOutput.StdOut
+    $bridgeStdErr = $negativeOutput.StdErr
     . (Join-Path $PSScriptRoot 'NoSourceControlCheck.ps1')
-    $negative = Test-LouderMeNoSourceControl -ExitCode $bridge.ExitCode `
+    $negative = Test-LouderMeNoSourceControl -ExitCode $negativeOutput.ExitCode `
       -StdOut $bridgeStdOut -StdErr $bridgeStdErr
     $negative['control_phase'] = $ControlPhase
     foreach ($key in $proofIdentity.Keys) { $negative[$key] = $proofIdentity[$key] }
@@ -126,23 +120,19 @@ try {
     Write-Host "PASS: $ControlPhase negative control proved virtual and physical listeners reject missing source PCM."
     return
   }
-  $source = Make-Process $IndependentToneDll @(
-    '--device-id', $VirtualEndpointId, '--external-app-source',
+  $source = Start-LouderMeLabChild -Executable 'dotnet' -Arguments @(
+    $IndependentToneDll, '--device-id', $VirtualEndpointId, '--external-app-source',
     '--confirm-experimental'
   )
-  if (-not $source.WaitForExit(6000)) {
-    throw 'Independent source app did not finish within six seconds.'
+  $sourceResult = Receive-LouderMeLabChildOutput -Child $source -TimeoutMs 6000
+  $sourceOutput = $sourceResult.StdOut
+  $sourceError = $sourceResult.StdErr
+  if ($sourceResult.ExitCode -ne 0) {
+    throw 'Independent app PCM failed; do not accept bridge-only evidence.'
   }
-  $sourceOutput = $source.StandardOutput.ReadToEnd()
-  $sourceError = $source.StandardError.ReadToEnd()
-  if ($source.ExitCode -ne 0) {
-    throw "Independent app PCM failed (exit=$($source.ExitCode)); do not accept bridge-only evidence."
-  }
-  if (-not $bridge.WaitForExit(8000)) {
-    throw 'Bridge did not finish physical monitor/evidence evaluation in time.'
-  }
-  $remainder = $bridge.StandardOutput.ReadToEnd()
-  $bridgeStdErr = $bridge.StandardError.ReadToEnd()
+  $bridgeResult = Receive-LouderMeLabChildOutput -Child $bridge -TimeoutMs 8000
+  $remainder = $bridgeResult.StdOut
+  $bridgeStdErr = $bridgeResult.StdErr
   $all = ($bridgeLines.ToArray() -join [Environment]::NewLine) +
     [Environment]::NewLine + $remainder
   # Logs contain numeric evidence only and must not store actual endpoint
@@ -155,8 +145,8 @@ try {
   # separate-source completion, complete physical WASAPI frame counters,
   # coherent numeric 440 Hz identity, and zero dropped frames.
   . (Join-Path $PSScriptRoot 'PositiveSourceCheck.ps1')
-  $checked = Test-LouderMePositiveSourceRoute -ExitCode $bridge.ExitCode `
-    -StdOut $all -StdErr $bridgeStdErr -SourceExitCode $source.ExitCode `
+  $checked = Test-LouderMePositiveSourceRoute -ExitCode $bridgeResult.ExitCode `
+    -StdOut $all -StdErr $bridgeStdErr -SourceExitCode $sourceResult.ExitCode `
     -SourceStdOut $sourceOutput -SourceStdErr $sourceError
   $result = [ordered]@{
     status = 'PASS'
@@ -184,14 +174,9 @@ try {
   Write-Host 'PASS: independent Windows app process -> real installed virtual render -> own DSP -> physical WASAPI monitor.'
   Write-Warning 'NOT proof of production driver signing, universal third-party audio or acoustic SPL.'
 } finally {
-  # Kill ONLY the PIDs created by THIS lab test (never every dotnet process).
-  foreach ($process in @($source, $bridge)) {
-    if ($null -ne $process) {
-      if (-not $process.HasExited) {
-        $process.Kill($true)
-        [void]$process.WaitForExit(3000)
-      }
-      $process.Dispose()
-    }
+  # Kill ONLY these two child process trees, even on readiness timeout,
+  # filled stdout/stderr pipes or an error in source/physical measurement.
+  foreach ($child in @($source, $bridge)) {
+    if ($null -ne $child) { Stop-LouderMeLabChild -Child $child }
   }
 }

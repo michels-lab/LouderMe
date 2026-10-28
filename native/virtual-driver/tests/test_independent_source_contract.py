@@ -44,7 +44,7 @@ class IndependentSourceBoundaryTests(unittest.TestCase):
         for marker in ('EXTERNAL_SOURCE_READY', 'independent-source-result-',
                        'physical_matched440_amplitude', '--probe-app-route',
                        'Test-LouderMePositiveSourceRoute', '-StdOut $all',
-                       '-ExitCode $bridge.ExitCode', '-SourceExitCode $source.ExitCode',
+                       '-ExitCode $bridgeResult.ExitCode', '-SourceExitCode $sourceResult.ExitCode',
                        '-SourceStdOut $sourceOutput', 'separate'):
             self.assertIn(marker, text)
         for marker in ('EXTERNAL_APP_TONE_FINISHED', 'Physical LAB proof:',
@@ -62,10 +62,15 @@ class IndependentSourceBoundaryTests(unittest.TestCase):
         self.assertIn('playbackReader.PayloadFramesRead', bridge)
         self.assertIn('PayloadFramesRead =>', monitor)
         self.assertNotIn('physicalEmitted=', bridge)
-        self.assertIn('$bridge.HasExited', text)
-        self.assertIn('$source.ExitCode -ne 0', text)
+        self.assertIn('$bridge.Process.HasExited', text)
+        self.assertIn('$sourceResult.ExitCode -ne 0', text)
         self.assertIn('Get-CimInstance -ClassName Win32_ComputerSystem', text)
-        self.assertIn('$process.Kill($true)', text)
+        self.assertIn('Stop-LouderMeLabChild -Child $child', text)
+        helper = (ROOT / 'native/virtual-driver/LabProcessGuard.ps1').read_text()
+        self.assertIn('$process.Kill($true)', helper)
+        self.assertIn('$child.StandardError.ReadToEndAsync()', helper)
+        self.assertIn('Receive-LouderMeLabChildOutput', text)
+        self.assertIn('EXTERNAL_SOURCE_READY', text)
         self.assertNotIn('Stop-Process -Name', text)
 
     def test_silence_control_is_distinct_full_window_and_fail_closed(self):

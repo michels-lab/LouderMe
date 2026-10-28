@@ -38,7 +38,7 @@ function Test-LouderMeNoSourceControl {
   $consumed = [long]::Parse($m.Groups['consumed'].Value, $culture)
   $starved = [long]::Parse($m.Groups['starved'].Value, $culture)
   if (-not [double]::IsFinite($tone) -or $tone -lt 0 -or $tone -gt 0.003 -or
-      -not [double]::IsFinite($coherence) -or $coherence -lt 0 -or $coherence -gt 1.05 -or
+      -not [double]::IsFinite($coherence) -or $coherence -lt 0 -or $coherence -gt 1.0 -or
       $frames -le 0 -or $drops -ne 0 -or $consumed -gt $queued -or
       $virtual -ne 0 -or $queued -ne 0 -or $consumed -ne 0 -or
       $starved -lt 0) {

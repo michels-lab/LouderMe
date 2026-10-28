@@ -85,7 +85,8 @@ class IndependentSourceBoundaryTests(unittest.TestCase):
         self.assertIn("Test-LouderMeNoSourceControl", runner)
         self.assertIn("return", runner)
         self.assertIn("Assert-Rejected", fixture)
-        self.assertIn("16 adversarial", fixture)
+        self.assertIn("17 adversarial", fixture)
+        self.assertIn("coherence above mathematical maximum", fixture)
 
     def test_disposable_vm_and_explicit_manual_audio_proof_mandatory(self):
         text = LAB.read_text()

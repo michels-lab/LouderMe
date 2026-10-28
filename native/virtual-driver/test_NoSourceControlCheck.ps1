@@ -28,6 +28,7 @@ Assert-Rejected 'unexpected independent PASS' 4 ($goodOut+"PASS: LAB independent
 Assert-Rejected 'preexisting physical 440 tone contamination' 4 ($goodOut.Replace('matched440=0.00001', 'matched440=0.01800')) $goodErr
 Assert-Rejected 'no physical listener frames' 4 ($goodOut.Replace('frames=96000', 'frames=0')) $goodErr
 Assert-Rejected 'dropped physical or virtual audio samples' 4 ($goodOut.Replace('dropped=0', 'dropped=4')) $goodErr
+Assert-Rejected 'coherence above mathematical maximum' 4 ($goodOut.Replace('coherence=0.012', 'coherence=1.01')) $goodErr
 Assert-Rejected 'nonfinite coherence' 4 ($goodOut.Replace('coherence=0.012', 'coherence=NaN')) $goodErr
 Assert-Rejected 'duplicate unrelated physical measurement' 4 ($goodOut + $goodOut) $goodErr
 Assert-Rejected 'missing monitor measurement' 4 'EXTERNAL_SOURCE_READY' $goodErr
@@ -36,4 +37,4 @@ Assert-Rejected 'cannot consume audio that was not enqueued' 4 ($goodOut.Replace
 Assert-Rejected 'missing render underflow evidence' 4 ($goodOut.Replace('starvedRenderReads=20','starvedFake=20')) $goodErr
 Assert-Rejected 'unrelated virtual application PCM invalidates silence control' 4 ($goodOut.Replace('virtualProcessed=0','virtualProcessed=4800')) $goodErr
 Assert-Rejected 'physical queue contaminated by background PCM' 4 ($goodOut.Replace('physicalQueued=0','physicalQueued=4800')) $goodErr
-Write-Host 'PASS: no-stimulus independent route validator rejects 16 adversarial false positives; no hardware used.'
+Write-Host 'PASS: no-stimulus independent route validator rejects 17 adversarial false positives; no hardware used.'

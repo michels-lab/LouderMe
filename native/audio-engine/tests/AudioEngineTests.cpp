@@ -269,8 +269,10 @@ void limiterEngagementAndSafeBoundaries() {
     for (const float v : pcm)
         check(std::isfinite(v) && v >= -1.0f && v <= 1.0f,
               "engaging Boost exceeded bounded float PCM");
-    check(pcm.back() < 1.0f && pcm.back() > 0.88f,
-          "active Boost bypassed the soft limiter");
+    float limited = 0.4f; // 250% pre-limiter -> 1.0 peak
+    engine.process(&limited, 1);
+    check(limited > 0.90f && limited < 0.995f,
+          "active Boost did not engage the soft knee at 0 dBFS");
     engine.setBoostEnabled(false);
     std::vector<float> off(rate, 0.99f);
     engine.process(off.data(), off.size());

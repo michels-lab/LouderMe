@@ -144,7 +144,8 @@ function Test-LouderMeIndependentGain {
       }
       $pcmCounters[$field] = [double]$value
     }
-    if ($pcmCounters.physical_monitor_frames -lt 44100 -or
+    if ($pcmCounters.render_starved_reads -lt 0 -or
+        $pcmCounters.physical_monitor_frames -lt 44100 -or
         $pcmCounters.virtual_processed_frames -lt 44100 -or
         $pcmCounters.physical_queued_frames -lt 44100 -or
         $pcmCounters.render_consumed_frames -lt 44100 -or
@@ -158,7 +159,7 @@ function Test-LouderMeIndependentGain {
     $amp = [double]$record.physical_matched440_amplitude
     $coherence = [double]$record.physical_coherence
     if ($amp -le 0 -or $amp -ge 0.15 -or
-        $coherence -lt 0.50 -or $coherence -gt 1.05) {
+        $coherence -lt 0.50 -or $coherence -gt 1.0) {
       throw "Invalid physical 440 Hz amplitude/coherence at $boost percent boost."
     }
     $m[$boost] = $amp

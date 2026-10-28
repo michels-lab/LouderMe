@@ -34,6 +34,7 @@ private:
         double tick(double x) noexcept;
     };
     void configureFilters() noexcept;
+    void configureLimiterTarget() noexcept;
     int sampleRate_;
     int channels_;
     bool boostEnabled_{false};
@@ -45,6 +46,10 @@ private:
     double currentEqMix_{0.0};
     double targetEqMix_{0.0};
     double smoothingCoefficient_;
+    // Limit only when non-flat processing is active, fade its engagement to
+    // avoid an instantaneous crest change when Boost/EQ toggles.
+    double limiterMix_{0.0};
+    double targetLimiterMix_{0.0};
     std::array<float, BandCount> bandGainsDb_{};
     std::vector<std::array<Biquad, BandCount>> filters_;
     // Preallocated previous EQ bank permits click-safe in-flight band changes.

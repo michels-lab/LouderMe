@@ -40,8 +40,10 @@ class DefaultRenderVMGuardTests(unittest.TestCase):
         ):
             self.assertIn(required, LAB)
         first_check = LAB.index("$defaultBefore = Get-LouderMeDefaultRenderFingerprint")
-        first_install = LAB.index("& $DevconExe install")
+        first_install = LAB.index('Invoke-LouderMeLabFiniteProcess -Executable $DevconExe')
         self.assertLess(first_check, first_install)
+        self.assertIn("-TimeoutMs 45000", LAB)
+        self.assertIn("-TimeoutMs 30000", LAB)
         after_install = LAB.index("$defaultAfterInstall = Get-LouderMeDefaultRenderFingerprint")
         first_probe = LAB.index("'--probe-virtual'")
         self.assertLess(after_install, first_probe)

@@ -35,11 +35,13 @@ AudioEngine::AudioEngine(int rate, int channels)
 void AudioEngine::setBoostEnabled(bool enabled) noexcept {
     boostEnabled_ = enabled;
     targetGain_ = enabled ? boostPercent_ / 100.0 : 1.0;
+    configureLimiterTarget();
 }
 
 void AudioEngine::setBoostPercent(int percent) noexcept {
     boostPercent_ = std::clamp(percent, 100, 250);
     targetGain_ = boostEnabled_ ? boostPercent_ / 100.0 : 1.0;
+    configureLimiterTarget();
 }
 
 void AudioEngine::setEqEnabled(bool enabled) noexcept {
@@ -50,6 +52,7 @@ void AudioEngine::setEqEnabled(bool enabled) noexcept {
     if (enabled && !eqEnabled_ && currentEqMix_ == 0.0) reset();
     eqEnabled_ = enabled;
     targetEqMix_ = enabled ? 1.0 : 0.0;
+    configureLimiterTarget();
 }
 
 void AudioEngine::setEqBandsDb(
@@ -69,6 +72,7 @@ void AudioEngine::setEqBandsDb(
         currentBandTransition_ = 1.0;
     }
     bandGainsDb_ = next;
+    configureLimiterTarget();
     configureFilters();
 }
 
@@ -98,6 +102,16 @@ double AudioEngine::Biquad::tick(double input) noexcept {
     return output;
 }
 
+void AudioEngine::configureLimiterTarget() noexcept {
+    // A 100% Boost, inactive EQ or active but FLAT EQ is bypass.
+    // No limiter should compress the source near 0 dBFS in that state.
+    const bool boosting = boostEnabled_ && boostPercent_ > 100;
+    const bool shapedEq = eqEnabled_ && std::any_of(
+        bandGainsDb_.begin(), bandGainsDb_.end(),
+        [](float gain) { return gain != 0.0f; });
+    targetLimiterMix_ = boosting || shapedEq ? 1.0 : 0.0;
+}
+
 void AudioEngine::configureFilters() noexcept {
     for (auto& channel : filters_)
         for (std::size_t band = 0; band < BandCount; ++band)
@@ -118,6 +132,9 @@ void AudioEngine::process(float* samples, std::size_t frames) noexcept {
     for (std::size_t frame = 0; frame < frames; ++frame) {
         currentGain_ += smoothingCoefficient_ * (targetGain_ - currentGain_);
         currentEqMix_ += smoothingCoefficient_ * (targetEqMix_ - currentEqMix_);
+        limiterMix_ += smoothingCoefficient_ * (targetLimiterMix_ - limiterMix_);
+        if (std::abs(targetLimiterMix_ - limiterMix_) < 1e-7)
+            limiterMix_ = targetLimiterMix_;
         // Snap only when inaudibly close so a fully bypassed EQ uses no
         // biquad work and never drifts from bit-exact dry samples.
         if (std::abs(targetEqMix_ - currentEqMix_) < 1e-7)
@@ -143,8 +160,15 @@ void AudioEngine::process(float* samples, std::size_t frames) noexcept {
                 }
                 value = dry + currentEqMix_ * (wet - dry);
             }
-            samples[index] = static_cast<float>(
-                limitOutput(value * currentGain_));
+            const double gained = value * currentGain_;
+            // At true unity/flat bypass preserve full-scale input EXACTLY;
+            // the previous always-on knee compressed valid 0.9..1.0 PCM.
+            // Fade in soft limiting with processing to avoid a knee jump
+            // when changing presets, while still respecting [-1, 1].
+            const double output = limiterMix_ == 0.0 ? gained :
+                gained + limiterMix_ * (limitOutput(gained) - gained);
+            samples[index] = static_cast<float>(std::clamp(
+                std::isfinite(output) ? output : 0.0, -1.0, 1.0));
         }
     }
 }

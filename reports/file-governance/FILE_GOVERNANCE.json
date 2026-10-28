@@ -25,8 +25,8 @@
     "POTENTIAL_UNLOGGED_CHANGES": 1
   },
   "finding_total": 1,
-  "inventory_fingerprint": "33223318fe02d1a1380864737cc7fd24ba2878f0cbff460f8f31a7752a03a241",
-  "evidence_fingerprint": "1f37f96d63d7cc5ea96267b6b22dc4b35c236507bb8a9617a9fccee15b481886",
+  "inventory_fingerprint": "6ec85b536b5b62e1549a50d646f5feb5fb417ddc79600c36b4b12cb5a6943df7",
+  "evidence_fingerprint": "ef1d604ae3e394269240cf3ef4a4d4155d47875596417f0972742445a3091dc8",
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/chatgpt-task.yml",
@@ -1461,7 +1461,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "bbaac8118327b2495e13e68a3af91754ce23f4a4"
+      "blob": "b3a29f32d6e0d9847b4c9ba5fe2f381f29f24aee"
     },
     {
       "path": "native/virtual-driver/PositiveSourceCheck.ps1",
@@ -1538,7 +1538,7 @@
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "1c544fb803ed55c8da3cd4b21b1fc9e4e4a1a14b"
+      "blob": "42ce01a906000554404db78cd4b7653cf17c54ed"
     },
     {
       "path": "native/virtual-driver/test_PositiveSourceCheck.ps1",
@@ -1559,7 +1559,7 @@
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "22e43b26f62156caf5181acf015308020bf6f84a"
+      "blob": "0aa67eb785aff943e1b200e0be3f38b8d8b69d52"
     },
     {
       "path": "native/virtual-driver/tests/test_prepare_sysvad.py",
@@ -1823,11 +1823,11 @@
   ],
   "findings": [
     {
-      "id": "353a78cd94fb5509",
+      "id": "40c8a5320488e569",
       "code": "POTENTIAL_UNLOGGED_CHANGES",
       "severity": "review",
       "path": "PROJECT_LOG.md",
-      "observation": "2 implementation/config paths changed since this log's last commit; examples: native/virtual-driver/IndependentGainCheck.ps1, native/virtual-driver/test_IndependentGainCheck.ps1",
+      "observation": "5 implementation/config paths changed since this log's last commit; examples: native/virtual-driver/IndependentGainCheck.ps1, native/virtual-driver/NoSourceControlCheck.ps1, native/virtual-driver/test_IndependentGainCheck.ps1, native/virtual-driver/test_NoSourceControlCheck.ps1, native/virtual-driver/tests/test_independent_source_contract.py",
       "recommendation": "Inspect diffs and reconcile only meaningful decisions/results in the canonical log",
       "state": "REVIEW_REQUIRED"
     }

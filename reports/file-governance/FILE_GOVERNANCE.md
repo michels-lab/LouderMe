@@ -27,7 +27,7 @@ Tracked: 260; classified: 256; readable documents: 74; above read cap: 0; findin
 
 ## Findings (human review required)
 
-- **REVIEW / POTENTIAL_UNLOGGED_CHANGES** PROJECT_LOG.md: 2 implementation/config paths changed since this log's last commit; examples: native/virtual-driver/IndependentGainCheck.ps1, native/virtual-driver/test_IndependentGainCheck.ps1. Next: Inspect diffs and reconcile only meaningful decisions/results in the canonical log (ID 353a78cd94fb5509)
+- **REVIEW / POTENTIAL_UNLOGGED_CHANGES** PROJECT_LOG.md: 5 implementation/config paths changed since this log's last commit; examples: native/virtual-driver/IndependentGainCheck.ps1, native/virtual-driver/NoSourceControlCheck.ps1, native/virtual-driver/test_IndependentGainCheck.ps1, native/virtual-driver/test_NoSourceControlCheck.ps1, native/virtual-driver/tests/test_independent_source_contract.py. Next: Inspect diffs and reconcile only meaningful decisions/results in the canonical log (ID 40c8a5320488e569)
 
 Complete path → purpose/role/certainty list lives in FILE_GOVERNANCE.json. SUMMARY.json has counts only for master polling.
 A dated file, duplicate, or suspicious name is an **investigation candidate**, not unwanted material.

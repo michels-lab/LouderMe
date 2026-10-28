@@ -21,10 +21,12 @@
     "text_metadata": 2,
     "workflow": 11
   },
-  "finding_counts": {},
-  "finding_total": 0,
-  "inventory_fingerprint": "1deff6d61d9af4ad2f55ea2d4c8579e220618334e4bd61a266cef8362246e35b",
-  "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "finding_counts": {
+    "POTENTIAL_UNLOGGED_CHANGES": 1
+  },
+  "finding_total": 1,
+  "inventory_fingerprint": "426c716d2735095827d5167a789a52ea5202186036ca3d4e8890b95b28123525",
+  "evidence_fingerprint": "1f37f96d63d7cc5ea96267b6b22dc4b35c236507bb8a9617a9fccee15b481886",
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/chatgpt-task.yml",
@@ -1424,7 +1426,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "88901695749e55403e807a698ad363b367fae544"
+      "blob": "0542726df6ddaf0133aee7155b5a4652f756e8f6"
     },
     {
       "path": "native/virtual-driver/LabEvidenceDirectory.ps1",
@@ -1501,7 +1503,7 @@
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "e227d4f25c1bfa97df12fc0b36673f5858fc9241"
+      "blob": "b68d61f2c6b9cf3962aebeea83eb3d6f1507f05b"
     },
     {
       "path": "native/virtual-driver/test_LabEvidenceDirectory.ps1",
@@ -1812,7 +1814,17 @@
       "blob": "724f2c9b5eb8b069e266eb1619375c97628d9202"
     }
   ],
-  "findings": [],
+  "findings": [
+    {
+      "id": "353a78cd94fb5509",
+      "code": "POTENTIAL_UNLOGGED_CHANGES",
+      "severity": "review",
+      "path": "PROJECT_LOG.md",
+      "observation": "2 implementation/config paths changed since this log's last commit; examples: native/virtual-driver/IndependentGainCheck.ps1, native/virtual-driver/test_IndependentGainCheck.ps1",
+      "recommendation": "Inspect diffs and reconcile only meaningful decisions/results in the canonical log",
+      "state": "REVIEW_REQUIRED"
+    }
+  ],
   "untracked_audited": false,
   "ignored_audited": false,
   "binary_contents_audited": false,

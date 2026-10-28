@@ -95,6 +95,17 @@ if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
 # default even though the app NEVER asks to change that setting. Snapshot
 # the current Multimedia default BEFORE any privileged PnP operation.
 . (Join-Path $PSScriptRoot 'DefaultRenderGuard.ps1')
+. (Join-Path $PSScriptRoot 'LabInputIntegrity.ps1')
+$inputSnapshot = New-LouderMeLabInputSnapshot -Files ([ordered]@{
+  INF = $inf
+  CAT = $cat
+  SYS = $sys
+  BRIDGE = $BridgeDll
+  NATIVE_DSP = $dspDll
+  INDEPENDENT_TONE = $IndependentToneDll
+  DEVCON = $DevconExe
+})
+Assert-LouderMeLabInputsUnchanged -Snapshot $inputSnapshot -Phase 'before first driver operation'
 $defaultBefore = Get-LouderMeDefaultRenderFingerprint -BridgeDll $BridgeDll
 Write-Host 'Preflight: existing Windows default multimedia playback identity captured (SHA256 only).'
 
@@ -116,12 +127,15 @@ $metadata = @(
   'PRODUCTION_SIGNING=NOT_VERIFIED',
   "DEFAULT_RENDER_SHA256_BEFORE=$defaultBefore",
   'WINDOWS_DEFAULT_DEVICE_CHANGE=NOT_REQUESTED'
-)
+) + @(Get-LouderMeLabInputMetadata -Snapshot $inputSnapshot)
 Write-LouderMeLabTextOnce -Path (Join-Path $evidence 'lab-metadata.txt') -Content (($metadata -join [Environment]::NewLine) + [Environment]::NewLine)
 
 try {
+  Assert-LouderMeLabInputsUnchanged -Snapshot $inputSnapshot -Phase 'immediately before driver install'
   Write-Host "Installing LAB root device '$hardwareId' in disposable VM only."
-  & $DevconExe install $inf $hardwareId
+  # WDK tools can echo private generated PnP instance IDs in stdout/stderr.
+  # Keep only exit status; never upload their raw text to shared Actions logs.
+  & $DevconExe install $inf $hardwareId *> $null
   if ($LASTEXITCODE -ne 0) {
     throw 'Devcon root-device installation failed; inspect package signing / VM test policy.'
   }
@@ -136,12 +150,13 @@ try {
   if (-not $createdInstance) {
     throw 'Virtual LAB PnP device did not become healthy within 30 seconds.'
   }
-  Write-Host "Installed only new virtual LAB instance: $createdInstance"
+  Write-Host 'Installed exactly one new virtual LAB instance (private Windows PnP ID withheld).'
   # Abort BEFORE opening capture/physical speaker if PnP auto-switched the
   # user's default render endpoint during driver installation.
   $defaultAfterInstall = Get-LouderMeDefaultRenderFingerprint -BridgeDll $BridgeDll
   Assert-LouderMeDefaultRenderUnchanged -Expected $defaultBefore -Actual $defaultAfterInstall -Phase 'driver installation'
 
+  Assert-LouderMeLabInputsUnchanged -Snapshot $inputSnapshot -Phase 'before WASAPI endpoint discovery'
   $list = @(Invoke-Bridge -BridgeArgs @('--list-devices') -Label 'list-devices')
   $virtualIds = @()
   $physicalFound = $false
@@ -163,8 +178,10 @@ try {
     throw 'Selected separate PHYSICAL playback endpoint was not listed by WASAPI.'
   }
   $virtualId = $virtualIds[0]
+  Assert-LouderMeLabInputsUnchanged -Snapshot $inputSnapshot -Phase 'before virtual tone'
   [void](Invoke-Bridge -BridgeArgs @('--probe-virtual', '--source-id',
     $virtualId, '--confirm-experimental') -Label 'virtual-440hz')
+  Assert-LouderMeLabInputsUnchanged -Snapshot $inputSnapshot -Phase 'before physical tone'
   [void](Invoke-Bridge -BridgeArgs @('--probe-route', '--source-id',
     $virtualId, '--output-id', $PhysicalEndpointId, '--boost', '150',
     '--confirm-experimental') -Label 'physical-route-440hz')
@@ -180,6 +197,7 @@ try {
     }
   }
   # Real no-stimulus negative proof must pass BEFORE either renderer runs.
+  Assert-LouderMeLabInputsUnchanged -Snapshot $inputSnapshot -Phase 'before silence control'
   pwsh -NoProfile -File $separateProbe -BridgeDll $BridgeDll -IndependentToneDll $IndependentToneDll `
     -VirtualEndpointId $virtualId -PhysicalEndpointId $PhysicalEndpointId `
     -LabConsent $LabConsent -EvidenceDir $evidence -SessionId $sessionId -BoostPercent 100 `
@@ -189,6 +207,7 @@ try {
     throw 'Silence baseline failed; external source gain measurement forbidden.'
   }
   foreach ($percent in @(100, 150)) {
+    Assert-LouderMeLabInputsUnchanged -Snapshot $inputSnapshot -Phase "before independent app $percent-percent probe"
     pwsh -NoProfile -File $separateProbe -BridgeDll $BridgeDll -IndependentToneDll $IndependentToneDll `
       -VirtualEndpointId $virtualId -PhysicalEndpointId $PhysicalEndpointId `
       -LabConsent $LabConsent -EvidenceDir $evidence -SessionId $sessionId -BoostPercent $percent
@@ -197,6 +216,7 @@ try {
       throw "Independent APP PCM at $percent% did not reach the virtual→native DSP→physical monitor."
     }
   }
+  Assert-LouderMeLabInputsUnchanged -Snapshot $inputSnapshot -Phase 'after both independent source probes'
   # The SAME real virtual and physical devices must reject silence again
   # after the sources exit, or 440Hz contamination makes the ratio suspect.
   pwsh -NoProfile -File $separateProbe -BridgeDll $BridgeDll -IndependentToneDll $IndependentToneDll `
@@ -212,6 +232,7 @@ try {
   . $validator
   # Real measured source evidence must pass the same data guard exercised in
   # native CI adversarial fixtures. Only accepted comparisons can leave a PASS.
+  Assert-LouderMeLabInputsUnchanged -Snapshot $inputSnapshot -Phase 'after final silence control'
   $ratio = Test-LouderMeIndependentGain -EvidenceDir $evidence -ExpectedSessionId $sessionId
   Write-LouderMeLabTextOnce -Path (Join-Path $evidence 'independent-app-boost-ratio.txt') -Content ($ratio.ToString('F3', [Globalization.CultureInfo]::InvariantCulture) + [Environment]::NewLine)
   # Even after a successful measurement, a Windows audio policy change by
@@ -242,10 +263,12 @@ try {
   }
   foreach ($device in $toRemove) {
     $id = $device.InstanceId
-    Write-Warning "Removing ONLY LouderME LAB device instance: $id"
-    & pnputil /remove-device "$id"
+    Write-Warning 'Removing only LouderME LAB-owned device instance (private ID withheld).'
+    # pnputil prints the private instance ID by default. Suppress native
+    # output while preserving exit-code based rollback acceptance.
+    & pnputil /remove-device "$id" *> $null
     if ($LASTEXITCODE -ne 0) {
-      $cleanupFailure = "Failed to remove LAB device $id; revert VM snapshot immediately."
+      $cleanupFailure = 'Failed to remove owned LAB device; revert VM snapshot immediately.'
     }
   }
   Start-Sleep -Seconds 1
@@ -261,6 +284,15 @@ try {
     Write-LouderMeLabTextOnce -Path (Join-Path $evidence 'default-render-identity-after-cleanup.txt') -Content ("DEFAULT_RENDER_UNCHANGED=PASS" + [Environment]::NewLine + "SHA256=$defaultAfterCleanup" + [Environment]::NewLine)
   } catch {
     $cleanupFailure = "Windows default playback was changed or cannot be verified after cleanup: $($_.Exception.Message). Restore VM snapshot."
+  }
+  # Even a PASS from the DSP/gain verifier is invalid if any shipped test
+  # input was replaced before teardown. Check after cleaning the device so
+  # this integrity failure never leaves a kernel instance installed.
+  try {
+    Assert-LouderMeLabInputsUnchanged -Snapshot $inputSnapshot -Phase 'after driver cleanup'
+    Write-LouderMeLabTextOnce -Path (Join-Path $evidence 'lab-input-integrity-after-cleanup.txt') -Content ('INPUTS_UNCHANGED=PASS' + [Environment]::NewLine)
+  } catch {
+    $cleanupFailure = 'A critical lab binary changed or became unobservable during session; restore VM snapshot.'
   }
   if ($cleanupFailure) { throw $cleanupFailure }
   Write-Host 'LAB root device removed; original default multimedia playback SHA256 retained. Restore VM snapshot.'

@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 259,
-  "classified_files_total": 255,
-  "docs_content_inspected": 73,
+  "tracked_files_total": 260,
+  "classified_files_total": 256,
+  "docs_content_inspected": 74,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,7 +12,7 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 65,
+    "document": 66,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
@@ -25,7 +25,7 @@
     "POTENTIAL_UNLOGGED_CHANGES": 1
   },
   "finding_total": 1,
-  "inventory_fingerprint": "426c716d2735095827d5167a789a52ea5202186036ca3d4e8890b95b28123525",
+  "inventory_fingerprint": "33223318fe02d1a1380864737cc7fd24ba2878f0cbff460f8f31a7752a03a241",
   "evidence_fingerprint": "1f37f96d63d7cc5ea96267b6b22dc4b35c236507bb8a9617a9fccee15b481886",
   "files": [
     {
@@ -1301,6 +1301,13 @@
       "purpose": "manual/decision/report/historical note",
       "certainty": "inferred",
       "blob": "455b63da032f2a6dd6e6a9a8cd02ced5084cb518"
+    },
+    {
+      "path": "docs/audits/GRANADA_2026-10-27_PHYSICAL_AUDIO_PROOF_INVARIANTS.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "d06e7ff1556f511d97b9155328e71ab5db6dcefe"
     },
     {
       "path": "docs/audits/GRANADA_2026-10-27_RENDER_CONSUMPTION_PROVENANCE.md",

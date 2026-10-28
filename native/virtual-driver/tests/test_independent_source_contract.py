@@ -68,7 +68,7 @@ class IndependentSourceBoundaryTests(unittest.TestCase):
         self.assertIn('Stop-LouderMeLabChild -Child $child', text)
         helper = (ROOT / 'native/virtual-driver/LabProcessGuard.ps1').read_text()
         self.assertIn('$process.Kill($true)', helper)
-        self.assertIn('$process.StandardError.ReadToEndAsync()', helper)
+        self.assertIn('$child.StandardError.ReadToEndAsync()', helper)
         self.assertIn('Receive-LouderMeLabChildOutput', text)
         self.assertIn('EXTERNAL_SOURCE_READY', text)
         self.assertNotIn('Stop-Process -Name', text)

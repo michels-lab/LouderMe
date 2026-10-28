@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 255,
-  "classified_files_total": 251,
-  "docs_content_inspected": 71,
+  "tracked_files_total": 256,
+  "classified_files_total": 252,
+  "docs_content_inspected": 72,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,7 +12,7 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 63,
+    "document": 64,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
@@ -23,7 +23,7 @@
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "fb6f47e9d7b3d5240d57de5d8c183c86c812d8f235fcfc1c737198f3d0447a4a",
+  "inventory_fingerprint": "85d732a7f229ba245c3777b58fa0061fefd0f992ab0b773c53bec776a4df5839",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -234,7 +234,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "07308e156268986255f90f095f255fdbd4af4f42"
+      "blob": "fe2f6520821af1e00f4df79e035d641e119d352f"
     },
     {
       "path": "README.md",
@@ -1280,6 +1280,13 @@
       "blob": "f09bcd244f0b3613d51e8c108a70a620b0560cb0"
     },
     {
+      "path": "docs/audits/GRANADA_2026-10-27_NATIVE_TRANSPARENT_BYPASS.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "c27f851c2eaeb127e26aeee2d237ec0b76211d4e"
+    },
+    {
       "path": "docs/audits/GRANADA_2026-10-27_NATIVE_WASAPI_REUSABLE_PCM.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -1347,7 +1354,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "012b689d3788156ca5cfd8c3043fde5eac8408d4"
+      "blob": "b7036bbec35ff6cce00f629549e12ae677c50ff2"
     },
     {
       "path": "native/audio-engine/include/louderme/AudioEngineC.h",
@@ -1361,7 +1368,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "9c216ace51664a8585e8103c94e55686ab63422e"
+      "blob": "e83bf628423ff0bfd62515eb8cec35e7f6955632"
     },
     {
       "path": "native/audio-engine/src/AudioEngineC.cpp",
@@ -1382,7 +1389,7 @@
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "ad3af85ecce05bfde16ad648c7901fc45a84262a"
+      "blob": "e83fd17c7de1277600f505af0f02d6709dfb9127"
     },
     {
       "path": "native/independent-tone/LouderMeIndependentTone.csproj",

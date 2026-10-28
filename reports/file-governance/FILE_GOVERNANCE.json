@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 256,
-  "classified_files_total": 252,
-  "docs_content_inspected": 72,
+  "tracked_files_total": 259,
+  "classified_files_total": 255,
+  "docs_content_inspected": 73,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,18 +12,18 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 64,
+    "document": 65,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
-    "source": 89,
-    "test": 30,
+    "source": 90,
+    "test": 31,
     "text_metadata": 2,
     "workflow": 11
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "85d732a7f229ba245c3777b58fa0061fefd0f992ab0b773c53bec776a4df5839",
+  "inventory_fingerprint": "1deff6d61d9af4ad2f55ea2d4c8579e220618334e4bd61a266cef8362246e35b",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -108,7 +108,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "d90ab5d95e1a779dbe544ceaf8c1f9e65cfdfb9e"
+      "blob": "57ff723202f9aeb6b70622e82a85bd28892240b0"
     },
     {
       "path": ".github/workflows/native-physical-lab-manual.yml",
@@ -234,7 +234,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "fe2f6520821af1e00f4df79e035d641e119d352f"
+      "blob": "074f9ef3394bb252864e1145a3947933328a361e"
     },
     {
       "path": "README.md",
@@ -1245,6 +1245,13 @@
       "blob": "4ae363c6e91e4d7242214f06edd7cf0a88b7c147"
     },
     {
+      "path": "docs/audits/GRANADA_2026-10-27_BOUNDED_LAB_PROCESS_LIFECYCLE.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "fd5d47cc792ed34dd86004f32fd96d1762ac627a"
+    },
+    {
       "path": "docs/audits/GRANADA_2026-10-27_DEFAULT_RENDER_LAB_GUARD.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -1434,6 +1441,13 @@
       "blob": "0576e54d73a288e060427a124d05ce7b0a0bca37"
     },
     {
+      "path": "native/virtual-driver/LabProcessGuard.ps1",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "c0217140b55921025d43606c4d59e38f82b7e700"
+    },
+    {
       "path": "native/virtual-driver/NoSourceControlCheck.ps1",
       "role": "source",
       "purpose": "code/test implementation",
@@ -1466,14 +1480,14 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "71d1e98ace4be0b4fc62f801c60b3803a6a7f24e"
+      "blob": "17c4a96c30164e2fe978a53adfd6095314903feb"
     },
     {
       "path": "native/virtual-driver/run_disposable_lab.ps1",
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "207053e2aaa284cdd3e9b8288faee4fccc0c9c8e"
+      "blob": "a67e1cef929307f0506a544490ffdeff98142620"
     },
     {
       "path": "native/virtual-driver/test_DefaultRenderGuard.ps1",
@@ -1501,7 +1515,14 @@
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "69443cc73806974596ca44947d6d4ba68eb44f59"
+      "blob": "6479c772a3962410be9a1fb4dde7e23059a10eeb"
+    },
+    {
+      "path": "native/virtual-driver/test_LabProcessGuard.ps1",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "69692b11f18813f1a7dcf06e32515b180d60acaa"
     },
     {
       "path": "native/virtual-driver/test_NoSourceControlCheck.ps1",
@@ -1522,14 +1543,14 @@
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "7e886aa65a0a59c446f022b52cf97f2900ed026b"
+      "blob": "b8b6ea1dfbb60bbfcf5ae702947537daf9f2a156"
     },
     {
       "path": "native/virtual-driver/tests/test_independent_source_contract.py",
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "32efb7236c92a92632285435f9859869e12be438"
+      "blob": "22e43b26f62156caf5181acf015308020bf6f84a"
     },
     {
       "path": "native/virtual-driver/tests/test_prepare_sysvad.py",

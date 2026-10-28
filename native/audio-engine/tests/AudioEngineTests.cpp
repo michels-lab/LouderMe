@@ -216,6 +216,122 @@ void rapidEqTogglePreservesHistory() {
               "Rapid EQ off-on reset live filter history");
 }
 
+// A clean native DSP must NOT change full-scale music when boost and EQ
+// are off. The previous always-on soft-knee compressed 0.88..1.0 peaks.
+void transparentFullScaleBypass() {
+    for (int rate : {44100, 48000, 96000}) {
+        AudioEngine engine(rate, 2);
+        const std::array<float, 10> peaks{
+            -1.0f, -0.9999f, -0.96f, -0.90f, -0.88f,
+            0.0f, 0.88f, 0.92f, 0.9999f, 1.0f
+        };
+        std::vector<float> pcm;
+        pcm.reserve(8000);
+        for (int i = 0; i < 800; ++i)
+            pcm.insert(pcm.end(), peaks.begin(), peaks.end());
+        auto original = pcm;
+        engine.process(pcm.data(), pcm.size() / 2);
+        check(pcm == original, "unity bypass compressed full-scale PCM");
+        engine.setBoostPercent(250);
+        engine.setBoostEnabled(false);
+        pcm = original;
+        engine.process(pcm.data(), pcm.size() / 2);
+        check(pcm == original, "disabled 250% Boost altered dry PCM");
+        engine.setEqEnabled(true); // all seven gains at EXACT 0 dB
+        pcm = original;
+        engine.process(pcm.data(), pcm.size() / 2);
+        for (std::size_t i = 0; i < pcm.size(); ++i)
+            check(std::abs(pcm[i] - original[i]) < 1e-6f,
+                  "flat enabled EQ altered the full-scale source");
+        engine.setEqEnabled(false);
+        pcm = original;
+        engine.process(pcm.data(), pcm.size() / 2);
+        check(pcm == original, "return to flat bypass changed PCM");
+    }
+}
+
+void limiterEngagementAndSafeBoundaries() {
+    constexpr int rate = 48000;
+    AudioEngine engine(rate, 1);
+    // At 0.99 normalized input, the old always-on limiter immediately
+    // changed the sample even before Boost/EQ was turned on.
+    float untouched = 0.99f;
+    engine.process(&untouched, 1);
+    check(untouched == 0.99f, "limiter changed dry 0.99 peak");
+    engine.setBoostPercent(250);
+    engine.setBoostEnabled(true);
+    float first = 0.99f;
+    engine.process(&first, 1);
+    check(first > 0.97f && first <= 1.0f,
+          "turning Boost on introduced abrupt dry-to-knee compression");
+    std::vector<float> pcm(rate, 0.99f);
+    engine.process(pcm.data(), pcm.size());
+    for (const float v : pcm)
+        check(std::isfinite(v) && v >= -1.0f && v <= 1.0f,
+              "engaging Boost exceeded bounded float PCM");
+    check(pcm.back() < 1.0f && pcm.back() > 0.88f,
+          "active Boost bypassed the soft limiter");
+    engine.setBoostEnabled(false);
+    std::vector<float> off(rate, 0.99f);
+    engine.process(off.data(), off.size());
+    check(off.back() == 0.99f,
+          "limiter remained active after fully settled Boost bypass");
+
+    // EQ on/off should fade limiter engagement independently. A 0 dB EQ
+    // should never cause the limiter's knee to engage at all.
+    std::array<float, AudioEngine::BandCount> bands{};
+    bands[3] = 10.0f;
+    engine.setEqBandsDb(bands);
+    engine.setEqEnabled(true);
+    std::vector<float> wet(rate, 0.91f);
+    engine.process(wet.data(), wet.size());
+    for (const float sample : wet)
+        check(std::isfinite(sample) && std::abs(sample) <= 1.0f,
+              "EQ with active limiter produced unsafe PCM");
+    engine.setEqEnabled(false);
+    std::vector<float> restore(rate, -0.99f);
+    engine.process(restore.data(), restore.size());
+    check(restore.back() == -0.99f,
+          "disabled EQ kept compressing high-amplitude dry PCM");
+
+    // Any invalid source float still becomes safe regardless of whether
+    // the limiter is enabled: no NaN or infinity reaches speakers.
+    std::vector<float> invalid{
+        std::numeric_limits<float>::quiet_NaN(),
+        std::numeric_limits<float>::infinity(),
+        -std::numeric_limits<float>::infinity(),
+        2.0f, -2.0f
+    };
+    engine.process(invalid.data(), invalid.size());
+    for (const float value : invalid)
+        check(std::isfinite(value) && value >= -1.0f && value <= 1.0f,
+              "invalid or out-of-range PCM escaped dry bypass");
+}
+
+void limiterPacketBoundaryParity() {
+    constexpr int rate = 48000;
+    AudioEngine whole(rate, 2), fragmented(rate, 2);
+    for (auto* engine : {&whole, &fragmented}) {
+        engine->setBoostPercent(150);
+        engine->setBoostEnabled(true);
+    }
+    std::vector<float> a(24000), b(24000);
+    for (std::size_t i = 0; i < a.size(); ++i) {
+        a[i] = static_cast<float>(0.94 * std::sin(
+            2.0 * 3.14159265358979323846 * 1000.0 * i / (rate * 2)));
+        b[i] = a[i];
+    }
+    whole.process(a.data(), a.size() / 2);
+    std::size_t done = 0;
+    while (done < b.size() / 2) {
+        const std::size_t frames = std::min<std::size_t>(
+            (done % 17) + 1, b.size() / 2 - done);
+        fragmented.process(b.data() + 2 * done, frames);
+        done += frames;
+    }
+    check(a == b, "limiter activation differs across PCM packet boundaries");
+}
+
 void invalidAndFormats() {
     bool failed = false;
     try { AudioEngine invalid(48000, 0); }
@@ -243,6 +359,9 @@ int main() {
         smoothEqBypassTransition();
         smoothEqBandUpdate();
         rapidEqTogglePreservesHistory();
+        transparentFullScaleBypass();
+        limiterEngagementAndSafeBoundaries();
+        limiterPacketBoundaryParity();
         invalidAndFormats();
         std::cout << "LouderME native DSP: tests passed\n";
         return 0;

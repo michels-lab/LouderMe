@@ -92,6 +92,11 @@ internal static class Program
                 DirectPhysicalDspProbe.RunSelfTests();
                 return 0;
             }
+            if (args.Contains("--check-direct-gain"))
+            {
+                DirectPhysicalGainComparison.RunSelfTests();
+                return 0;
+            }
             if (args.Contains("--check-route-preflight"))
             {
                 RoutePreflight.RunSelfTests();
@@ -186,6 +191,29 @@ internal static class Program
                     acoustic_output_verified = false
                 }));
                 return check.Ready ? 0 : 3;
+            }
+
+            if (args.Contains("--probe-direct-gain"))
+            {
+                // Distinct from a single physical tone: same selected sink,
+                // native C++ 100% then 150%, quantified at physical loopback.
+                // Both stimuli are low-amplitude, explicitly consented, and
+                // never auto-retried or redirected to a Windows default.
+                if (args.Length != 4 ||
+                    args[0] != "--probe-direct-gain" ||
+                    args[1] != "--output-id" ||
+                    args[3] != "--confirm-experimental" ||
+                    string.IsNullOrWhiteSpace(args[2]))
+                    throw new ArgumentException(
+                        "Usage: --probe-direct-gain --output-id EXACT_PHYSICAL_ID " +
+                        "--confirm-experimental.");
+                var matches = devices.Where(x =>
+                    string.Equals(x.ID, args[2], StringComparison.Ordinal))
+                    .Take(2).ToArray();
+                if (matches.Length != 1)
+                    throw new InvalidOperationException(
+                        "Selected physical playback endpoint missing or ambiguous.");
+                return DirectPhysicalGainComparison.Run(matches[0]);
             }
 
             if (args.Contains("--probe-direct-dsp"))

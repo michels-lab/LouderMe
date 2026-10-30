@@ -1,6 +1,6 @@
 ## 2026-10-30 — Operación Granada: diagnóstico read-only previo a ruta nativa Windows (candidato)
 
-- Issues #46/#48/#74: agregado `RoutePreflight` de metadatos seleccionados y formato PCM, compartido entre `--diagnose-route` (JSON redacted) y la ruta experimental real, **antes** de iniciar callbacks WASAPI.
+- Issues abiertos #46/#48 (antecedente cerrado #74): agregado `RoutePreflight` de metadatos seleccionados y formato PCM, compartido entre `--diagnose-route` (JSON redacted) y la ruta experimental real, **antes** de iniciar callbacks WASAPI.
 - Errores específicos para ausencia de endpoint virtual, ID ambiguo/no seleccionado, feedback fuente/sink virtual, endpoint inactivo, formato ilegible/incompatible, mapeo de canales o tasa no soportados. No se finge driver firmado, PCM externo, resultado audible ni SPL.
 - Contrato de regresión: `--check-route-preflight` en Windows Native DSP CI; se comprueban casos seguros e inseguros sin hardware. [Auditoría detallada](docs/audits/GRANADA_2026-10-30_NATIVE_ROUTE_PREFLIGHT.md).
 - **Pendiente** el CI exact-head y, por separado, la prueba de driver/VM/PC real. Sin instalación, cambio de endpoint, nueva versión, release ni cierre de issues.

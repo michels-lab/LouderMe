@@ -82,7 +82,8 @@ internal static class DirectPhysicalDspProbe
             .Encode(floatPcm, floatPcm.Length);
     }
 
-    internal static int Run(MMDevice output, int boost, float[]? eqGains)
+    internal static int Run(MMDevice output, int boost, float[]? eqGains,
+        Action<LoopbackToneVerifier.ToneEvidence>? onAcceptedEvidence = null)
     {
         ArgumentNullException.ThrowIfNull(output);
         if (output.State != DeviceState.Active ||
@@ -204,6 +205,7 @@ internal static class DirectPhysicalDspProbe
             return 4;
         }
 
+        onAcceptedEvidence?.Invoke(evidence);
         Console.WriteLine(
             "PASS: owned DSP -> selected physical WASAPI loopback " +
             "440 Hz signal identity. NOT proof of acoustic audibility, " +

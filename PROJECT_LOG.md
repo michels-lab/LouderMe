@@ -1,3 +1,11 @@
+## 2026-10-30 — Operación Granada: medición física comparativa 100% → 150% (candidato)
+
+- Tras integrar #130 (DSP C++ → salida física), se añade un experimento Windows A/B de Boost 100% y 150% en **el mismo** endpoint físico seleccionado. Cada pasada verifica un tono 440 Hz en el WASAPI loopback físico; la comparación exige una subida numérica de amplitud `1.25..1.75`, duraciones comparables y señal válida.
+- `--probe-direct-gain` es opt-in (requiere ID explícito y confirmación), no altera dispositivos ni captura audio general; `--check-direct-gain` usa C++ real y PCM sintético para rechazar volumen idéntico, invertido, evidencia ausente y datos no finitos. Se conecta a Windows CI nativo; **la validación física real sigue pendiente**.
+- [Auditoría técnica](docs/audits/GRANADA_2026-10-30_DIRECT_PHYSICAL_GAIN_AB.md). #46/#48 continúan abiertos; sin driver instalado ni sistema global de otras aplicaciones, sin nuevo release.
+
+---
+
 ## 2026-10-30 — Operación Granada: PR #130 native DSP → physical WASAPI integrado
 
 - [PR #130](https://github.com/michels-lab/LouderMe/pull/130) integrado en `main`, merge `64a8f18f1063b05d0fa277db6b860b3343eac12e`: modo experimental consentido `--probe-direct-dsp`, 2 s de 440 Hz procesado por C++ DSP 100/150%, salida WASAPI elegida y observación por loopback del mismo endpoint; sin depender del driver virtual y sin alterar default.

@@ -1,3 +1,13 @@
+## Gain change proved on one physical WASAPI endpoint (candidate, 2026-10-30)
+
+Use the real C++ DSP to compare **two separate monitored physical output passes**, Boost 100% then 150%, on the SAME manually selected Windows render endpoint:
+
+```powershell
+dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --probe-direct-gain --output-id "<PHYSICAL_ID>" --confirm-experimental
+```
+
+It plays two brief quiet tones (4 seconds of signal total, separated by a short pause), compares coherent 440-Hz **WASAPI loopback** matched amplitudes (ratio required 1.25..1.75), and rejects no change, reversed gain and inconsistent capture windows. Lower your speaker volume and close unrelated audio applications first. A loopback PASS is not a measurement of acoustic loudness, not an installed virtual driver and **not processing of arbitrary other Windows applications**. `--check-direct-gain` runs native C++ and PCM regressions in CI without hardware. [Engineering audit](../../docs/audits/GRANADA_2026-10-30_DIRECT_PHYSICAL_GAIN_AB.md).
+
 ## Native DSP → physical output: experimental direct tone (no virtual driver)
 
 There is now a separate, explicitly consented **direct physical WASAPI experiment** to test the owned C++ DSP and the selected physical render output **without** requiring the experimental virtual driver first. This does not intercept system audio. Select an active physical output using `--list-devices`, lower the speaker volume, then:

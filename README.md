@@ -2,7 +2,7 @@
 
 ## Operación Granada — prueba directa del DSP nativo en salida física Windows (2026-10-30)
 
-Candidato de código para un test audible consentido: `--probe-direct-dsp` permite probar el **motor C++ propio** con un tono breve y una salida física Windows elegida explícitamente, aun sin driver virtual. La prueba recoge únicamente evidencia WASAPI local de identidad de señal; no capta audio general de terceros ni certifica sonido acústico o integración global. [Auditoría técnica](docs/audits/GRANADA_2026-10-30_DIRECT_NATIVE_DSP_PHYSICAL_PROBE.md). **No publicado; #46/#48 todavía abiertos.**
+Código experimental integrado ([PR #130](https://github.com/michels-lab/LouderMe/pull/130), CI nativa aprobada), todavía sin release: `--probe-direct-dsp` permite probar el **motor C++ propio** con un tono breve y una salida física Windows elegida explícitamente, aun sin driver virtual. La prueba recoge únicamente evidencia WASAPI local de identidad de señal; no capta audio general de terceros ni certifica sonido acústico o integración global. [Auditoría técnica](docs/audits/GRANADA_2026-10-30_DIRECT_NATIVE_DSP_PHYSICAL_PROBE.md). **No publicado; #46/#48 todavía abiertos.**
 
 ## Operación Granada — preflight seguro de ruta nativa Windows (2026-10-30)
 

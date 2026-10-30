@@ -29,25 +29,35 @@ jobs:
         run: python3 tools/test_repository_file_auditor.py
       - name: Enumerate all tracked paths, inspect documents and write local delta log
         run: python3 tools/repository_file_auditor.py --repo .
-      - name: Commit only generated audit reports in this repository
+      - name: Publish only regenerated audit reports against latest main
+        shell: bash
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -- reports/file-governance/FILE_GOVERNANCE.json reports/file-governance/FILE_GOVERNANCE.md reports/file-governance/SUMMARY.json docs/audits/FILE_GOVERNANCE_LOG.md
-          if ! git diff --cached --quiet; then
+          # Do not rebase stale, generated JSON/log snapshots. If main
+          # advances, regenerate against its current tracked tree and prior
+          # audit log; never resolve these machine-generated files by hand.
+          for attempt in 1 2 3 4 5; do
+            echo "File Steward optimistic publish attempt $attempt/5"
+            git fetch --no-tags origin main
+            # The runner owns only temporary generated report edits.
+            # Reset this isolated checkout; never force-push a shared branch.
+            git reset --hard FETCH_HEAD
+            git clean -fd -- reports/file-governance docs/audits/FILE_GOVERNANCE_LOG.md
+            python3 tools/test_repository_file_auditor.py
+            python3 tools/repository_file_auditor.py --repo .
+            git add -- reports/file-governance/FILE_GOVERNANCE.json reports/file-governance/FILE_GOVERNANCE.md reports/file-governance/SUMMARY.json docs/audits/FILE_GOVERNANCE_LOG.md
+            if git diff --cached --quiet; then
+              echo "Audit reports already match the latest main; no commit needed."
+              exit 0
+            fi
             git commit -m "chore(file-steward): refresh local audit findings [skip ci]"
-            for attempt in 1 2 3; do
-              if git push; then
-                echo "Audit report committed and published."
-                exit 0
-              fi
-              git fetch origin main
-              if ! git rebase origin/main; then
-                git rebase --abort || true
-                echo "::error::Audit report conflicts with another writer; no force push"
-                exit 1
-              fi
-            done
-            echo "::error::Audit report push failed after safe retries"
-            exit 1
-          fi
+            if git push origin HEAD:main; then
+              echo "Audit reports committed against latest main without force push."
+              exit 0
+            fi
+            echo "::warning::main advanced before audit push; regenerating from its latest reports"
+          done
+          echo "::error::File Steward could not publish safely after five fresh-tree attempts"
+          exit 1

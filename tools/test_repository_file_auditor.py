@@ -98,6 +98,22 @@ class FileStewardTests(unittest.TestCase):
                 self.assertIn(exclusion,region)
         self.assertIn("  workflow_dispatch:", workflow)
 
+    def test_file_steward_rebuilds_on_concurrent_main_updates(self):
+        workflow=(HERE.parent/".github/workflows/file-governance-audit.yml").read_text(encoding="utf-8")
+        # Never try to merge/rebase machine-generated reports written from
+        # a stale tracked tree. Recompute against latest remote main.
+        self.assertIn("git fetch --no-tags origin main",workflow)
+        self.assertIn("git reset --hard FETCH_HEAD",workflow)
+        self.assertIn("python3 tools/repository_file_auditor.py --repo .",workflow)
+        self.assertIn("git push origin HEAD:main",workflow)
+        self.assertIn("for attempt in 1 2 3 4 5; do",workflow)
+        self.assertNotIn("git rebase origin/main",workflow)
+        self.assertNotIn("git push --force",workflow)
+        # A failed push must fall through to a new fetch and recomputation.
+        self.assertIn("main advanced before audit push; regenerating",workflow)
+        pr=(HERE.parent/".github/workflows/file-steward-pr-validation.yml").read_text(encoding="utf-8")
+        self.assertIn("'.github/workflows/file-governance-audit.yml'",pr)
+
     def test_shared_css_and_native_header_have_purpose(self):
         self.assertEqual(audit.identify("shared-components/about-web/about.css", {})[0],"style")
         self.assertEqual(audit.identify("native/audio-engine/include/louderme/AudioEngine.hpp", {})[0],"source")

@@ -9,6 +9,7 @@ on:
       - '.michelslab/file-audit-policy.json'
       - '.michelslab/agents/file-steward.md'
       - '.github/workflows/file-steward-pr-validation.yml'
+      - '.github/workflows/file-governance-audit.yml'
 permissions:
   contents: read
 jobs:

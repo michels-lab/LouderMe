@@ -1,3 +1,12 @@
+## 2026-10-30 — Operación Granada: watchdog del render integrado, sin audio físico certificado
+
+- [PR #128](https://github.com/michels-lab/LouderMe/pull/128) integrado en `main` mediante squash `cdd769a0c6750f577afc9edd4f38a17415f072e4`: guard de progreso en ruta experimental Windows, limpieza existente de endpoints ante atasco, pruebas unitarias de inactividad/recuperación/estancamiento. Cambios registrados en `native/windows-bridge/`.
+- [Native audio DSP CI del SHA exacto](https://github.com/michels-lab/LouderMe/actions/runs/41139171359) **SUCCESS**: Ubuntu/Windows DSP + Windows managed/native interop, incluido `--check-recovery`.
+- [Android CI del SHA exacto](https://github.com/michels-lab/LouderMe/actions/runs/41139170889): compilación/variantes **SUCCESS** al integrar; dos jobs Android instalados de Home/About y Developer Edition seguían **EN EJECUCIÓN**. No declarar validación instalada de Android hasta que terminen.
+- Evidencia de código **NO** equivale a driver instalado/firmado ni a Boost/EQ audible o captura externa probada. #46/#48/#74 y release gates permanecen abiertos. No release; versiones públicas Android 0.1.12 + Windows 0.1.17.
+
+---
+
 ## 2026-10-30 — Operación Granada: watchdog de lectura del render Windows (candidato)
 
 - Tras auditar #46/#48/#74 y confirmar cero PR abiertos al iniciar, se creó una única línea funcional experimental para vigilar la ruta de reproducción. `RenderProgressWatchdog` detecta 3 s de PCM realmente encolado (>=50 ms) sin lecturas útiles por el renderer de NAudio, sin confundir inactividad legítima con fallo. `Program.cs` devuelve interrupción recuperable y ejecuta su limpieza de endpoints; `--auto-reconnect` permanece estrictamente opt-in y acotado.

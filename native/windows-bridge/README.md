@@ -1,3 +1,14 @@
+## Native DSP → physical output: experimental direct tone (no virtual driver)
+
+There is now a separate, explicitly consented **direct physical WASAPI experiment** to test the owned C++ DSP and the selected physical render output **without** requiring the experimental virtual driver first. This does not intercept system audio. Select an active physical output using `--list-devices`, lower the speaker volume, then:
+
+```powershell
+dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --probe-direct-dsp --output-id "<PHYSICAL_ID>" --boost 100 --confirm-experimental
+dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --probe-direct-dsp --output-id "<PHYSICAL_ID>" --boost 150 --confirm-experimental
+```
+
+Optional EQ: `--eq-db 0,0,0,0,8,0,0`. The signal lasts 2 s and starts/ends with a short silence. It is deliberately quiet but can be audible; never run without consent or at an unsafe speaker level. Valid proof is a bounded 440 Hz identity on the **selected physical endpoint's WASAPI loopback**. A loopback PASS is **not acoustic listening proof**, not global audio processing and not proof of an installed/signed virtual driver. Source checks: `--check-direct-dsp` runs the **real native C++ DSP** and PCM conversion in memory. [Implementation and test boundary](../../docs/audits/GRANADA_2026-10-30_DIRECT_NATIVE_DSP_PHYSICAL_PROBE.md).
+
 ## Read-only route preflight (Granada 2026-10-30 — source candidate)
 
 Before attempting an experimental device route, use `--list-devices`, then:

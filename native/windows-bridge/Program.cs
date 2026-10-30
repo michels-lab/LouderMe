@@ -87,6 +87,11 @@ internal static class Program
                 AudioProcessingTelemetry.RunSelfTests();
                 return 0;
             }
+            if (args.Contains("--check-direct-dsp"))
+            {
+                DirectPhysicalDspProbe.RunSelfTests();
+                return 0;
+            }
             if (args.Contains("--check-route-preflight"))
             {
                 RoutePreflight.RunSelfTests();
@@ -181,6 +186,38 @@ internal static class Program
                     acoustic_output_verified = false
                 }));
                 return check.Ready ? 0 : 3;
+            }
+
+            if (args.Contains("--probe-direct-dsp"))
+            {
+                // Deliberately independent of the virtual-driver route. The
+                // caller must select an active physical sink and explicitly
+                // accept the low-amplitude audible signal; never use defaults.
+                if (!args.Contains("--confirm-experimental") ||
+                    args.Contains("--source-id") || args.Contains("--probe-route") ||
+                    args.Contains("--probe-app-route") ||
+                    args.Contains("--probe-virtual") ||
+                    args.Contains("--interactive-controls") ||
+                    args.Contains("--auto-reconnect") ||
+                    args.Length != (args.Contains("--eq-db") ? 8 : 6) ||
+                    args.Distinct(StringComparer.Ordinal).Count() != args.Length)
+                    throw new ArgumentException(
+                        "Usage: --probe-direct-dsp --output-id PHYSICAL_ID " +
+                        "--boost 100..150 [--eq-db b1,...,b7] --confirm-experimental.");
+                string selectedId = GetArg(args, "--output-id") ??
+                    throw new ArgumentException("Selected physical endpoint ID required.");
+                if (!int.TryParse(GetArg(args, "--boost"),
+                    System.Globalization.NumberStyles.None,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out int directBoost) || directBoost is < 100 or > 150)
+                    throw new ArgumentException("Direct physical lab boost is 100..150 only.");
+                var matching = devices.Where(x => x.ID == selectedId).Take(2).ToArray();
+                if (matching.Length != 1)
+                    throw new InvalidOperationException(
+                        "Selected physical playback endpoint is absent or ambiguous.");
+                float[]? directEq = DirectPhysicalDspProbe.ParseEq(
+                    GetArg(args, "--eq-db"));
+                return DirectPhysicalDspProbe.Run(matching[0], directBoost, directEq);
             }
 
             if (args.Contains("--probe-virtual"))

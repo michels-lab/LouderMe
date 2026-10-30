@@ -1,3 +1,12 @@
+## 2026-10-30 — Operación Granada: DSP propio → salida física sin driver virtual (candidato)
+
+- #46/#48: modo Windows experimental `--probe-direct-dsp` para reproducir **solo una señal propia y breve** por un endpoint físico explícitamente seleccionado, procesada realmente con `NativeDsp` C++, y verificar identidad 440 Hz mediante el loopback WASAPI del mismo endpoint. Sin cambiar predeterminados, instalar drivers ni usar Equalizer APO.
+- `--check-direct-dsp`: validación C++ DSP real en memoria de 100%/150%, PCM16/float32 44.1/48/96 kHz mono/estéreo, EQ y errores invalidantes; integrado en Windows Native DSP CI. La prueba física aún requiere PC Windows con permiso del usuario y altavoces a nivel seguro.
+- Un PASS de loopback físico **no** implica altavoces audibles ni sistema global de otras apps; la ruta completa con driver SysVAD permanece pendiente. Auditoría: [DIRECT_NATIVE_DSP_PHYSICAL_PROBE.md](docs/audits/GRANADA_2026-10-30_DIRECT_NATIVE_DSP_PHYSICAL_PROBE.md).
+- Candidato en rama, pendiente CI exact-head/merge. Sin release y sin modificación Android.
+
+---
+
 ## 2026-10-30 — Operación Granada: preflight Windows #129 integrado con CI verde
 
 - [PR #129](https://github.com/michels-lab/LouderMe/pull/129) fusionado en `main`, squash `84e5c003c86e87f1820ddcaed81463b0d6dd3ba8`. `RoutePreflight.Assess` comparte las validaciones de endpoints/formatos entre `--diagnose-route` read-only y la admisión del streaming WASAPI experimental.

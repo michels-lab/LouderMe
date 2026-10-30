@@ -68,6 +68,7 @@ internal static class Program
             if (args.Contains("--check-recovery"))
             {
                 AudioQueueRecovery.RunSelfTests();
+                RenderProgressWatchdog.RunSelfTests();
                 return 0;
             }
             if (args.Contains("--check-controls"))
@@ -230,6 +231,9 @@ internal static class Program
             };
             var playbackReader = new MonitoredRenderBuffer(buffer);
             var queueRecovery = new AudioQueueRecovery();
+            // Console-only watchdog: detect a nominally Playing render path
+            // that stopped consuming real, already buffered PCM.
+            var renderProgressWatchdog = new RenderProgressWatchdog();
             playback.Init(playbackReader);
 
             // Optional LAB-only end-to-end observable. A second WASAPI
@@ -481,6 +485,15 @@ internal static class Program
                     // output frame count gradually based on queue occupancy.
                     // Allow startup to settle before applying feedback.
                     double queuedMs = buffer.BufferedDuration.TotalMilliseconds;
+                    if (renderProgressWatchdog.Observe(
+                        Stopwatch.GetTimestamp(),
+                        Interlocked.Read(ref outputFrames),
+                        playbackReader.PayloadFramesRead,
+                        buffer.BufferedBytes / outputFormat.BlockAlign,
+                        outputFormat.SampleRate))
+                        throw new AudioRouteRecoverableException(
+                            "Physical render callbacks stopped consuming queued PCM for three seconds; " +
+                            "release both selected endpoints instead of hiding a stalled route.");
                     double correctionPpm = 0;
                     long currentResets = Interlocked.Read(ref queueResets);
                     if (currentResets != lastObservedQueueResets)

@@ -1,3 +1,13 @@
+## Read-only route preflight (Granada 2026-10-30 — source candidate)
+
+Before attempting an experimental device route, use `--list-devices`, then:
+
+```powershell
+dotnet native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll --diagnose-route --source-id "<VIRTUAL_ID>" --output-id "<PHYSICAL_ID>"
+```
+
+This emits a privacy-conscious JSON result with an actionable code (missing virtual output, invalid selection, unsupported source/sink PCM, dangerous feedback pairing, or compatible metadata). It never opens audio capture/playback, modifies defaults, installs a driver or certifies audibility. The actual experimental route uses the same preflight before opening any streams. A zero exit code means **metadata compatible for a controlled LAB attempt only**; it is NOT a device/signed-driver/third-party-audio/physical-sound PASS. CI exercises `--check-route-preflight` on the real Windows bridge binary. [Technical acceptance and limits](../../docs/audits/GRANADA_2026-10-30_NATIVE_ROUTE_PREFLIGHT.md).
+
 # LouderME Windows virtual-to-physical audio bridge — experimental M2
 
 This **is NOT a Windows audio driver**. This host application connects an

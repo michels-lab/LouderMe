@@ -4,6 +4,7 @@ using System.Buffers.Binary;
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 
 namespace LouderMeAudioBridge;
 
@@ -17,6 +18,27 @@ internal static class Program
         format.BitsPerSample == 32 &&
         (format.Encoding == WaveFormatEncoding.IeeeFloat ||
          (format is WaveFormatExtensible extended && extended.SubFormat == Float32Subtype));
+
+    private static RoutePreflight.Endpoint CreatePreflightSnapshot(MMDevice device)
+    {
+        WaveFormat? mixFormat;
+        try
+        {
+            mixFormat = device.AudioClient.MixFormat;
+        }
+        catch (System.Runtime.InteropServices.COMException)
+        {
+            // Device lost between enumeration and query; never guess a format.
+            mixFormat = null;
+        }
+        catch (InvalidOperationException)
+        {
+            mixFormat = null;
+        }
+        return new RoutePreflight.Endpoint(
+            device.ID, device.FriendlyName, mixFormat,
+            device.State == DeviceState.Active);
+    }
 
     private static int Main(string[] args)
     {
@@ -63,6 +85,11 @@ internal static class Program
             {
                 AdaptiveBufferClock.RunSelfTests();
                 AudioProcessingTelemetry.RunSelfTests();
+                return 0;
+            }
+            if (args.Contains("--check-route-preflight"))
+            {
+                RoutePreflight.RunSelfTests();
                 return 0;
             }
             if (args.Contains("--check-recovery"))
@@ -124,6 +151,38 @@ internal static class Program
                 return 0;
             }
 
+            if (args.Contains("--diagnose-route"))
+            {
+                // Diagnostic is strictly read-only: no capture, audio playback,
+                // default endpoint changes, registry access, or driver install.
+                if (args[0] != "--diagnose-route" ||
+                    (args.Length != 1 &&
+                     !(args.Length == 5 &&
+                       args[1] == "--source-id" && args[3] == "--output-id")))
+                    throw new ArgumentException(
+                        "Read-only usage: --diagnose-route [--source-id ID --output-id ID].");
+
+                string? requestedSource = args.Length == 5 ? args[2] : null;
+                string? requestedOutput = args.Length == 5 ? args[4] : null;
+                var candidates = devices
+                    .Where(x => args.Length == 1 ||
+                        x.ID == requestedSource || x.ID == requestedOutput)
+                    .Select(CreatePreflightSnapshot).ToArray();
+                var check = RoutePreflight.Assess(
+                    candidates, requestedSource, requestedOutput);
+                Console.WriteLine(JsonSerializer.Serialize(new
+                {
+                    code = check.Code,
+                    ready_for_controlled_lab_only = check.Ready,
+                    explanation = check.Explanation,
+                    real_audio_verified = false,
+                    driver_signing_verified = false,
+                    windows_system_audio_routing_verified = false,
+                    acoustic_output_verified = false
+                }));
+                return check.Ready ? 0 : 3;
+            }
+
             if (args.Contains("--probe-virtual"))
                 return ProbeVirtualEndpoint(devices, args);
 
@@ -174,11 +233,13 @@ internal static class Program
                     "Selected physical output ID is unavailable; no alternate device selected.");
 
             // Fail closed: capturing arbitrary physical output would cause doubled sound/feedback.
-            if (!source.FriendlyName.Contains("LouderMe Virtual", StringComparison.OrdinalIgnoreCase) ||
-                 physical.FriendlyName.Contains("LouderMe Virtual", StringComparison.OrdinalIgnoreCase))
-                throw new InvalidOperationException(
-                    "The source must be an explicitly selected LouderMe Virtual output, " +
-                    "and the target must be a separate physical playback device.");
+            var routePreflight = RoutePreflight.Assess(
+                new[] { CreatePreflightSnapshot(source), CreatePreflightSnapshot(physical) },
+                sourceId, outputId);
+            if (!routePreflight.Ready)
+                throw new NotSupportedException(
+                    "Experimental route preflight " + routePreflight.Code + ": " +
+                    routePreflight.Explanation);
 
             using var capture = new WasapiLoopbackCapture(source);
             var inputFormat = capture.WaveFormat;

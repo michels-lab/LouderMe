@@ -1,8 +1,12 @@
 # LouderMe
 
+## Operación Granada — preflight seguro de ruta nativa Windows (2026-10-30)
+
+El [PR #129](https://github.com/michels-lab/LouderMe/pull/129) integró `--diagnose-route` (read-only, respuesta JSON sin IDs/nombres de endpoints) y el mismo validador antes de abrir la ruta experimental: distingue dispositivo virtual ausente, output físico equivocado, formatos incompatibles y selecciones peligrosas. [Auditoría y requisitos físicos aún pendientes](docs/audits/GRANADA_2026-10-30_NATIVE_ROUTE_PREFLIGHT.md). **La compilación/CI del puente pasó; no se ha demostrado driver firmado, PCM de otras apps, Boost/EQ audible ni audio físico. No hay release nuevo.**
+
 ## Operación Granada — resguardo de render Windows (30 de octubre de 2026)
 
-Candidato experimental para detectar una ruta Windows que muestra reproducción activa pero deja de consumir PCM real: el nuevo vigilante supervisa la cola y las lecturas del renderer, interrumpe de modo controlado los atascos prolongados y no confunde el silencio legítimo con una avería. [Auditoría y límites técnicos](docs/audits/GRANADA_2026-10-30_RENDER_PROGRESS_WATCHDOG.md). **No está publicado ni constituye evidencia de audio físico.**
+Implementación experimental integrada en código fuente mediante [PR #128](https://github.com/michels-lab/LouderMe/pull/128), sin publicación de binarios nuevos: detecta una ruta Windows que muestra reproducción activa pero deja de consumir PCM real: el nuevo vigilante supervisa la cola y las lecturas del renderer, interrumpe de modo controlado los atascos prolongados y no confunde el silencio legítimo con una avería. [Auditoría y límites técnicos](docs/audits/GRANADA_2026-10-30_RENDER_PROGRESS_WATCHDOG.md). **No está publicado ni constituye evidencia de audio físico.**
 
 ## Operación Granada — Windows v0.1.17 estable (2026-10-26)
 

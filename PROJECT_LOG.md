@@ -1,3 +1,12 @@
+## 2026-10-30 — Operación Granada: físico nativo antes de SysVAD en VM desechable (candidato)
+
+- #46/#48: `run_disposable_lab.ps1` requiere, ANTES de Devcon, una prueba real de Boost 100/150 desde DSP C++ propio hacia el endpoint físico elegido y su WASAPI loopback. El proceso se limita a 40 s, se registran resultados numéricos sanitizados y se exige exactamente una señal `PHYSICAL_LOOPBACK_NATIVE_GAIN_AB_PASS`. Cualquier falta, salida distinta o fallo → no instalar driver.
+- Recomprueba hashes de siete insumos y la identidad de los dispositivos predeterminados antes y después. El resto del laboratorio conserva el método de driver SysVAD, app independiente, controles sin señal y retiro del dispositivo propio en `finally`.
+- `test_LabInputIntegrity.ps1` fija por contrato el orden pre-Devcon, el rechazo sin evidencia y el techo de tiempo; CI todavía debe pasar en el HEAD exacto. [Auditoría del laboratorio](docs/audits/GRANADA_2026-10-30_PREINSTALL_PHYSICAL_GAIN_GATE.md).
+- No hay resultados de hardware en este bloque, ni driver firmado/instalado en un equipo real, ni release nuevo. Versión pública sin cambios.
+
+---
+
 ## 2026-10-30 — Operación Granada: medición física comparativa 100% → 150% (candidato)
 
 - Tras integrar #130 (DSP C++ → salida física), se añade un experimento Windows A/B de Boost 100% y 150% en **el mismo** endpoint físico seleccionado. Cada pasada verifica un tono 440 Hz en el WASAPI loopback físico; la comparación exige una subida numérica de amplitud `1.25..1.75`, duraciones comparables y señal válida.

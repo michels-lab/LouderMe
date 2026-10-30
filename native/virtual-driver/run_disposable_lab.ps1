@@ -153,7 +153,17 @@ try {
     '--probe-direct-gain', '--output-id', $PhysicalEndpointId,
     '--confirm-experimental') -Label 'direct-physical-gain-before-driver')
   $acceptedGainLines = @($physicalGainEvidence | Where-Object {
-    "$_" -match '^DIRECT_GAIN_AB: .* status=PHYSICAL_LOOPBACK_NATIVE_GAIN_AB_PASS
+    "$_" -match '^DIRECT_GAIN_AB: .* status=PHYSICAL_LOOPBACK_NATIVE_GAIN_AB_PASS$'
+  })
+  if ($acceptedGainLines.Count -ne 1) {
+    throw 'Physical output native DSP 100/150 comparison did not supply one accepted WASAPI loopback amplitude ratio; driver installation forbidden.'
+  }
+  Assert-LouderMeLabInputsUnchanged -Snapshot $inputSnapshot -Phase 'after preinstall physical gain A/B'
+  $defaultAfterDirectGain = Get-LouderMeDefaultRenderFingerprint -BridgeDll $BridgeDll
+  Assert-LouderMeDefaultRenderUnchanged -Expected $defaultBefore -Actual $defaultAfterDirectGain -Phase 'preinstall physical gain A/B'
+  Write-Host 'Preinstall DSP+physical WASAPI gain A/B passed. Does NOT prove virtual-driver PCM or acoustic SPL.'
+  Assert-LouderMeLabInputsUnchanged -Snapshot $inputSnapshot -Phase 'immediately before driver install'
+  Write-Host "Installing LAB root device '$hardwareId' in disposable VM only."
   # WDK tools can echo private generated PnP instance IDs in stdout/stderr.
   # Keep only exit status; never upload their raw text to shared Actions logs.
   $install = Invoke-LouderMeLabFiniteProcess -Executable $DevconExe `

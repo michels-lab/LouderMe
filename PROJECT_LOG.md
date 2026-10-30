@@ -1,3 +1,12 @@
+## 2026-10-30 — Operación Granada: preflight Windows #129 integrado con CI verde
+
+- [PR #129](https://github.com/michels-lab/LouderMe/pull/129) fusionado en `main`, squash `84e5c003c86e87f1820ddcaed81463b0d6dd3ba8`. `RoutePreflight.Assess` comparte las validaciones de endpoints/formatos entre `--diagnose-route` read-only y la admisión del streaming WASAPI experimental.
+- [CI Windows/Ubuntu de DSP y bridge exact-head](https://github.com/michels-lab/LouderMe/actions/runs/41140816315) **SUCCESS**, incluido `--check-route-preflight`. El workflow corregido valida por separado el tono sintético y el preflight.
+- [Android CI independiente](https://github.com/michels-lab/LouderMe/actions/runs/41140816323): **IN PROGRESS al fusionar**. No equivale a Android instalado certificado.
+- Sin driver firmado/instalado, sin PCM real de terceras aplicaciones ni audibilidad verificada: #46/#48 permanecen abiertos y #74 es antecedente cerrado. No release ni versión nueva (Android 0.1.12, Windows 0.1.17). Ver [auditoría](docs/audits/GRANADA_2026-10-30_NATIVE_ROUTE_PREFLIGHT.md).
+
+---
+
 ## 2026-10-30 — Operación Granada: diagnóstico read-only previo a ruta nativa Windows (candidato)
 
 - Issues abiertos #46/#48 (antecedente cerrado #74): agregado `RoutePreflight` de metadatos seleccionados y formato PCM, compartido entre `--diagnose-route` (JSON redacted) y la ruta experimental real, **antes** de iniciar callbacks WASAPI.

@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 267,
-  "classified_files_total": 263,
-  "docs_content_inspected": 78,
+  "tracked_files_total": 269,
+  "classified_files_total": 265,
+  "docs_content_inspected": 79,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,18 +12,18 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 70,
+    "document": 71,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
-    "source": 93,
+    "source": 94,
     "test": 31,
     "text_metadata": 2,
     "workflow": 11
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "bb7e8ce10ecdb2877df3d9886eab95543e797efd1e776b9468c3d2ad21641f7d",
+  "inventory_fingerprint": "4f885857435cbbd716e54f9313504cacb5822716a1af3c7c546005a7d7c1d839",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -108,7 +108,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "a3c8832a58797da71d42823eddef47ce78e2da0f"
+      "blob": "03efd350f4dc5602efa48e28ea990bf93831e645"
     },
     {
       "path": ".github/workflows/native-physical-lab-manual.yml",
@@ -234,14 +234,14 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "4476bd57ce8504622d90751990de936b3270ebc2"
+      "blob": "76cc3d7bed74755802bfd662b4045df688fd2969"
     },
     {
       "path": "README.md",
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "d2ff27cd2d2de496e0f4794a196bccb9fce6ce14"
+      "blob": "1140db25fcdbbe7f4fd13289e8577c4ef0fdb4a4"
     },
     {
       "path": "app/build.gradle.kts",
@@ -1343,6 +1343,13 @@
       "blob": "0fb6996766dc6f83e75dd6db9d047a1edf527c01"
     },
     {
+      "path": "docs/audits/GRANADA_2026-10-30_DIRECT_PHYSICAL_GAIN_AB.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "a8c69e39ee6d4b915bf19b5af38d66192cb98c25"
+    },
+    {
       "path": "docs/audits/GRANADA_2026-10-30_NATIVE_ROUTE_PREFLIGHT.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -1627,7 +1634,14 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "c00f3a0cbb6f8657357446044da1341626549269"
+      "blob": "07159b045679100370230acee869515523bd965f"
+    },
+    {
+      "path": "native/windows-bridge/DirectPhysicalGainComparison.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "c3fa84b38084a3ec1ebda6f4ec222ed4d4be6bc4"
     },
     {
       "path": "native/windows-bridge/DspLiveControls.cs",
@@ -1683,14 +1697,14 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "0eeaf426cef03562127d86fd868ef947aba84751"
+      "blob": "9b637e75a768e9aec590416e86ebf16e0b9d14f3"
     },
     {
       "path": "native/windows-bridge/README.md",
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "6453de5d65b17ceebf5cf306c77ba80a6dba7545"
+      "blob": "2bcb771fe8312b9a7923cf7ffb9378d0795e8321"
     },
     {
       "path": "native/windows-bridge/RenderProgressWatchdog.cs",

@@ -1,3 +1,9 @@
+## Granada 2026-10-30 — prove selected physical DSP/sink BEFORE virtual-driver install (candidate)
+
+The existing snapshot-backed disposable Windows VM runner now runs the **actual native C++ DSP physical WASAPI 100%-to-150% gain A/B** before invoking Devcon. It captures only sanitized numeric evidence in `direct-physical-gain-before-driver.log`, requires a single explicit `PHYSICAL_LOOPBACK_NATIVE_GAIN_AB_PASS` line plus exit code 0, and verifies original Windows render defaults and all seven pinned lab inputs again. A failing or unobservable physical route aborts **without installing the virtual driver**. Two passes run with a strict 40-second subprocess ceiling. The normal independent app → virtual SysVAD → DSP → physical sequence still follows *only if* this prerequisite passes.
+
+This is manual, expressly consented VM audio with a safe speaker volume, never hosted GitHub CI and never an automatic stable app action. [Failure diagnosis and acceptance limits](../../docs/audits/GRANADA_2026-10-30_PREINSTALL_PHYSICAL_GAIN_GATE.md). An A/B loopback PASS does **not** mean the virtual driver supplies PCM, that speakers audibly amplified or that arbitrary Windows apps are processed; issues #46/#48 remain open.
+
 ## Input identity across the entire disposable VM session (2026-10-27)
 
 The manual driver-VM lab snapshots **seven exact local files** with SHA-256

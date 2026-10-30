@@ -108,11 +108,13 @@ internal static class DirectPhysicalDspProbe
         var decoder = new PcmFormatAdapter(captureFormat, verifierFormat);
         var verifier = new LoopbackToneVerifier(verifierFormat);
         var gate = new object();
+        using var monitorStopped = new ManualResetEventSlim(false);
         Exception? callbackFailure = null;
         monitor.RecordingStopped += (_, e) =>
         {
             if (e.Exception is not null)
                 Interlocked.CompareExchange(ref callbackFailure, e.Exception, null);
+            monitorStopped.Set();
         };
         monitor.DataAvailable += (_, e) =>
         {
@@ -177,6 +179,11 @@ internal static class DirectPhysicalDspProbe
             monitor.StopRecording();
         }
 
+        // Capture shutdown may be asynchronous. Accept no stale/incomplete
+        // monitor frames after initiating StopRecording.
+        if (!monitorStopped.Wait(TimeSpan.FromSeconds(3)))
+            throw new IOException(
+                "Physical WASAPI loopback did not confirm recording shutdown.");
         if (callbackFailure is not null)
             throw new IOException("Physical WASAPI monitor or playback failed.",
                 callbackFailure);

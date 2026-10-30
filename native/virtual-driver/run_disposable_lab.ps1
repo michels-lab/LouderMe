@@ -44,7 +44,11 @@ function Invoke-Bridge([string[]]$BridgeArgs, [string]$Label) {
   # Unlike synchronous '& dotnet', this launch has a local deadline.
   # A stalled native bridge cannot consume the whole workflow timeout and
   # prevent the outer finally from removing the kernel LAB device.
-  $milliseconds = if ($Label -eq 'list-devices') { 15000 } else { 20000 }
+  $milliseconds = switch ($Label) {
+    'list-devices' { 15000 }
+    'direct-physical-gain-before-driver' { 40000 } # two separate bounded WASAPI passes
+    default { 20000 }
+  }
   $result = Invoke-LouderMeLabFiniteProcess -Executable 'dotnet' `
     -Arguments (@($script:BridgeDll) + $BridgeArgs) -TimeoutMs $milliseconds
   $lines = @(($result.StdOut + [Environment]::NewLine +

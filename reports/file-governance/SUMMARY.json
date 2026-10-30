@@ -21,10 +21,12 @@
     "text_metadata": 2,
     "workflow": 11
   },
-  "finding_counts": {},
-  "finding_total": 0,
-  "inventory_fingerprint": "4f885857435cbbd716e54f9313504cacb5822716a1af3c7c546005a7d7c1d839",
-  "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "finding_counts": {
+    "POTENTIAL_UNLOGGED_CHANGES": 1
+  },
+  "finding_total": 1,
+  "inventory_fingerprint": "7ac396cef27ef27cf8a55de40ad4ffb87c5f6481269e56a0026ba73946ee193e",
+  "evidence_fingerprint": "4325746ebd033477cf83eb83723e71ba70a5bc6933ba1bc282799d809ad099e7",
   "untracked_audited": false,
   "ignored_audited": false,
   "binary_contents_audited": false,

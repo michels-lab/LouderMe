@@ -21,10 +21,12 @@
     "text_metadata": 2,
     "workflow": 11
   },
-  "finding_counts": {},
-  "finding_total": 0,
-  "inventory_fingerprint": "4f885857435cbbd716e54f9313504cacb5822716a1af3c7c546005a7d7c1d839",
-  "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "finding_counts": {
+    "POTENTIAL_UNLOGGED_CHANGES": 1
+  },
+  "finding_total": 1,
+  "inventory_fingerprint": "7ac396cef27ef27cf8a55de40ad4ffb87c5f6481269e56a0026ba73946ee193e",
+  "evidence_fingerprint": "4325746ebd033477cf83eb83723e71ba70a5bc6933ba1bc282799d809ad099e7",
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/chatgpt-task.yml",
@@ -94,14 +96,14 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "319fbeb2c53d3e1e8d827111368e2b27a1651b45"
+      "blob": "423ae2999856ccb2225e39a1413864881319a849"
     },
     {
       "path": ".github/workflows/file-steward-pr-validation.yml",
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "5aa9ad9449b3dd4e50808a9f8808b2dd2a6f9f6c"
+      "blob": "39d00cbd64cc3aefa7c24b3e2535bd8c67091c57"
     },
     {
       "path": ".github/workflows/native-audio-engine-ci.yml",
@@ -1823,7 +1825,7 @@
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "dfbbfe2e18f212be20f53dd33718d8a8b1389ca2"
+      "blob": "59fd0b9ef745b28ec5f6bf1dccb9443f1dfbf5ef"
     },
     {
       "path": "tools/test_windows_shipping_provenance.py",
@@ -1882,7 +1884,17 @@
       "blob": "724f2c9b5eb8b069e266eb1619375c97628d9202"
     }
   ],
-  "findings": [],
+  "findings": [
+    {
+      "id": "ace7334128d700d7",
+      "code": "POTENTIAL_UNLOGGED_CHANGES",
+      "severity": "review",
+      "path": "PROJECT_LOG.md",
+      "observation": "1 implementation/config paths changed since this log's last commit; examples: .github/workflows/file-steward-pr-validation.yml",
+      "recommendation": "Inspect diffs and reconcile only meaningful decisions/results in the canonical log",
+      "state": "REVIEW_REQUIRED"
+    }
+  ],
   "untracked_audited": false,
   "ignored_audited": false,
   "binary_contents_audited": false,

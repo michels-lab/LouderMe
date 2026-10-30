@@ -1,3 +1,11 @@
+## 2026-10-30 — Operación Granada: watchdog de lectura del render Windows (candidato)
+
+- Tras auditar #46/#48/#74 y confirmar cero PR abiertos al iniciar, se creó una única línea funcional experimental para vigilar la ruta de reproducción. `RenderProgressWatchdog` detecta 3 s de PCM realmente encolado (>=50 ms) sin lecturas útiles por el renderer de NAudio, sin confundir inactividad legítima con fallo. `Program.cs` devuelve interrupción recuperable y ejecuta su limpieza de endpoints; `--auto-reconnect` permanece estrictamente opt-in y acotado.
+- Incluye pruebas deterministas de progreso normal, inicio en silencio, cola pequeña, atasco, recuperación, drenaje y contadores/reloj inválidos ejecutadas desde `--check-recovery` en Windows Native CI.
+- Auditoría y límites: [GRANADA_2026-10-30_RENDER_PROGRESS_WATCHDOG.md](docs/audits/GRANADA_2026-10-30_RENDER_PROGRESS_WATCHDOG.md). **Pendiente CI de SHA exacto y pruebas reales con hardware**; no hay driver instalado ni prueba de audio externo audible. Sin release ni cambio Android.
+
+---
+
 ## 2026-10-21 — Operación Granada: real no-stimulus causality gate for native Windows external-source route (candidate)
 
 - Follow-up after merged #88 and #91: the independent source physical-audio VM procedure now brackets 100%/150% measurements with **no-stimulus WASAPI capture before and after**. It must announce EXTERNAL_SOURCE_READY, complete a real five-second physical-monitor window, show one valid numeric measurement with physical frames and no dropped packets, and fail specifically because the externally generated 440 Hz input is **absent**. A different error, missing listener, unexpected PASS, stale result or matched440 contamination >0.003 aborts the laboratory instead of claiming source causality.

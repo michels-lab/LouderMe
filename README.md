@@ -1,5 +1,9 @@
 # LouderMe
 
+## Operación Granada — resguardo de render Windows (30 de octubre de 2026)
+
+Candidato experimental para detectar una ruta Windows que muestra reproducción activa pero deja de consumir PCM real: el nuevo vigilante supervisa la cola y las lecturas del renderer, interrumpe de modo controlado los atascos prolongados y no confunde el silencio legítimo con una avería. [Auditoría y límites técnicos](docs/audits/GRANADA_2026-10-30_RENDER_PROGRESS_WATCHDOG.md). **No está publicado ni constituye evidencia de audio físico.**
+
 ## Operación Granada — Windows v0.1.17 estable (2026-10-26)
 
 La [distribución oficial unificada Android v0.1.12 + Windows v0.1.17](https://github.com/michels-lab/LouderME-Releases/releases/tag/louderme-android-v0.1.12-desktop-v0.1.17) ya está publicada y verificada; Windows conserva las correcciones del About, fotografía grande, logotipo auténtico de Michel's Lab y encabezado LouderMe alineado a la izquierda. El [release de origen](https://github.com/michels-lab/LouderMe/releases/tag/desktop-v0.1.17) aprobó instalación, renderizado y checksums. Android v0.1.12 se conservó byte por byte; el motor global nativo independiente de Equalizer APO sigue sin validación física.

@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 260,
-  "classified_files_total": 256,
-  "docs_content_inspected": 74,
+  "tracked_files_total": 263,
+  "classified_files_total": 259,
+  "docs_content_inspected": 76,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,21 +12,19 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 66,
+    "document": 68,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
-    "source": 90,
+    "source": 91,
     "test": 31,
     "text_metadata": 2,
     "workflow": 11
   },
-  "finding_counts": {
-    "POTENTIAL_UNLOGGED_CHANGES": 1
-  },
-  "finding_total": 1,
-  "inventory_fingerprint": "6ec85b536b5b62e1549a50d646f5feb5fb417ddc79600c36b4b12cb5a6943df7",
-  "evidence_fingerprint": "ef1d604ae3e394269240cf3ef4a4d4155d47875596417f0972742445a3091dc8",
+  "finding_counts": {},
+  "finding_total": 0,
+  "inventory_fingerprint": "388ed7423f09753c116491b47e77c498e96a59d02c7a70a6ac5141a7b100d1bd",
+  "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/chatgpt-task.yml",
@@ -236,14 +234,14 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "074f9ef3394bb252864e1145a3947933328a361e"
+      "blob": "f6fe35e9bd58667f5d765178f31a15673863d05d"
     },
     {
       "path": "README.md",
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "ff69ec65569400d5a0b44b42b7776495d3443435"
+      "blob": "075daef8804a786968d57e33ec43799defbb334c"
     },
     {
       "path": "app/build.gradle.kts",
@@ -1331,6 +1329,20 @@
       "blob": "6f62a47c92c2922905aa41660832b08b003b65ca"
     },
     {
+      "path": "docs/audits/GRANADA_2026-10-28_NO_SOURCE_COHERENCE_CI.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "15bb0759fac69c299ae1a8794677f1ba249d8213"
+    },
+    {
+      "path": "docs/audits/GRANADA_2026-10-30_RENDER_PROGRESS_WATCHDOG.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "e57ac64b5cf0079a471a2ae12aaa97629c1a08f1"
+    },
+    {
       "path": "docs/product-reviews/2026-10-21-native-windows-audio-evidence.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -1650,7 +1662,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "3994885db1fa4ee425df74e9ee8a838b121f98ff"
+      "blob": "c8cc863d4fb31ac1db550e04680c3c9cdbd3fd24"
     },
     {
       "path": "native/windows-bridge/README.md",
@@ -1658,6 +1670,13 @@
       "purpose": "navigation/onboarding",
       "certainty": "rule",
       "blob": "e7d7b82a8dd48dd6dfa46917a40c6833d6199f66"
+    },
+    {
+      "path": "native/windows-bridge/RenderProgressWatchdog.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "3f60121e3b692b97a4157aae7c4f7c517c7deca7"
     },
     {
       "path": "native/windows-bridge/StreamingDownsampleLowPass.cs",
@@ -1821,17 +1840,7 @@
       "blob": "724f2c9b5eb8b069e266eb1619375c97628d9202"
     }
   ],
-  "findings": [
-    {
-      "id": "40c8a5320488e569",
-      "code": "POTENTIAL_UNLOGGED_CHANGES",
-      "severity": "review",
-      "path": "PROJECT_LOG.md",
-      "observation": "5 implementation/config paths changed since this log's last commit; examples: native/virtual-driver/IndependentGainCheck.ps1, native/virtual-driver/NoSourceControlCheck.ps1, native/virtual-driver/test_IndependentGainCheck.ps1, native/virtual-driver/test_NoSourceControlCheck.ps1, native/virtual-driver/tests/test_independent_source_contract.py",
-      "recommendation": "Inspect diffs and reconcile only meaningful decisions/results in the canonical log",
-      "state": "REVIEW_REQUIRED"
-    }
-  ],
+  "findings": [],
   "untracked_audited": false,
   "ignored_audited": false,
   "binary_contents_audited": false,

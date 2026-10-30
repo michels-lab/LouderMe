@@ -1,3 +1,13 @@
+## 2026-10-30 — Operación Granada: PR #130 native DSP → physical WASAPI integrado
+
+- [PR #130](https://github.com/michels-lab/LouderMe/pull/130) integrado en `main`, merge `64a8f18f1063b05d0fa277db6b860b3343eac12e`: modo experimental consentido `--probe-direct-dsp`, 2 s de 440 Hz procesado por C++ DSP 100/150%, salida WASAPI elegida y observación por loopback del mismo endpoint; sin depender del driver virtual y sin alterar default.
+- [CI exact-head nativo](https://github.com/michels-lab/LouderMe/actions/runs/41141961169): **SUCCESS** en DSP Windows/Ubuntu y Windows bridge, incluido `--check-direct-dsp` con ganancias, formatos, límites y rechazos sintéticos.
+- [Android CI exact-head](https://github.com/michels-lab/LouderMe/actions/runs/41141961213): `IN PROGRESS` al fusionar. No usar para afirmar validación Android instalada hasta el cierre real.
+- **No hay prueba de reproducción física realizada en este bloque.** El test nativo mide PCM en memoria; aun una ejecución de loopback física no demostraría audibilidad de altavoces, driver firmado, PCM de otras aplicaciones o aplicación global Boost/EQ. Issues #46/#48 abiertos.
+- [Auditoría y comandos](docs/audits/GRANADA_2026-10-30_DIRECT_NATIVE_DSP_PHYSICAL_PROBE.md). Sin release; Android estable 0.1.12 y Windows estable 0.1.17 sin cambios.
+
+---
+
 ## 2026-10-30 — Operación Granada: DSP propio → salida física sin driver virtual (candidato)
 
 - #46/#48: modo Windows experimental `--probe-direct-dsp` para reproducir **solo una señal propia y breve** por un endpoint físico explícitamente seleccionado, procesada realmente con `NativeDsp` C++, y verificar identidad 440 Hz mediante el loopback WASAPI del mismo endpoint. Sin cambiar predeterminados, instalar drivers ni usar Equalizer APO.

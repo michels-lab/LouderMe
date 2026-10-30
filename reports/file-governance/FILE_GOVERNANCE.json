@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 263,
-  "classified_files_total": 259,
-  "docs_content_inspected": 76,
+  "tracked_files_total": 265,
+  "classified_files_total": 261,
+  "docs_content_inspected": 77,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,18 +12,18 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 68,
+    "document": 69,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
-    "source": 91,
+    "source": 92,
     "test": 31,
     "text_metadata": 2,
     "workflow": 11
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "1c80f050227dc26ac66f5d93b233cb78902bae8068ffbafd346531783f824d97",
+  "inventory_fingerprint": "a53e215e1fe8d31312588592ca50488ff6fe39dd966887d4989516189260e9ec",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -108,7 +108,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "57ff723202f9aeb6b70622e82a85bd28892240b0"
+      "blob": "bbc1ca5b6a3741720b198051fb018a845052bda8"
     },
     {
       "path": ".github/workflows/native-physical-lab-manual.yml",
@@ -234,7 +234,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "e690b2e03ec4f0e995179d0ff8fa82432da88dd3"
+      "blob": "25ea3b8fd6c351eb5dbb1a393fe3daeb850dc1be"
     },
     {
       "path": "README.md",
@@ -1336,6 +1336,13 @@
       "blob": "15bb0759fac69c299ae1a8794677f1ba249d8213"
     },
     {
+      "path": "docs/audits/GRANADA_2026-10-30_NATIVE_ROUTE_PREFLIGHT.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "db4b8e9a0778ce1f7a02f8fa74747910d49e1686"
+    },
+    {
       "path": "docs/audits/GRANADA_2026-10-30_RENDER_PROGRESS_WATCHDOG.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -1662,14 +1669,14 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "c8cc863d4fb31ac1db550e04680c3c9cdbd3fd24"
+      "blob": "c569aacb7f7a4a761abebe4315edc6ee32b6842f"
     },
     {
       "path": "native/windows-bridge/README.md",
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "e7d7b82a8dd48dd6dfa46917a40c6833d6199f66"
+      "blob": "adcfc1831b62a27012164ecabf9ecb34def1c9f6"
     },
     {
       "path": "native/windows-bridge/RenderProgressWatchdog.cs",
@@ -1677,6 +1684,13 @@
       "purpose": "code/test implementation",
       "certainty": "rule",
       "blob": "3f60121e3b692b97a4157aae7c4f7c517c7deca7"
+    },
+    {
+      "path": "native/windows-bridge/RoutePreflight.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "e568d7d2cfd8fbea62033b96a5314f650fdfa587"
     },
     {
       "path": "native/windows-bridge/StreamingDownsampleLowPass.cs",

@@ -172,9 +172,9 @@ jobs:
         shell: pwsh
         run: |
           dotnet "native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll" --check-route-tone
+          if ($LASTEXITCODE -ne 0) { throw 'Lab physical-route tone format/regression failed.' }
           dotnet "native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll" --check-route-preflight
           if ($LASTEXITCODE -ne 0) { throw 'Read-only endpoint and PCM route preflight regressions failed.' }
-          if ($LASTEXITCODE -ne 0) { throw 'Lab physical-route tone format/regression failed.' }
       - name: Verify bounded clock drift and callback CPU telemetry without hardware
         shell: pwsh
         run: |

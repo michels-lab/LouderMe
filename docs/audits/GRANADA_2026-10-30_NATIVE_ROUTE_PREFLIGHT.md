@@ -1,6 +1,6 @@
 # Granada — diagnóstico seguro de ruta nativa Windows (2026-10-30)
 
-**Estado:** código experimental, no release. Issues de referencia: #46, #48 y #74.
+**Estado:** código experimental, no release. Issues activos de referencia: #46 y #48. Antecedente histórico: #74 (cerrado en GitHub; no certificar audio real por su cierre).
 
 ## Objetivo
 
@@ -27,5 +27,5 @@ La matriz de pruebas sin dispositivos ejecuta selección nula, driver ausente, I
 
 1. Integrar solo si el workflow de Windows compila el puente y ejecuta `--check-route-preflight` sobre el SHA exacto.
 2. Un endpoint etiquetado LouderMe Virtual puede estar presente y aun así no estar firmado, instalado de forma confiable o conectado a un ring buffer con PCM válido. El diagnóstico intencionalmente no afirma ninguna de esas cosas.
-3. Para cierre de #46/#48/#74 sigue siendo necesaria una VM descartable y un dispositivo real con driver firmado y autorizado: audio de otra aplicación → virtual → DSP → salida WASAPI física, relación de amplitudes, fuente ausente antes/después, desconexión/reinicio, sin dobles reproducciones, y validación audible del propietario.
+3. Para cierre de #46/#48 sigue siendo necesaria una VM descartable y un dispositivo real con driver firmado y autorizado: audio de otra aplicación → virtual → DSP → salida WASAPI física, relación de amplitudes, fuente ausente antes/después, desconexión/reinicio, sin dobles reproducciones, y validación audible del propietario.
 4. Ningún instalador público/release ni permiso de dispositivo cambia en este bloque.

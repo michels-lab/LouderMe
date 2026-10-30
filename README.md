@@ -1,5 +1,9 @@
 # LouderMe
 
+## Operación Granada — prueba directa del DSP nativo en salida física Windows (2026-10-30)
+
+Candidato de código para un test audible consentido: `--probe-direct-dsp` permite probar el **motor C++ propio** con un tono breve y una salida física Windows elegida explícitamente, aun sin driver virtual. La prueba recoge únicamente evidencia WASAPI local de identidad de señal; no capta audio general de terceros ni certifica sonido acústico o integración global. [Auditoría técnica](docs/audits/GRANADA_2026-10-30_DIRECT_NATIVE_DSP_PHYSICAL_PROBE.md). **No publicado; #46/#48 todavía abiertos.**
+
 ## Operación Granada — preflight seguro de ruta nativa Windows (2026-10-30)
 
 El [PR #129](https://github.com/michels-lab/LouderMe/pull/129) integró `--diagnose-route` (read-only, respuesta JSON sin IDs/nombres de endpoints) y el mismo validador antes de abrir la ruta experimental: distingue dispositivo virtual ausente, output físico equivocado, formatos incompatibles y selecciones peligrosas. [Auditoría y requisitos físicos aún pendientes](docs/audits/GRANADA_2026-10-30_NATIVE_ROUTE_PREFLIGHT.md). **La compilación/CI del puente pasó; no se ha demostrado driver firmado, PCM de otras apps, Boost/EQ audible ni audio físico. No hay release nuevo.**

@@ -18,6 +18,25 @@ internal static class DirectPhysicalDspProbe
     private const int ToneSeconds = 2;
     private const int QuietPaddingMs = 250;
 
+    internal static float[]? ParseEq(string? values)
+    {
+        if (values is null) return null;
+        var parts = values.Split(',');
+        if (parts.Length != 7)
+            throw new ArgumentException(
+                "Direct physical DSP probe requires exactly seven EQ bands.");
+        var gains = new float[7];
+        for (int i = 0; i < parts.Length; i++)
+            if (!float.TryParse(parts[i],
+                    System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    out gains[i]) ||
+                !float.IsFinite(gains[i]) || gains[i] is < -10 or > 10)
+                throw new ArgumentException(
+                    "Direct physical DSP EQ bands must be finite [-10,+10] dB.");
+        return gains;
+    }
+
     internal static byte[] PreparePcm(
         WaveFormat outputMix, int boost, float[]? eqGains = null)
     {
@@ -226,6 +245,18 @@ internal static class DirectPhysicalDspProbe
                     "synthetic amplitude gain.");
         }
 
+        if (ParseEq(null) is not null || ParseEq("0,0,0,0,8,0,0") is not { Length: 7 })
+            throw new InvalidOperationException(
+                "Direct EQ parser rejected a valid optional seven-band command.");
+        foreach (var invalid in new[] { "0,0", "0,NaN,0,0,0,0,0", "11,0,0,0,0,0,0" })
+        {
+            bool rejected = false;
+            try { ParseEq(invalid); }
+            catch (ArgumentException) { rejected = true; }
+            if (!rejected)
+                throw new InvalidOperationException(
+                    "Invalid direct-output EQ command was accepted.");
+        }
         var fmt = WaveFormat.CreateIeeeFloatWaveFormat(48000, 2);
         foreach (int boost in new[] { 99, 151, 250 })
         {

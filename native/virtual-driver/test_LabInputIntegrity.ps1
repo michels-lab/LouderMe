@@ -109,7 +109,7 @@ try {
   # evidence requirements, never instantiate an audio endpoint here.
   $gainProbe = $runner.IndexOf("'--probe-direct-gain'")
   $gainAcceptance = $runner.IndexOf('PHYSICAL_LOOPBACK_NATIVE_GAIN_AB_PASS')
-  $installStep = $runner.IndexOf("Write-Host \"Installing LAB root device")
+  $installStep = $runner.IndexOf('Write-Host "Installing LAB root device')
   $defaultIntegrity = $runner.IndexOf("'preinstall physical gain A/B'")
   if ($gainProbe -lt 0 -or $gainAcceptance -lt $gainProbe -or
       $installStep -lt $gainAcceptance -or $defaultIntegrity -lt $gainProbe -or

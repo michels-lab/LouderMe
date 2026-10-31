@@ -87,6 +87,8 @@ try {
     'New-LouderMeLabInputSnapshot',
     'Get-LouderMeLabInputMetadata',
     'before first driver operation',
+    'before preinstall physical gain A/B',
+    'after preinstall physical gain A/B',
     'immediately before driver install',
     'before WASAPI endpoint discovery',
     'before virtual tone',
@@ -101,6 +103,24 @@ try {
     if (-not $runner.Contains($marker)) {
       throw "Real disposable VM runner missing mandatory fingerprint check: $marker"
     }
+  }
+  # A physical loopback proof must pass before privileged virtual-driver
+  # setup. Device-free source contract: inspect ordering and fail-closed
+  # evidence requirements, never instantiate an audio endpoint here.
+  $gainProbe = $runner.IndexOf("'--probe-direct-gain'")
+  $gainAcceptance = $runner.IndexOf('PHYSICAL_LOOPBACK_NATIVE_GAIN_AB_PASS')
+  $installStep = $runner.IndexOf('Write-Host "Installing LAB root device')
+  $defaultIntegrity = $runner.IndexOf("'preinstall physical gain A/B'")
+  if ($gainProbe -lt 0 -or $gainAcceptance -lt $gainProbe -or
+      $installStep -lt $gainAcceptance -or $defaultIntegrity -lt $gainProbe -or
+      $defaultIntegrity -gt $installStep -or
+      -not $runner.Contains('if ($acceptedGainLines.Count -ne 1)') -or
+      -not $runner.Contains("'direct-physical-gain-before-driver' { 40000 }")) {
+    throw 'VM driver lab failed to require accepted direct C++ DSP physical WASAPI A/B before Devcon installation.'
+  }
+  if ($runner.Contains('--probe-direct-gain --auto-reconnect') -or
+      $runner.Contains('SetDefaultEndpoint')) {
+    throw 'Driver lab cannot auto-retry direct tone or silently change Windows defaults.'
   }
   if ($runner.Contains('LAB instance: $createdInstance') -or
       $runner.Contains('device instance: $id') -or

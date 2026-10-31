@@ -44,7 +44,11 @@ function Invoke-Bridge([string[]]$BridgeArgs, [string]$Label) {
   # Unlike synchronous '& dotnet', this launch has a local deadline.
   # A stalled native bridge cannot consume the whole workflow timeout and
   # prevent the outer finally from removing the kernel LAB device.
-  $milliseconds = if ($Label -eq 'list-devices') { 15000 } else { 20000 }
+  $milliseconds = switch ($Label) {
+    'list-devices' { 15000 }
+    'direct-physical-gain-before-driver' { 40000 } # two bounded physical loops
+    default { 20000 }
+  }
   $result = Invoke-LouderMeLabFiniteProcess -Executable 'dotnet' `
     -Arguments (@($script:BridgeDll) + $BridgeArgs) -TimeoutMs $milliseconds
   $lines = @(($result.StdOut + [Environment]::NewLine +
@@ -140,6 +144,22 @@ $metadata = @(
 Write-LouderMeLabTextOnce -Path (Join-Path $evidence 'lab-metadata.txt') -Content (($metadata -join [Environment]::NewLine) + [Environment]::NewLine)
 
 try {
+  # Real physical native C++ DSP gain check must pass before privileged PnP.
+  # A failed or missing amplitude comparison leaves SysVAD uninstalled.
+  Assert-LouderMeLabInputsUnchanged -Snapshot $inputSnapshot -Phase 'before preinstall physical gain A/B'
+  $physicalGainEvidence = @(Invoke-Bridge -BridgeArgs @(
+    '--probe-direct-gain', '--output-id', $PhysicalEndpointId,
+    '--confirm-experimental') -Label 'direct-physical-gain-before-driver')
+  $acceptedGainLines = @($physicalGainEvidence | Where-Object {
+    "$_" -match '^DIRECT_GAIN_AB: .* status=PHYSICAL_LOOPBACK_NATIVE_GAIN_AB_PASS$'
+  })
+  if ($acceptedGainLines.Count -ne 1) {
+    throw 'Physical output native DSP 100/150 comparison did not supply one accepted WASAPI loopback amplitude ratio; driver installation forbidden.'
+  }
+  Assert-LouderMeLabInputsUnchanged -Snapshot $inputSnapshot -Phase 'after preinstall physical gain A/B'
+  $defaultAfterDirectGain = Get-LouderMeDefaultRenderFingerprint -BridgeDll $BridgeDll
+  Assert-LouderMeDefaultRenderUnchanged -Expected $defaultBefore -Actual $defaultAfterDirectGain -Phase 'preinstall physical gain A/B'
+  Write-Host 'Preinstall DSP+physical WASAPI gain A/B passed. Does NOT prove virtual-driver PCM or acoustic SPL.'
   Assert-LouderMeLabInputsUnchanged -Snapshot $inputSnapshot -Phase 'immediately before driver install'
   Write-Host "Installing LAB root device '$hardwareId' in disposable VM only."
   # WDK tools can echo private generated PnP instance IDs in stdout/stderr.

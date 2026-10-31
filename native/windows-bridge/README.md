@@ -1,3 +1,7 @@
+## External Windows process → virtual WASAPI PCM (before DSP/speakers)
+
+The isolated VM lab can now call `--probe-virtual-external --source-id EXACT_VIRTUAL_ID --confirm-experimental`. This is a **receive-only loopback capture** on the explicitly named LouderMe virtual render endpoint. It emits `EXTERNAL_VIRTUAL_READY` once capture begins, accepts a separate Windows executable's low-amplitude 440-Hz PCM, and checks numeric tone identity. It does NOT generate its own tone, open a physical `WasapiOut`, initialize native DSP or redirect Windows defaults. The companion bounded VM PowerShell runner launches the independent tone only after the readiness marker and emits privacy-sanitized evidence. [Isolation and acceptance audit](../../docs/audits/GRANADA_2026-10-30_INDEPENDENT_VIRTUAL_PCM_STAGE.md). CI validates source contracts and compiled code only; actual signed SysVAD loopback remains unverified.
+
 ## Gain change proved on one physical WASAPI endpoint (candidate, 2026-10-30)
 
 Use the real C++ DSP to compare **two separate monitored physical output passes**, Boost 100% then 150%, on the SAME manually selected Windows render endpoint:

@@ -23,6 +23,7 @@ on:
       - 'native/virtual-driver/PositiveSourceCheck.ps1'
       - 'native/virtual-driver/test_PositiveSourceCheck.ps1'
       - 'native/virtual-driver/probe_independent_app_route.ps1'
+      - 'native/virtual-driver/probe_independent_virtual_pcm.ps1'
       - 'native/virtual-driver/run_disposable_lab.ps1'
       - '.github/workflows/native-audio-engine-ci.yml'
   pull_request:
@@ -48,6 +49,7 @@ on:
       - 'native/virtual-driver/PositiveSourceCheck.ps1'
       - 'native/virtual-driver/test_PositiveSourceCheck.ps1'
       - 'native/virtual-driver/probe_independent_app_route.ps1'
+      - 'native/virtual-driver/probe_independent_virtual_pcm.ps1'
       - 'native/virtual-driver/run_disposable_lab.ps1'
       - '.github/workflows/native-audio-engine-ci.yml'
 
@@ -209,6 +211,7 @@ jobs:
                               'native/virtual-driver/test_LabEvidenceDirectory.ps1',
                               'native/virtual-driver/run_disposable_lab.ps1',
                               'native/virtual-driver/probe_independent_app_route.ps1',
+                              'native/virtual-driver/probe_independent_virtual_pcm.ps1',
                               'native/virtual-driver/IndependentGainCheck.ps1',
                               'native/virtual-driver/test_IndependentGainCheck.ps1',
                               'native/virtual-driver/NoSourceControlCheck.ps1',

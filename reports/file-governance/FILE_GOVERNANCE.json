@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 269,
-  "classified_files_total": 265,
-  "docs_content_inspected": 79,
+  "tracked_files_total": 270,
+  "classified_files_total": 266,
+  "docs_content_inspected": 80,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,7 +12,7 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 71,
+    "document": 72,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
@@ -21,12 +21,10 @@
     "text_metadata": 2,
     "workflow": 11
   },
-  "finding_counts": {
-    "POTENTIAL_UNLOGGED_CHANGES": 1
-  },
-  "finding_total": 1,
-  "inventory_fingerprint": "7ac396cef27ef27cf8a55de40ad4ffb87c5f6481269e56a0026ba73946ee193e",
-  "evidence_fingerprint": "4325746ebd033477cf83eb83723e71ba70a5bc6933ba1bc282799d809ad099e7",
+  "finding_counts": {},
+  "finding_total": 0,
+  "inventory_fingerprint": "9001e8b263d94e142269b3ce58a7ffadc9dc7f4d5a8d2b61679786c80810d7c1",
+  "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/chatgpt-task.yml",
@@ -236,7 +234,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "76cc3d7bed74755802bfd662b4045df688fd2969"
+      "blob": "2bdd51f9725be54121cb75115924b3bad32e4bff"
     },
     {
       "path": "README.md",
@@ -1359,6 +1357,13 @@
       "blob": "db4b8e9a0778ce1f7a02f8fa74747910d49e1686"
     },
     {
+      "path": "docs/audits/GRANADA_2026-10-30_PREINSTALL_PHYSICAL_GAIN_GATE.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "8e634aa9552dceeea8ef77f98e4c288e6deb0d81"
+    },
+    {
       "path": "docs/audits/GRANADA_2026-10-30_RENDER_PROGRESS_WATCHDOG.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -1510,7 +1515,7 @@
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "a87bf1bd0e2265c21840754bd43bbe097e7c5d18"
+      "blob": "d5eaaca466012c5bb3aa72a15b06e4d1f5c5d2d9"
     },
     {
       "path": "native/virtual-driver/prepare_sysvad.py",
@@ -1531,7 +1536,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "a67e1cef929307f0506a544490ffdeff98142620"
+      "blob": "35a00c2ee8f65a38a6fc8488fa17a4cef9dc44d8"
     },
     {
       "path": "native/virtual-driver/test_DefaultRenderGuard.ps1",
@@ -1559,7 +1564,7 @@
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "6479c772a3962410be9a1fb4dde7e23059a10eeb"
+      "blob": "894b5899135b35b0bc8bceefeba126ae1c903dc0"
     },
     {
       "path": "native/virtual-driver/test_LabProcessGuard.ps1",
@@ -1884,17 +1889,7 @@
       "blob": "724f2c9b5eb8b069e266eb1619375c97628d9202"
     }
   ],
-  "findings": [
-    {
-      "id": "ace7334128d700d7",
-      "code": "POTENTIAL_UNLOGGED_CHANGES",
-      "severity": "review",
-      "path": "PROJECT_LOG.md",
-      "observation": "1 implementation/config paths changed since this log's last commit; examples: .github/workflows/file-steward-pr-validation.yml",
-      "recommendation": "Inspect diffs and reconcile only meaningful decisions/results in the canonical log",
-      "state": "REVIEW_REQUIRED"
-    }
-  ],
+  "findings": [],
   "untracked_audited": false,
   "ignored_audited": false,
   "binary_contents_audited": false,

@@ -1,3 +1,12 @@
+## 2026-10-30 — Operación Granada: fuente externa → loopback SOLO virtual (candidato)
+
+- Se añadió el modo Windows `--probe-virtual-external`: el puente NO crea tono ni `WasapiOut` ni un DSP/altavoz físico. Marca `EXTERNAL_VIRTUAL_READY` después de arrancar la captura y exige PCM 440 Hz del proceso Windows independiente. Una prueba exitosa crea `VIRTUAL_EXTERNAL_PROOF` con amplitud/coherencia.
+- Nuevo `probe_independent_virtual_pcm.ps1`: ejecución acotada de ambos procesos, arranque causal, controles de identidad/sesión, umbrales numéricos, redacción de IDs y archivos de evidencia inmutables; aborto antes de la ruta DSP/física si falla. Integrado en el laboratorio VM y en los contratos Python/PowerShell y el CI de Windows.
+- Causa técnica bajo revisión: el SysVAD de Microsoft contiene un generador de tono de captura; desactivarlo no demuestra un transporte render→loopback funcional. Se requiere prueba real de PCM externo en una VM con driver firmado. [Diagnóstico técnico](docs/audits/GRANADA_2026-10-30_INDEPENDENT_VIRTUAL_PCM_STAGE.md).
+- Pendiente CI exact-head y ensayo hardware. No hay nuevo instalador/release y #46/#48 siguen abiertos.
+
+---
+
 ## 2026-10-30 — Operación Granada: físico nativo antes de SysVAD en VM desechable (candidato)
 
 - #46/#48: `run_disposable_lab.ps1` requiere, ANTES de Devcon, una prueba real de Boost 100/150 desde DSP C++ propio hacia el endpoint físico elegido y su WASAPI loopback. El proceso se limita a 40 s, se registran resultados numéricos sanitizados y se exige exactamente una señal `PHYSICAL_LOOPBACK_NATIVE_GAIN_AB_PASS`. Cualquier falta, salida distinta o fallo → no instalar driver.

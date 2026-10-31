@@ -10,7 +10,8 @@ function Test-LouderMeIndependentGain {
   [CmdletBinding()]
   param(
     [Parameter(Mandatory)][string]$EvidenceDir,
-    [Parameter(Mandatory)][string]$ExpectedSessionId
+    [Parameter(Mandatory)][string]$ExpectedSessionId,
+    [switch]$RequireVirtualProof
   )
   $parsedSession = [guid]::Empty
   if (-not [guid]::TryParse($ExpectedSessionId, [ref]$parsedSession) -or
@@ -60,6 +61,47 @@ function Test-LouderMeIndependentGain {
       }
     }
     $records[$name] = $record
+  }
+  if ($RequireVirtualProof) {
+    $virtualFile = Join-Path $EvidenceDir 'independent-virtual-source-proof.json'
+    if (-not (Test-Path -LiteralPath $virtualFile -PathType Leaf)) {
+      throw 'Required independent virtual PCM source proof is missing.'
+    }
+    $virtual = Get-Content -LiteralPath $virtualFile -Raw -ErrorAction Stop |
+      ConvertFrom-Json -ErrorAction Stop
+    if ($null -eq $virtual -or $virtual.status -cne 'PASS' -or
+        $virtual.session_id -cne $session -or
+        $virtual.stimulus -cne 'separate Windows process' -or
+        $virtual.physical_output_verified -cne $false -or
+        $virtual.global_windows_audio_verified -cne $false -or
+        $virtual.acoustic_spl_verified -cne $false) {
+      throw 'Invalid, cross-session or overclaimed virtual-only source proof.'
+    }
+    foreach ($field in @('virtual_endpoint_sha256', 'bridge_binary_sha256',
+                         'source_binary_sha256')) {
+      $value = $virtual.$field
+      if ($value -isnot [string] -or $value -cnotmatch '^[a-f0-9]{64}$' -or
+          $value -cne $expectedIdentity[$field]) {
+        throw "Virtual-only source proof identity does not match the physical route: $field."
+      }
+    }
+    foreach ($field in @('virtual_monitor_frames',
+                         'virtual_matched440_amplitude', 'virtual_coherence')) {
+      $value = $virtual.$field
+      if ($null -eq $value -or $value -is [bool] -or
+          $value -isnot [ValueType] -or
+          -not [double]::IsFinite([double]$value)) {
+        throw "Virtual-only source measurement is non-numeric or missing: $field."
+      }
+    }
+    if ([double]$virtual.virtual_monitor_frames -lt 4000 -or
+        [double]$virtual.virtual_monitor_frames % 1 -ne 0 -or
+        [double]$virtual.virtual_matched440_amplitude -lt 0.007 -or
+        [double]$virtual.virtual_matched440_amplitude -gt 0.15 -or
+        [double]$virtual.virtual_coherence -lt 0.50 -or
+        [double]$virtual.virtual_coherence -gt 1.0) {
+      throw 'Independent virtual-source PCM lacks complete and coherent 440 Hz evidence.'
+    }
   }
   foreach ($phase in @('before', 'after')) {
     $record = $records["no-source-control-$phase.json"]

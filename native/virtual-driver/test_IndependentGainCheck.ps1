@@ -274,6 +274,72 @@ try {
   } catch { $wrongSessionRejected = $true }
   if (-not $wrongSessionRejected) { throw 'Wrong caller-supplied lab session ID was accepted.' }
 
+  # The VM uses -RequireVirtualProof: the positive virtual-only stage MUST
+  # match the final physical A/B records. Older pure gain-fixture tests remain
+  # valid without this opt-in phase, but the real VM can never omit it.
+  function Get-VirtualProof {
+    return @{
+      status = 'PASS'
+      stimulus = 'separate Windows process'
+      session_id = $SessionId
+      virtual_endpoint_sha256 = ('a' * 64)
+      bridge_binary_sha256 = ('c' * 64)
+      source_binary_sha256 = ('d' * 64)
+      virtual_monitor_frames = 192000
+      virtual_matched440_amplitude = 0.011
+      virtual_coherence = 0.75
+      physical_output_verified = $false
+      global_windows_audio_verified = $false
+      acoustic_spl_verified = $false
+    }
+  }
+  function Write-Virtual($record) {
+    $record | ConvertTo-Json -Compress |
+      Set-Content -LiteralPath (Join-Path $dir 'independent-virtual-source-proof.json')
+  }
+  function Assert-VirtualRejected([string]$label, $record) {
+    Write-Pair (Get-Baseline 100) (Get-Baseline 150)
+    Write-Virtual $record
+    $rejected = $false
+    try {
+      [void](Test-LouderMeIndependentGain -EvidenceDir $dir -ExpectedSessionId $SessionId -RequireVirtualProof)
+    } catch { $rejected = $true }
+    if (-not $rejected) { throw "Invalid virtual-only PCM proof accepted: $label" }
+  }
+
+  Write-Pair (Get-Baseline 100) (Get-Baseline 150)
+  $virtualProof = Join-Path $dir 'independent-virtual-source-proof.json'
+  if (Test-Path -LiteralPath $virtualProof) { Remove-Item -LiteralPath $virtualProof -Force }
+  $missingVirtualRejected = $false
+  try {
+    [void](Test-LouderMeIndependentGain -EvidenceDir $dir -ExpectedSessionId $SessionId -RequireVirtualProof)
+  } catch { $missingVirtualRejected = $true }
+  if (-not $missingVirtualRejected) { throw 'Missing independent virtual source proof accepted.' }
+
+  Write-Virtual (Get-VirtualProof)
+  $validVirtualRatio = Test-LouderMeIndependentGain -EvidenceDir $dir -ExpectedSessionId $SessionId -RequireVirtualProof
+  if ([Math]::Abs($validVirtualRatio - 1.5) -gt 0.000001) {
+    throw 'Correct session-linked virtual→physical 100/150 gain proof rejected.'
+  }
+  $v = Get-VirtualProof; $v.session_id = [guid]::NewGuid().ToString('D')
+  Assert-VirtualRejected 'unrelated session' $v
+  $v = Get-VirtualProof; $v.virtual_endpoint_sha256 = ('f' * 64)
+  Assert-VirtualRejected 'different virtual render endpoint' $v
+  $v = Get-VirtualProof; $v.bridge_binary_sha256 = ('f' * 64)
+  Assert-VirtualRejected 'different bridge binary' $v
+  $v = Get-VirtualProof; $v.source_binary_sha256 = ('f' * 64)
+  Assert-VirtualRejected 'different independent source executable' $v
+  $v = Get-VirtualProof; $v.stimulus = 'bridge generated test tone'
+  Assert-VirtualRejected 'source not independently generated' $v
+  $v = Get-VirtualProof; $v.physical_output_verified = $true
+  Assert-VirtualRejected 'virtual-only proof falsely certifies physical output' $v
+  $v = Get-VirtualProof; $v.virtual_monitor_frames = 0
+  Assert-VirtualRejected 'no actual virtual monitor samples' $v
+  $v = Get-VirtualProof; $v.virtual_matched440_amplitude = 0.001
+  Assert-VirtualRejected 'silence in virtual source proof' $v
+  $v = Get-VirtualProof; $v.virtual_coherence = 1.01
+  Assert-VirtualRejected 'impossible virtual coherence' $v
+
   Write-Host 'PASS: Windows source gain validates session-bound 100/150 records, before/after silence controls and 41+ adversarial fixtures; no audio device used.'
 } finally {
   Remove-Item -LiteralPath $dir -Recurse -Force -ErrorAction SilentlyContinue

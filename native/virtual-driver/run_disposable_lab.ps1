@@ -276,7 +276,7 @@ try {
   # Real measured source evidence must pass the same data guard exercised in
   # native CI adversarial fixtures. Only accepted comparisons can leave a PASS.
   Assert-LouderMeLabInputsUnchanged -Snapshot $inputSnapshot -Phase 'after final silence control'
-  $ratio = Test-LouderMeIndependentGain -EvidenceDir $evidence -ExpectedSessionId $sessionId
+  $ratio = Test-LouderMeIndependentGain -EvidenceDir $evidence -ExpectedSessionId $sessionId -RequireVirtualProof
   Write-LouderMeLabTextOnce -Path (Join-Path $evidence 'independent-app-boost-ratio.txt') -Content ($ratio.ToString('F3', [Globalization.CultureInfo]::InvariantCulture) + [Environment]::NewLine)
   # Even after a successful measurement, a Windows audio policy change by
   # another component invalidates the claim that this LAB never displaced

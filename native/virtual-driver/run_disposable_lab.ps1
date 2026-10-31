@@ -211,6 +211,19 @@ try {
   Assert-LouderMeLabInputsUnchanged -Snapshot $inputSnapshot -Phase 'before virtual tone'
   [void](Invoke-Bridge -BridgeArgs @('--probe-virtual', '--source-id',
     $virtualId, '--confirm-experimental') -Label 'virtual-440hz')
+  # The self-tone probe cannot prove PCM from a separate process. Isolate
+  # that exact causal boundary BEFORE native DSP or physical playback.
+  Assert-LouderMeLabInputsUnchanged -Snapshot $inputSnapshot -Phase 'before independent virtual PCM'
+  $isolatedVirtualProof = Join-Path $PSScriptRoot 'probe_independent_virtual_pcm.ps1'
+  Require-File $isolatedVirtualProof
+  pwsh -NoProfile -File $isolatedVirtualProof -BridgeDll $BridgeDll `
+    -IndependentToneDll $IndependentToneDll -VirtualEndpointId $virtualId `
+    -LabConsent $LabConsent -EvidenceDir $evidence -SessionId $sessionId
+  if ($LASTEXITCODE -ne 0 -or
+      -not (Test-Path -LiteralPath (Join-Path $evidence 'independent-virtual-source-proof.json'))) {
+    throw 'Independent Windows app PCM did not reach virtual loopback; physical/DSP tests forbidden.'
+  }
+  Assert-LouderMeLabInputsUnchanged -Snapshot $inputSnapshot -Phase 'after independent virtual PCM'
   Assert-LouderMeLabInputsUnchanged -Snapshot $inputSnapshot -Phase 'before physical tone'
   [void](Invoke-Bridge -BridgeArgs @('--probe-route', '--source-id',
     $virtualId, '--output-id', $PhysicalEndpointId, '--boost', '150',

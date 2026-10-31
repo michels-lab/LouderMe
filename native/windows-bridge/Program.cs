@@ -838,14 +838,10 @@ internal static class Program
         LoopbackToneVerifier.ToneEvidence evidence;
         lock (sync) evidence = verifier.Evaluate();
         Console.WriteLine(FormattableString.Invariant(
-            $"Virtual PCM proof: frames={evidence.Frames} RMS={evidence.Rms:F5} " +
-            $"peak={evidence.Peak:F5} matched440={evidence.Matched440Amplitude:F5} " +
-            $"coherence={evidence.Coherence:F3}"));
+            $"Virtual PCM proof: frames={evidence.Frames} RMS={evidence.Rms:F5} peak={evidence.Peak:F5} matched440={evidence.Matched440Amplitude:F5} coherence={evidence.Coherence:F3}"));
         if (externalSource)
             Console.WriteLine(FormattableString.Invariant(
-                $"VIRTUAL_EXTERNAL_PROOF frames={evidence.Frames} " +
-                $"matched440={evidence.Matched440Amplitude:F6} " +
-                $"coherence={evidence.Coherence:F4}"));
+                $"VIRTUAL_EXTERNAL_PROOF frames={evidence.Frames} matched440={evidence.Matched440Amplitude:F6} coherence={evidence.Coherence:F4}"));
         if (!evidence.Passed)
         {
             Console.Error.WriteLine(

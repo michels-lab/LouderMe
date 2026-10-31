@@ -92,6 +92,8 @@ try {
     'immediately before driver install',
     'before WASAPI endpoint discovery',
     'before virtual tone',
+    'before independent virtual PCM',
+    'after independent virtual PCM',
     'before physical tone',
     'before silence control',
     'before independent app $percent-percent probe',
@@ -103,6 +105,15 @@ try {
     if (-not $runner.Contains($marker)) {
       throw "Real disposable VM runner missing mandatory fingerprint check: $marker"
     }
+  }
+  # Hardware-free source contract: an independent app must prove virtual
+  # loopback PCM *before* the bridge can begin physical DSP routing.
+  $virtualStep = $runner.IndexOf('probe_independent_virtual_pcm.ps1')
+  $physicalStep = $runner.IndexOf("Assert-LouderMeLabInputsUnchanged -Snapshot $inputSnapshot -Phase 'before physical tone'")
+  if ($virtualStep -lt 0 -or $physicalStep -le $virtualStep -or
+      -not $runner.Contains("independent-virtual-source-proof.json") -or
+      -not $runner.Contains("if ($LASTEXITCODE -ne 0 -or")) {
+    throw 'VM lab skipped independent-app PCM proof at the virtual endpoint before physical DSP.'
   }
   # A physical loopback proof must pass before privileged virtual-driver
   # setup. Device-free source contract: inspect ordering and fail-closed

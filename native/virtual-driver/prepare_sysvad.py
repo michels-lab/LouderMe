@@ -238,15 +238,15 @@ def patch_minwavert_header(text: str) -> str:
     """Attach a per-miniport, nonpaged PCM FIFO; never use a global ring."""
     text = replace_exact(
         text,
-        "#define _SYSVAD_MINWAVERT_H_\\n",
-        '#define _SYSVAD_MINWAVERT_H_\\n#include "LouderMeLabPcmRelay.h"\\n',
+        "#define _SYSVAD_MINWAVERT_H_\n",
+        '#define _SYSVAD_MINWAVERT_H_\n#include "LouderMeLabPcmRelay.h"\n',
         "minwavert.h"
     )
     text = replace_exact(
         text,
-        "    CONSTRICTOR_OPTION                  m_LoopbackProtection;\\n",
-        "    CONSTRICTOR_OPTION                  m_LoopbackProtection;\\n"
-        "    LouderMeLabPcmRelay                 m_LouderMeRelay;\\n",
+        "    CONSTRICTOR_OPTION                  m_LoopbackProtection;\n",
+        "    CONSTRICTOR_OPTION                  m_LoopbackProtection;\n"
+        "    LouderMeLabPcmRelay                 m_LouderMeRelay;\n",
         "minwavert.h"
     )
     methods = """    // LAB only: one system-render source, one bounded virtual loopback sink.
@@ -281,8 +281,8 @@ def patch_minwavert_header(text: str) -> str:
 """
     text = replace_exact(
         text,
-        "public:\\n    DECLARE_PROPERTYHANDLER(Get_SoundDetectorSupportedPatterns);",
-        "public:\\n" + methods +
+        "public:\n    DECLARE_PROPERTYHANDLER(Get_SoundDetectorSupportedPatterns);",
+        "public:\n" + methods +
         "    DECLARE_PROPERTYHANDLER(Get_SoundDetectorSupportedPatterns);",
         "minwavert.h"
     )
@@ -294,8 +294,8 @@ def patch_minwavert_cpp(text: str) -> str:
     text = replace_exact(
         text,
         "    m_LoopbackProtection = CONSTRICTOR_OPTION_DISABLE;",
-        "    m_LoopbackProtection = CONSTRICTOR_OPTION_DISABLE;\\n"
-        "    ntStatus = m_LouderMeRelay.Initialize();\\n"
+        "    m_LoopbackProtection = CONSTRICTOR_OPTION_DISABLE;\n"
+        "    ntStatus = m_LouderMeRelay.Initialize();\n"
         "    if (!NT_SUCCESS(ntStatus)) return ntStatus;",
         "minwavert.cpp"
     )
@@ -304,9 +304,9 @@ def patch_minwavert_cpp(text: str) -> str:
     destructor = text[destructor_start:init_start]
     destructor = replace_exact(
         destructor,
-        "    if (m_LoopbackStreams)\\n",
-        "    m_LouderMeRelay.Shutdown();\\n\\n"
-        "    if (m_LoopbackStreams)\\n",
+        "    if (m_LoopbackStreams)\n",
+        "    m_LouderMeRelay.Shutdown();\n\n"
+        "    if (m_LoopbackStreams)\n",
         "CMiniportWaveRT destructor"
     )
     text = text[:destructor_start] + destructor + text[init_start:]
@@ -317,14 +317,14 @@ def patch_minwavert_cpp(text: str) -> str:
     closed = replace_exact(
         closed,
         "        FREE_PIN_INSTANCE_RESOURCES(m_ulLoopbackAllocated);",
-        "        FREE_PIN_INSTANCE_RESOURCES(m_ulLoopbackAllocated);\\n"
+        "        FREE_PIN_INSTANCE_RESOURCES(m_ulLoopbackAllocated);\n"
         "        m_LouderMeRelay.Reset();",
         "minwavert.cpp StreamClosed"
     )
     closed = replace_exact(
         closed,
         "        FREE_PIN_INSTANCE_RESOURCES(m_ulSystemAllocated);",
-        "        FREE_PIN_INSTANCE_RESOURCES(m_ulSystemAllocated);\\n"
+        "        FREE_PIN_INSTANCE_RESOURCES(m_ulSystemAllocated);\n"
         "        m_LouderMeRelay.Reset();",
         "minwavert.cpp StreamClosed"
     )
@@ -349,7 +349,7 @@ def patch_minwavertstream_cpp(text: str) -> str:
     section = text[start:end]
     section = replace_exact(
         section,
-        "        if (!g_DoNotCreateDataFiles)\\n",
+        "        if (!g_DoNotCreateDataFiles)\n",
         """        // Publish DMA bytes actually consumed by the lab's sole system
         // render stream. Bounded by its WaveRT buffer, no heap or file I/O.
         // Never use queued source bytes as proof of playback.

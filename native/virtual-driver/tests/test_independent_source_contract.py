@@ -134,6 +134,40 @@ class IndependentSourceBoundaryTests(unittest.TestCase):
         native_ci=(ROOT / ".github/workflows/native-audio-engine-ci.yml").read_text()
         self.assertIn("probe_independent_virtual_pcm.ps1", native_ci)
 
+    def test_virtual_only_positive_requires_no_source_windows_before_and_after(self):
+        root = ROOT / "native/virtual-driver"
+        runner = (root / "probe_independent_virtual_pcm.ps1").read_text()
+        checker = (root / "VirtualSourceSilenceCheck.ps1").read_text()
+        validator = (root / "IndependentGainCheck.ps1").read_text()
+        harness = (root / "test_VirtualSourceSilenceCheck.ps1").read_text()
+        for fragment in (
+            'Invoke-VirtualNoSourceControl before',
+            'Invoke-VirtualNoSourceControl after',
+            "VirtualSourceSilenceCheck.ps1",
+            "'--probe-virtual-external'",
+            'virtual-no-source-$phase.json',
+            'Write-LouderMeLabJsonOnce -Path $controlFile',
+            '-TimeoutMs 16000',
+        ):
+            self.assertIn(fragment, runner)
+        self.assertLess(runner.index("Invoke-VirtualNoSourceControl before"),
+                        runner.index("$source = Start-LouderMeLabChild"))
+        self.assertLess(runner.index("Invoke-VirtualNoSourceControl after"),
+                        runner.index("$record = [ordered]@{"))
+        for token in ("if ($ExitCode -ne 3)",
+                      "EXTERNAL_VIRTUAL_READY",
+                      "VIRTUAL_EXTERNAL_PROOF",
+                      "'FAIL: no matching 440 Hz tone in the virtual WASAPI loopback.",
+                      "$amplitude -gt 0.003"):
+            self.assertIn(token, checker)
+        self.assertIn("virtual-no-source-$controlPhase.json", validator)
+        self.assertIn("if ($RequireVirtualProof)", validator)
+        self.assertIn("bridge_rejected_for_no_tone", validator)
+        self.assertIn("Test-LouderMeVirtualNoSource", harness)
+        self.assertIn("Assert-Rejected 'lingering 440 Hz above silence threshold'", harness)
+        ci = (ROOT / ".github/workflows/native-audio-engine-ci.yml").read_text()
+        self.assertIn("test_VirtualSourceSilenceCheck.ps1", ci)
+
     def test_disposable_vm_and_explicit_manual_audio_proof_mandatory(self):
         text = LAB.read_text()
         self.assertIn('probe_independent_app_route.ps1', text)

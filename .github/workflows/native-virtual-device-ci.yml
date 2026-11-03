@@ -39,6 +39,12 @@ jobs:
             louderme/native/virtual-driver/tests/test_pcm_relay_host.cpp \
             -o /tmp/louderme-lab-relay-test
           /tmp/louderme-lab-relay-test
+      - name: Exercise actual WaveRT frame-clock helper across fractional rates
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -pthread \
+            louderme/native/virtual-driver/tests/test_pcm_frame_clock_host.cpp \
+            -o /tmp/louderme-lab-frame-clock-test
+          /tmp/louderme-lab-frame-clock-test
       - name: Produce local virtual-render source and metadata
         run: |
           python louderme/native/virtual-driver/prepare_sysvad.py --upstream-root upstream
@@ -56,6 +62,8 @@ jobs:
           assert proj.count('<DriverTargetPlatform>Desktop</DriverTargetPlatform>') == 4
           assert info['recording_to_file_enabled'] is False
           assert info['sample_tone_generator_enabled'] is False
+          assert info['lab_frame_accurate_dma_clock'] is True
+          assert 'EndpointsCommon/LouderMeLabFrameClock.h' in info['patched_files']
           assert info['hardware_id'] == r'Root\LouderMe_VirtualRender_Lab'
           assert info['driver_signed'] is False
           assert info['real_audio_verified'] is False

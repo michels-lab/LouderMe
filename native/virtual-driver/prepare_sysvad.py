@@ -327,7 +327,11 @@ def patch_minwavert_cpp(text: str) -> str:
     )
     closed = replace_exact(
         closed,
+        "    else if (IsSystemRenderPin(_Pin))\n"
+        "    {\n"
         "        FREE_PIN_INSTANCE_RESOURCES(m_ulSystemAllocated);",
+        "    else if (IsSystemRenderPin(_Pin))\n"
+        "    {\n"
         "        FREE_PIN_INSTANCE_RESOURCES(m_ulSystemAllocated);\n"
         "        m_LouderMeRelay.Reset();",
         "minwavert.cpp StreamClosed"

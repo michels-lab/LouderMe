@@ -159,7 +159,10 @@ int main() {
     relay.Consume(quiet.data(), (ULONG)quiet.size(), &stereo);
     Zeros(quiet);
     relay.Consume(quiet.data(), (ULONG)quiet.size(), &otherRate);
-    assert(quiet == fresh);
+    Zeros(quiet); // Conflicting capture request flushed the queued 44.1kHz PCM.
+    relay.Publish(fresh.data(), (ULONG)fresh.size(), &otherRate);
+    relay.Consume(quiet.data(), (ULONG)quiet.size(), &otherRate);
+    assert(quiet == fresh); // A NEW valid source packet is accepted.
 
     // 24-bit stereo uses six-byte frames. Ring wrap/overflow must never
     // discard half a sample, including when the input exceeds capacity.

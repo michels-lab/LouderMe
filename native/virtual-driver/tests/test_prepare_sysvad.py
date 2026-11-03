@@ -114,7 +114,7 @@ SYSVAD.TopologySpeaker.szPname="SYSVAD Topology Speaker"
         result = MODULE.patch_minwavert_header(sample_header)
         self.assertIn('#include "LouderMeLabPcmRelay.h"', result)
         self.assertIn("LouderMeLabPcmRelay                 m_LouderMeRelay", result)
-        self.assertIn("m_LoopbackProtection == CONSTRICTOR_OPTION_DISABLE", result)
+        self.assertIn("m_LoopbackProtection != CONSTRICTOR_OPTION_DISABLE", result)
         self.assertIn("m_MixDrmRights.CopyProtect", result)
         self.assertIn("m_ulLoopbackAllocated == 0", result)
         self.assertIn("m_LouderMeRelay.Reset();", result)

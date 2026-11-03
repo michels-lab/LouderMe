@@ -236,6 +236,8 @@ def patch_adapter(text: str) -> str:
 
 def patch_minwavert_header(text: str) -> str:
     """Attach a per-miniport, nonpaged PCM FIFO; never use a global ring."""
+    # The pinned WDK source may be CRLF; exact source anchors use LF.
+    text = text.replace("\r\n", "\n")
     text = replace_exact(
         text,
         "#define _SYSVAD_MINWAVERT_H_\n",
@@ -291,6 +293,8 @@ def patch_minwavert_header(text: str) -> str:
 
 def patch_minwavert_cpp(text: str) -> str:
     """Initialize, wipe and reset relay with WaveRT miniport lifetime."""
+    # The pinned WDK source may be CRLF; exact source anchors use LF.
+    text = text.replace("\r\n", "\n")
     text = replace_exact(
         text,
         "    m_LoopbackProtection                = CONSTRICTOR_OPTION_DISABLE;",
@@ -333,6 +337,8 @@ def patch_minwavert_cpp(text: str) -> str:
 
 def patch_minwavertstream_cpp(text: str) -> str:
     """Move consumed system-render DMA bytes into the virtual loopback, no tone."""
+    # The pinned WDK source may be CRLF; exact source anchors use LF.
+    text = text.replace("\r\n", "\n")
     text = replace_exact(
         text,
         "            m_ToneGenerator.GenerateSine(m_pDmaBuffer + bufferOffset, runWrite);",

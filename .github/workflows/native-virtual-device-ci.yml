@@ -33,6 +33,12 @@ jobs:
             LICENSE
       - name: Test derivation guards
         run: python -m unittest discover -s louderme/native/virtual-driver/tests -v
+      - name: Exercise bounded PCM relay with real C++ implementation on a host stub
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -pthread \
+            louderme/native/virtual-driver/tests/test_pcm_relay_host.cpp \
+            -o /tmp/louderme-lab-relay-test
+          /tmp/louderme-lab-relay-test
       - name: Produce local virtual-render source and metadata
         run: |
           python louderme/native/virtual-driver/prepare_sysvad.py --upstream-root upstream

@@ -1,3 +1,9 @@
+## Granada 2026-11-03 — whole-frame 24-bit PCM and explicit IEEE float formats
+
+The prototype render→loopback ring now uses **65520 bytes**, a multiple of every supported mono/stereo 16/24/32-bit PCM frame size, rather than 65536 (which splits six-byte stereo 24-bit frames). The DMA publish and loopback consume paths reject non-frame-aligned byte counts, unknown WaveFormatExtended subtypes, invalid sample metadata and float samples other than 32-bit IEEE. Capture format mismatches flush stale PCM. The existing source-derived SysVAD driver and the same C++ relay header are tested through expanded host/WDK CI. [Root-cause audit](../../docs/audits/GRANADA_2026-11-03_PCM_FRAME_FORMAT_INTEGRITY.md).
+
+Still lab source only. No production-signed device, installed driver or actual independent-app PCM verified in a VM. Do not release.
+
 ## Granada 2026-11-03 — actual render DMA → virtual loopback PCM relay (experimental)
 
 The pinned SysVAD derivation now includes a **per-miniport, bounded kernel PCM ring** that forwards samples **already consumed** by the one system-render WaveRT stream to its loopback capture stream, replacing the Microsoft sample's synthetic capture tone. The original SysVAD example generated capture PCM itself; LouderMe had muted that generator without yet implementing an explicit render→loopback data path. Format mismatch/DRM/underrun yields silence rather than synthetic PCM; the kernel buffer is nonpaged, synchronized and wiped on shutdown. Source-derivation tests inspect this behavior and CI must compile the real pinned WDK project.

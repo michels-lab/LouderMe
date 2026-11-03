@@ -85,7 +85,12 @@ SYSVAD.TopologySpeaker.szPname="SYSVAD Topology Speaker"
     def test_relay_uses_bounded_per_miniport_nonpaged_fifo(self):
         header = (HERE.parent / "LouderMeLabPcmRelay.h").read_text()
         self.assertIn("KSPIN_LOCK m_Lock", header)
-        self.assertIn("Capacity = 65536", header)
+        self.assertIn("Capacity = 65520", header)
+        self.assertIn("KSDATAFORMAT_SUBTYPE_IEEE_FLOAT", header)
+        self.assertIn("KSDATAFORMAT_SUBTYPE_PCM", header)
+        self.assertIn("bytes % format->Format.nBlockAlign != 0", header)
+        self.assertIn("m_HaveFormat = FALSE", header)
+        self.assertIn("nAvgBytesPerSec", header)
         self.assertIn("POOL_FLAG_NON_PAGED", header)
         self.assertIn("KeAcquireSpinLock", header)
         self.assertIn("RtlSecureZeroMemory", header)
@@ -132,6 +137,9 @@ SYSVAD.TopologySpeaker.szPname="SYSVAD Topology Speaker"
         self.assertIn("m_pMiniport->IsLoopbackPin(m_ulPin)", actual)
         self.assertIn("ByteDisplacement - remaining", actual)
         self.assertIn("m_ulDmaBufferSize != 0", actual)
+        self.assertIn("m_ulDmaBufferSize % m_pWfExt->Format.nBlockAlign == 0", actual)
+        self.assertIn("m_ullLinearPosition % m_pWfExt->Format.nBlockAlign == 0", actual)
+        self.assertIn("ByteDisplacement % m_pWfExt->Format.nBlockAlign == 0", actual)
         with self.assertRaises(ValueError):
             MODULE.patch_minwavertstream_cpp(before.replace(
                 "m_ToneGenerator.GenerateSine", "m_UnknownGenerator"

@@ -1,3 +1,9 @@
+## Granada 2026-11-02 — virtual PCM pre/post no-source controls
+
+The independent Windows-process virtual-only PCM proof now brackets its two-second stimulus with TWO complete five-second **source-absent virtual WASAPI loopback** runs. Each receive-only probe must reject 440 Hz (exit 3), have exactly one capture-ready and a numeric post-stop frame/amplitude report, and measure no residual 440-Hz amplitude >0.003. The native DSP/physical A/B final acceptance requires both write-once negative records and the positive separate-process record from the same session and binary/endpoint SHA-256 identities. Tests reject missing or changed files and a 440-Hz signal already present before or persisting after the independent executable. [Audit](../../docs/audits/GRANADA_2026-11-02_VIRTUAL_LOOPBACK_SILENCE_CONTROLS.md).
+
+No real signed LAB driver, PCM from independent Windows applications or acoustic sound is demonstrated by hosted CI. The operator-consented disposable VM run remains required; no consumer release.
+
 ## Granada 2026-10-30 — independent application PCM on virtual-only loopback
 
 The disposable VM lab now has a **virtual-only causal proof before native DSP/physical rendering**: `probe_independent_virtual_pcm.ps1` starts `--probe-virtual-external`, waits for real capture readiness, launches the *separate* Windows tone executable into the selected virtual render endpoint and requires measured 440-Hz PCM returned by that exact endpoint's WASAPI loopback. The bridge in this mode does **not** generate tone samples or open a physical sink. If this stage fails, the lab refuses to run its later DSP/physical tests. The intermediate output is a session-bound, write-once, numeric JSON file with SHA-256 identities, no recorded waveform. [Detailed source evidence, test sequence and limitations](../../docs/audits/GRANADA_2026-10-30_INDEPENDENT_VIRTUAL_PCM_STAGE.md).

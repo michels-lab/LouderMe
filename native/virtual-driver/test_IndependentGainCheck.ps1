@@ -297,9 +297,48 @@ try {
     $record | ConvertTo-Json -Compress |
       Set-Content -LiteralPath (Join-Path $dir 'independent-virtual-source-proof.json')
   }
+  function Get-VirtualSilence([string]$phase) {
+    return @{
+      status = 'PASS'
+      control = 'negative: virtual WASAPI listener active, independent source absent'
+      control_phase = $phase
+      stimulus_launched = $false
+      bridge_rejected_for_no_tone = $true
+      session_id = $SessionId
+      virtual_endpoint_sha256 = ('a' * 64)
+      bridge_binary_sha256 = ('c' * 64)
+      source_binary_sha256 = ('d' * 64)
+      virtual_monitor_frames = 0
+      virtual_matched440_amplitude = 0.0
+      virtual_coherence = 0.0
+      physical_output_verified = $false
+      global_windows_audio_verified = $false
+      acoustic_spl_verified = $false
+    }
+  }
+  function Write-VirtualSilence($record) {
+    $record | ConvertTo-Json -Compress |
+      Set-Content -LiteralPath (Join-Path $dir "virtual-no-source-$($record.control_phase).json")
+  }
+  function Write-ValidVirtualSilence {
+    Write-VirtualSilence (Get-VirtualSilence 'before')
+    Write-VirtualSilence (Get-VirtualSilence 'after')
+  }
+  function Assert-VirtualSilenceRejected([string]$label, $before, $after) {
+    Write-Pair (Get-Baseline 100) (Get-Baseline 150)
+    Write-Virtual (Get-VirtualProof)
+    Write-VirtualSilence $before
+    Write-VirtualSilence $after
+    $rejected = $false
+    try {
+      [void](Test-LouderMeIndependentGain -EvidenceDir $dir -ExpectedSessionId $SessionId -RequireVirtualProof)
+    } catch { $rejected = $true }
+    if (-not $rejected) { throw "Invalid virtual-only silence accepted: $label" }
+  }
   function Assert-VirtualRejected([string]$label, $record) {
     Write-Pair (Get-Baseline 100) (Get-Baseline 150)
     Write-Virtual $record
+    Write-ValidVirtualSilence
     $rejected = $false
     try {
       [void](Test-LouderMeIndependentGain -EvidenceDir $dir -ExpectedSessionId $SessionId -RequireVirtualProof)
@@ -317,6 +356,7 @@ try {
   if (-not $missingVirtualRejected) { throw 'Missing independent virtual source proof accepted.' }
 
   Write-Virtual (Get-VirtualProof)
+  Write-ValidVirtualSilence
   $validVirtualRatio = Test-LouderMeIndependentGain -EvidenceDir $dir -ExpectedSessionId $SessionId -RequireVirtualProof
   if ([Math]::Abs($validVirtualRatio - 1.5) -gt 0.000001) {
     throw 'Correct session-linked virtual→physical 100/150 gain proof rejected.'
@@ -339,6 +379,44 @@ try {
   Assert-VirtualRejected 'silence in virtual source proof' $v
   $v = Get-VirtualProof; $v.virtual_coherence = 1.01
   Assert-VirtualRejected 'impossible virtual coherence' $v
+
+  $b = Get-VirtualSilence before; $a = Get-VirtualSilence after
+  $b.virtual_matched440_amplitude = 0.012
+  Assert-VirtualSilenceRejected 'pre-source 440 Hz is already present' $b $a
+  $b = Get-VirtualSilence before; $a = Get-VirtualSilence after
+  $a.virtual_matched440_amplitude = 0.008
+  Assert-VirtualSilenceRejected 'post-source 440 Hz failed to stop' $b $a
+  $b = Get-VirtualSilence before; $a = Get-VirtualSilence after
+  $a.stimulus_launched = $true
+  Assert-VirtualSilenceRejected 'post negative control launched independent source' $b $a
+  $b = Get-VirtualSilence before; $a = Get-VirtualSilence after
+  $b.virtual_endpoint_sha256 = ('f' * 64)
+  Assert-VirtualSilenceRejected 'pre control uses wrong virtual endpoint' $b $a
+  $b = Get-VirtualSilence before; $a = Get-VirtualSilence after
+  $a.source_binary_sha256 = ('f' * 64)
+  Assert-VirtualSilenceRejected 'post control uses different source binary' $b $a
+  $b = Get-VirtualSilence before; $a = Get-VirtualSilence after
+  $b.session_id = [guid]::NewGuid().ToString('D')
+  Assert-VirtualSilenceRejected 'pre control from another session' $b $a
+  $b = Get-VirtualSilence before; $a = Get-VirtualSilence after
+  $a.virtual_coherence = 1.02
+  Assert-VirtualSilenceRejected 'post control impossible coherence' $b $a
+  $b = Get-VirtualSilence before; $a = Get-VirtualSilence after
+  $a.bridge_rejected_for_no_tone = $false
+  Assert-VirtualSilenceRejected 'post control falsely accepted absent source' $b $a
+  $b = Get-VirtualSilence before; $a = Get-VirtualSilence after
+  $a.virtual_monitor_frames = '0'
+  Assert-VirtualSilenceRejected 'non-numeric virtual frame count' $b $a
+
+  Write-Pair (Get-Baseline 100) (Get-Baseline 150)
+  Write-Virtual (Get-VirtualProof)
+  Write-ValidVirtualSilence
+  Remove-Item -LiteralPath (Join-Path $dir 'virtual-no-source-after.json') -Force
+  $noPostRejected = $false
+  try {
+    [void](Test-LouderMeIndependentGain -EvidenceDir $dir -ExpectedSessionId $SessionId -RequireVirtualProof)
+  } catch { $noPostRejected = $true }
+  if (-not $noPostRejected) { throw 'Missing post-source virtual silence control was accepted.' }
 
   Write-Host 'PASS: Windows source gain validates session-bound 100/150 records, before/after silence controls and 41+ adversarial fixtures; no audio device used.'
 } finally {

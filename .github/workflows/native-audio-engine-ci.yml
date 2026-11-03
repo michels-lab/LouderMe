@@ -24,6 +24,8 @@ on:
       - 'native/virtual-driver/test_PositiveSourceCheck.ps1'
       - 'native/virtual-driver/probe_independent_app_route.ps1'
       - 'native/virtual-driver/probe_independent_virtual_pcm.ps1'
+      - 'native/virtual-driver/VirtualSourceSilenceCheck.ps1'
+      - 'native/virtual-driver/test_VirtualSourceSilenceCheck.ps1'
       - 'native/virtual-driver/run_disposable_lab.ps1'
       - '.github/workflows/native-audio-engine-ci.yml'
   pull_request:
@@ -50,6 +52,8 @@ on:
       - 'native/virtual-driver/test_PositiveSourceCheck.ps1'
       - 'native/virtual-driver/probe_independent_app_route.ps1'
       - 'native/virtual-driver/probe_independent_virtual_pcm.ps1'
+      - 'native/virtual-driver/VirtualSourceSilenceCheck.ps1'
+      - 'native/virtual-driver/test_VirtualSourceSilenceCheck.ps1'
       - 'native/virtual-driver/run_disposable_lab.ps1'
       - '.github/workflows/native-audio-engine-ci.yml'
 
@@ -134,6 +138,11 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
             throw 'Silence negative control accepted missing listener, contaminated output or fake proof.'
           }
+      - name: Reject false virtual-only no-source evidence before and after independent tone
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File native/virtual-driver/test_VirtualSourceSilenceCheck.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'Virtual loopback idle-phase evidence accepted stale or fabricated 440Hz PCM.' }
       - name: Reject fake independent source/physical-loopback successes
         shell: pwsh
         run: |
@@ -212,6 +221,8 @@ jobs:
                               'native/virtual-driver/run_disposable_lab.ps1',
                               'native/virtual-driver/probe_independent_app_route.ps1',
                               'native/virtual-driver/probe_independent_virtual_pcm.ps1',
+                              'native/virtual-driver/VirtualSourceSilenceCheck.ps1',
+                              'native/virtual-driver/test_VirtualSourceSilenceCheck.ps1',
                               'native/virtual-driver/IndependentGainCheck.ps1',
                               'native/virtual-driver/test_IndependentGainCheck.ps1',
                               'native/virtual-driver/NoSourceControlCheck.ps1',

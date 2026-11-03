@@ -1,3 +1,11 @@
+## 2026-11-02 — Operación Granada: controles de silencio virtual antes/después (PR candidato)
+
+- Después de #134, nueva verificación **virtual WASAPI sin DSP/altavoz**: captura sin fuente de 5 s ANTES y DESPUÉS del PCM 440 Hz emitido por un proceso Windows diferente. Debe rechazar el tono con salida 3, medir amplitud matched440 <=0.003 y verificar el cierre real del monitor. Un endpoint inactivo puede registrar 0 frames en estos controles, pero el positivo requiere PCM real no silencioso.
+- `VirtualSourceSilenceCheck.ps1` más pruebas adversariales; `probe_independent_virtual_pcm.ps1` ejecuta controles y anota archivos JSON `virtual-no-source-before/after`, inmutables por sesión; `IndependentGainCheck.ps1 -RequireVirtualProof` requiere los tres archivos con hashes de endpoint/bridge/fuente idénticos antes de aceptar el A/B físico.
+- [Auditoría detallada](docs/audits/GRANADA_2026-11-02_VIRTUAL_LOOPBACK_SILENCE_CONTROLS.md). No se ha corrido en VM con SysVAD firmado/instalado, sin release, issues #46/#48 abiertos.
+
+---
+
 ## 2026-10-30 — Operación Granada: fuente externa → loopback SOLO virtual (candidato)
 
 - Se añadió el modo Windows `--probe-virtual-external`: el puente NO crea tono ni `WasapiOut` ni un DSP/altavoz físico. Marca `EXTERNAL_VIRTUAL_READY` después de arrancar la captura y exige PCM 440 Hz del proceso Windows independiente. Una prueba exitosa crea `VIRTUAL_EXTERNAL_PROOF` con amplitud/coherencia.

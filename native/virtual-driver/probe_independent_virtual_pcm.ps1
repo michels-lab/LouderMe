@@ -44,6 +44,29 @@ $logPath = Join-Path $folder 'independent-virtual-source-proof.log'
 if ((Test-Path -LiteralPath $evidencePath) -or (Test-Path -LiteralPath $logPath)) {
   throw 'Existing virtual PCM evidence is never reused or overwritten.'
 }
+. (Join-Path $PSScriptRoot 'VirtualSourceSilenceCheck.ps1')
+function Invoke-VirtualNoSourceControl([string]$phase) {
+  $controlFile = Join-Path $folder "virtual-no-source-$phase.json"
+  if (Test-Path -LiteralPath $controlFile) {
+    throw "Refusing stale $phase virtual WASAPI no-source control."
+  }
+  # This command opens only the virtual capture for its full five seconds.
+  # No other process, DSP or physical WasapiOut is started in this phase.
+  $measure = Invoke-LouderMeLabFiniteProcess -Executable 'dotnet' -Arguments @(
+    $BridgeDll, '--probe-virtual-external', '--source-id', $VirtualEndpointId,
+    '--confirm-experimental') -TimeoutMs 16000
+  $proof = Test-LouderMeVirtualNoSource -ExitCode $measure.ExitCode `
+    -StdOut $measure.StdOut -StdErr $measure.StdErr -Phase $phase
+  $proof['session_id'] = $sessionIdCanonical
+  $proof['virtual_endpoint_sha256'] = [Convert]::ToHexString(
+    [Security.Cryptography.SHA256]::HashData(
+      [Text.Encoding]::UTF8.GetBytes($VirtualEndpointId))).ToLowerInvariant()
+  $proof['bridge_binary_sha256'] = (Get-FileHash -LiteralPath $BridgeDll -Algorithm SHA256).Hash.ToLowerInvariant()
+  $proof['source_binary_sha256'] = (Get-FileHash -LiteralPath $IndependentToneDll -Algorithm SHA256).Hash.ToLowerInvariant()
+  Write-LouderMeLabJsonOnce -Path $controlFile -Record $proof
+  Write-Host "PASS: $phase control observed no independent 440 Hz PCM on virtual-only listener."
+}
+Invoke-VirtualNoSourceControl before
 $bridge = $null
 $source = $null
 $readyLines = [Collections.Generic.List[string]]::new()
@@ -113,6 +136,10 @@ try {
       $coherence -lt 0.50 -or $coherence -gt 1.0) {
     throw 'Virtual loopback lacks real numeric 440 Hz PCM evidence from the separate app.'
   }
+  # The separate source has completed and the positive loopback process
+  # exited. A second real receive-only capture must now reject residual tone.
+  # Do this BEFORE writing the positive PASS record.
+  Invoke-VirtualNoSourceControl after
   $redacted = $stdout.Replace($VirtualEndpointId, '[REDACTED_ENDPOINT_ID]')
   Write-LouderMeLabTextOnce -Path $logPath -Content $redacted
   $record = [ordered]@{

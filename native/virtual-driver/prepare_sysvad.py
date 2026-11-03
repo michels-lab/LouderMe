@@ -234,6 +234,149 @@ def patch_adapter(text: str) -> str:
     return text
 
 
+def patch_minwavert_header(text: str) -> str:
+    """Attach a per-miniport, nonpaged PCM FIFO; never use a global ring."""
+    text = replace_exact(
+        text,
+        "#define _SYSVAD_MINWAVERT_H_\\n",
+        '#define _SYSVAD_MINWAVERT_H_\\n#include "LouderMeLabPcmRelay.h"\\n',
+        "minwavert.h"
+    )
+    text = replace_exact(
+        text,
+        "    CONSTRICTOR_OPTION                  m_LoopbackProtection;\\n",
+        "    CONSTRICTOR_OPTION                  m_LoopbackProtection;\\n"
+        "    LouderMeLabPcmRelay                 m_LouderMeRelay;\\n",
+        "minwavert.h"
+    )
+    methods = """    // LAB only: one system-render source, one bounded virtual loopback sink.
+    // No kernel global ring; if DRM prohibits copy, produce silence instead.
+    VOID PublishLouderMeRender(
+        _In_ PCMiniportWaveRTStream stream,
+        _In_reads_bytes_(bytes) const BYTE* pcm,
+        _In_ ULONG bytes,
+        _In_ const WAVEFORMATEXTENSIBLE* format)
+    {
+        if (IsRenderDevice() && m_ulLoopbackAllocated != 0 &&
+            m_SystemStreams != NULL && m_SystemStreams[0] == stream &&
+            !m_MixDrmRights.CopyProtect &&
+            m_LoopbackProtection == CONSTRICTOR_OPTION_DISABLE)
+            m_LouderMeRelay.Publish(pcm, bytes, format);
+    }
+
+    VOID FillLouderMeLoopback(
+        _Out_writes_bytes_(bytes) BYTE* pcm,
+        _In_ ULONG bytes,
+        _In_ const WAVEFORMATEXTENSIBLE* format)
+    {
+        if (m_MixDrmRights.CopyProtect ||
+            m_LoopbackProtection != CONSTRICTOR_OPTION_DISABLE)
+        {
+            RtlZeroMemory(pcm, bytes);
+            return;
+        }
+        m_LouderMeRelay.Consume(pcm, bytes, format);
+    }
+
+"""
+    text = replace_exact(
+        text,
+        "public:\\n    DECLARE_PROPERTYHANDLER(Get_SoundDetectorSupportedPatterns);",
+        "public:\\n" + methods +
+        "    DECLARE_PROPERTYHANDLER(Get_SoundDetectorSupportedPatterns);",
+        "minwavert.h"
+    )
+    return text
+
+
+def patch_minwavert_cpp(text: str) -> str:
+    """Initialize, wipe and reset relay with WaveRT miniport lifetime."""
+    text = replace_exact(
+        text,
+        "    m_LoopbackProtection = CONSTRICTOR_OPTION_DISABLE;",
+        "    m_LoopbackProtection = CONSTRICTOR_OPTION_DISABLE;\\n"
+        "    ntStatus = m_LouderMeRelay.Initialize();\\n"
+        "    if (!NT_SUCCESS(ntStatus)) return ntStatus;",
+        "minwavert.cpp"
+    )
+    destructor_start = text.index("CMiniportWaveRT::~CMiniportWaveRT")
+    init_start = text.index("CMiniportWaveRT::Init", destructor_start)
+    destructor = text[destructor_start:init_start]
+    destructor = replace_exact(
+        destructor,
+        "    if (m_LoopbackStreams)\\n",
+        "    m_LouderMeRelay.Shutdown();\\n\\n"
+        "    if (m_LoopbackStreams)\\n",
+        "CMiniportWaveRT destructor"
+    )
+    text = text[:destructor_start] + destructor + text[init_start:]
+
+    closed_start = text.index("CMiniportWaveRT::StreamClosed")
+    closed_end = text.index("//=============================================================================", closed_start)
+    closed = text[closed_start:closed_end]
+    closed = replace_exact(
+        closed,
+        "        FREE_PIN_INSTANCE_RESOURCES(m_ulLoopbackAllocated);",
+        "        FREE_PIN_INSTANCE_RESOURCES(m_ulLoopbackAllocated);\\n"
+        "        m_LouderMeRelay.Reset();",
+        "minwavert.cpp StreamClosed"
+    )
+    closed = replace_exact(
+        closed,
+        "        FREE_PIN_INSTANCE_RESOURCES(m_ulSystemAllocated);",
+        "        FREE_PIN_INSTANCE_RESOURCES(m_ulSystemAllocated);\\n"
+        "        m_LouderMeRelay.Reset();",
+        "minwavert.cpp StreamClosed"
+    )
+    return text[:closed_start] + closed + text[closed_end:]
+
+
+def patch_minwavertstream_cpp(text: str) -> str:
+    """Move consumed system-render DMA bytes into the virtual loopback, no tone."""
+    text = replace_exact(
+        text,
+        "            m_ToneGenerator.GenerateSine(m_pDmaBuffer + bufferOffset, runWrite);",
+        """            if (m_pMiniport->IsLoopbackPin(m_ulPin))
+                m_pMiniport->FillLouderMeLoopback(
+                    m_pDmaBuffer + bufferOffset, runWrite, m_pWfExt);
+            else
+                m_ToneGenerator.GenerateSine(
+                    m_pDmaBuffer + bufferOffset, runWrite);""",
+        "minwavertstream.cpp WriteBytes"
+    )
+    start = text.index("VOID CMiniportWaveRTStream::UpdatePosition")
+    end = text.index("VOID CMiniportWaveRTStream::WriteBytes", start)
+    section = text[start:end]
+    section = replace_exact(
+        section,
+        "        if (!g_DoNotCreateDataFiles)\\n",
+        """        // Publish DMA bytes actually consumed by the lab's sole system
+        // render stream. Bounded by its WaveRT buffer, no heap or file I/O.
+        // Never use queued source bytes as proof of playback.
+        if (m_pMiniport->IsSystemRenderPin(m_ulPin) &&
+            m_pDmaBuffer != NULL && m_pWfExt != NULL &&
+            m_ulDmaBufferSize != 0 && ByteDisplacement != 0)
+        {
+            ULONG remaining = min(ByteDisplacement, m_ulDmaBufferSize);
+            ULONG offset = (ULONG)((m_ullLinearPosition +
+                ByteDisplacement - remaining) % m_ulDmaBufferSize);
+            while (remaining != 0)
+            {
+                ULONG chunk = min(remaining, m_ulDmaBufferSize - offset);
+                m_pMiniport->PublishLouderMeRender(
+                    this, m_pDmaBuffer + offset, chunk, m_pWfExt);
+                remaining -= chunk;
+                offset = (offset + chunk) % m_ulDmaBufferSize;
+            }
+        }
+
+        if (!g_DoNotCreateDataFiles)
+""",
+        "minwavertstream.cpp UpdatePosition"
+    )
+    return text[:start] + section + text[end:]
+
+
 def patch_project_for_desktop(text: str) -> str:
     # LouderME is explicitly a Windows desktop application; it does not
     # target Windows IoT/Core, mobile, or other Universal-driver platforms.
@@ -273,9 +416,23 @@ def prepare(repo: Path, dry_run: bool = False) -> dict:
         "TabletAudioSample/ComponentizedAudioSampleExtension.inx": lambda s: patch_inf(s, True),
         "TabletAudioSample/TabletAudioSample.rc": patch_resource,
         "adapter.cpp": patch_adapter,
+        "EndpointsCommon/minwavert.h": patch_minwavert_header,
+        "EndpointsCommon/minwavert.cpp": patch_minwavert_cpp,
+        "EndpointsCommon/minwavertstream.cpp": patch_minwavertstream_cpp,
         "TabletAudioSample/TabletAudioSample.vcxproj": patch_project_for_desktop
     }
-    patched = {}
+    relay_source = Path(__file__).with_name("LouderMeLabPcmRelay.h")
+    relay_dest = root / "EndpointsCommon" / relay_source.name
+    if not relay_source.is_file():
+        raise FileNotFoundError("LouderMe lab PCM relay implementation missing")
+    relay_text = relay_source.read_bytes()
+    if b"KeAcquireSpinLock" not in relay_text or b"RtlZeroMemory" not in relay_text:
+        raise ValueError("LouderMe PCM relay lost kernel synchronization or silence")
+    patched = {"EndpointsCommon/LouderMeLabPcmRelay.h": {
+        "sha256": hashlib.sha256(relay_text).hexdigest(), "encoding": "utf-8"
+    }}
+    if not dry_run:
+        relay_dest.write_bytes(relay_text)
     for rel, patch in work.items():
         target = root / rel
         raw = target.read_bytes()
@@ -308,6 +465,8 @@ def prepare(repo: Path, dry_run: bool = False) -> dict:
         "sample_keyword_detector_included": False,
         "recording_to_file_enabled": False,
         "sample_tone_generator_enabled": False,
+        "lab_render_loopback_relay_source": True,
+        "render_loopback_relay_installed_or_verified": False,
         "driver_signed": False,
         "driver_installed": False,
         "real_audio_verified": False,

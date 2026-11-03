@@ -100,9 +100,9 @@ SYSVAD.TopologySpeaker.szPname="SYSVAD Topology Speaker"
 
     def test_relay_kernel_derivation_rejects_upstream_drift(self):
         sample_header = (
-            "#define _SYSVAD_MINWAVERT_H_\\n"
-            "    CONSTRICTOR_OPTION                  m_LoopbackProtection;\\n"
-            "public:\\n    DECLARE_PROPERTYHANDLER(Get_SoundDetectorSupportedPatterns);"
+            "#define _SYSVAD_MINWAVERT_H_\n"
+            "    CONSTRICTOR_OPTION                  m_LoopbackProtection;\n"
+            "public:\n    DECLARE_PROPERTYHANDLER(Get_SoundDetectorSupportedPatterns);"
         )
         result = MODULE.patch_minwavert_header(sample_header)
         self.assertIn('#include "LouderMeLabPcmRelay.h"', result)
@@ -118,12 +118,12 @@ SYSVAD.TopologySpeaker.szPname="SYSVAD Topology Speaker"
 
     def test_kernel_stream_publishes_only_consumed_render_and_reads_loopback(self):
         before = (
-            "VOID CMiniportWaveRTStream::UpdatePosition\\n{\\n"
-            "        if (!g_DoNotCreateDataFiles)\\n"
-            "}\\n"
-            "VOID CMiniportWaveRTStream::WriteBytes\\n{\\n"
+            "VOID CMiniportWaveRTStream::UpdatePosition\n{\n"
+            "        if (!g_DoNotCreateDataFiles)\n"
+            "}\n"
+            "VOID CMiniportWaveRTStream::WriteBytes\n{\n"
             "            m_ToneGenerator.GenerateSine(m_pDmaBuffer + bufferOffset, runWrite);"
-            "}\\n"
+            "}\n"
         )
         actual = MODULE.patch_minwavertstream_cpp(before)
         self.assertIn("PublishLouderMeRender(", actual)
@@ -139,15 +139,15 @@ SYSVAD.TopologySpeaker.szPname="SYSVAD Topology Speaker"
 
     def test_relay_is_lifetime_managed_and_not_global(self):
         before = (
-            "CMiniportWaveRT::~CMiniportWaveRT\\n{\\n"
-            "    if (m_LoopbackStreams)\\n{}\\n"
-            "CMiniportWaveRT::Init\\n{\\n"
-            "    m_LoopbackProtection                = CONSTRICTOR_OPTION_DISABLE;\\n"
-            "}\\n"
-            "CMiniportWaveRT::StreamClosed\\n{\\n"
-            "        FREE_PIN_INSTANCE_RESOURCES(m_ulLoopbackAllocated);\\n"
-            "        FREE_PIN_INSTANCE_RESOURCES(m_ulSystemAllocated);\\n"
-            "}\\n//=============================================================================\\n"
+            "CMiniportWaveRT::~CMiniportWaveRT\n{\n"
+            "    if (m_LoopbackStreams)\n{}\n"
+            "CMiniportWaveRT::Init\n{\n"
+            "    m_LoopbackProtection                = CONSTRICTOR_OPTION_DISABLE;\n"
+            "}\n"
+            "CMiniportWaveRT::StreamClosed\n{\n"
+            "        FREE_PIN_INSTANCE_RESOURCES(m_ulLoopbackAllocated);\n"
+            "        FREE_PIN_INSTANCE_RESOURCES(m_ulSystemAllocated);\n"
+            "}\n//=============================================================================\n"
         )
         result = MODULE.patch_minwavert_cpp(before)
         self.assertIn("m_LouderMeRelay.Initialize()", result)

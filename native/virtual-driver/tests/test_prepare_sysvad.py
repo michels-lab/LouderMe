@@ -130,6 +130,9 @@ SYSVAD.TopologySpeaker.szPname="SYSVAD Topology Speaker"
 
     def test_kernel_stream_publishes_only_consumed_render_and_reads_loopback(self):
         before = (
+            "NTSTATUS CMiniportWaveRTStream::Init\n{\n"
+            "            ntStatus = m_ToneGenerator.Init(toneFrequency, toneAmplitudeDouble, toneDCOffsetDouble, toneInitialPhaseDouble, m_pWfExt);\n"
+            "}\n"
             "VOID CMiniportWaveRTStream::UpdatePosition\n{\n"
             "        if (!g_DoNotCreateDataFiles)\n"
             "}\n"
@@ -140,6 +143,11 @@ SYSVAD.TopologySpeaker.szPname="SYSVAD Topology Speaker"
         actual = MODULE.patch_minwavertstream_cpp(before)
         self.assertIn("PublishLouderMeRender(", actual)
         self.assertIn("FillLouderMeLoopback(", actual)
+        self.assertIn("if (!m_pMiniport->IsLoopbackPin(Pin_))", actual)
+        self.assertIn("ntStatus = m_ToneGenerator.Init(", actual)
+        self.assertEqual(actual.count("ntStatus = m_ToneGenerator.Init("), 1)
+        self.assertLess(actual.index("if (!m_pMiniport->IsLoopbackPin(Pin_))"),
+                        actual.index("ntStatus = m_ToneGenerator.Init("))
         self.assertIn("m_pMiniport->IsSystemRenderPin(m_ulPin)", actual)
         self.assertIn("m_pMiniport->IsLoopbackPin(m_ulPin)", actual)
         self.assertIn("ByteDisplacement - remaining", actual)
@@ -150,6 +158,10 @@ SYSVAD.TopologySpeaker.szPname="SYSVAD Topology Speaker"
         with self.assertRaises(ValueError):
             MODULE.patch_minwavertstream_cpp(before.replace(
                 "m_ToneGenerator.GenerateSine", "m_UnknownGenerator"
+            ))
+        with self.assertRaises(ValueError):
+            MODULE.patch_minwavertstream_cpp(before.replace(
+                "m_ToneGenerator.Init", "m_UnknownCaptureInit"
             ))
 
     def test_relay_is_lifetime_managed_and_not_global(self):

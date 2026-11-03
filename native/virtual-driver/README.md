@@ -1,3 +1,9 @@
+## Granada 2026-11-03 — habilitar la apertura del loopback IEEE float32
+
+Se identificó en el SysVAD original que `ToneGenerator::Init`, usado por el ejemplo de captura, **rechaza float32 incluso cuando su generación de tono está desactivada**. LouderMe ahora evita la inicialización de ese generador en el pin de loopback virtual; los frames continúan llegando por el relé propio render DMA → captura. El parche exacto se protege con tests de derivación y compilación WDK. [Causa y límite de prueba](../../docs/audits/GRANADA_2026-11-03_FLOAT32_LOOPBACK_INIT.md).
+
+Esto corrige un bloqueo potencial de apertura del stream, **no** valida todavía hardware instalado, sonido físico ni un producto listo para distribuir. Sin release.
+
 ## Granada 2026-11-03 — revocación de copia, cola PCM y `cbSize` extensible
 
 Cuando el render de SysVAD detecta contenido `CopyProtect`, loopback restringido o ausencia de listener, **invalida todo el PCM pendiente** del buffer, no solo el paquete nuevo. La captura restringida también descarta esa época: al volver a permitir copia, solo puede reproducirse PCM posteriormente publicado. El buffer ahora valida los 22 bytes mínimos de `WAVEFORMATEXTENSIBLE.cbSize` sin depender del tamaño alineado de una estructura C++; pruebas host cubren la transición de política y publicación/captura/reset simultáneos con frames estéreo 24-bit. [Auditoría técnica](../../docs/audits/GRANADA_2026-11-03_PCM_COPY_POLICY_AND_EXTENSIBLE_ABI.md).

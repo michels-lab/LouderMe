@@ -355,6 +355,20 @@ def patch_minwavertstream_cpp(text: str) -> str:
     """Move consumed system-render DMA bytes into the virtual loopback, no tone."""
     # The pinned WDK source may be CRLF; exact source anchors use LF.
     text = text.replace("\r\n", "\n")
+    # The original SysVAD always initializes its demo ToneGenerator for
+    # capture pins, including render loopback. ToneGenerator::Init accepts
+    # PCM ONLY and rejects IEEE float32, even if g_DisableToneGenerator=1.
+    # Our real loopback captures PCM supplied by the render DMA FIFO instead:
+    # NEVER initialize a synthetic generator on the loopback pin.
+    text = replace_exact(
+        text,
+        "            ntStatus = m_ToneGenerator.Init(toneFrequency, toneAmplitudeDouble, toneDCOffsetDouble, toneInitialPhaseDouble, m_pWfExt);",
+        """            if (!m_pMiniport->IsLoopbackPin(Pin_))
+                ntStatus = m_ToneGenerator.Init(
+                    toneFrequency, toneAmplitudeDouble, toneDCOffsetDouble,
+                    toneInitialPhaseDouble, m_pWfExt);""",
+        "minwavertstream.cpp Init: loopback PCM/IEEE float32"
+    )
     text = replace_exact(
         text,
         "            m_ToneGenerator.GenerateSine(m_pDmaBuffer + bufferOffset, runWrite);",

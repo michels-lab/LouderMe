@@ -1,3 +1,12 @@
+## 2026-11-03 — Operación Granada: apertura WASAPI float32 del loopback (PR candidato)
+
+- PR #138 integrado en `main` por commit `b3a7909aefbb3f45fa7f6d822a5c56da1cbf2b03`, con CI WDK/Android verde. La política de copia vacía PCM antiguo y el tamaño de WAVEFORMATEXTENSIBLE se valida con 22 bytes.
+- **Causa encontrada en fuente upstream:** `ToneGenerator::Init` de SysVAD rechaza `WAVE_FORMAT_IEEE_FLOAT`, aunque `g_DisableToneGenerator=1`. Antes del cambio, el pin de loopback LouderMe ejecutaba esa inicialización y podía fallar durante la apertura, pese a tener un relé render→loopback correcto.
+- El parche del código SysVAD impide esa inicialización en loopback, conservando `FillLouderMeLoopback`; tests de derivación revisan el contrato y deben pasar WDK x64 real. [Auditoría](docs/audits/GRANADA_2026-11-03_FLOAT32_LOOPBACK_INIT.md).
+- Pendiente CI exact-head y la validación real de audio PCM en VM autorizada. Issues #46/#48 abiertos; sin release nuevo.
+
+---
+
 ## 2026-11-03 — Granada: invalidación de audio al revocar copia + WAVEFORMATEXTENSIBLE (PR candidato)
 
 - Tras fusionar #136/#137, se corrigió un riesgo en kernel: cuando DRM, CopyProtect o loopback restringido impiden leer el stream, el relé vacía la cola anterior. Si la política vuelve a permitir copia, solo se distribuye PCM renderizado después del cambio.

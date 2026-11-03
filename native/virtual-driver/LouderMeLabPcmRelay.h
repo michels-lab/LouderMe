@@ -5,7 +5,9 @@
 
 class LouderMeLabPcmRelay final
 {
-    static const ULONG Capacity = 65536; // nonpaged, bounded ~0.17-0.34 s at 48k stereo
+    // Multiple of every permitted mono/stereo PCM frame size: 2, 3, 4, 6, 8.
+    // A 65536-byte ring cuts 24-bit stereo frames after wraparound.
+    static const ULONG Capacity = 65520; // bounded, nonpaged and frame-aligned
     KSPIN_LOCK m_Lock;
     BYTE* m_Buffer;
     ULONG m_Read;
@@ -32,8 +34,23 @@ class LouderMeLabPcmRelay final
             format->Format.nBlockAlign !=
                 format->Format.nChannels * (format->Format.wBitsPerSample / 8))
             return FALSE;
-        return format->Format.wFormatTag == WAVE_FORMAT_PCM ||
-               format->Format.wFormatTag == WAVE_FORMAT_EXTENSIBLE;
+        const BOOLEAN extended =
+            format->Format.wFormatTag == WAVE_FORMAT_EXTENSIBLE &&
+            format->Format.cbSize >= sizeof(WAVEFORMATEXTENSIBLE) -
+                sizeof(WAVEFORMATEX);
+        const BOOLEAN pcm = format->Format.wFormatTag == WAVE_FORMAT_PCM ||
+            (extended && IsEqualGUIDAligned(
+                format->SubFormat, KSDATAFORMAT_SUBTYPE_PCM));
+        const BOOLEAN float32 =
+            (format->Format.wFormatTag == WAVE_FORMAT_IEEE_FLOAT ||
+             (extended && IsEqualGUIDAligned(
+                 format->SubFormat, KSDATAFORMAT_SUBTYPE_IEEE_FLOAT))) &&
+            format->Format.wBitsPerSample == 32;
+        // Unknown WAVEFORMATEXTENSIBLE GUIDs must never be forwarded as PCM.
+        // Refuse impossible average-rate metadata instead of guessing layout.
+        return (pcm || float32) &&
+            format->Format.nAvgBytesPerSec ==
+                format->Format.nSamplesPerSec * format->Format.nBlockAlign;
     }
 
     BOOLEAN SameFormat(_In_ const WAVEFORMATEXTENSIBLE* format) const
@@ -112,8 +129,15 @@ public:
         _In_ ULONG bytes,
         _In_ const WAVEFORMATEXTENSIBLE* format)
     {
-        if (m_Buffer == NULL || data == NULL || !Supported(format) || bytes == 0)
+        if (m_Buffer == NULL || data == NULL || bytes == 0)
             return;
+        if (!Supported(format) ||
+            bytes % format->Format.nBlockAlign != 0)
+        {
+            // Unaligned DMA packet would irreversibly shift sample boundaries.
+            Reset();
+            return;
+        }
         if (bytes > Capacity)
         {
             data += bytes - Capacity;
@@ -154,11 +178,24 @@ public:
         if (output == NULL || bytes == 0)
             return;
         RtlZeroMemory(output, bytes);
-        if (m_Buffer == NULL || !Supported(format))
+        if (m_Buffer == NULL)
             return;
+        if (!Supported(format) ||
+            bytes % format->Format.nBlockAlign != 0)
+        {
+            Reset();
+            return;
+        }
         KIRQL oldIrql;
         KeAcquireSpinLock(&m_Lock, &oldIrql);
-        if (SameFormat(format))
+        if (!SameFormat(format))
+        {
+            // Do not release old frames if render/capture negotiated
+            // incompatible formats or if capture changes mid-session.
+            m_Read = m_Write = m_Count = 0;
+            m_HaveFormat = FALSE;
+        }
+        else
         {
             ULONG take = min(bytes, m_Count);
             ULONG first = min(take, Capacity - m_Read);

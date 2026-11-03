@@ -1,3 +1,11 @@
+## 2026-11-03 — Granada: integración de ruta PCM y corrección de frames (cerrado en source)
+
+- **PR #136** integrado (`e4bb181af533ed0d342a17813cb40c94afe7e8f9`): transporte explícito de PCM consumido del render WaveRT al loopback virtual del SysVAD experimental; pruebas host FIFO, derivación fuente Microsoft fijada y compilación real WDK/x64 aprobadas.
+- **PR #137** integrado (`3df61269965ed46d6776b49551ed00d76cb7ec90`): buffer de 65520 bytes compatible con frames estéreo 24-bit, alineación de posición DMA/paquetes, subtipos PCM/IEEE float32 validados y descarte de audio residual al cambiar formato. Exact-head `617ff5eb81857fe9ebc04f5b0c0627524d09ba94`: [driver/WaveRT/INF-CAT CI 41699629719](https://github.com/michels-lab/LouderMe/actions/runs/41699629719) y [Android/install QA CI 41699629876](https://github.com/michels-lab/LouderMe/actions/runs/41699629876) en verde.
+- **No hay evidencia de audio real en VM con dispositivo instalado, paquete firmado de producción, SPL audible ni integración global Windows**. Se mantienen abiertos #46/#48. Sin release nuevo; distribución pública estable permanece en Android 0.1.12 + Windows 0.1.17.
+
+---
+
 ## 2026-11-03 — Granada: integridad de frames y formatos PCM (candidato)
 
 - PR #136 integrado en `main` como `e4bb181a` tras CI SysVAD derivación + WDK completo y Android verde. Ahora hay transporte experimental render DMA → loopback dentro del kernel.

@@ -1,3 +1,12 @@
+## 2026-11-03 — Granada: integridad de frames y formatos PCM (candidato)
+
+- PR #136 integrado en `main` como `e4bb181a` tras CI SysVAD derivación + WDK completo y Android verde. Ahora hay transporte experimental render DMA → loopback dentro del kernel.
+- Se encontró riesgo de corrupción: buffer de 65536 bytes no divisible entre frames de 6 bytes (24-bit estéreo); modificado a 65520 bytes. Se rechazan paquetes desalineados en origen y destino. Capturas incompatibles limpian el buffer para evitar un positivo falso.
+- Solo formatos PCM 16/24/32 y float32 IEEE declarados correctamente (tag o GUID extensible), canales/tasas/byte rate consistentes. C++ host test amplía cobertura de overflow/wrap 24bit, sample type, formatos erróneos y limpieza de datos residuales. [Auditoría](docs/audits/GRANADA_2026-11-03_PCM_FRAME_FORMAT_INTEGRITY.md).
+- Pendiente CI WDK exact-head e instalación/prueba en VM con driver LAB firmado. Sin release, #46/#48 siguen bloqueadores.
+
+---
+
 ## 2026-11-03 — Operación Granada: PCM real render → loopback en código fuente SysVAD (candidato)
 
 - PR #135 integrado en `main` (`4dfac8ec`) con los tres workflows en verde; exige controles virtuales sin señal antes/después del PCM de un proceso externo.

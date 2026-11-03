@@ -102,6 +102,54 @@ function Test-LouderMeIndependentGain {
         [double]$virtual.virtual_coherence -gt 1.0) {
       throw 'Independent virtual-source PCM lacks complete and coherent 440 Hz evidence.'
     }
+    # A matching positive virtual tone can be stale or another background
+    # 440-Hz stream. Require SAME endpoint/binaries and a real completed
+    # receive-only listener with NO source, both before and after the tone.
+    foreach ($controlPhase in @('before', 'after')) {
+      $negativePath = Join-Path $EvidenceDir "virtual-no-source-$controlPhase.json"
+      if (-not (Test-Path -LiteralPath $negativePath -PathType Leaf)) {
+        throw "Missing $controlPhase virtual-only no-source control."
+      }
+      $negative = Get-Content -LiteralPath $negativePath -Raw -ErrorAction Stop |
+        ConvertFrom-Json -ErrorAction Stop
+      if ($null -eq $negative -or $negative.status -cne 'PASS' -or
+          $negative.session_id -cne $session -or
+          $negative.control_phase -cne $controlPhase -or
+          $negative.control -cne 'negative: virtual WASAPI listener active, independent source absent' -or
+          $negative.stimulus_launched -cne $false -or
+          $negative.bridge_rejected_for_no_tone -cne $true -or
+          $negative.physical_output_verified -cne $false -or
+          $negative.global_windows_audio_verified -cne $false -or
+          $negative.acoustic_spl_verified -cne $false) {
+        throw "Invalid $controlPhase virtual-only no-source provenance."
+      }
+      foreach ($field in @('virtual_endpoint_sha256',
+                           'bridge_binary_sha256', 'source_binary_sha256')) {
+        $value = $negative.$field
+        if ($value -isnot [string] -or $value -cnotmatch '^[a-f0-9]{64}$' -or
+            $value -cne $expectedIdentity[$field]) {
+          throw "Virtual $controlPhase negative source used a different device or binary: $field."
+        }
+      }
+      foreach ($field in @('virtual_monitor_frames',
+                           'virtual_matched440_amplitude', 'virtual_coherence')) {
+        $value = $negative.$field
+        if ($null -eq $value -or $value -is [bool] -or
+            $value -isnot [ValueType] -or
+            -not [double]::IsFinite([double]$value)) {
+          throw "Invalid numeric $controlPhase virtual-only silence measurement: $field."
+        }
+      }
+      if ([double]$negative.virtual_monitor_frames -lt 0 -or
+          [double]$negative.virtual_monitor_frames -gt 10000000 -or
+          [double]$negative.virtual_monitor_frames % 1 -ne 0 -or
+          [double]$negative.virtual_matched440_amplitude -lt 0 -or
+          [double]$negative.virtual_matched440_amplitude -gt 0.003 -or
+          [double]$negative.virtual_coherence -lt 0 -or
+          [double]$negative.virtual_coherence -gt 1.0001) {
+        throw "Residual virtual 440 Hz contaminated $controlPhase control."
+      }
+    }
   }
   foreach ($phase in @('before', 'after')) {
     $record = $records["no-source-control-$phase.json"]

@@ -1,3 +1,12 @@
+## 2026-11-03 — Operación Granada: PCM real render → loopback en código fuente SysVAD (candidato)
+
+- PR #135 integrado en `main` (`4dfac8ec`) con los tres workflows en verde; exige controles virtuales sin señal antes/después del PCM de un proceso externo.
+- Nuevo trabajo P0 #46/#48: el driver LAB derivado de SysVAD ahora tiene ruta explícita **PCM consumido del DMA de render → cola no paginada por miniport de 64 KiB → buffer WaveRT loopback**, en lugar de la ruta original de generación de tono silenciado.
+- Rechaza incompatibilidad de formato, contenido con restricciones de copia, underflow y ausencia de fuente sin inventar PCM; límites de memoria/latencia/copia y limpieza definidos en `LouderMeLabPcmRelay.h`. Se parchean tres fuentes Microsoft verificadas con anclas exactas; tests de cambios inesperados y hash manifest.
+- [Auditoría técnica](docs/audits/GRANADA_2026-11-03_SYSVAD_RENDER_PCM_RELAY.md). **Pendiente compilación WDK exact-head y verificación en VM Windows con driver de laboratorio firmado e instalado**. Sin equipo físico probado, sin nueva versión, sin release; issues #46/#48 abiertos.
+
+---
+
 ## 2026-11-02 — Operación Granada: controles de silencio virtual antes/después (PR candidato)
 
 - Después de #134, nueva verificación **virtual WASAPI sin DSP/altavoz**: captura sin fuente de 5 s ANTES y DESPUÉS del PCM 440 Hz emitido por un proceso Windows diferente. Debe rechazar el tono con salida 3, medir amplitud matched440 <=0.003 y verificar el cierre real del monitor. Un endpoint inactivo puede registrar 0 frames en estos controles, pero el positivo requiere PCM real no silencioso.

@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <mutex>
+#include <thread>
 #include <vector>
 #include <iostream>
 using BYTE = std::uint8_t;
@@ -249,11 +250,50 @@ int main() {
     relay.Consume(quiet.data(), (ULONG)quiet.size(), &unsafe);
     Zeros(quiet);
     assert(g_allocations == 1);
+
+    // Simultaneous WaveRT DPC producers, loopback consumers, and policy/stream
+    // resets must preserve WHOLE 24-bit stereo frames and never surface stale
+    // garbage after a reset. Reuses actual kernel FIFO code and host spin-lock.
     relay.Reset();
+    auto concurrent24 = Fmt(48000, 2, 24, WAVE_FORMAT_EXTENSIBLE);
+    std::thread producer([&] {
+        for (unsigned i = 0; i < 3000; ++i) {
+            std::vector<BYTE> packet(6 * 101, BYTE((i % 250) + 1));
+            relay.Publish(packet.data(), (ULONG)packet.size(), &concurrent24);
+            if (i % 7 == 0) std::this_thread::yield();
+        }
+    });
+    std::thread consumer([&] {
+        for (unsigned i = 0; i < 3000; ++i) {
+            std::vector<BYTE> packet(6 * 97, 0xdd);
+            relay.Consume(packet.data(), (ULONG)packet.size(), &concurrent24);
+            for (std::size_t p = 0; p < packet.size(); p += 6) {
+                // Each input frame is homogeneous; any torn frame or bad
+                // wraparound causes one of these five comparisons to fail.
+                for (unsigned k = 1; k < 6; ++k)
+                    assert(packet[p + k] == packet[p]);
+            }
+            if (i % 11 == 0) std::this_thread::yield();
+        }
+    });
+    std::thread revoker([&] {
+        for (unsigned i = 0; i < 600; ++i) {
+            relay.Reset();
+            if (i % 3 == 0) std::this_thread::yield();
+        }
+    });
+    producer.join();
+    consumer.join();
+    revoker.join();
+    relay.Reset();
+    std::vector<BYTE> afterReset(6 * 97, 0xff);
+    relay.Consume(afterReset.data(), (ULONG)afterReset.size(), &concurrent24);
+    Zeros(afterReset);
+    assert(g_allocations == 1); // no callback allocations in kernel FIFO
     relay.Consume(quiet.data(), (ULONG)quiet.size(), &stereo);
     Zeros(quiet);
     relay.Shutdown();
     assert(g_wipes == 1);
-    std::cout << "PASS: bounded native relay FIFO, 24-bit frame alignment, 22-byte extensible format, DRM epoch reset, float32, stale-format rejection, wrap, overflow, "
+    std::cout << "PASS: bounded native relay FIFO, 24-bit frame alignment, 22-byte extensible format, DRM epoch reset and concurrent frame integrity, float32, stale-format rejection, wrap, overflow, "
                  "format isolation, reset, and no callback allocation\n";
 }

@@ -79,8 +79,9 @@ static WAVEFORMATEXTENSIBLE Fmt(ULONG rate = 48000, USHORT channels = 2,
     f.Format.nBlockAlign = channels * bits / 8;
     f.Format.wFormatTag = tag;
     f.Format.nAvgBytesPerSec = rate * f.Format.nBlockAlign;
-    f.Format.cbSize = tag == WAVE_FORMAT_EXTENSIBLE ?
-        USHORT(sizeof(WAVEFORMATEXTENSIBLE) - sizeof(WAVEFORMATEX)) : 0;
+    // WAVEFORMATEXTENSIBLE's cbSize is 22 on the wire, independent of
+    // ABI struct padding on Linux host stubs or Windows WDK compilers.
+    f.Format.cbSize = tag == WAVE_FORMAT_EXTENSIBLE ? 22 : 0;
     f.SubFormat = floatSubtype ?
         KSDATAFORMAT_SUBTYPE_IEEE_FLOAT : KSDATAFORMAT_SUBTYPE_PCM;
     return f;
@@ -202,6 +203,34 @@ int main() {
     relay.Consume(quiet.data(), (ULONG)quiet.size(), &badRate);
     Zeros(quiet);
 
+    // 20 or 21 extension bytes are invalid even if the host struct
+    // happens to have alignment padding. Exactly 22 is a valid extension.
+    relay.Reset();
+    auto extension = Fmt(48000, 2, 16, WAVE_FORMAT_EXTENSIBLE);
+    auto shortExtension = extension;
+    shortExtension.Format.cbSize = 21;
+    relay.Publish(data.data(), (ULONG)data.size(), &shortExtension);
+    relay.Consume(quiet.data(), (ULONG)quiet.size(), &extension);
+    Zeros(quiet);
+    shortExtension.Format.cbSize = 20;
+    relay.Publish(data.data(), (ULONG)data.size(), &shortExtension);
+    relay.Consume(quiet.data(), (ULONG)quiet.size(), &extension);
+    Zeros(quiet);
+    relay.Publish(data.data(), (ULONG)data.size(), &extension);
+    relay.Consume(quiet.data(), (ULONG)quiet.size(), &extension);
+    assert(quiet == data);
+
+    // A DRM policy revocation destroys the previous PCM epoch.
+    // The derived miniport calls Reset() when the listener is absent,
+    // copy protection is active or loopback constriction is enabled.
+    relay.Publish(data.data(), (ULONG)data.size(), &stereo);
+    relay.Reset();
+    relay.Consume(quiet.data(), (ULONG)quiet.size(), &stereo);
+    Zeros(quiet);
+    relay.Publish(fresh.data(), (ULONG)fresh.size(), &stereo);
+    relay.Consume(quiet.data(), (ULONG)quiet.size(), &stereo);
+    assert(quiet == fresh); // Only newly rendered unprotected PCM survives.
+
     // Malformed packets (not an integer number of sample-frames) must
     // fail closed rather than shift the next left/right channel boundary.
     relay.Publish(data.data(), (ULONG)data.size(), &stereo);
@@ -225,6 +254,6 @@ int main() {
     Zeros(quiet);
     relay.Shutdown();
     assert(g_wipes == 1);
-    std::cout << "PASS: bounded native relay FIFO, 24-bit frame alignment, float32, stale-format rejection, wrap, overflow, "
+    std::cout << "PASS: bounded native relay FIFO, 24-bit frame alignment, 22-byte extensible format, DRM epoch reset, float32, stale-format rejection, wrap, overflow, "
                  "format isolation, reset, and no callback allocation\n";
 }

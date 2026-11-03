@@ -365,7 +365,11 @@ def patch_minwavertstream_cpp(text: str) -> str:
         // Never use queued source bytes as proof of playback.
         if (m_pMiniport->IsSystemRenderPin(m_ulPin) &&
             m_pDmaBuffer != NULL && m_pWfExt != NULL &&
-            m_ulDmaBufferSize != 0 && ByteDisplacement != 0)
+            m_pWfExt->Format.nBlockAlign != 0 &&
+            m_ulDmaBufferSize != 0 &&
+            m_ulDmaBufferSize % m_pWfExt->Format.nBlockAlign == 0 &&
+            ByteDisplacement != 0 &&
+            ByteDisplacement % m_pWfExt->Format.nBlockAlign == 0)
         {
             ULONG remaining = min(ByteDisplacement, m_ulDmaBufferSize);
             ULONG offset = (ULONG)((m_ullLinearPosition +

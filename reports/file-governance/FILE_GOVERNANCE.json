@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 275,
-  "classified_files_total": 271,
-  "docs_content_inspected": 82,
+  "tracked_files_total": 278,
+  "classified_files_total": 274,
+  "docs_content_inspected": 83,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,18 +12,18 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 74,
+    "document": 75,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
-    "source": 96,
-    "test": 32,
+    "source": 97,
+    "test": 33,
     "text_metadata": 2,
     "workflow": 11
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "cf8fdfd14e75034a154513bed523442376509f5e4136c1a947204390a2be69b1",
+  "inventory_fingerprint": "46feeb92fca6191fa2b3c8cdf0e40844d4b1decafe23a1fdcca40d67e7655ecc",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -122,7 +122,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "a044ddbdafb39b3fefaf64cef622ed2054810a2d"
+      "blob": "efe1ec7ae2ff9c96d2b6287b62325c589de51b01"
     },
     {
       "path": ".github/workflows/release-louderme-desktop.yml",
@@ -234,7 +234,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "71e09d0d2b8fde454e57a71d6c107fd517093cb9"
+      "blob": "46531a63657dd789573db20fed43bbe693f2dbfe"
     },
     {
       "path": "README.md",
@@ -1385,6 +1385,13 @@
       "blob": "1ee340303cc593f5b6271eb3e5e57ef47f95b39a"
     },
     {
+      "path": "docs/audits/GRANADA_2026-11-03_SYSVAD_RENDER_PCM_RELAY.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "c8d904e9113e1c4873c8d48e209100efe20c8b8b"
+    },
+    {
       "path": "docs/product-reviews/2026-10-21-native-windows-audio-evidence.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -1511,6 +1518,13 @@
       "blob": "c0217140b55921025d43606c4d59e38f82b7e700"
     },
     {
+      "path": "native/virtual-driver/LouderMeLabPcmRelay.h",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "11e9454f1240cb7d80548e8430a02610fc31b271"
+    },
+    {
       "path": "native/virtual-driver/NoSourceControlCheck.ps1",
       "role": "source",
       "purpose": "code/test implementation",
@@ -1529,7 +1543,7 @@
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "eabbd2073d5a08e3af3f800dcd06d5a22753b1b1"
+      "blob": "98b23fd7673b1162f87d4879796abef571c40913"
     },
     {
       "path": "native/virtual-driver/VirtualSourceSilenceCheck.ps1",
@@ -1543,7 +1557,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "d552beeb483f1f3f4adfcdd09d39b1fd5478356c"
+      "blob": "22c9bb4c75d01143b52f1eca0a2a09016b3e24d0"
     },
     {
       "path": "native/virtual-driver/probe_independent_app_route.ps1",
@@ -1637,11 +1651,18 @@
       "blob": "e4c65a0fa8e1d2073fba93b5d3291bfb1e8f2f14"
     },
     {
+      "path": "native/virtual-driver/tests/test_pcm_relay_host.cpp",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "31302380b3afe28d730fb5f5193ab4cfa2351541"
+    },
+    {
       "path": "native/virtual-driver/tests/test_prepare_sysvad.py",
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "1c0438bd7b254e989d0aeebc0115c2a6d58d9983"
+      "blob": "f4ed75a43dce26fbec90cef3432caf5551bf6305"
     },
     {
       "path": "native/virtual-driver/validate_lab_package.ps1",

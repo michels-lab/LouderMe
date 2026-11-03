@@ -368,6 +368,7 @@ def patch_minwavertstream_cpp(text: str) -> str:
             m_pWfExt->Format.nBlockAlign != 0 &&
             m_ulDmaBufferSize != 0 &&
             m_ulDmaBufferSize % m_pWfExt->Format.nBlockAlign == 0 &&
+            m_ullLinearPosition % m_pWfExt->Format.nBlockAlign == 0 &&
             ByteDisplacement != 0 &&
             ByteDisplacement % m_pWfExt->Format.nBlockAlign == 0)
         {

@@ -1,3 +1,9 @@
+## Granada 2026-11-03 — revocación de copia, cola PCM y `cbSize` extensible
+
+Cuando el render de SysVAD detecta contenido `CopyProtect`, loopback restringido o ausencia de listener, **invalida todo el PCM pendiente** del buffer, no solo el paquete nuevo. La captura restringida también descarta esa época: al volver a permitir copia, solo puede reproducirse PCM posteriormente publicado. El buffer ahora valida los 22 bytes mínimos de `WAVEFORMATEXTENSIBLE.cbSize` sin depender del tamaño alineado de una estructura C++; pruebas host cubren la transición de política y publicación/captura/reset simultáneos con frames estéreo 24-bit. [Auditoría técnica](../../docs/audits/GRANADA_2026-11-03_PCM_COPY_POLICY_AND_EXTENSIBLE_ABI.md).
+
+La compilación WDK no es evidencia de audio físico ni sustituye el ensayo completo en VM con driver firmado para laboratorio. No hay release.
+
 ## Granada 2026-11-03 — whole-frame 24-bit PCM and explicit IEEE float formats
 
 The prototype render→loopback ring now uses **65520 bytes**, a multiple of every supported mono/stereo 16/24/32-bit PCM frame size, rather than 65536 (which splits six-byte stereo 24-bit frames). The DMA publish and loopback consume paths reject non-frame-aligned byte counts, unknown WaveFormatExtended subtypes, invalid sample metadata and float samples other than 32-bit IEEE. Capture format mismatches flush stale PCM. The existing source-derived SysVAD driver and the same C++ relay header are tested through expanded host/WDK CI. [Root-cause audit](../../docs/audits/GRANADA_2026-11-03_PCM_FRAME_FORMAT_INTEGRITY.md).

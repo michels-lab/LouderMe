@@ -259,11 +259,20 @@ def patch_minwavert_header(text: str) -> str:
         _In_ ULONG bytes,
         _In_ const WAVEFORMATEXTENSIBLE* format)
     {
-        if (IsRenderDevice() && m_ulLoopbackAllocated != 0 &&
-            m_SystemStreams != NULL && m_SystemStreams[0] == stream &&
-            !m_MixDrmRights.CopyProtect &&
-            m_LoopbackProtection == CONSTRICTOR_OPTION_DISABLE)
-            m_LouderMeRelay.Publish(pcm, bytes, format);
+        if (!IsRenderDevice() || m_SystemStreams == NULL ||
+            m_SystemStreams[0] != stream)
+            return;
+        // Revocation (or no active listener) invalidates the *whole* audio
+        // epoch, not just the current callback. Never replay queued samples
+        // after a protected stream returns to an unrestricted state.
+        if (m_ulLoopbackAllocated == 0 ||
+            m_MixDrmRights.CopyProtect ||
+            m_LoopbackProtection != CONSTRICTOR_OPTION_DISABLE)
+        {
+            m_LouderMeRelay.Reset();
+            return;
+        }
+        m_LouderMeRelay.Publish(pcm, bytes, format);
     }
 
     VOID FillLouderMeLoopback(
@@ -274,6 +283,9 @@ def patch_minwavert_header(text: str) -> str:
         if (m_MixDrmRights.CopyProtect ||
             m_LoopbackProtection != CONSTRICTOR_OPTION_DISABLE)
         {
+            // A failed content-policy check kills previously buffered PCM.
+            // A later unprotected capture must begin with a fresh render.
+            m_LouderMeRelay.Reset();
             RtlZeroMemory(pcm, bytes);
             return;
         }

@@ -82,6 +82,85 @@ SYSVAD.TopologySpeaker.szPname="SYSVAD Topology Speaker"
         self.assertIn("g_DisableToneGenerator = 1", actual)
         self.assertNotIn('L"DoNotCreateDataFiles"', actual)
 
+    def test_relay_uses_bounded_per_miniport_nonpaged_fifo(self):
+        header = (HERE.parent / "LouderMeLabPcmRelay.h").read_text()
+        self.assertIn("KSPIN_LOCK m_Lock", header)
+        self.assertIn("Capacity = 65536", header)
+        self.assertIn("POOL_FLAG_NON_PAGED", header)
+        self.assertIn("KeAcquireSpinLock", header)
+        self.assertIn("RtlSecureZeroMemory", header)
+        self.assertIn("RtlZeroMemory(output, bytes)", header)
+        self.assertIn("m_Count -= take", header)
+        self.assertIn("m_Count += bytes", header)
+        self.assertIn("SameFormat(format)", header)
+        self.assertIn("m_Tag != WAVE_FORMAT_EXTENSIBLE", header)
+        self.assertNotIn("CreateFile", header)
+        self.assertNotIn("KeWaitFor", header)
+        self.assertNotIn("GenerateSine", header)
+
+    def test_relay_kernel_derivation_rejects_upstream_drift(self):
+        sample_header = (
+            "#define _SYSVAD_MINWAVERT_H_\\n"
+            "    CONSTRICTOR_OPTION                  m_LoopbackProtection;\\n"
+            "public:\\n    DECLARE_PROPERTYHANDLER(Get_SoundDetectorSupportedPatterns);"
+        )
+        result = MODULE.patch_minwavert_header(sample_header)
+        self.assertIn('#include "LouderMeLabPcmRelay.h"', result)
+        self.assertIn("LouderMeLabPcmRelay                 m_LouderMeRelay", result)
+        self.assertIn("m_LoopbackProtection == CONSTRICTOR_OPTION_DISABLE", result)
+        self.assertIn("!m_MixDrmRights.CopyProtect", result)
+        self.assertIn("m_SystemStreams[0] == stream", result)
+        self.assertIn("RtlZeroMemory(pcm, bytes)", result)
+        with self.assertRaises(ValueError):
+            MODULE.patch_minwavert_header(sample_header.replace(
+                "m_LoopbackProtection;", "m_InvalidLoopbackProtection;"
+            ))
+
+    def test_kernel_stream_publishes_only_consumed_render_and_reads_loopback(self):
+        before = (
+            "VOID CMiniportWaveRTStream::UpdatePosition\\n{\\n"
+            "        if (!g_DoNotCreateDataFiles)\\n"
+            "}\\n"
+            "VOID CMiniportWaveRTStream::WriteBytes\\n{\\n"
+            "            m_ToneGenerator.GenerateSine(m_pDmaBuffer + bufferOffset, runWrite);"
+            "}\\n"
+        )
+        actual = MODULE.patch_minwavertstream_cpp(before)
+        self.assertIn("PublishLouderMeRender(", actual)
+        self.assertIn("FillLouderMeLoopback(", actual)
+        self.assertIn("m_pMiniport->IsSystemRenderPin(m_ulPin)", actual)
+        self.assertIn("m_pMiniport->IsLoopbackPin(m_ulPin)", actual)
+        self.assertIn("ByteDisplacement - remaining", actual)
+        self.assertIn("m_ulDmaBufferSize != 0", actual)
+        with self.assertRaises(ValueError):
+            MODULE.patch_minwavertstream_cpp(before.replace(
+                "m_ToneGenerator.GenerateSine", "m_UnknownGenerator"
+            ))
+
+    def test_relay_is_lifetime_managed_and_not_global(self):
+        before = (
+            "CMiniportWaveRT::~CMiniportWaveRT\\n{\\n"
+            "    if (m_LoopbackStreams)\\n{}\\n"
+            "CMiniportWaveRT::Init\\n{\\n"
+            "    m_LoopbackProtection = CONSTRICTOR_OPTION_DISABLE;\\n"
+            "}\\n"
+            "CMiniportWaveRT::StreamClosed\\n{\\n"
+            "        FREE_PIN_INSTANCE_RESOURCES(m_ulLoopbackAllocated);\\n"
+            "        FREE_PIN_INSTANCE_RESOURCES(m_ulSystemAllocated);\\n"
+            "}\\n//=============================================================================\\n"
+        )
+        result = MODULE.patch_minwavert_cpp(before)
+        self.assertIn("m_LouderMeRelay.Initialize()", result)
+        self.assertIn("m_LouderMeRelay.Shutdown()", result)
+        self.assertEqual(result.count("m_LouderMeRelay.Reset()"), 2)
+        self.assertLess(result.index("m_LouderMeRelay.Shutdown()"),
+                        result.index("CMiniportWaveRT::Init"))
+        with self.assertRaises(ValueError):
+            MODULE.patch_minwavert_cpp(before.replace(
+                "FREE_PIN_INSTANCE_RESOURCES(m_ulLoopbackAllocated)",
+                "FREE_PIN_INSTANCE_RESOURCES(m_ulOffloadAllocated)"
+            ))
+
     def test_target_platform_is_explicitly_desktop(self):
         sample = "<DriverTargetPlatform>Universal</DriverTargetPlatform>" * 4
         updated = MODULE.patch_project_for_desktop(sample)

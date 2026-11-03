@@ -146,6 +146,8 @@ SYSVAD.TopologySpeaker.szPname="SYSVAD Topology Speaker"
             "}\n"
             "CMiniportWaveRT::StreamClosed\n{\n"
             "        FREE_PIN_INSTANCE_RESOURCES(m_ulLoopbackAllocated);\n"
+            "    else if (IsSystemRenderPin(_Pin))\n"
+            "    {\n"
             "        FREE_PIN_INSTANCE_RESOURCES(m_ulSystemAllocated);\n"
             "}\n//=============================================================================\n"
         )

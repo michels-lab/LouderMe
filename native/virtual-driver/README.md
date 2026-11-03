@@ -1,3 +1,9 @@
+## Granada 2026-11-03 — actual render DMA → virtual loopback PCM relay (experimental)
+
+The pinned SysVAD derivation now includes a **per-miniport, bounded kernel PCM ring** that forwards samples **already consumed** by the one system-render WaveRT stream to its loopback capture stream, replacing the Microsoft sample's synthetic capture tone. The original SysVAD example generated capture PCM itself; LouderMe had muted that generator without yet implementing an explicit render→loopback data path. Format mismatch/DRM/underrun yields silence rather than synthetic PCM; the kernel buffer is nonpaged, synchronized and wiped on shutdown. Source-derivation tests inspect this behavior and CI must compile the real pinned WDK project.
+
+This code is **a laboratory prototype, not a signed/installed driver**. It has not been verified on an installed Windows endpoint, and must complete the existing separate-app PCM, pre/post silence, native Boost A/B and physical speaker checks in an owner-consented disposable VM before any release. [Technical audit and constraints](../../docs/audits/GRANADA_2026-11-03_SYSVAD_RENDER_PCM_RELAY.md).
+
 ## Granada 2026-11-02 — virtual PCM pre/post no-source controls
 
 The independent Windows-process virtual-only PCM proof now brackets its two-second stimulus with TWO complete five-second **source-absent virtual WASAPI loopback** runs. Each receive-only probe must reject 440 Hz (exit 3), have exactly one capture-ready and a numeric post-stop frame/amplitude report, and measure no residual 440-Hz amplitude >0.003. The native DSP/physical A/B final acceptance requires both write-once negative records and the positive separate-process record from the same session and binary/endpoint SHA-256 identities. Tests reject missing or changed files and a 440-Hz signal already present before or persisting after the independent executable. [Audit](../../docs/audits/GRANADA_2026-11-02_VIRTUAL_LOOPBACK_SILENCE_CONTROLS.md).

@@ -14,6 +14,7 @@ using ULONG = std::uint32_t;
 using USHORT = std::uint16_t;
 using BOOLEAN = int;
 using NTSTATUS = std::int32_t;
+using VOID = void;
 using KIRQL = int;
 using KSPIN_LOCK = std::mutex;
 struct GUID { std::uint8_t bytes[16] = {}; };
@@ -40,6 +41,7 @@ static constexpr NTSTATUS STATUS_SUCCESS = 0, STATUS_INVALID_DEVICE_STATE = -1,
 static unsigned g_allocations = 0, g_wipes = 0;
 #define _In_
 #define _In_opt_
+#define _IRQL_requires_max_(x)
 #define _In_reads_bytes_(x)
 #define _Out_writes_bytes_(x)
 #define min(a, b) ((a) < (b) ? (a) : (b))

@@ -1,3 +1,9 @@
+## Granada 2026-10-30 — independent application PCM on virtual-only loopback
+
+The disposable VM lab now has a **virtual-only causal proof before native DSP/physical rendering**: `probe_independent_virtual_pcm.ps1` starts `--probe-virtual-external`, waits for real capture readiness, launches the *separate* Windows tone executable into the selected virtual render endpoint and requires measured 440-Hz PCM returned by that exact endpoint's WASAPI loopback. The bridge in this mode does **not** generate tone samples or open a physical sink. If this stage fails, the lab refuses to run its later DSP/physical tests. The intermediate output is a session-bound, write-once, numeric JSON file with SHA-256 identities, no recorded waveform. [Detailed source evidence, test sequence and limitations](../../docs/audits/GRANADA_2026-10-30_INDEPENDENT_VIRTUAL_PCM_STAGE.md).
+
+This distinguishes a SysVAD/virtual-loopback transport defect from downstream DSP and physical sink defects. **Still requires a trusted, already installed lab driver in a disposable VM; never claim the actual PCM stage passed from CI alone.** No stable release or general Windows audio interception proven.
+
 ## Granada 2026-10-30 — prove selected physical DSP/sink BEFORE virtual-driver install (candidate)
 
 The existing snapshot-backed disposable Windows VM runner now runs the **actual native C++ DSP physical WASAPI 100%-to-150% gain A/B** before invoking Devcon. It captures only sanitized numeric evidence in `direct-physical-gain-before-driver.log`, requires a single explicit `PHYSICAL_LOOPBACK_NATIVE_GAIN_AB_PASS` line plus exit code 0, and verifies original Windows render defaults and all seven pinned lab inputs again. A failing or unobservable physical route aborts **without installing the virtual driver**. Two passes run with a strict 40-second subprocess ceiling. The normal independent app → virtual SysVAD → DSP → physical sequence still follows *only if* this prerequisite passes.

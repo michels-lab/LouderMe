@@ -88,6 +88,52 @@ class IndependentSourceBoundaryTests(unittest.TestCase):
         self.assertIn("17 adversarial", fixture)
         self.assertIn("coherence above mathematical maximum", fixture)
 
+    def test_separate_app_pcm_proven_at_virtual_endpoint_before_physical_audio(self):
+        bridge = BRIDGE.read_text()
+        script = (ROOT / "native/virtual-driver/probe_independent_virtual_pcm.ps1").read_text()
+        lab = LAB.read_text()
+        for token in (
+            'if (args.Contains("--probe-virtual-external"))',
+            'ProbeVirtualEndpoint(devices, args, externalSource: true)',
+            'if (!externalSource)',
+            'EXTERNAL_VIRTUAL_READY',
+            'VIRTUAL_EXTERNAL_PROOF frames=',
+            'PASS: independent Windows process -> LouderMe virtual WASAPI loopback',
+            'Console.Out.Flush()',
+            'recordingStopped.Wait(TimeSpan.FromSeconds(3))',
+        ):
+            self.assertIn(token, bridge)
+        for token in (
+            'Start-LouderMeLabChild -Executable',
+            'DeferStdOutDrain',
+            'EXTERNAL_VIRTUAL_READY',
+            "'--probe-virtual-external'",
+            "'--external-app-source'",
+            'Receive-LouderMeLabChildOutput',
+            'VIRTUAL_EXTERNAL_PROOF frames=',
+            'virtual_endpoint_sha256',
+            'source_binary_sha256',
+            'physical_output_verified = $false',
+            'global_windows_audio_verified = $false',
+            'lab-session.lock',
+            'Stop-LouderMeLabChild -Child $child',
+        ):
+            self.assertIn(token, script)
+        for forbidden in ('--probe-app-route', '--probe-direct-gain',
+                          'pnputil', 'devcon.exe', 'SetDefaultEndpoint',
+                          "'--output-id'", 'RawSourceWaveStream'):
+            self.assertNotIn(forbidden, script)
+        self.assertIn("probe_independent_virtual_pcm.ps1", lab)
+        virtual_ready = lab.index("probe_independent_virtual_pcm.ps1")
+        physical_tone = lab.index("before physical tone")
+        independent_route = lab.index("probe_independent_app_route.ps1")
+        self.assertLess(virtual_ready, physical_tone)
+        self.assertLess(virtual_ready, independent_route)
+        self.assertIn("after independent virtual PCM", lab)
+        self.assertIn("independent-virtual-source-proof.json", lab)
+        native_ci=(ROOT / ".github/workflows/native-audio-engine-ci.yml").read_text()
+        self.assertIn("probe_independent_virtual_pcm.ps1", native_ci)
+
     def test_disposable_vm_and_explicit_manual_audio_proof_mandatory(self):
         text = LAB.read_text()
         self.assertIn('probe_independent_app_route.ps1', text)

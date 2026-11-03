@@ -248,8 +248,10 @@ internal static class Program
                 return DirectPhysicalDspProbe.Run(matching[0], directBoost, directEq);
             }
 
+            if (args.Contains("--probe-virtual-external"))
+                return ProbeVirtualEndpoint(devices, args, externalSource: true);
             if (args.Contains("--probe-virtual"))
-                return ProbeVirtualEndpoint(devices, args);
+                return ProbeVirtualEndpoint(devices, args, externalSource: false);
 
             // Never install a driver or change Windows' default endpoint.
             var sourceId = GetArg(args, "--source-id");
@@ -726,17 +728,24 @@ internal static class Program
     }
 
     private static int ProbeVirtualEndpoint(
-        IEnumerable<MMDevice> devices, string[] args)
+        IEnumerable<MMDevice> devices, string[] args, bool externalSource)
     {
-        // Sound proof only: locally generate a low-amplitude test tone on a
-        // specified virtual endpoint and measure its loopback. Does not alter
-        // the default playback device or play to a physical output.
+        // Virtual ONLY: in external mode this process MUST NOT generate PCM,
+        // open a render client or have any access to the physical speaker.
+        // A separate process starts only after EXTERNAL_VIRTUAL_READY.
         if (!args.Contains("--confirm-experimental"))
             throw new ArgumentException("Probe requires explicit --confirm-experimental.");
+        if (externalSource &&
+            (args.Length != 4 || args[0] != "--probe-virtual-external" ||
+             args[1] != "--source-id" || args[3] != "--confirm-experimental"))
+            throw new ArgumentException(
+                "Usage: --probe-virtual-external --source-id EXACT_VIRTUAL_ID --confirm-experimental.");
         var sourceId = GetArg(args, "--source-id")
             ?? throw new ArgumentException("Probe requires --source-id.");
-        var endpoint = devices.FirstOrDefault(d => d.ID == sourceId)
-            ?? throw new InvalidOperationException("Selected endpoint not available.");
+        var endpoints = devices.Where(d => d.ID == sourceId).Take(2).ToArray();
+        if (endpoints.Length != 1)
+            throw new InvalidOperationException("Selected virtual endpoint missing or ambiguous.");
+        var endpoint = endpoints[0];
         if (!endpoint.FriendlyName.Contains("LouderMe Virtual", StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("Probe refuses non-LouderME source endpoints.");
 
@@ -745,27 +754,34 @@ internal static class Program
         if (!IsFloat32(format) || format.Channels is < 1 or > 8 ||
             format.SampleRate is < 8000 or > 192000)
             throw new NotSupportedException("Probe needs a valid float32 virtual mix format.");
-        var frames = format.SampleRate * 2;
-        var audio = new byte[checked(frames * format.BlockAlign)];
-        for (var frame = 0; frame < frames; frame++)
+
+        // Existing self-tone path keeps its own two-second stimulus. In
+        // external mode, no test tone or WasapiOut is constructed here.
+        byte[]? audio = null;
+        if (!externalSource)
         {
-            var value = 0.025f * MathF.Sin(
-                2 * MathF.PI * 440f * frame / format.SampleRate);
-            for (var ch = 0; ch < format.Channels; ch++)
-                BinaryPrimitives.WriteSingleLittleEndian(
-                    audio.AsSpan((frame * format.Channels + ch) * sizeof(float)), value);
+            int frames = checked(format.SampleRate * 2);
+            audio = new byte[checked(frames * format.BlockAlign)];
+            for (int frame = 0; frame < frames; frame++)
+            {
+                float value = 0.025f * MathF.Sin(
+                    2 * MathF.PI * 440f * frame / format.SampleRate);
+                for (int ch = 0; ch < format.Channels; ch++)
+                    BinaryPrimitives.WriteSingleLittleEndian(
+                        audio.AsSpan((frame * format.Channels + ch) * sizeof(float)), value);
+            }
         }
 
-        // A nonzero stream alone can be unrelated system audio or DC noise.
-        // Prove that captured PCM has the 440 Hz identity of OUR known tone,
-        // with continuous phase across callback packets and unknown start lag.
         var verifier = new LoopbackToneVerifier(format);
         var sync = new object();
         Exception? callbackError = null;
         Exception? captureError = null;
+        using var recordingStopped = new ManualResetEventSlim(false);
         capture.RecordingStopped += (_, e) =>
         {
-            if (e.Exception is not null) captureError = e.Exception;
+            if (e.Exception is not null)
+                Interlocked.CompareExchange(ref captureError, e.Exception, null);
+            recordingStopped.Set();
         };
         capture.DataAvailable += (_, e) =>
         {
@@ -773,53 +789,69 @@ internal static class Program
             {
                 try
                 {
-                    verifier.Add(e.Buffer.AsSpan(0, e.BytesRecorded));
+                    if (e.BytesRecorded > 0)
+                        verifier.Add(e.Buffer.AsSpan(0, e.BytesRecorded));
                 }
                 catch (Exception ex)
                 {
-                    // NAudio's event thread must not throw and bring down
-                    // the lab host. Report and fail closed on our main thread.
-                    callbackError ??= ex;
+                    Interlocked.CompareExchange(ref callbackError, ex, null);
                 }
             }
         };
-        using var playback = new WasapiOut(endpoint, AudioClientShareMode.Shared, true, 75);
-        using var tone = new RawSourceWaveStream(new MemoryStream(audio, writable: false), format);
-        playback.Init(tone);
+        using var playback = externalSource
+            ? null : new WasapiOut(endpoint, AudioClientShareMode.Shared, true, 75);
+        using var tone = audio is null ? null :
+            new RawSourceWaveStream(new MemoryStream(audio, writable: false), format);
+        if (!externalSource)
+        {
+            if (tone is null || playback is null)
+                throw new InvalidOperationException("Owned LAB tone missing.");
+            playback.Init(tone);
+        }
         try
         {
             capture.StartRecording();
-            playback.Play();
-            Thread.Sleep(TimeSpan.FromSeconds(3));
+            if (externalSource)
+            {
+                Console.WriteLine("EXTERNAL_VIRTUAL_READY");
+                Console.Out.Flush();
+                Thread.Sleep(TimeSpan.FromSeconds(5));
+            }
+            else
+            {
+                playback!.Play();
+                Thread.Sleep(TimeSpan.FromSeconds(3));
+            }
         }
         finally
         {
-            playback.Stop();
+            playback?.Stop();
             capture.StopRecording();
-            Thread.Sleep(150); // permit last loopback callback to complete
         }
+        if (!recordingStopped.Wait(TimeSpan.FromSeconds(3)))
+            throw new IOException("Virtual WASAPI loopback did not confirm recording shutdown.");
         if (captureError is not null)
             throw new IOException("Virtual endpoint capture stopped with an error.", captureError);
         if (callbackError is not null)
             throw new IOException("Invalid virtual endpoint PCM packet.", callbackError);
+
         LoopbackToneVerifier.ToneEvidence evidence;
         lock (sync) evidence = verifier.Evaluate();
-        Console.WriteLine(
-            $"Virtual PCM proof: frames={evidence.Frames} RMS={evidence.Rms:F5} " +
-            $"peak={evidence.Peak:F5} matched440={evidence.Matched440Amplitude:F5} " +
-            $"coherence={evidence.Coherence:F3}");
+        Console.WriteLine(FormattableString.Invariant(
+            $"Virtual PCM proof: frames={evidence.Frames} RMS={evidence.Rms:F5} peak={evidence.Peak:F5} matched440={evidence.Matched440Amplitude:F5} coherence={evidence.Coherence:F3}"));
+        if (externalSource)
+            Console.WriteLine(FormattableString.Invariant(
+                $"VIRTUAL_EXTERNAL_PROOF frames={evidence.Frames} matched440={evidence.Matched440Amplitude:F6} coherence={evidence.Coherence:F4}"));
         if (!evidence.Passed)
         {
             Console.Error.WriteLine(
-                "FAIL: no matching 440 Hz tone in the virtual endpoint loopback. " +
-                "Other non-silent audio/DC does not qualify as proof.");
+                "FAIL: no matching 440 Hz tone in the virtual WASAPI loopback. " +
+                "Unrelated energy, silence and synthetic driver tones do not qualify.");
             return 3;
         }
-        Console.WriteLine(
-            "PASS: loopback PCM contained the specific generated 440 Hz tone " +
-            "(frequency-matched, phase-insensitive). " +
-            "This proves only the isolated LAB virtual endpoint signal. " +
-            "Physical playback and other applications remain unverified.");
+        Console.WriteLine(externalSource
+            ? "PASS: independent Windows process -> LouderMe virtual WASAPI loopback 440 Hz identity. No physical output or DSP was opened."
+            : "PASS: loopback PCM contained the specific generated 440 Hz tone (frequency-matched, phase-insensitive). This proves only the isolated LAB virtual endpoint signal. Physical playback and other applications remain unverified.");
         return 0;
     }
 

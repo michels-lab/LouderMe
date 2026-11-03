@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 272,
-  "classified_files_total": 268,
-  "docs_content_inspected": 81,
+  "tracked_files_total": 275,
+  "classified_files_total": 271,
+  "docs_content_inspected": 82,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,18 +12,18 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 73,
+    "document": 74,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
-    "source": 95,
-    "test": 31,
+    "source": 96,
+    "test": 32,
     "text_metadata": 2,
     "workflow": 11
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "f7a178d4e52c54c6e3b3e809bf3f3c7e4adce6facf276e128f2d13c38a52c9d4",
+  "inventory_fingerprint": "cf8fdfd14e75034a154513bed523442376509f5e4136c1a947204390a2be69b1",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -108,7 +108,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "e60954b273e11ca87c0c6a6b1678c8a1a49cb6c5"
+      "blob": "4816fd26fac7ef8f722bc76c0865d67f23ff955b"
     },
     {
       "path": ".github/workflows/native-physical-lab-manual.yml",
@@ -234,7 +234,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "627f75f2afd064c541d17391e4aedbc9f7d778e2"
+      "blob": "71e09d0d2b8fde454e57a71d6c107fd517093cb9"
     },
     {
       "path": "README.md",
@@ -1378,6 +1378,13 @@
       "blob": "e57ac64b5cf0079a471a2ae12aaa97629c1a08f1"
     },
     {
+      "path": "docs/audits/GRANADA_2026-11-02_VIRTUAL_LOOPBACK_SILENCE_CONTROLS.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "1ee340303cc593f5b6271eb3e5e57ef47f95b39a"
+    },
+    {
       "path": "docs/product-reviews/2026-10-21-native-windows-audio-evidence.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -1480,7 +1487,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "1df72a8308ab5c8004ef8136b28cdec856d90bc5"
+      "blob": "66cc7c0de3d2f34eb20e36409888cef511d1303d"
     },
     {
       "path": "native/virtual-driver/LabEvidenceDirectory.ps1",
@@ -1522,7 +1529,14 @@
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "cc80d992a084d06da46e372fe43d8ec654687fcd"
+      "blob": "eabbd2073d5a08e3af3f800dcd06d5a22753b1b1"
+    },
+    {
+      "path": "native/virtual-driver/VirtualSourceSilenceCheck.ps1",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "4a1f1ffdaa1bfcac31aab3d8d1a765170b892972"
     },
     {
       "path": "native/virtual-driver/prepare_sysvad.py",
@@ -1543,7 +1557,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "4760b6d140d337ee7ee64dd2503bda8832754820"
+      "blob": "e6b5a05519ff2bf1b592bdc0a393e0a124bf2518"
     },
     {
       "path": "native/virtual-driver/run_disposable_lab.ps1",
@@ -1564,7 +1578,7 @@
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "e0ef52e3cfa2ba06266dd493ea9084468010f732"
+      "blob": "9535584666eebd6d97f6ac79b0f2d0ccfabf7cff"
     },
     {
       "path": "native/virtual-driver/test_LabEvidenceDirectory.ps1",
@@ -1578,7 +1592,7 @@
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "9691cb7c1135422fbcdd2f6c3a4b258f48c4d3a7"
+      "blob": "9f96c0621dd5dd9d45654ce715016ea62ae8cb56"
     },
     {
       "path": "native/virtual-driver/test_LabProcessGuard.ps1",
@@ -1602,6 +1616,13 @@
       "blob": "6c599c35f8dd50c1b53d26a1e26a773a9ec893b0"
     },
     {
+      "path": "native/virtual-driver/test_VirtualSourceSilenceCheck.ps1",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "ffed1ce89012ddf1e7525864567b3f068379264f"
+    },
+    {
       "path": "native/virtual-driver/tests/test_default_render_guard.py",
       "role": "test",
       "purpose": "code/test implementation",
@@ -1613,7 +1634,7 @@
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "000239fb4a3b38220106d93c2c14e068961f2849"
+      "blob": "e4c65a0fa8e1d2073fba93b5d3291bfb1e8f2f14"
     },
     {
       "path": "native/virtual-driver/tests/test_prepare_sysvad.py",

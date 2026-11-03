@@ -121,7 +121,7 @@ SYSVAD.TopologySpeaker.szPname="SYSVAD Topology Speaker"
         self.assertEqual(result.count("m_LouderMeRelay.Reset();"), 2)
         self.assertIn("m_LouderMeRelay.Publish(pcm, bytes, format);", result)
         self.assertIn("m_LouderMeRelay.Consume(pcm, bytes, format);", result)
-        self.assertIn("m_SystemStreams[0] == stream", result)
+        self.assertIn("m_SystemStreams[0] != stream", result)
         self.assertIn("RtlZeroMemory(pcm, bytes)", result)
         with self.assertRaises(ValueError):
             MODULE.patch_minwavert_header(sample_header.replace(

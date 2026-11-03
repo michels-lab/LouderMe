@@ -293,8 +293,8 @@ def patch_minwavert_cpp(text: str) -> str:
     """Initialize, wipe and reset relay with WaveRT miniport lifetime."""
     text = replace_exact(
         text,
-        "    m_LoopbackProtection = CONSTRICTOR_OPTION_DISABLE;",
-        "    m_LoopbackProtection = CONSTRICTOR_OPTION_DISABLE;\n"
+        "    m_LoopbackProtection                = CONSTRICTOR_OPTION_DISABLE;",
+        "    m_LoopbackProtection                = CONSTRICTOR_OPTION_DISABLE;\n"
         "    ntStatus = m_LouderMeRelay.Initialize();\n"
         "    if (!NT_SUCCESS(ntStatus)) return ntStatus;",
         "minwavert.cpp"

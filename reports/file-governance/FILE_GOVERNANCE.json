@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 280,
-  "classified_files_total": 276,
-  "docs_content_inspected": 85,
+  "tracked_files_total": 281,
+  "classified_files_total": 277,
+  "docs_content_inspected": 86,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,7 +12,7 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 77,
+    "document": 78,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
@@ -23,7 +23,7 @@
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "d0e543cbb16322a721ef5c922fa81f8dfb989242140234b22b19b0c0ab8154e4",
+  "inventory_fingerprint": "5864eef78074ec34a65310b70c479485ea7dc084b43b8bc1726959874e37af13",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -234,7 +234,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "7b6e0680fe757f71205ea8caa617fdc1c23a4874"
+      "blob": "bf7ab3e2ca7afdfe5c3a6bdde18b5b2d77eaf2ed"
     },
     {
       "path": "README.md",
@@ -1385,6 +1385,13 @@
       "blob": "1ee340303cc593f5b6271eb3e5e57ef47f95b39a"
     },
     {
+      "path": "docs/audits/GRANADA_2026-11-03_FLOAT32_LOOPBACK_INIT.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "fb3cfbeaf9df2dab6b5a4a11c11e0a37b37ca606"
+    },
+    {
       "path": "docs/audits/GRANADA_2026-11-03_PCM_COPY_POLICY_AND_EXTENSIBLE_ABI.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -1557,7 +1564,7 @@
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "56df86061ceeb4cae06c9a0e0049f78238c7b626"
+      "blob": "67130df18a378d7fbbfd2b644c30e4fb87c2eab1"
     },
     {
       "path": "native/virtual-driver/VirtualSourceSilenceCheck.ps1",
@@ -1571,7 +1578,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "ad3628f36cad44e19bca7632abd6c021db45d8c1"
+      "blob": "3454fba9078c49e4c99401d2bacf8af0a95a7edb"
     },
     {
       "path": "native/virtual-driver/probe_independent_app_route.ps1",
@@ -1676,7 +1683,7 @@
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "e4cd596a413fbc33348af660fb18ba344f1a5f24"
+      "blob": "462dca871c4b907263d59d877668e2f389dbd33b"
     },
     {
       "path": "native/virtual-driver/validate_lab_package.ps1",

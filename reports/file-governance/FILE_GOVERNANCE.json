@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 279,
-  "classified_files_total": 275,
-  "docs_content_inspected": 84,
+  "tracked_files_total": 280,
+  "classified_files_total": 276,
+  "docs_content_inspected": 85,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,7 +12,7 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 76,
+    "document": 77,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
@@ -23,7 +23,7 @@
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "5af183bf80b0dcfc1d915e34a1293f5e081539c0fd76bdbec301d09f9f83bf02",
+  "inventory_fingerprint": "d0e543cbb16322a721ef5c922fa81f8dfb989242140234b22b19b0c0ab8154e4",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -234,7 +234,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "3e15a4dc0209bd73a5b1895bbd8fbd3fca3b51c2"
+      "blob": "7b6e0680fe757f71205ea8caa617fdc1c23a4874"
     },
     {
       "path": "README.md",
@@ -1385,6 +1385,13 @@
       "blob": "1ee340303cc593f5b6271eb3e5e57ef47f95b39a"
     },
     {
+      "path": "docs/audits/GRANADA_2026-11-03_PCM_COPY_POLICY_AND_EXTENSIBLE_ABI.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "790a5789931324c0d8442de982c617e3aac49dfa"
+    },
+    {
       "path": "docs/audits/GRANADA_2026-11-03_PCM_FRAME_FORMAT_INTEGRITY.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -1529,7 +1536,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "d39a211c683684f40aaea6fe7172ffab7d8bbe09"
+      "blob": "cbae5adb8c801e3a7c9f9e981c2bf185649d5eb6"
     },
     {
       "path": "native/virtual-driver/NoSourceControlCheck.ps1",
@@ -1550,7 +1557,7 @@
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "c09d0f3c75f009ab10b0530d861bb8cdde557c3a"
+      "blob": "56df86061ceeb4cae06c9a0e0049f78238c7b626"
     },
     {
       "path": "native/virtual-driver/VirtualSourceSilenceCheck.ps1",
@@ -1564,7 +1571,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "6e42d16ff0859574e4aeed32a2d620a7571bd671"
+      "blob": "ad3628f36cad44e19bca7632abd6c021db45d8c1"
     },
     {
       "path": "native/virtual-driver/probe_independent_app_route.ps1",
@@ -1662,14 +1669,14 @@
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "0fb82748084df19c817b243c3a226680539c675b"
+      "blob": "d5875f21e7770a648743d45b8a73aa9cf7f2c94a"
     },
     {
       "path": "native/virtual-driver/tests/test_prepare_sysvad.py",
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "5371424044091f6cec0d30db892fe9411608c938"
+      "blob": "e4cd596a413fbc33348af660fb18ba344f1a5f24"
     },
     {
       "path": "native/virtual-driver/validate_lab_package.ps1",

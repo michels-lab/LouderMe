@@ -138,6 +138,7 @@ SYSVAD.TopologySpeaker.szPname="SYSVAD Topology Speaker"
         self.assertIn("ByteDisplacement - remaining", actual)
         self.assertIn("m_ulDmaBufferSize != 0", actual)
         self.assertIn("m_ulDmaBufferSize % m_pWfExt->Format.nBlockAlign == 0", actual)
+        self.assertIn("m_ullLinearPosition % m_pWfExt->Format.nBlockAlign == 0", actual)
         self.assertIn("ByteDisplacement % m_pWfExt->Format.nBlockAlign == 0", actual)
         with self.assertRaises(ValueError):
             MODULE.patch_minwavertstream_cpp(before.replace(

@@ -82,6 +82,19 @@ SYSVAD.TopologySpeaker.szPname="SYSVAD Topology Speaker"
         self.assertIn("g_DisableToneGenerator = 1", actual)
         self.assertNotIn('L"DoNotCreateDataFiles"', actual)
 
+    def test_frame_clock_helper_is_bounded_and_pinned(self):
+        source = (HERE.parent / "LouderMeLabFrameClock.h").read_text()
+        self.assertIn("class LouderMeLabFrameClock final", source)
+        self.assertIn("averageBytesPerSecond / blockAlign", source)
+        self.assertIn("scaledFrames / 1000ULL", source)
+        self.assertIn("wholeFrames > maxWholeFrames", source)
+        self.assertIn("fractionalFrameMillis", source)
+        self.assertNotIn("new ", source)
+        self.assertNotIn("ExAllocatePool", source)
+        parser = (HERE.parent / "prepare_sysvad.py").read_text()
+        self.assertIn('"LouderMeLabFrameClock.h": (b"fractionalFrameMillis"', parser)
+        self.assertIn('"lab_frame_accurate_dma_clock": True', parser)
+
     def test_relay_uses_bounded_per_miniport_nonpaged_fifo(self):
         header = (HERE.parent / "LouderMeLabPcmRelay.h").read_text()
         self.assertIn("KSPIN_LOCK m_Lock", header)
@@ -130,10 +143,16 @@ SYSVAD.TopologySpeaker.szPname="SYSVAD Topology Speaker"
 
     def test_kernel_stream_publishes_only_consumed_render_and_reads_loopback(self):
         before = (
+            '#include "minwavertstream.h"\n'
             "NTSTATUS CMiniportWaveRTStream::Init\n{\n"
             "            ntStatus = m_ToneGenerator.Init(toneFrequency, toneAmplitudeDouble, toneDCOffsetDouble, toneInitialPhaseDouble, m_pWfExt);\n"
             "}\n"
+            "VOID CMiniportWaveRTStream::SetState\n{\n"
+            "            m_ullLinearPosition = 0;\n"
+            "}\n"
             "VOID CMiniportWaveRTStream::UpdatePosition\n{\n"
+            "    ULONG ByteDisplacement = ((m_ulDmaMovementRate * TimeElapsedInMS) + m_byteDisplacementCarryForward) / 1000 ;\n"
+            "    m_byteDisplacementCarryForward = ((m_ulDmaMovementRate * TimeElapsedInMS) + m_byteDisplacementCarryForward) % 1000;\n"
             "        if (!g_DoNotCreateDataFiles)\n"
             "}\n"
             "VOID CMiniportWaveRTStream::WriteBytes\n{\n"
@@ -151,6 +170,12 @@ SYSVAD.TopologySpeaker.szPname="SYSVAD Topology Speaker"
         self.assertIn("m_pMiniport->IsSystemRenderPin(m_ulPin)", actual)
         self.assertIn("m_pMiniport->IsLoopbackPin(m_ulPin)", actual)
         self.assertIn("ByteDisplacement - remaining", actual)
+        self.assertIn('#include "LouderMeLabFrameClock.h"', actual)
+        self.assertIn("ByteDisplacement = LouderMeLabFrameClock::Advance(", actual)
+        self.assertIn("m_ulDmaMovementRate, m_pWfExt->Format.nBlockAlign", actual)
+        self.assertIn("m_byteDisplacementCarryForward = 0; // new stream epoch", actual)
+        self.assertIn("m_pMiniport->IsLoopbackPin(m_ulPin)", actual)
+        self.assertEqual(actual.count("LouderMeLabFrameClock::Advance("), 1)
         self.assertIn("m_ulDmaBufferSize != 0", actual)
         self.assertIn("m_ulDmaBufferSize % m_pWfExt->Format.nBlockAlign == 0", actual)
         self.assertIn("m_ullLinearPosition % m_pWfExt->Format.nBlockAlign == 0", actual)
@@ -162,6 +187,14 @@ SYSVAD.TopologySpeaker.szPname="SYSVAD Topology Speaker"
         with self.assertRaises(ValueError):
             MODULE.patch_minwavertstream_cpp(before.replace(
                 "m_ToneGenerator.Init", "m_UnknownCaptureInit"
+            ))
+        with self.assertRaises(ValueError):
+            MODULE.patch_minwavertstream_cpp(before.replace(
+                "m_byteDisplacementCarryForward", "m_UnknownTimeCarry"
+            ))
+        with self.assertRaises(ValueError):
+            MODULE.patch_minwavertstream_cpp(before.replace(
+                '#include "minwavertstream.h"', '#include "unknownstream.h"'
             ))
 
     def test_relay_is_lifetime_managed_and_not_global(self):

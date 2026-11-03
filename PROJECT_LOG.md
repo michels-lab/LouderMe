@@ -1,3 +1,12 @@
+## 2026-11-03 — Granada: invalidación de audio al revocar copia + WAVEFORMATEXTENSIBLE (PR candidato)
+
+- Tras fusionar #136/#137, se corrigió un riesgo en kernel: cuando DRM, CopyProtect o loopback restringido impiden leer el stream, el relé vacía la cola anterior. Si la política vuelve a permitir copia, solo se distribuye PCM renderizado después del cambio.
+- Validación de formato extensible corregida a `cbSize >= 22` bytes del contrato de audio Windows, no `sizeof` dependiente de padding ABI. Tests host rechazan extensiones parciales (20/21 bytes).
+- Prueba real C++ host del mismo buffer de SysVAD con productores/capturas/reseteos simultáneos, validación de 24-bit frame indivisible y ausencia de asignaciones de memoria en callbacks; anclas de derivación comprueban el descarte en cambios de política.
+- [Auditoría](docs/audits/GRANADA_2026-11-03_PCM_COPY_POLICY_AND_EXTENSIBLE_ABI.md). Pendiente CI exact-head y ensayo de instalación/escucha en VM. Sin release; issues #46/#48 permanecen abiertos.
+
+---
+
 ## 2026-11-03 — Granada: integración de ruta PCM y corrección de frames (cerrado en source)
 
 - **PR #136** integrado (`e4bb181af533ed0d342a17813cb40c94afe7e8f9`): transporte explícito de PCM consumido del render WaveRT al loopback virtual del SysVAD experimental; pruebas host FIFO, derivación fuente Microsoft fijada y compilación real WDK/x64 aprobadas.

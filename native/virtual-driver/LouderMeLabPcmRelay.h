@@ -34,10 +34,12 @@ class LouderMeLabPcmRelay final
             format->Format.nBlockAlign !=
                 format->Format.nChannels * (format->Format.wBitsPerSample / 8))
             return FALSE;
+        // WAVEFORMATEXTENSIBLE adds exactly 22 bytes after WAVEFORMATEX.
+        // sizeof(struct)-sizeof(WAVEFORMATEX) is NOT a wire-format size:
+        // C/C++ padding can make it 20 or 24 depending on ABI.
         const BOOLEAN extended =
             format->Format.wFormatTag == WAVE_FORMAT_EXTENSIBLE &&
-            format->Format.cbSize >= sizeof(WAVEFORMATEXTENSIBLE) -
-                sizeof(WAVEFORMATEX);
+            format->Format.cbSize >= 22;
         const BOOLEAN pcm = format->Format.wFormatTag == WAVE_FORMAT_PCM ||
             (extended && IsEqualGUIDAligned(
                 format->SubFormat, KSDATAFORMAT_SUBTYPE_PCM));

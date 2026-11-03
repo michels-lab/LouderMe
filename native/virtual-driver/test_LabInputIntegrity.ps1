@@ -112,6 +112,8 @@ try {
   $physicalStep = $runner.IndexOf('Assert-LouderMeLabInputsUnchanged -Snapshot $inputSnapshot -Phase ''before physical tone''')
   if ($virtualStep -lt 0 -or $physicalStep -le $virtualStep -or
       -not $runner.Contains("independent-virtual-source-proof.json") -or
+      -not $runner.Contains("probe_independent_virtual_pcm.ps1") -or
+      -not $runner.Contains("-RequireVirtualProof") -or
       -not $runner.Contains('if ($LASTEXITCODE -ne 0 -or')) {
     throw 'VM lab skipped independent-app PCM proof at the virtual endpoint before physical DSP.'
   }

@@ -30,8 +30,8 @@ struct WAVEFORMATEX {
 };
 struct WAVEFORMATEXTENSIBLE {
     WAVEFORMATEX Format;
-    USHORT reserved = 0;
-    ULONG channelMask = 0;
+    struct { USHORT wValidBitsPerSample = 0; } Samples;
+    ULONG dwChannelMask = 0;
     GUID SubFormat;
 };
 static constexpr int TRUE = 1, FALSE = 0;
@@ -85,6 +85,8 @@ static WAVEFORMATEXTENSIBLE Fmt(ULONG rate = 48000, USHORT channels = 2,
     f.Format.cbSize = tag == WAVE_FORMAT_EXTENSIBLE ? 22 : 0;
     f.SubFormat = floatSubtype ?
         KSDATAFORMAT_SUBTYPE_IEEE_FLOAT : KSDATAFORMAT_SUBTYPE_PCM;
+    f.Samples.wValidBitsPerSample = bits;
+    f.dwChannelMask = channels == 2 ? 0x3UL : 0x4UL;
     return f;
 }
 static void Zeros(const std::vector<BYTE>& v) {
@@ -204,6 +206,54 @@ int main() {
     relay.Consume(quiet.data(), (ULONG)quiet.size(), &badRate);
     Zeros(quiet);
 
+    // Equivalent legacy/EXTENSIBLE wrapper tags MUST not cause silent
+    // loopback, but PCM and IEEE float never share the same sample meaning.
+    relay.Reset();
+    auto pcmLegacy = Fmt(48000, 2, 16, WAVE_FORMAT_PCM);
+    auto pcmExtended = Fmt(48000, 2, 16, WAVE_FORMAT_EXTENSIBLE);
+    relay.Publish(data.data(), (ULONG)data.size(), &pcmLegacy);
+    relay.Consume(quiet.data(), (ULONG)quiet.size(), &pcmExtended);
+    assert(quiet == data);
+    relay.Publish(data.data(), (ULONG)data.size(), &pcmExtended);
+    relay.Consume(quiet.data(), (ULONG)quiet.size(), &pcmLegacy);
+    assert(quiet == data);
+
+    auto legacyFloat = Fmt(48000, 2, 32, WAVE_FORMAT_IEEE_FLOAT);
+    auto extendedFloat = Fmt(48000, 2, 32, WAVE_FORMAT_EXTENSIBLE, true);
+    relay.Publish(data.data(), (ULONG)data.size(), &legacyFloat);
+    relay.Consume(quiet.data(), (ULONG)quiet.size(), &extendedFloat);
+    assert(quiet == data);
+    relay.Publish(data.data(), (ULONG)data.size(), &extendedFloat);
+    relay.Consume(quiet.data(), (ULONG)quiet.size(), &legacyFloat);
+    assert(quiet == data);
+
+    auto pcm32 = Fmt(48000, 2, 32, WAVE_FORMAT_EXTENSIBLE);
+    relay.Publish(data.data(), (ULONG)data.size(), &pcm32);
+    relay.Consume(quiet.data(), (ULONG)quiet.size(), &extendedFloat);
+    Zeros(quiet); // float32 cannot consume otherwise identical PCM32 bytes.
+    relay.Publish(data.data(), (ULONG)data.size(), &extendedFloat);
+    relay.Consume(quiet.data(), (ULONG)quiet.size(), &pcm32);
+    Zeros(quiet); // reverse incompatible sample encoding.
+
+    auto wrongMask = pcmExtended;
+    wrongMask.dwChannelMask = 0x30UL; // surround channels, not FL/FR
+    relay.Publish(data.data(), (ULONG)data.size(), &wrongMask);
+    relay.Consume(quiet.data(), (ULONG)quiet.size(), &pcmLegacy);
+    Zeros(quiet);
+    auto valid24In32 = Fmt(48000, 2, 32, WAVE_FORMAT_EXTENSIBLE);
+    valid24In32.Samples.wValidBitsPerSample = 24;
+    relay.Publish(data.data(), (ULONG)data.size(), &valid24In32);
+    relay.Consume(quiet.data(), (ULONG)quiet.size(), &pcm32);
+    Zeros(quiet); // 24 significant bits != 32 significant bits.
+    relay.Publish(data.data(), (ULONG)data.size(), &valid24In32);
+    relay.Consume(quiet.data(), (ULONG)quiet.size(), &valid24In32);
+    assert(quiet == data);
+    auto impossibleValid = valid24In32;
+    impossibleValid.Samples.wValidBitsPerSample = 40;
+    relay.Publish(data.data(), (ULONG)data.size(), &impossibleValid);
+    relay.Consume(quiet.data(), (ULONG)quiet.size(), &pcm32);
+    Zeros(quiet);
+
     // 20 or 21 extension bytes are invalid even if the host struct
     // happens to have alignment padding. Exactly 22 is a valid extension.
     relay.Reset();
@@ -294,6 +344,6 @@ int main() {
     Zeros(quiet);
     relay.Shutdown();
     assert(g_wipes == 1);
-    std::cout << "PASS: bounded native relay FIFO, 24-bit frame alignment, 22-byte extensible format, DRM epoch reset and concurrent frame integrity, float32, stale-format rejection, wrap, overflow, "
+    std::cout << "PASS: bounded native relay FIFO, 24-bit frame alignment, 22-byte extensible format, DRM epoch reset, normalized PCM/float wrapper types and concurrent frame integrity, float32, stale-format rejection, wrap, overflow, "
                  "format isolation, reset, and no callback allocation\n";
 }

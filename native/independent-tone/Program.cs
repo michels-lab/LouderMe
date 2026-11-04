@@ -83,15 +83,18 @@ internal static class Program
         bool isPcm16 = format.BitsPerSample == 16 &&
             (format.Encoding == WaveFormatEncoding.Pcm ||
              format is WaveFormatExtensible e1 && e1.SubFormat == PcmSubtype);
+        bool isPcm24 = format.BitsPerSample == 24 &&
+            (format.Encoding == WaveFormatEncoding.Pcm ||
+             format is WaveFormatExtensible e3 && e3.SubFormat == PcmSubtype);
         bool isFloat32 = format.BitsPerSample == 32 &&
             (format.Encoding == WaveFormatEncoding.IeeeFloat ||
              format is WaveFormatExtensible e2 && e2.SubFormat == FloatSubtype);
-        if ((!isPcm16 && !isFloat32) ||
+        if ((!isPcm16 && !isPcm24 && !isFloat32) ||
             format.SampleRate is < 8000 or > 192000 ||
             format.Channels is < 1 or > 2 ||
             format.BlockAlign != format.Channels * format.BitsPerSample / 8)
             throw new NotSupportedException(
-                "External app lab tone requires PCM16/float32 mono/stereo 8–192 kHz.");
+                "External app lab tone requires PCM16/PCM24/float32 mono/stereo 8–192 kHz.");
         var frames = checked(format.SampleRate * DurationSeconds);
         var pcm = new byte[checked(frames * format.BlockAlign)];
         for (int frame = 0; frame < frames; frame++)
@@ -102,9 +105,18 @@ internal static class Program
             {
                 var dest = pcm.AsSpan(frame * format.BlockAlign +
                     channel * (format.BitsPerSample / 8));
-                if (isFloat32) BinaryPrimitives.WriteSingleLittleEndian(dest, v);
-                else BinaryPrimitives.WriteInt16LittleEndian(
-                    dest, (short)MathF.Round(v * 32767f));
+                if (isFloat32)
+                    BinaryPrimitives.WriteSingleLittleEndian(dest, v);
+                else if (isPcm16)
+                    BinaryPrimitives.WriteInt16LittleEndian(
+                        dest, (short)MathF.Round(v * 32767f));
+                else
+                {
+                    int signed24 = (int)MathF.Round(v * 8388607f);
+                    dest[0] = (byte)signed24;
+                    dest[1] = (byte)(signed24 >> 8);
+                    dest[2] = (byte)(signed24 >> 16);
+                }
             }
         }
         return pcm;
@@ -114,21 +126,24 @@ internal static class Program
     {
         foreach (int rate in new[] { 44100, 48000, 96000 })
         foreach (int channels in new[] { 1, 2 })
-        foreach (int bits in new[] { 16, 32 })
+        foreach (int bits in new[] { 16, 24, 32 })
         {
-            var format = bits == 16 ? new WaveFormat(rate, bits, channels)
-                : WaveFormat.CreateIeeeFloatWaveFormat(rate, channels);
+            var format = bits == 32 ? WaveFormat.CreateIeeeFloatWaveFormat(rate, channels)
+                : new WaveFormat(rate, bits, channels);
             byte[] pcm = CreateTone(format);
             if (pcm.Length != rate * DurationSeconds * format.BlockAlign)
                 throw new Exception("Independent application tone has invalid frame count.");
             double energy = 0, projectionSin = 0, projectionCos = 0;
             for (int frame = 0; frame < rate * DurationSeconds; frame++)
             {
+                int at = frame * format.BlockAlign;
+                int packed24 = pcm[at] | (pcm[at + 1] << 8) | (pcm[at + 2] << 16);
+                if ((packed24 & 0x800000) != 0)
+                    packed24 |= unchecked((int)0xFF000000);
                 double sample = bits == 16
-                    ? BinaryPrimitives.ReadInt16LittleEndian(
-                        pcm.AsSpan(frame * format.BlockAlign)) / 32768.0
-                    : BinaryPrimitives.ReadSingleLittleEndian(
-                        pcm.AsSpan(frame * format.BlockAlign));
+                    ? BinaryPrimitives.ReadInt16LittleEndian(pcm.AsSpan(at)) / 32768.0
+                    : bits == 24 ? packed24 / 8388608.0
+                    : BinaryPrimitives.ReadSingleLittleEndian(pcm.AsSpan(at));
                 if (!double.IsFinite(sample) || Math.Abs(sample) > 0.03)
                     throw new Exception("Independent application tone amplitude invalid.");
                 var angle = 2 * Math.PI * Frequency * frame / rate;
@@ -152,6 +167,6 @@ internal static class Program
             catch (NotSupportedException) { continue; }
             throw new Exception("Unsupported independent app audio format accepted.");
         }
-        Console.WriteLine("PASS: separate Windows process 440 Hz source generator PCM16/float32, mono/stereo, 44.1/48/96 kHz; no devices.");
+        Console.WriteLine("PASS: separate Windows process 440 Hz source generator PCM16/PCM24/float32, mono/stereo, 44.1/48/96 kHz; no devices.");
     }
 }

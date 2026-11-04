@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 281,
-  "classified_files_total": 277,
-  "docs_content_inspected": 86,
+  "tracked_files_total": 284,
+  "classified_files_total": 280,
+  "docs_content_inspected": 87,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,18 +12,18 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 78,
+    "document": 79,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
-    "source": 97,
-    "test": 33,
+    "source": 98,
+    "test": 34,
     "text_metadata": 2,
     "workflow": 11
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "5864eef78074ec34a65310b70c479485ea7dc084b43b8bc1726959874e37af13",
+  "inventory_fingerprint": "5afc279e56d1647540765e7a422d5eca78d7b22d754bb3abae13c45df891d034",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -122,7 +122,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "efe1ec7ae2ff9c96d2b6287b62325c589de51b01"
+      "blob": "f2204a3e1b9d45da0c4dc760b294e848d0e373f9"
     },
     {
       "path": ".github/workflows/release-louderme-desktop.yml",
@@ -234,7 +234,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "bf7ab3e2ca7afdfe5c3a6bdde18b5b2d77eaf2ed"
+      "blob": "70f2ea9b3124c69850bd88f67bdd669518d367b2"
     },
     {
       "path": "README.md",
@@ -1413,6 +1413,13 @@
       "blob": "c8d904e9113e1c4873c8d48e209100efe20c8b8b"
     },
     {
+      "path": "docs/audits/GRANADA_2026-11-03_WAVERT_FRAME_CLOCK.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "204bb740ce75c7b97ff329ae38f9986466f7a2e1"
+    },
+    {
       "path": "docs/product-reviews/2026-10-21-native-windows-audio-evidence.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -1539,6 +1546,13 @@
       "blob": "c0217140b55921025d43606c4d59e38f82b7e700"
     },
     {
+      "path": "native/virtual-driver/LouderMeLabFrameClock.h",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "324df3dce7bdf4459d42719479ca81b8f3047115"
+    },
+    {
       "path": "native/virtual-driver/LouderMeLabPcmRelay.h",
       "role": "source",
       "purpose": "code/test implementation",
@@ -1564,7 +1578,7 @@
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "67130df18a378d7fbbfd2b644c30e4fb87c2eab1"
+      "blob": "3223865e5719a2471a008b725cd4fe371a3e0920"
     },
     {
       "path": "native/virtual-driver/VirtualSourceSilenceCheck.ps1",
@@ -1578,7 +1592,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "3454fba9078c49e4c99401d2bacf8af0a95a7edb"
+      "blob": "047888c921915c84a7bf8e71bbce1583f22bf266"
     },
     {
       "path": "native/virtual-driver/probe_independent_app_route.ps1",
@@ -1672,6 +1686,13 @@
       "blob": "e4c65a0fa8e1d2073fba93b5d3291bfb1e8f2f14"
     },
     {
+      "path": "native/virtual-driver/tests/test_pcm_frame_clock_host.cpp",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "0e95e5b814ad371dd619477f5170ed65c5cf6ed4"
+    },
+    {
       "path": "native/virtual-driver/tests/test_pcm_relay_host.cpp",
       "role": "test",
       "purpose": "code/test implementation",
@@ -1683,7 +1704,7 @@
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "462dca871c4b907263d59d877668e2f389dbd33b"
+      "blob": "a299bcb8eabc1ee29ed00cfcc5d12df79144b151"
     },
     {
       "path": "native/virtual-driver/validate_lab_package.ps1",

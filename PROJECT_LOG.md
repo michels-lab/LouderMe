@@ -1,3 +1,13 @@
+## 2026-11-03 — Operación Granada: reloj WaveRT + PCM equivalente + loopback PCM16 integrados
+
+- **PR #140** integrado (`191d231f79767e9938e8a07e7f1b47bc1a969d20`): reloj WaveRT basado en frames completos a 44.1/48/96 kHz, protección de reanudación (máximo 250 ms por callback). CI derivación SysVAD, WDK x64/INF-CAT y Android verde.
+- **PR #141** integrado (`62cf79f6deaf8550b269aad529cfcab37c2108c7`): relé kernel ya compara clase canónica PCM/float32, bits significativos y máscara de canales; transferencias seguras entre headers legacy/extensibles, sin confundir PCM32 con float32. CI [SysVAD 41750929581](https://github.com/michels-lab/LouderMe/actions/runs/41750929581) y [Android 41750929534](https://github.com/michels-lab/LouderMe/actions/runs/41750929534) completado en verde.
+- **PR #142** integrado (`34ed5241e9ca642ab81d99276433123ff84cc3ca`): prueba de loopback virtual del puente Windows admite PCM16 además de IEEE float32, decodifica a scratch preasignado y mantiene evidencia 440 Hz sin generar audio en modo externo. Dos PRs paralelos conciliados con commit de merge de ramas sin perder ninguna bitácora; [CI nativo 41753066000](https://github.com/michels-lab/LouderMe/actions/runs/41753066000) y [Android 41753066043](https://github.com/michels-lab/LouderMe/actions/runs/41753066043) completados en verde.
+- **Estado de producto:** issue #46 está cerrado administrativamente; la aceptación física y firma de distribución del driver siguen explícitamente pendientes en **#48 abierto**. No se ha instalado ni probado el driver en VM real con PCM externo→DSP→salida física, ni se certifica audio acústico o captura global de Windows.
+- **Sin release:** última distribución pública `louderme-android-v0.1.12-desktop-v0.1.17`. No instalar driver de laboratorio en equipo de uso diario.
+
+---
+
 ## 2026-11-03 — Granada: captura virtual PCM16 o float32 desde aplicación separada (candidato)
 
 - El puente virtual-only `--probe-virtual-external` rechazaba PCM16 antes de empezar WASAPI por exigir `IsFloat32`, aunque el DSP y su adaptador ya soportaban PCM16. El tono propio también escribía bytes de float32 incluso si el endpoint era PCM16.

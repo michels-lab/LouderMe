@@ -31,10 +31,11 @@ public:
         const ULONGLONG scaledFrames =
             framesPerSecond * elapsedMilliseconds + *fractionalFrameMillis;
         const ULONGLONG wholeFrames = scaledFrames / 1000ULL;
-        const ULONGLONG maxWholeFrames = 0xFFFFFFFFULL / blockAlign;
-
-        // A VM pause can yield an extremely large elapsed value. Do not
-        // wrap ULONG byte displacement or publish unsized kernel buffers.
+        // Do not let a suspended VM or stalled timer force multi-second
+        // work inside a kernel DPC. Cap a single callback to 250 ms of
+        // frames, safely below the ULONG byte limit even at 192 kHz stereo.
+        // Old audio is dropped rather than scheduling an unbounded catch-up.
+        const ULONGLONG maxWholeFrames = framesPerSecond / 4ULL;
         if (wholeFrames > maxWholeFrames)
         {
             *fractionalFrameMillis = 0;

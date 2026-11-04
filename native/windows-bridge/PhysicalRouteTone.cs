@@ -17,7 +17,7 @@ internal static class PhysicalRouteTone
         if (!PcmFormatAdapter.IsSupported(format) ||
             format.Channels is < 1 or > 2)
             throw new NotSupportedException(
-                "Isolated physical-route proof supports PCM16/float32 mono/stereo only.");
+                "Isolated physical-route proof supports PCM16/PCM24/float32 mono/stereo only.");
         int frames = checked(format.SampleRate * DurationSeconds);
         int channels = format.Channels;
         var floatFormat = WaveFormat.CreateIeeeFloatWaveFormat(format.SampleRate, channels);
@@ -32,7 +32,7 @@ internal static class PhysicalRouteTone
                     pcm.AsSpan((frame * channels + channel) * sizeof(float)), value);
         }
 
-        // The selected render endpoint may use PCM16, not just IEEE float.
+        // The selected render endpoint may use packed PCM16/PCM24, not just IEEE float.
         // The conversion path is the same numerically tested adapter that
         // feeds the native DSP and physical playback endpoint.
         var encoder = new PcmFormatAdapter(floatFormat, format);
@@ -43,11 +43,11 @@ internal static class PhysicalRouteTone
     {
         foreach (int rate in new[] { 44100, 48000, 96000 })
         foreach (int channels in new[] { 1, 2 })
-        foreach (int bits in new[] { 16, 32 })
+        foreach (int bits in new[] { 16, 24, 32 })
         {
-            var format = bits == 16
-                ? new WaveFormat(rate, 16, channels)
-                : WaveFormat.CreateIeeeFloatWaveFormat(rate, channels);
+            var format = bits == 32
+                ? WaveFormat.CreateIeeeFloatWaveFormat(rate, channels)
+                : new WaveFormat(rate, bits, channels);
             byte[] stimulus = Create(format);
             if (stimulus.Length != rate * DurationSeconds * format.BlockAlign)
                 throw new InvalidOperationException("Lab stimulus frames are missing.");
@@ -66,7 +66,7 @@ internal static class PhysicalRouteTone
                 throw new InvalidOperationException(
                     $"Lab tone invalid for {rate} Hz, {channels}ch, {bits}-bit: {proof}");
         }
-        Console.WriteLine("PASS: isolated lab tone generation PCM16/float32 " +
+        Console.WriteLine("PASS: isolated lab tone generation PCM16/PCM24/float32 " +
             "mono/stereo 44.1/48/96 kHz, fragmented 440 Hz identity.");
     }
 }

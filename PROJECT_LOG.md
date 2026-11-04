@@ -1,3 +1,12 @@
+## 2026-11-03 — Granada: captura virtual PCM16 o float32 desde aplicación separada (candidato)
+
+- El puente virtual-only `--probe-virtual-external` rechazaba PCM16 antes de empezar WASAPI por exigir `IsFloat32`, aunque el DSP y su adaptador ya soportaban PCM16. El tono propio también escribía bytes de float32 incluso si el endpoint era PCM16.
+- Nueva clase `VirtualLoopbackProbePcm`: decodificación a float32 con scratch preasignado, identidad numérica 440 Hz inalterada; captura externa sin generador ni salida física. Tono propio codificado PCM16/float32 según mezcla.
+- Nuevas pruebas `--check-virtual-formats` en CI Windows: 44.1/48/96 kHz, mono/estéreo, tonos por fragmentos variables, silencio, NaN, paquete PCM16 desalineado, packet mayor al buffer y PCM24 aún incompatible con el adaptador.
+- [Auditoría](docs/audits/GRANADA_2026-11-03_PCM16_VIRTUAL_LOOPBACK_PROBE.md). No instala ningún driver ni prueba sonido en hardware; #46/#48 siguen pendientes; sin release.
+
+---
+
 ## 2026-11-03 — Operación Granada: precisión temporal de frames WaveRT (candidato)
 
 - PR #139 integrado en `main` como `7a522590afc2deee52f18f07098a63c6275addda` con CI WDK/Android verde: el loopback de SysVAD ya no intenta inicializar su generador sintético PCM-only cuando el formato es float32.

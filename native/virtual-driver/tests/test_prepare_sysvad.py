@@ -88,6 +88,8 @@ SYSVAD.TopologySpeaker.szPname="SYSVAD Topology Speaker"
         self.assertIn("averageBytesPerSecond / blockAlign", source)
         self.assertIn("scaledFrames / 1000ULL", source)
         self.assertIn("wholeFrames > maxWholeFrames", source)
+        self.assertIn("framesPerSecond / 4ULL", source)
+        self.assertIn("*fractionalFrameMillis = 0;", source)
         self.assertIn("fractionalFrameMillis", source)
         self.assertNotIn("new ", source)
         self.assertNotIn("ExAllocatePool", source)

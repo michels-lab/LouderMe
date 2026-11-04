@@ -43,6 +43,15 @@ class WindowsShippingBinaryProvenanceTests(unittest.TestCase):
                 for surface in ("home", "about", "equalizer")
             ],
         }
+        for shot in self.doc["screenshots"]:
+            name = f'{shot["surface"]}-{shot["viewport"]}.png'
+            file = self.base / name
+            file.write_bytes((f"hermetic pixels {name} ".encode()) * 180)
+            shot["path"] = name
+            shot["width"], shot["height"] = (
+                (600, 520) if shot["viewport"] == "compact" else (900, 700)
+            )
+            shot["sha256"] = provenance.hash_file(file)
         self.write_manifest()
 
     def recompute_sidecars(self):
@@ -71,6 +80,10 @@ class WindowsShippingBinaryProvenanceTests(unittest.TestCase):
         self.assertEqual(result["tested_installer_sha256"], provenance.hash_file(self.setup))
         self.assertEqual(result["source_commit"], self.SOURCE)
         self.assertEqual(result["screenshots"], 6)
+        self.assertTrue(result["rendered_screenshot_files_verified"])
+        self.assertEqual(len(result["rendered_screenshot_sha256"]), 6)
+        self.assertEqual(result["rendered_screenshot_sha256"]["home-wide.png"],
+                         provenance.hash_file(self.base / "home-wide.png"))
         self.assertEqual(result["post_release_owner_visual_review"], "PENDING")
         self.assertEqual(result["physical_audio_device_test"], "NOT TESTED")
         self.assertEqual(json.loads(self.out.read_text()), result)
@@ -94,6 +107,22 @@ class WindowsShippingBinaryProvenanceTests(unittest.TestCase):
                 {"capture_method": "static-mock"})),
             ("wrong capture platform", lambda: self.doc["screenshots"][0].update(
                 {"platform": "android"})),
+            ("screenshot file replaced after visual gate", lambda:
+                (self.base / "home-compact.png").write_bytes(b"swapped rendered window" * 300)),
+            ("screenshot file deleted", lambda:
+                (self.base / "home-compact.png").unlink()),
+            ("forged screenshot digest", lambda:
+                self.doc["screenshots"][0].update({"sha256": "b" * 64})),
+            ("missing screenshot digest", lambda:
+                self.doc["screenshots"][0].pop("sha256")),
+            ("path traversal outside evidence directory", lambda:
+                self.doc["screenshots"][0].update({"path": "../home-compact.png"})),
+            ("wrong screenshot file for claimed surface", lambda:
+                self.doc["screenshots"][0].update({"path": "about-compact.png"})),
+            ("invalid compact viewport dimensions", lambda:
+                self.doc["screenshots"][0].update({"width": 900})),
+            ("same bytes reused for distinct surfaces", lambda:
+                self._duplicate_image_bytes()),
         ):
             self.setUp()
             mutation()
@@ -102,6 +131,11 @@ class WindowsShippingBinaryProvenanceTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     self.verify()
                 self.assertFalse(self.out.exists())
+
+    def _duplicate_image_bytes(self):
+        file = self.base / "about-compact.png"
+        file.write_bytes((self.base / "home-compact.png").read_bytes())
+        self.doc["screenshots"][1]["sha256"] = provenance.hash_file(file)
 
     def test_source_and_release_version_also_must_match(self):
         with self.assertRaises(ValueError):

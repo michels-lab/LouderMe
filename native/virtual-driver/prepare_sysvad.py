@@ -355,6 +355,12 @@ def patch_minwavertstream_cpp(text: str) -> str:
     """Move consumed system-render DMA bytes into the virtual loopback, no tone."""
     # The pinned WDK source may be CRLF; exact source anchors use LF.
     text = text.replace("\r\n", "\n")
+    text = replace_exact(
+        text,
+        '#include "minwavertstream.h"\n',
+        '#include "minwavertstream.h"\n#include "LouderMeLabFrameClock.h"\n',
+        "minwavertstream.cpp frame-clock include"
+    )
     # The original SysVAD always initializes its demo ToneGenerator for
     # capture pins, including render loopback. ToneGenerator::Init accepts
     # PCM ONLY and rejects IEEE float32, even if g_DisableToneGenerator=1.
@@ -379,6 +385,40 @@ def patch_minwavertstream_cpp(text: str) -> str:
                 m_ToneGenerator.GenerateSine(
                     m_pDmaBuffer + bufferOffset, runWrite);""",
         "minwavertstream.cpp WriteBytes"
+    )
+    # SysVAD computes BYTE counts from whole milliseconds; at 44.1 kHz
+    # the remainder often yields a fractional *frame*, so our DMA relay
+    # safely rejects it and emits periodic silence. Convert time to full
+    # frames with a fractional-frame carry before any DMA state advances.
+    text = replace_exact(
+        text,
+        """    ULONG ByteDisplacement = ((m_ulDmaMovementRate * TimeElapsedInMS) + m_byteDisplacementCarryForward) / 1000 ;
+    m_byteDisplacementCarryForward = ((m_ulDmaMovementRate * TimeElapsedInMS) + m_byteDisplacementCarryForward) % 1000;""",
+        """    ULONG ByteDisplacement = 0;
+    if (m_pWfExt != NULL &&
+        (m_pMiniport->IsSystemRenderPin(m_ulPin) ||
+         m_pMiniport->IsLoopbackPin(m_ulPin)))
+    {
+        ByteDisplacement = LouderMeLabFrameClock::Advance(
+            m_ulDmaMovementRate, m_pWfExt->Format.nBlockAlign,
+            TimeElapsedInMS, &m_byteDisplacementCarryForward);
+    }
+    else
+    {
+        // Preserve the SysVAD sample's upstream timing for unrelated pins.
+        ByteDisplacement = ((m_ulDmaMovementRate * TimeElapsedInMS) +
+            m_byteDisplacementCarryForward) / 1000;
+        m_byteDisplacementCarryForward = ((m_ulDmaMovementRate * TimeElapsedInMS) +
+            m_byteDisplacementCarryForward) % 1000;
+    }""",
+        "minwavertstream.cpp UpdatePosition frame-accurate DMA clock"
+    )
+    text = replace_exact(
+        text,
+        "            m_ullLinearPosition = 0;\n",
+        "            m_ullLinearPosition = 0;\n"
+        "            m_byteDisplacementCarryForward = 0; // new stream epoch\n",
+        "minwavertstream.cpp SetState(STOP) clock reset"
     )
     start = text.index("VOID CMiniportWaveRTStream::UpdatePosition")
     end = text.index("VOID CMiniportWaveRTStream::WriteBytes", start)
@@ -462,18 +502,25 @@ def prepare(repo: Path, dry_run: bool = False) -> dict:
         "EndpointsCommon/minwavertstream.cpp": patch_minwavertstream_cpp,
         "TabletAudioSample/TabletAudioSample.vcxproj": patch_project_for_desktop
     }
-    relay_source = Path(__file__).with_name("LouderMeLabPcmRelay.h")
-    relay_dest = root / "EndpointsCommon" / relay_source.name
-    if not relay_source.is_file():
-        raise FileNotFoundError("LouderMe lab PCM relay implementation missing")
-    relay_text = relay_source.read_bytes()
-    if b"KeAcquireSpinLock" not in relay_text or b"RtlZeroMemory" not in relay_text:
-        raise ValueError("LouderMe PCM relay lost kernel synchronization or silence")
-    patched = {"EndpointsCommon/LouderMeLabPcmRelay.h": {
-        "sha256": hashlib.sha256(relay_text).hexdigest(), "encoding": "utf-8"
-    }}
-    if not dry_run:
-        relay_dest.write_bytes(relay_text)
+    # Copy both bounded, host-testable C++ building blocks into the
+    # pinned Microsoft checkout. Never rely on ambient machine headers.
+    patched = {}
+    for name, required_tokens in {
+        "LouderMeLabPcmRelay.h": (b"KeAcquireSpinLock", b"RtlZeroMemory"),
+        "LouderMeLabFrameClock.h": (b"fractionalFrameMillis", b"wholeFrames"),
+    }.items():
+        source = Path(__file__).with_name(name)
+        dest = root / "EndpointsCommon" / name
+        if not source.is_file():
+            raise FileNotFoundError(f"Missing LAB kernel helper: {name}")
+        source_bytes = source.read_bytes()
+        if any(token not in source_bytes for token in required_tokens):
+            raise ValueError(f"LAB kernel helper lost mandatory behavior: {name}")
+        patched["EndpointsCommon/" + name] = {
+            "sha256": hashlib.sha256(source_bytes).hexdigest(), "encoding": "utf-8"
+        }
+        if not dry_run:
+            dest.write_bytes(source_bytes)
     for rel, patch in work.items():
         target = root / rel
         raw = target.read_bytes()
@@ -507,6 +554,7 @@ def prepare(repo: Path, dry_run: bool = False) -> dict:
         "recording_to_file_enabled": False,
         "sample_tone_generator_enabled": False,
         "lab_render_loopback_relay_source": True,
+        "lab_frame_accurate_dma_clock": True,
         "render_loopback_relay_installed_or_verified": False,
         "driver_signed": False,
         "driver_installed": False,

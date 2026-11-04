@@ -166,6 +166,7 @@ internal static class Program
         }
         foreach (WaveFormat bad in new[] {
             new WaveFormat(48000, 8, 2),
+            new WaveFormat(48000, 32, 2), // Integer PCM32 is not IEEE float.
             WaveFormat.CreateIeeeFloatWaveFormat(48000, 3),
         })
         {

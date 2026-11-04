@@ -248,6 +248,11 @@ int main() {
     relay.Publish(data.data(), (ULONG)data.size(), &valid24In32);
     relay.Consume(quiet.data(), (ULONG)quiet.size(), &valid24In32);
     assert(quiet == data);
+    auto invalidFloatBits = extendedFloat;
+    invalidFloatBits.Samples.wValidBitsPerSample = 24;
+    relay.Publish(data.data(), (ULONG)data.size(), &invalidFloatBits);
+    relay.Consume(quiet.data(), (ULONG)quiet.size(), &legacyFloat);
+    Zeros(quiet);
     auto impossibleValid = valid24In32;
     impossibleValid.Samples.wValidBitsPerSample = 40;
     relay.Publish(data.data(), (ULONG)data.size(), &impossibleValid);

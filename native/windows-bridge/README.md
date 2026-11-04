@@ -1,3 +1,9 @@
+## Granada 2026-11-04 — packed PCM24 in independent Windows audio LAB
+
+El formato **PCM24 little-endian con muestras de tres bytes** ahora atraviesa el generador de audio de una aplicación independiente, la captura virtual WASAPI, el decodificador con scratch preasignado, el DSP float32 y la conversión de salida física. Se admiten PCM16, PCM24 y IEEE float32, pero **no PCM32 entero ni muestras PCM24 de cuatro bytes**. No se infiere formato por el tamaño del paquete: el mix seleccionado debe declararlo explícitamente.
+
+Autopruebas sin dispositivo: `--check-tone` (proceso fuente independiente), `--check-formats` y `--check-scratch` (signo, rails, re-muestreo y reutilización), `--check-virtual-formats` (440 Hz, PCM24 fragmentado y paquetes rechazados), `--check-route-tone` y `--check-route-preflight`. El CI real de Windows debe aprobar en el SHA del PR; las pruebas de una VM con el controlador instalado y el audio físico siguen PENDIENTES. [Auditoría de PCM24](../../docs/audits/GRANADA_2026-11-04_PCM24_MANAGED_ROUTE.md).
+
 ## Granada 2026-11-03 — laboratorio virtual-only PCM16 o IEEE float32
 
 `--probe-virtual-external` ya no rechaza una salida virtual de Windows por estar negociada como **PCM16** en vez de IEEE float32. Ambos formatos se decodifican usando `PcmFormatAdapter` a un buffer float32 privado, reservado una vez, para el mismo verificador de tono 440 Hz; paquetes no alineados o demasiado grandes fallan sin producir un positivo falso. En modo externo **no genera un tono**, no abre salida física ni configura el DSP; en modo de tono propio, el estímulo se codifica correctamente según el formato real de la salida virtual. La autoprueba `--check-virtual-formats` ejecuta PCM16/float32 a 44.1/48/96 kHz mono/estéreo sin dispositivos. [Auditoría y alcance](../../docs/audits/GRANADA_2026-11-03_PCM16_VIRTUAL_LOOPBACK_PROBE.md).
@@ -57,11 +63,11 @@ or create the virtual endpoint; that WDK/SysVAD work is a separate milestone.
 - Requires active virtual endpoint named `LouderMe Virtual` and a distinct
   physical render endpoint. If there is no working signed virtual device,
   the bridge cannot process any actual system audio.
-- Experimental streaming converter now accepts PCM16 or IEEE float32 on
+- Experimental streaming converter now accepts packed PCM24, PCM16 or IEEE float32 on
   **either** endpoint, with independently selected mix sample rates of
   8–192 kHz and ratios between 1:4 and 4:1. Native C++ DSP continues to
   operate on private interleaved float32 samples; the physical WASAPI buffer
-  receives its own negotiated PCM16/float32 encoding and sample rate.
+  receives its own negotiated PCM16/PCM24/float32 encoding and sample rate.
 - Experimental output queue feedback now uses a **bounded ±250 ppm** slowly smoothed correction to the PCM adapter's frame step to compensate modest capture/render clock mismatch without altering Windows device clocks. This is not hardware clock synchronization.
 - The bridge reports **queued audio milliseconds (not audible end-to-end latency)**, packet-processing work relative to nominal audio time (not OS CPU utilization), worst callback and over-budget callback counts in 1-second summaries. Independent callback counters use atomic updates. The same-rate/no-correction output fast path avoids a redundant per-packet array resize/copy, reducing managed allocation overhead.
 - Uses **stateful linear interpolation** across capture callbacks and

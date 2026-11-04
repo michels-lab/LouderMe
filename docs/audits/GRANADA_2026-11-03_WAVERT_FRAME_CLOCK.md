@@ -8,7 +8,7 @@ LouderMe's new render→loopback DMA relay (PRs #136–#138) correctly rejects f
 
 ## Fix
 
-- New `LouderMeLabFrameClock.h` computes whole frames from `(bytes/sec / nBlockAlign) * elapsedMilliseconds + fractionalFrameMillis`, dividing by 1000 and retaining a remainder in **1/1000 frame** units. No floating-point, allocation, sleeping or kernel I/O. It uses 64-bit intermediates and caps the 32-bit byte displacement at the maximum whole-frame value after VM pauses.
+- New `LouderMeLabFrameClock.h` computes whole frames from `(bytes/sec / nBlockAlign) * elapsedMilliseconds + fractionalFrameMillis`, dividing by 1000 and retaining a remainder in **1/1000 frame** units. No floating-point, allocation, sleeping or kernel I/O. It uses 64-bit intermediates and limits each callback to **at most 250 milliseconds of whole frames**, so a paused VM cannot demand a multi-second DPC loop after resuming. The cap discards obsolete catch-up time and clears the fractional carry.
 - The exact pinned-source patch applies this helper only to SysVAD's **system-render** and **render-loopback capture** pins; unrelated sample capture/offload pins retain their original clock. The same `m_byteDisplacementCarryForward` field stores a fractional frame for those two lab streams only.
 - The STOP transition clears the fractional carry along with `m_ullLinearPosition`, preventing a previous audio session from biasing the next one.
 - The clock header ships into the throwaway Microsoft WDK checkout as a standalone header, with its SHA256 recorded in the lab manifest. No installer or signed device is emitted by CI.

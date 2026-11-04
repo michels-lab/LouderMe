@@ -85,11 +85,24 @@ int main()
     assert(LouderMeLabFrameClock::Advance(44100 * 6, 6, 1, &carry) == 0);
     assert(carry == 0);
 
+    // A 30-second VM suspension must not ask the WaveRT DPC to process
+    // 30 seconds of audio in one callback. Exactly 250ms is the ceiling.
+    for (ULONG rate : {44100U, 48000U, 96000U, 192000U})
+    {
+        carry = 0;
+        ULONG cappedPause = LouderMeLabFrameClock::Advance(
+            rate * 6, 6, 30000, &carry);
+        assert(cappedPause == rate * 6 / 4 && carry == 0);
+        ULONG resumed = LouderMeLabFrameClock::Advance(
+            rate * 6, 6, 1, &carry);
+        assert(resumed % 6 == 0);
+        assert(resumed == (rate / 1000) * 6);
+    }
     ULONG capped = LouderMeLabFrameClock::Advance(
         192000 * 8, 8, std::numeric_limits<ULONG>::max(), &carry);
-    assert(capped > 0 && capped % 8 == 0 && carry == 0);
+    assert(capped == 192000 * 8 / 4 && carry == 0);
     assert(capped <= std::numeric_limits<ULONG>::max());
 
     std::cout << "PASS: real WaveRT frame clock is drift-free and whole-frame at 44.1/48/96kHz, "
-                 "preserves jittered time, resets across stream epochs and saturates safely\n";
+                 "preserves jittered time, resets across stream epochs and limits VM-pause DPC catch-up\n";
 }

@@ -10,15 +10,6 @@ namespace LouderMeAudioBridge;
 
 internal static class Program
 {
-    // IEEE 754 floating PCM subtype in WAVEFORMATEXTENSIBLE.
-    private static readonly Guid Float32Subtype =
-        new("00000003-0000-0010-8000-00aa00389b71");
-
-    private static bool IsFloat32(WaveFormat format) =>
-        format.BitsPerSample == 32 &&
-        (format.Encoding == WaveFormatEncoding.IeeeFloat ||
-         (format is WaveFormatExtensible extended && extended.SubFormat == Float32Subtype));
-
     private static RoutePreflight.Endpoint CreatePreflightSnapshot(MMDevice device)
     {
         WaveFormat? mixFormat;
@@ -73,6 +64,11 @@ internal static class Program
             if (args.Contains("--check-loopback"))
             {
                 LoopbackToneVerifier.RunSelfTests();
+                return 0;
+            }
+            if (args.Contains("--check-virtual-formats"))
+            {
+                VirtualLoopbackProbePcm.RunSelfTests();
                 return 0;
             }
             if (args.Contains("--check-route-tone"))
@@ -751,28 +747,17 @@ internal static class Program
 
         using var capture = new WasapiLoopbackCapture(endpoint);
         var format = capture.WaveFormat;
-        if (!IsFloat32(format) || format.Channels is < 1 or > 8 ||
-            format.SampleRate is < 8000 or > 192000)
-            throw new NotSupportedException("Probe needs a valid float32 virtual mix format.");
+        // WASAPI endpoints may expose otherwise equivalent PCM16 or float32
+        // virtual mix formats. Verify both via the same float32 tone evidence
+        // without ever changing OS defaults or constructing a physical sink.
+        var virtualPcm = new VirtualLoopbackProbePcm(format);
 
         // Existing self-tone path keeps its own two-second stimulus. In
         // external mode, no test tone or WasapiOut is constructed here.
-        byte[]? audio = null;
-        if (!externalSource)
-        {
-            int frames = checked(format.SampleRate * 2);
-            audio = new byte[checked(frames * format.BlockAlign)];
-            for (int frame = 0; frame < frames; frame++)
-            {
-                float value = 0.025f * MathF.Sin(
-                    2 * MathF.PI * 440f * frame / format.SampleRate);
-                for (int ch = 0; ch < format.Channels; ch++)
-                    BinaryPrimitives.WriteSingleLittleEndian(
-                        audio.AsSpan((frame * format.Channels + ch) * sizeof(float)), value);
-            }
-        }
+        byte[]? audio = externalSource
+            ? null : VirtualLoopbackProbePcm.CreateInternalTone(format);
 
-        var verifier = new LoopbackToneVerifier(format);
+        var verifier = new LoopbackToneVerifier(virtualPcm.EvidenceFormat);
         var sync = new object();
         Exception? callbackError = null;
         Exception? captureError = null;
@@ -790,7 +775,7 @@ internal static class Program
                 try
                 {
                     if (e.BytesRecorded > 0)
-                        verifier.Add(e.Buffer.AsSpan(0, e.BytesRecorded));
+                        virtualPcm.AddPacket(verifier, e.Buffer, e.BytesRecorded);
                 }
                 catch (Exception ex)
                 {

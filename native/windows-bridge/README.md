@@ -1,3 +1,9 @@
+## Granada 2026-11-03 — laboratorio virtual-only PCM16 o IEEE float32
+
+`--probe-virtual-external` ya no rechaza una salida virtual de Windows por estar negociada como **PCM16** en vez de IEEE float32. Ambos formatos se decodifican usando `PcmFormatAdapter` a un buffer float32 privado, reservado una vez, para el mismo verificador de tono 440 Hz; paquetes no alineados o demasiado grandes fallan sin producir un positivo falso. En modo externo **no genera un tono**, no abre salida física ni configura el DSP; en modo de tono propio, el estímulo se codifica correctamente según el formato real de la salida virtual. La autoprueba `--check-virtual-formats` ejecuta PCM16/float32 a 44.1/48/96 kHz mono/estéreo sin dispositivos. [Auditoría y alcance](../../docs/audits/GRANADA_2026-11-03_PCM16_VIRTUAL_LOOPBACK_PROBE.md).
+
+Esta prueba no certifica aún audio de una aplicación real en una VM con driver instalado; la firma del driver y prueba física siguen pendientes, sin release.
+
 ## External Windows process → virtual WASAPI PCM (before DSP/speakers)
 
 The isolated VM lab can now call `--probe-virtual-external --source-id EXACT_VIRTUAL_ID --confirm-experimental`. This is a **receive-only loopback capture** on the explicitly named LouderMe virtual render endpoint. It emits `EXTERNAL_VIRTUAL_READY` once capture begins, accepts a separate Windows executable's low-amplitude 440-Hz PCM, and checks numeric tone identity. It does NOT generate its own tone, open a physical `WasapiOut`, initialize native DSP or redirect Windows defaults. The companion bounded VM PowerShell runner launches the independent tone only after the readiness marker and emits privacy-sanitized evidence. [Isolation and acceptance audit](../../docs/audits/GRANADA_2026-10-30_INDEPENDENT_VIRTUAL_PCM_STAGE.md). CI validates source contracts and compiled code only; actual signed SysVAD loopback remains unverified.

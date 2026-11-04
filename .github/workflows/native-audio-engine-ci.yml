@@ -179,6 +179,11 @@ jobs:
         run: |
           dotnet "native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll" --check-loopback
           if ($LASTEXITCODE -ne 0) { throw 'Virtual loopback signal-identity verification regression failed.' }
+      - name: Verify PCM16 and float32 virtual capture with separate-app-safe decoder
+        shell: pwsh
+        run: |
+          dotnet "native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll" --check-virtual-formats
+          if ($LASTEXITCODE -ne 0) { throw 'Virtual WASAPI PCM16/float32 evidence decode or tone vectors failed.' }
       - name: Verify safe lab virtual tone and physical-monitor PCM test vectors
         shell: pwsh
         run: |

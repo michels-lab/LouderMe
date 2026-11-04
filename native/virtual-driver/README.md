@@ -1,3 +1,9 @@
+## Granada 2026-11-03 — reloj DMA WaveRT con frames completos
+
+El clock del sample SysVAD contaba fracciones en **bytes**, por lo que un stream 44.1 kHz/24-bit estéreo podía avanzar primero 264 y después 265 bytes por milisegundo, violando frames de seis bytes y provocando descarte de PCM en el buffer virtual. La nueva `LouderMeLabFrameClock.h` avanza solo frames completos con carry fraccional; aplica al render y loopback LAB, reinicia la fracción al detener el stream y limita desplazamientos extremos en pausas de VM. Los tests ejecutan el mismo C++ en 8/44.1/48/96/192 kHz con intervalos regulares e irregulares. [Auditoría técnica](../../docs/audits/GRANADA_2026-11-03_WAVERT_FRAME_CLOCK.md).
+
+Esto sigue siendo una corrección del driver experimental, no prueba de audio real instalado. No hay release.
+
 ## Granada 2026-11-03 — habilitar la apertura del loopback IEEE float32
 
 Se identificó en el SysVAD original que `ToneGenerator::Init`, usado por el ejemplo de captura, **rechaza float32 incluso cuando su generación de tono está desactivada**. LouderMe ahora evita la inicialización de ese generador en el pin de loopback virtual; los frames continúan llegando por el relé propio render DMA → captura. El parche exacto se protege con tests de derivación y compilación WDK. [Causa y límite de prueba](../../docs/audits/GRANADA_2026-11-03_FLOAT32_LOOPBACK_INIT.md).

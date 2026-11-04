@@ -16,9 +16,9 @@ class LouderMeLabPcmRelay final
     USHORT m_Channels;
     USHORT m_Bits;
     USHORT m_BlockAlign;
-    USHORT m_Tag;
+    USHORT m_SampleKind;
+    USHORT m_ValidBits;
     ULONG m_Rate;
-    GUID m_SubFormat;
     BOOLEAN m_HaveFormat;
 
     static BOOLEAN Supported(_In_opt_ const WAVEFORMATEXTENSIBLE* format)
@@ -48,23 +48,52 @@ class LouderMeLabPcmRelay final
              (extended && IsEqualGUIDAligned(
                  format->SubFormat, KSDATAFORMAT_SUBTYPE_IEEE_FLOAT))) &&
             format->Format.wBitsPerSample == 32;
-        // Unknown WAVEFORMATEXTENSIBLE GUIDs must never be forwarded as PCM.
-        // Refuse impossible average-rate metadata instead of guessing layout.
+        // Mono defaults to front-center (0x4); stereo is front left+right
+        // (0x3). An alternate channel map cannot be silently reinterpreted.
+        if (extended && format->dwChannelMask != 0 &&
+            format->dwChannelMask !=
+                (format->Format.nChannels == 1 ? 0x4UL : 0x3UL))
+            return FALSE;
+        // A 24-valid-bit sample in a 32-bit container is supported only
+        // when BOTH formats explicitly agree on that nonstandard precision.
+        if (extended && format->Samples.wValidBitsPerSample != 0 &&
+            (format->Samples.wValidBitsPerSample >
+                 format->Format.wBitsPerSample ||
+             format->Samples.wValidBitsPerSample < 1))
+            return FALSE;
+        // Unknown GUIDs never qualify. Refuse impossible byte rates.
         return (pcm || float32) &&
             format->Format.nAvgBytesPerSec ==
                 format->Format.nSamplesPerSec * format->Format.nBlockAlign;
     }
 
+    // Normalize only the wrapper representation, never resample or
+    // reinterpret a PCM sample as IEEE float. Samples remain byte-identical.
+    static USHORT SampleKind(_In_ const WAVEFORMATEXTENSIBLE* format)
+    {
+        if (format->Format.wFormatTag == WAVE_FORMAT_PCM ||
+            (format->Format.wFormatTag == WAVE_FORMAT_EXTENSIBLE &&
+             IsEqualGUIDAligned(format->SubFormat, KSDATAFORMAT_SUBTYPE_PCM)))
+            return 1;
+        return 2; // Supported() already admitted IEEE float32 only.
+    }
+
+    static USHORT ValidBits(_In_ const WAVEFORMATEXTENSIBLE* format)
+    {
+        if (format->Format.wFormatTag == WAVE_FORMAT_EXTENSIBLE &&
+            format->Samples.wValidBitsPerSample != 0)
+            return format->Samples.wValidBitsPerSample;
+        return format->Format.wBitsPerSample;
+    }
+
     BOOLEAN SameFormat(_In_ const WAVEFORMATEXTENSIBLE* format) const
     {
-        if (!m_HaveFormat || m_Channels != format->Format.nChannels ||
-            m_Bits != format->Format.wBitsPerSample ||
-            m_BlockAlign != format->Format.nBlockAlign ||
-            m_Rate != format->Format.nSamplesPerSec ||
-            m_Tag != format->Format.wFormatTag)
-            return FALSE;
-        return m_Tag != WAVE_FORMAT_EXTENSIBLE ||
-               IsEqualGUIDAligned(m_SubFormat, format->SubFormat);
+        return m_HaveFormat && m_Channels == format->Format.nChannels &&
+               m_Bits == format->Format.wBitsPerSample &&
+               m_BlockAlign == format->Format.nBlockAlign &&
+               m_Rate == format->Format.nSamplesPerSec &&
+               m_SampleKind == SampleKind(format) &&
+               m_ValidBits == ValidBits(format);
     }
 
     VOID Remember(_In_ const WAVEFORMATEXTENSIBLE* format)
@@ -73,22 +102,18 @@ class LouderMeLabPcmRelay final
         m_Bits = format->Format.wBitsPerSample;
         m_BlockAlign = format->Format.nBlockAlign;
         m_Rate = format->Format.nSamplesPerSec;
-        m_Tag = format->Format.wFormatTag;
-        if (m_Tag == WAVE_FORMAT_EXTENSIBLE)
-            m_SubFormat = format->SubFormat;
-        else
-            RtlZeroMemory(&m_SubFormat, sizeof(m_SubFormat));
+        m_SampleKind = SampleKind(format);
+        m_ValidBits = ValidBits(format);
         m_HaveFormat = TRUE;
     }
 
 public:
     LouderMeLabPcmRelay() :
         m_Buffer(NULL), m_Read(0), m_Write(0), m_Count(0),
-        m_Channels(0), m_Bits(0), m_BlockAlign(0), m_Tag(0),
-        m_Rate(0), m_HaveFormat(FALSE)
+        m_Channels(0), m_Bits(0), m_BlockAlign(0),
+        m_SampleKind(0), m_ValidBits(0), m_Rate(0), m_HaveFormat(FALSE)
     {
         KeInitializeSpinLock(&m_Lock);
-        RtlZeroMemory(&m_SubFormat, sizeof(m_SubFormat));
     }
 
     _IRQL_requires_max_(PASSIVE_LEVEL)

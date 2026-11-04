@@ -1,3 +1,9 @@
+## Granada 2026-11-03 — formatos PCM/float32 equivalentes en el loopback virtual
+
+Un source de Windows puede usar el encabezado `WAVE_FORMAT_PCM` mientras la captura usa `WAVE_FORMAT_EXTENSIBLE` con la misma representación de PCM, o la variante equivalente de float32. El relé anterior descartaba esas muestras por comparar el tipo de encabezado en lugar de la clase de sample. El nuevo `LouderMeLabPcmRelay.h` normaliza únicamente representaciones **byte-identical**: clase PCM vs IEEE float32, bits significativos, tasa, canales, frame y máscara de altavoces deben coincidir. No convierte muestras, jamás confunde float32 con PCM32 y no permite mapas de canales arbitrarios. [Pruebas y límites](../../docs/audits/GRANADA_2026-11-03_CANONICAL_WAVEFORMAT_PCM_MATCHING.md).
+
+Código experimental sujeto a CI y a ensayo en VM con driver firmado de laboratorio; sin release.
+
 ## Granada 2026-11-03 — reloj DMA WaveRT con frames completos
 
 El clock del sample SysVAD contaba fracciones en **bytes**, por lo que un stream 44.1 kHz/24-bit estéreo podía avanzar primero 264 y después 265 bytes por milisegundo, violando frames de seis bytes y provocando descarte de PCM en el buffer virtual. La nueva `LouderMeLabFrameClock.h` avanza solo frames completos con carry fraccional; aplica al render y loopback LAB, reinicia la fracción al detener el stream y limita cada callback a **250 ms de frames** cuando la VM se suspende, evitando un procesamiento de recuperación descontrolado. Los tests ejecutan el mismo C++ en 8/44.1/48/96/192 kHz con intervalos regulares e irregulares. [Auditoría técnica](../../docs/audits/GRANADA_2026-11-03_WAVERT_FRAME_CLOCK.md).

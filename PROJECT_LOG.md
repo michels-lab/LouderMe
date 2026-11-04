@@ -7,6 +7,15 @@
 
 ---
 
+## 2026-11-03 — Operación Granada: compatibilidad PCM vs WAVEFORMATEXTENSIBLE (candidato)
+
+- PR #140 fusionado en `main` como `191d231f79767e9938e8a07e7f1b47bc1a969d20`: reloj WaveRT por frames sin drift a 44.1 kHz, con recuperación acotada después de pausas y CI WDK/Android aprobado.
+- Hallazgo P0 del audio: el relé render→loopback rechazaba PCM estándar vs PCM extensible (o IEEE float32 estándar vs IEEE float32 extensible) por tener etiquetas de formato distintas aunque las muestras fueran byte-idénticas. Eso podía causar silencio total pese a ser compatible a nivel de audio.
+- Implementado match por tipo canónico PCM/float32, valid bits, canales, sample rate, nBlockAlign, channel mask y subtype reconocido. Los casos PCM32↔float32, mono/stereo incompatible, canales surround y 24-valid-in-32↔32-valid son rechazados; no hay conversión de muestras.
+- [Auditoría y pruebas](docs/audits/GRANADA_2026-11-03_CANONICAL_WAVEFORMAT_PCM_MATCHING.md). Requiere CI exact-head, VM con driver de laboratorio instalado y prueba de audio física antes de cerrar #46/#48. No release.
+
+---
+
 ## 2026-11-03 — Operación Granada: precisión temporal de frames WaveRT (candidato)
 
 - PR #139 integrado en `main` como `7a522590afc2deee52f18f07098a63c6275addda` con CI WDK/Android verde: el loopback de SysVAD ya no intenta inicializar su generador sintético PCM-only cuando el formato es float32.

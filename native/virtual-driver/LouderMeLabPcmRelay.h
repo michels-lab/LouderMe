@@ -57,9 +57,14 @@ class LouderMeLabPcmRelay final
         // A 24-valid-bit sample in a 32-bit container is supported only
         // when BOTH formats explicitly agree on that nonstandard precision.
         if (extended && format->Samples.wValidBitsPerSample != 0 &&
-            (format->Samples.wValidBitsPerSample >
-                 format->Format.wBitsPerSample ||
-             format->Samples.wValidBitsPerSample < 1))
+            format->Samples.wValidBitsPerSample >
+                format->Format.wBitsPerSample)
+            return FALSE;
+        // IEEE 754 float32 has all 32 bits significant; never reinterpret a
+        // partially valid 32-bit container as a standard float sample.
+        if (float32 && extended &&
+            format->Samples.wValidBitsPerSample != 0 &&
+            format->Samples.wValidBitsPerSample != 32)
             return FALSE;
         // Unknown GUIDs never qualify. Refuse impossible byte rates.
         return (pcm || float32) &&

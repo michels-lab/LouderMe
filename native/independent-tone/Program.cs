@@ -137,13 +137,19 @@ internal static class Program
             for (int frame = 0; frame < rate * DurationSeconds; frame++)
             {
                 int at = frame * format.BlockAlign;
-                int packed24 = pcm[at] | (pcm[at + 1] << 8) | (pcm[at + 2] << 16);
-                if ((packed24 & 0x800000) != 0)
-                    packed24 |= unchecked((int)0xFF000000);
-                double sample = bits == 16
-                    ? BinaryPrimitives.ReadInt16LittleEndian(pcm.AsSpan(at)) / 32768.0
-                    : bits == 24 ? packed24 / 8388608.0
-                    : BinaryPrimitives.ReadSingleLittleEndian(pcm.AsSpan(at));
+                double sample;
+                if (bits == 16)
+                    sample = BinaryPrimitives.ReadInt16LittleEndian(pcm.AsSpan(at)) / 32768.0;
+                else if (bits == 24)
+                {
+                    int packed24 = pcm[at] | (pcm[at + 1] << 8) |
+                        (pcm[at + 2] << 16);
+                    if ((packed24 & 0x800000) != 0)
+                        packed24 |= unchecked((int)0xFF000000);
+                    sample = packed24 / 8388608.0;
+                }
+                else
+                    sample = BinaryPrimitives.ReadSingleLittleEndian(pcm.AsSpan(at));
                 if (!double.IsFinite(sample) || Math.Abs(sample) > 0.03)
                     throw new Exception("Independent application tone amplitude invalid.");
                 var angle = 2 * Math.PI * Frequency * frame / rate;

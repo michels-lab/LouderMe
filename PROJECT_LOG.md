@@ -1,7 +1,7 @@
 ## 2026-11-03 — Operación Granada: precisión temporal de frames WaveRT (candidato)
 
 - PR #139 integrado en `main` como `7a522590afc2deee52f18f07098a63c6275addda` con CI WDK/Android verde: el loopback de SysVAD ya no intenta inicializar su generador sintético PCM-only cuando el formato es float32.
-- **Bloqueo detectado a 44.1 kHz:** el algoritmo original del sample calcula avances como bytes enteros con carry de milésimas de byte. A 24-bit estéreo, intervalos sucesivos de 1ms dan 264/265 bytes; 265 rompe un frame de seis bytes y el relé de LouderMe descarta PCM. Se agregó `LouderMeLabFrameClock.h`: acumular fracciones en milésimas de frame, publicar solo desplazamientos alineados, evitar wrap de ULONG y reiniciar carry al hacer STOP.
+- **Bloqueo detectado a 44.1 kHz:** el algoritmo original del sample calcula avances como bytes enteros con carry de milésimas de byte. A 24-bit estéreo, intervalos sucesivos de 1ms dan 264/265 bytes; 265 rompe un frame de seis bytes y el relé de LouderMe descarta PCM. Se agregó `LouderMeLabFrameClock.h`: acumular fracciones en milésimas de frame, publicar solo desplazamientos alineados, limitar la recuperación de una VM suspendida a 250 ms de trabajo por callback, evitar wrap de ULONG y reiniciar carry al hacer STOP.
 - `prepare_sysvad.py` inyecta el helper en ambos pines LAB render/loopback; se registra su SHA-256. Test C++ sobre implementación real en tasas 8/44.1/48/96/192 kHz, bloques 2/3/4/6/8 bytes y movimientos variables. [Auditoría](docs/audits/GRANADA_2026-11-03_WAVERT_FRAME_CLOCK.md).
 - **Pendiente CI WDK y VM física**. No se ha instalado el driver, publicado release, ni validado audio arbitrario de Windows; #46/#48 continúan abiertos.
 

@@ -339,7 +339,12 @@ internal sealed class PcmFormatAdapter
         AssertClose(BinaryPrimitives.ReadSingleLittleEndian(unpacked.AsSpan(8)), 0.5f);
         AssertClose(BinaryPrimitives.ReadSingleLittleEndian(unpacked.AsSpan(12)), 8388607f / 8388608f);
         byte[] encoded24 = new PcmFormatAdapter(ieee, pcm24).Encode(unpacked, unpacked.Length);
-        if (!encoded24.AsSpan().SequenceEqual(packed))
+        // Positive PCM is normalized by 2^23 and quantized by 2^23-1,
+        // so the maximum positive rail can legitimately differ by one LSB.
+        // The sign, middle 24-bit sample and negative rail must survive.
+        if (!encoded24.AsSpan(0, 9).SequenceEqual(packed.AsSpan(0, 9)) ||
+            encoded24[10] != 0xff || encoded24[11] != 0x7f ||
+            encoded24[9] is not (0xfe or 0xff))
             throw new InvalidOperationException("PCM24 signed full-scale round-trip corrupted.");
 
         if (IsSupported(new WaveFormat(48000, 32, 2)))

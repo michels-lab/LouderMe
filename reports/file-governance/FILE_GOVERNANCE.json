@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 285,
-  "classified_files_total": 281,
-  "docs_content_inspected": 88,
+  "tracked_files_total": 287,
+  "classified_files_total": 283,
+  "docs_content_inspected": 89,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,18 +12,18 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 80,
+    "document": 81,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
-    "source": 98,
+    "source": 99,
     "test": 34,
     "text_metadata": 2,
     "workflow": 11
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "013d863010a8e215caf0ea99249b450967f8ed5d5f981d3c9ea71b1666155059",
+  "inventory_fingerprint": "70ff5bed820c590a77544be634e712ea8fb3bf731919a4a339ab1f21589b66d0",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -108,7 +108,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "4816fd26fac7ef8f722bc76c0865d67f23ff955b"
+      "blob": "2721c0aae1b7f663df65c4ee2dd7095dd2ab56c5"
     },
     {
       "path": ".github/workflows/native-physical-lab-manual.yml",
@@ -234,7 +234,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "265048cee8529d2377683afd0951ce5a33269ba3"
+      "blob": "751600f83152806aa5fbc5f56fba3c6305002bac"
     },
     {
       "path": "README.md",
@@ -1399,6 +1399,13 @@
       "blob": "fb3cfbeaf9df2dab6b5a4a11c11e0a37b37ca606"
     },
     {
+      "path": "docs/audits/GRANADA_2026-11-03_PCM16_VIRTUAL_LOOPBACK_PROBE.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "725e54ffeb00b49cfd89064111d702edb285ca61"
+    },
+    {
       "path": "docs/audits/GRANADA_2026-11-03_PCM_COPY_POLICY_AND_EXTENSIBLE_ABI.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -1809,14 +1816,14 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "bde49834e33c2d624e67c3566d2191b05b8e1a2d"
+      "blob": "c5d205c02778865335b80274ea92839c294f7d9f"
     },
     {
       "path": "native/windows-bridge/README.md",
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "156c8eaa5067ef63cbd0f0d598788379e1f880c6"
+      "blob": "653cf08de5f1ad4c4b661bdfa395f989b1f1af8a"
     },
     {
       "path": "native/windows-bridge/RenderProgressWatchdog.cs",
@@ -1838,6 +1845,13 @@
       "purpose": "code/test implementation",
       "certainty": "rule",
       "blob": "59028cac98fc49a6ccf037686f0ad2332986ec62"
+    },
+    {
+      "path": "native/windows-bridge/VirtualLoopbackProbePcm.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "66dc36213478f6706165402cc8b1d7c3e8ebee90"
     },
     {
       "path": "settings.gradle.kts",

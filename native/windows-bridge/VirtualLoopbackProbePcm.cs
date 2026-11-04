@@ -148,6 +148,26 @@ internal sealed class VirtualLoopbackProbePcm
             throw new InvalidOperationException("Oversized virtual PCM packet allocated or accepted.");
         }
         catch (ArgumentException) { }
+        // A malformed six-byte PCM24 stereo frame must not be silently
+        // truncated or counted as acoustic evidence.
+        var pcm24Format = new WaveFormat(48000, 24, 2);
+        var pcm24Probe = new VirtualLoopbackProbePcm(pcm24Format);
+        try
+        {
+            pcm24Probe.AddPacket(new LoopbackToneVerifier(pcm24Probe.EvidenceFormat),
+                new byte[5], 5);
+            throw new InvalidOperationException("Unaligned packed PCM24 frame accepted.");
+        }
+        catch (ArgumentException) { }
+        try
+        {
+            int overFrames = pcm24Format.SampleRate / 2 + 17;
+            pcm24Probe.AddPacket(new LoopbackToneVerifier(pcm24Probe.EvidenceFormat),
+                new byte[overFrames * pcm24Format.BlockAlign],
+                overFrames * pcm24Format.BlockAlign);
+            throw new InvalidOperationException("Oversized packed PCM24 virtual packet accepted.");
+        }
+        catch (ArgumentException) { }
         try
         {
             _ = new VirtualLoopbackProbePcm(new WaveFormat(48000, 32, 2));
@@ -156,6 +176,6 @@ internal sealed class VirtualLoopbackProbePcm
         catch (NotSupportedException) { }
 
         Console.WriteLine("PASS: virtual WASAPI receive-only PCM16/PCM24/float32 decoder and owned-tone encode " +
-            "44.1/48/96k mono/stereo, exact 440Hz identity, reject silent/misaligned/oversized/NaN/integer PCM32.");
+            "44.1/48/96k mono/stereo, exact 440Hz identity, reject silent/misaligned/oversized PCM16/24, NaN and integer PCM32.");
     }
 }

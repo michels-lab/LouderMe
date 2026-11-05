@@ -1,3 +1,10 @@
+## 2026-11-05 — Operación Granada: precisión WAVEFORMATEXTENSIBLE y canales Windows (candidato)
+
+- **Riesgo corregido:** PCM24 con bits válidos inferiores al contenedor y layouts 5.1/7.1 distintos podían interpretarse como datos equivalentes. Validación del puente, preflight y captura virtual; el generador independiente también rechaza formatos ambiguos. El caso multicanal exige máscaras explícitas e idénticas; tests de extensible real, PCM24/float32 y ocho canales.
+- **CI requerido:** compilación .NET 10 Windows y autopruebas de formatos, memoria, captura virtual, preflight y fuente independiente sobre el SHA exacto del PR. Sin prueba de audio real firmado, hardware ni release; #48 permanece abierto. Auditoría: docs/audits/GRANADA_2026-11-05_PCM_LAYOUT_VALID_BITS.md.
+
+---
+
 ## 2026-11-04 — Granada: comprobar bytes de cada captura Windows en gate de publicación (candidato)
 
 - **Causa:** el validador de distribución Windows comparaba el EXE instalado, portable, Setup y metadatos del manifest, pero no abría ni comparaba el SHA256 de las seis capturas reales. Una imagen intercambiada/eliminada DESPUÉS del gate visual podía pasar la comprobación de procedencia final.

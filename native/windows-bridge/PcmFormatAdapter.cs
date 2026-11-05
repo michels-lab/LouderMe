@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using System.Numerics;
 using NAudio.Wave;
 
 namespace LouderMeAudioBridge;
@@ -39,6 +40,15 @@ internal sealed class PcmFormatAdapter
             !(input.Channels == 2 && output.Channels == 1))
             throw new NotSupportedException(
                 "Only matching channel layouts or explicit mono/stereo conversions are supported.");
+        // Frame-interleaving alone does not identify which speaker owns each
+        // channel. Reject mismatched explicit speaker masks before any PCM moves.
+        if (input.Channels == output.Channels &&
+            input is WaveFormatExtensible inputLayout &&
+            output is WaveFormatExtensible outputLayout &&
+            inputLayout.ChannelMask != 0 && outputLayout.ChannelMask != 0 &&
+            inputLayout.ChannelMask != outputLayout.ChannelMask)
+            throw new NotSupportedException(
+                "Source and sink speaker masks differ; raw PCM channel ordering is unsafe.");
         if (input.SampleRate is < 8000 or > 192000 ||
             output.SampleRate is < 8000 or > 192000)
             throw new NotSupportedException("Sample rates must be between 8 kHz and 192 kHz.");
@@ -73,8 +83,19 @@ internal sealed class PcmFormatAdapter
 
     public static bool IsSupported(WaveFormat f)
     {
-        if (f.Channels is < 1 or > 8) return false;
+        if (f is null || f.Channels is < 1 or > 8) return false;
         if (f.SampleRate is < 8000 or > 192000) return false;
+        // WAVEFORMATEXTENSIBLE may declare fewer valid bits than the
+        // sample container. Only full-width PCM16, PCM24 and float32 work.
+        if (f is WaveFormatExtensible ext)
+        {
+            if (ext.ValidBitsPerSample != f.BitsPerSample) return false;
+            if (ext.ChannelMask != 0 &&
+                BitOperations.PopCount(unchecked((uint)ext.ChannelMask)) != f.Channels)
+                return false;
+            if (f.Channels > 2 && ext.ChannelMask == 0) return false;
+        }
+        else if (f.Channels > 2) return false;
         var isFloat = IsFloat(f);
         var isPcm = IsPcm16(f) || IsPcm24(f);
         return (isFloat || isPcm) &&
@@ -350,6 +371,7 @@ internal sealed class PcmFormatAdapter
         if (IsSupported(new WaveFormat(48000, 32, 2)))
             throw new InvalidOperationException("Unimplemented integer PCM32 accepted as IEEE float32.");
 
+        TestExtensiblePrecisionAndChannelLayouts();
         TestStreamingResample(48000, 44100, 480, 2);
         TestStreamingResample(44100, 48000, 441, 2);
         TestStreamingResample(48000, 96000, 480, 2);
@@ -383,6 +405,41 @@ internal sealed class PcmFormatAdapter
             "adjustment and unsupported 5.1 rejection.");
     }
 
+    private static void TestExtensiblePrecisionAndChannelLayouts()
+    {
+        var packedStereo = new WaveFormatExtensible(48000, 24, 2);
+        var floatStereo = new WaveFormatExtensible(48000, 32, 2);
+        if (!IsSupported(packedStereo) || !IsSupported(floatStereo))
+            throw new InvalidOperationException("Full-width extensible PCM24/float32 was rejected.");
+        foreach (var bad in new WaveFormat[]
+        {
+            new WaveFormatExtensible(48000, 24, 2, false, 20, 0x3),
+            new WaveFormatExtensible(48000, 32, 2, true, 24, 0x3),
+            new WaveFormatExtensible(48000, 32, 2, false, 24, 0x3),
+            new WaveFormatExtensible(48000, 24, 2, false, 24, 0x1),
+            new WaveFormatExtensible(48000, 24, 6, false, 24, 0),
+            new WaveFormat(48000, 24, 6)
+        })
+        {
+            if (IsSupported(bad))
+                throw new InvalidOperationException("Ambiguous valid bits or channel mask was accepted.");
+        }
+        var surroundPcm = new WaveFormatExtensible(48000, 24, 6, false, 24, 0x3f);
+        var surroundFloat = new WaveFormatExtensible(48000, 32, 6, true, 32, 0x3f);
+        _ = new PcmFormatAdapter(surroundPcm, surroundFloat);
+        var wrongSpeakers = new WaveFormatExtensible(48000, 32, 6, true, 32, 0x60f);
+        if (!IsSupported(wrongSpeakers))
+            throw new InvalidOperationException("Valid alternate 5.1 layout unexpectedly rejected.");
+        try
+        {
+            _ = new PcmFormatAdapter(surroundPcm, wrongSpeakers);
+            throw new InvalidOperationException("Mismatched 5.1 speaker layouts were accepted.");
+        }
+        catch (NotSupportedException) { }
+        _ = new PcmFormatAdapter(new WaveFormatExtensible(48000, 24, 8),
+            new WaveFormatExtensible(48000, 32, 8));
+    }
+
     // Same real streaming implementation: old allocating convenience calls
     // versus new bounded callback buffers, including frame history, rate
     // correction, mono/stereo and eight-channel channel alignment.
@@ -402,10 +459,14 @@ internal sealed class PcmFormatAdapter
             (48000, 48000, 8, 8, 32)
         })
         {
-            var input = sourceBits == 32
-                ? WaveFormat.CreateIeeeFloatWaveFormat(inputRate, sourceChannels)
-                : new WaveFormat(inputRate, sourceBits, sourceChannels);
-            var output = WaveFormat.CreateIeeeFloatWaveFormat(outputRate, sinkChannels);
+            var input = sourceChannels > 2
+                ? new WaveFormatExtensible(inputRate, sourceBits, sourceChannels)
+                : sourceBits == 32
+                    ? WaveFormat.CreateIeeeFloatWaveFormat(inputRate, sourceChannels)
+                    : new WaveFormat(inputRate, sourceBits, sourceChannels);
+            var output = sinkChannels > 2
+                ? new WaveFormatExtensible(outputRate, 32, sinkChannels)
+                : WaveFormat.CreateIeeeFloatWaveFormat(outputRate, sinkChannels);
             var allocating = new PcmFormatAdapter(input, output);
             var scratch = new PcmFormatAdapter(input, output);
             var monoPacket = new byte[checked(1024 * input.BlockAlign)];

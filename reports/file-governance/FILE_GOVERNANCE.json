@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 290,
-  "classified_files_total": 286,
-  "docs_content_inspected": 92,
+  "tracked_files_total": 291,
+  "classified_files_total": 287,
+  "docs_content_inspected": 93,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,7 +12,7 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 84,
+    "document": 85,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
@@ -23,7 +23,7 @@
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "534e64a8e7e3aa44e84e88921f428e2e59352d2e712cf120af8aed07436d9829",
+  "inventory_fingerprint": "0d7f2d3b034729bb9d139872b9d366e7b94d88078d6a3b411f0a270a876f62e8",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -234,7 +234,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "11df194c0f947cb37c57de5b121fc6f7c74fea14"
+      "blob": "b9442df458a00a13e42f936adbcd8fe39eaa66c6"
     },
     {
       "path": "README.md",
@@ -675,7 +675,7 @@
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "e2c7d8b3816849df2dcfa21fb87753413e611230"
+      "blob": "0004ed54541f94b083ef95adc21d663540e0c110"
     },
     {
       "path": "desktop/docs/GRANADA_RELEASE_READINESS_2026-10-20.md",
@@ -871,7 +871,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "48cf74c3cb1621d838ba26867bcfdd490e9258f6"
+      "blob": "8e8afe32da11be7462d3f27eb3af30d61c607225"
     },
     {
       "path": "desktop/src/LouderMeDesktop/DeveloperAudit.cs",
@@ -1446,6 +1446,13 @@
       "purpose": "manual/decision/report/historical note",
       "certainty": "inferred",
       "blob": "acb5c5cbdb32016c19f93d86b4b017fb84fcbc46"
+    },
+    {
+      "path": "docs/audits/GRANADA_2026-11-05_ATOMIC_WINDOWS_UPDATE.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "b903e26696b402f2b1b46184117a8b1f7d0076b2"
     },
     {
       "path": "docs/audits/GRANADA_2026-11-05_PCM_LAYOUT_VALID_BITS.md",

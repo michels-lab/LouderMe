@@ -4,7 +4,7 @@ using NAudio.Wave;
 namespace LouderMeAudioBridge;
 
 /// <summary>
-/// LAB-only virtual WASAPI listener. PCM16 and IEEE float32 are decoded to
+/// LAB-only virtual WASAPI listener. PCM16, packed PCM24 and IEEE float32 are decoded to
 /// private float32 scratch for the SAME 440Hz loopback identity verifier.
 /// This does not open an audio device, manufacture PCM in external mode,
 /// initialize DSP, or select any physical sink.
@@ -22,7 +22,7 @@ internal sealed class VirtualLoopbackProbePcm
         if (!PcmFormatAdapter.IsSupported(captureFormat) ||
             captureFormat.Channels is < 1 or > 8)
             throw new NotSupportedException(
-                "Virtual loopback probe needs supported PCM16 or IEEE float32, mono-to-eight-channel mix.");
+                "Virtual loopback probe needs supported PCM16, PCM24 or IEEE float32, mono-to-eight-channel mix.");
         EvidenceFormat = WaveFormat.CreateIeeeFloatWaveFormat(
             captureFormat.SampleRate, captureFormat.Channels);
         _decoder = new PcmFormatAdapter(captureFormat, EvidenceFormat);
@@ -46,7 +46,7 @@ internal sealed class VirtualLoopbackProbePcm
         ArgumentNullException.ThrowIfNull(format);
         if (!PcmFormatAdapter.IsSupported(format) ||
             format.Channels is < 1 or > 8)
-            throw new NotSupportedException("Owned tone requires PCM16 or IEEE float32 mix.");
+            throw new NotSupportedException("Owned tone requires PCM16, PCM24 or IEEE float32 mix.");
         // Only called by --probe-virtual (own stimulus); never called by
         // --probe-virtual-external (a separate Windows executable is source).
         int frames = checked(format.SampleRate * 2);
@@ -59,12 +59,19 @@ internal sealed class VirtualLoopbackProbePcm
             for (int channel = 0; channel < format.Channels; channel++)
             {
                 int at = frame * format.BlockAlign +
-                    channel * (isFloat ? sizeof(float) : sizeof(short));
+                    channel * (format.BitsPerSample / 8);
                 if (isFloat)
                     BinaryPrimitives.WriteSingleLittleEndian(pcm.AsSpan(at), value);
-                else
+                else if (format.BitsPerSample == 16)
                     BinaryPrimitives.WriteInt16LittleEndian(
                         pcm.AsSpan(at), (short)MathF.Round(value * 32767f));
+                else
+                {
+                    int signed24 = (int)MathF.Round(value * 8388607f);
+                    pcm[at] = (byte)signed24;
+                    pcm[at + 1] = (byte)(signed24 >> 8);
+                    pcm[at + 2] = (byte)(signed24 >> 16);
+                }
             }
         }
         return pcm;
@@ -74,13 +81,13 @@ internal sealed class VirtualLoopbackProbePcm
     {
         foreach (int rate in new[] { 44100, 48000, 96000 })
         {
-            foreach (bool floatMix in new[] { false, true })
+            foreach (int sampleBits in new[] { 16, 24, 32 })
             {
                 foreach (int channels in new[] { 1, 2 })
                 {
-                    WaveFormat capture = floatMix
+                    WaveFormat capture = sampleBits == 32
                         ? WaveFormat.CreateIeeeFloatWaveFormat(rate, channels)
-                        : new WaveFormat(rate, 16, channels);
+                        : new WaveFormat(rate, sampleBits, channels);
                     var decoder = new VirtualLoopbackProbePcm(capture);
                     var verifier = new LoopbackToneVerifier(decoder.EvidenceFormat);
                     byte[] tone = CreateInternalTone(capture);
@@ -100,7 +107,7 @@ internal sealed class VirtualLoopbackProbePcm
                     if (!e.Passed || e.Matched440Amplitude is < 0.02 or > 0.03 ||
                         e.Coherence < 0.96)
                         throw new InvalidOperationException(
-                            $"Virtual {rate}Hz {channels}ch {(floatMix ? "float32" : "PCM16")} proof failed: {e}");
+                            $"Virtual {rate}Hz {channels}ch {(sampleBits == 32 ? "float32" : $"PCM{sampleBits}")} proof failed: {e}");
                     // No source must not be accepted, regardless of encoding.
                     var quiet = new LoopbackToneVerifier(decoder.EvidenceFormat);
                     byte[] silence = new byte[rate / 4 * capture.BlockAlign];
@@ -141,14 +148,34 @@ internal sealed class VirtualLoopbackProbePcm
             throw new InvalidOperationException("Oversized virtual PCM packet allocated or accepted.");
         }
         catch (ArgumentException) { }
+        // A malformed six-byte PCM24 stereo frame must not be silently
+        // truncated or counted as acoustic evidence.
+        var pcm24Format = new WaveFormat(48000, 24, 2);
+        var pcm24Probe = new VirtualLoopbackProbePcm(pcm24Format);
         try
         {
-            _ = new VirtualLoopbackProbePcm(new WaveFormat(48000, 24, 2));
-            throw new InvalidOperationException("Unsupported virtual PCM24 accepted by managed decoder.");
+            pcm24Probe.AddPacket(new LoopbackToneVerifier(pcm24Probe.EvidenceFormat),
+                new byte[5], 5);
+            throw new InvalidOperationException("Unaligned packed PCM24 frame accepted.");
+        }
+        catch (ArgumentException) { }
+        try
+        {
+            int overFrames = pcm24Format.SampleRate / 2 + 17;
+            pcm24Probe.AddPacket(new LoopbackToneVerifier(pcm24Probe.EvidenceFormat),
+                new byte[overFrames * pcm24Format.BlockAlign],
+                overFrames * pcm24Format.BlockAlign);
+            throw new InvalidOperationException("Oversized packed PCM24 virtual packet accepted.");
+        }
+        catch (ArgumentException) { }
+        try
+        {
+            _ = new VirtualLoopbackProbePcm(new WaveFormat(48000, 32, 2));
+            throw new InvalidOperationException("Unimplemented integer PCM32 accepted as IEEE float32.");
         }
         catch (NotSupportedException) { }
 
-        Console.WriteLine("PASS: virtual WASAPI receive-only PCM16/float32 decoder and owned-tone encode " +
-            "44.1/48/96k mono/stereo, exact 440Hz identity, reject silent/misaligned/oversized/NaN/PCM24.");
+        Console.WriteLine("PASS: virtual WASAPI receive-only PCM16/PCM24/float32 decoder and owned-tone encode " +
+            "44.1/48/96k mono/stereo, exact 440Hz identity, reject silent/misaligned/oversized PCM16/24, NaN and integer PCM32.");
     }
 }

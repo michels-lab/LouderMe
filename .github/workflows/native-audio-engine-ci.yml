@@ -99,11 +99,11 @@ jobs:
         run: |
           dotnet build native/windows-bridge/LouderMeAudioBridge.csproj -c Release
           dotnet build native/independent-tone/LouderMeIndependentTone.csproj -c Release
-      - name: Verify independent real Windows application tone without an audio device
+      - name: Verify independent PCM16/PCM24/float32 Windows source tone without an audio device
         shell: pwsh
         run: |
           dotnet "native/independent-tone/bin/Release/net10.0-windows/LouderMeIndependentTone.dll" --check-tone
-          if ($LASTEXITCODE -ne 0) { throw 'Independent source PCM16/float32 test vectors failed.' }
+          if ($LASTEXITCODE -ne 0) { throw 'Independent source PCM16/PCM24/float32 test vectors failed.' }
       - name: Refuse silent Windows default playback reassignment during virtual driver lab
         shell: pwsh
         run: |
@@ -159,7 +159,7 @@ jobs:
           Copy-Item $dll.FullName -Destination "$outDir/louderme_audio_c.dll"
           dotnet "$outDir/LouderMeAudioBridge.dll" --check-native
           if ($LASTEXITCODE -ne 0) { throw 'Native managed bridge DSP test failed.' }
-      - name: Validate PCM16/float32 and streaming rate adaptation without audio devices
+      - name: Validate packed PCM24, PCM16/float32 and streaming adaptation without audio devices
         shell: pwsh
         run: |
           dotnet "native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll" --check-formats
@@ -179,11 +179,11 @@ jobs:
         run: |
           dotnet "native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll" --check-loopback
           if ($LASTEXITCODE -ne 0) { throw 'Virtual loopback signal-identity verification regression failed.' }
-      - name: Verify PCM16 and float32 virtual capture with separate-app-safe decoder
+      - name: Verify PCM16/PCM24/float32 virtual capture with separate-app-safe decoder
         shell: pwsh
         run: |
           dotnet "native/windows-bridge/bin/Release/net10.0-windows/LouderMeAudioBridge.dll" --check-virtual-formats
-          if ($LASTEXITCODE -ne 0) { throw 'Virtual WASAPI PCM16/float32 evidence decode or tone vectors failed.' }
+          if ($LASTEXITCODE -ne 0) { throw 'Virtual WASAPI PCM16/PCM24/float32 evidence decode or tone vectors failed.' }
       - name: Verify safe lab virtual tone and physical-monitor PCM test vectors
         shell: pwsh
         run: |

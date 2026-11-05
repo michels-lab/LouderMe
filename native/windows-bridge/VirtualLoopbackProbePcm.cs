@@ -54,7 +54,7 @@ internal sealed class VirtualLoopbackProbePcm
         // --probe-virtual-external (a separate Windows executable is source).
         int frames = checked(format.SampleRate * 2);
         var pcm = new byte[checked(frames * format.BlockAlign)];
-        bool isFloat = format.BitsPerSample == 32;
+        bool isFloat = PcmFormatAdapter.IsFloat(format);
         for (int frame = 0; frame < frames; frame++)
         {
             float value = 0.025f * MathF.Sin(
@@ -71,9 +71,15 @@ internal sealed class VirtualLoopbackProbePcm
                 else
                 {
                     int signed24 = (int)MathF.Round(value * 8388607f);
-                    pcm[at] = (byte)signed24;
-                    pcm[at + 1] = (byte)(signed24 >> 8);
-                    pcm[at + 2] = (byte)(signed24 >> 16);
+                    if (format.BitsPerSample == 24)
+                    {
+                        pcm[at] = (byte)signed24;
+                        pcm[at + 1] = (byte)(signed24 >> 8);
+                        pcm[at + 2] = (byte)(signed24 >> 16);
+                    }
+                    else
+                        BinaryPrimitives.WriteInt32LittleEndian(
+                            pcm.AsSpan(at), signed24 << 8);
                 }
             }
         }
@@ -84,15 +90,18 @@ internal sealed class VirtualLoopbackProbePcm
     {
         foreach (int rate in new[] { 44100, 48000, 96000 })
         {
-            foreach (int sampleBits in new[] { 16, 24, 32 })
+            foreach (int sampleBits in new[] { 16, 24, 32, 132 })
             {
                 foreach (int channels in new[] { 1, 2, 8 })
                 {
-                    WaveFormat capture = channels > 2
-                        ? new WaveFormatExtensible(rate, sampleBits, channels)
-                        : sampleBits == 32
-                            ? WaveFormat.CreateIeeeFloatWaveFormat(rate, channels)
-                            : new WaveFormat(rate, sampleBits, channels);
+                    WaveFormat capture = sampleBits == 132
+                        ? new WaveFormatExtensible(rate, 32, channels, false, 24,
+                            channels == 1 ? 0x4 : channels == 2 ? 0x3 : 0x63f)
+                        : channels > 2
+                            ? new WaveFormatExtensible(rate, sampleBits, channels)
+                            : sampleBits == 32
+                                ? WaveFormat.CreateIeeeFloatWaveFormat(rate, channels)
+                                : new WaveFormat(rate, sampleBits, channels);
                     var decoder = new VirtualLoopbackProbePcm(capture);
                     var verifier = new LoopbackToneVerifier(decoder.EvidenceFormat);
                     byte[] tone = CreateInternalTone(capture);
@@ -112,7 +121,7 @@ internal sealed class VirtualLoopbackProbePcm
                     if (!e.Passed || e.Matched440Amplitude is < 0.02 or > 0.03 ||
                         e.Coherence < 0.96)
                         throw new InvalidOperationException(
-                            $"Virtual {rate}Hz {channels}ch {(sampleBits == 32 ? "float32" : $"PCM{sampleBits}")} proof failed: {e}");
+                            $"Virtual {rate}Hz {channels}ch {(sampleBits == 132 ? "PCM24-in-32" : sampleBits == 32 ? "float32" : $"PCM{sampleBits}")} proof failed: {e}");
                     // No source must not be accepted, regardless of encoding.
                     var quiet = new LoopbackToneVerifier(decoder.EvidenceFormat);
                     byte[] silence = new byte[rate / 4 * capture.BlockAlign];

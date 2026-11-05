@@ -1,3 +1,10 @@
+## 2026-11-05 — Granada: PCM24 válido en contenedor Windows de 32 bits (candidato)
+
+- **Corrección funcional:** Windows permite 24 bits significativos a la izquierda de un contenedor de 32. El puente y la app fuente los rechazaban o los confundían con float32, pese a que el kernel LAB ya los transportaba. Conversión nativa sin alocaciones por callback, padding inferior verificado, mismo subtipo y máscara de canales; fuente independiente, monitor virtual, tono físico y preflight se alinean.
+- **Pruebas añadidas:** rail negativo/positivo, PCM24/32 ↔ packed PCM24, padding inválido, no aceptar PCM32 entero o float32 parcial, 44.1/48/96 kHz y 1/2/8 canales virtuales. Requiere CI exact-head de Windows + Android y prueba física en VM aparte; #48 permanece abierto. Auditoría: docs/audits/GRANADA_2026-11-05_PCM24_IN_32_WINDOWS.md. **No release**.
+
+---
+
 ## 2026-11-05 — Granada: actualizador Windows atómico (candidato)
 
 - **Bug funcional:** descargar directamente sobre LouderMe-Setup-vX.exe podía corromper un instalador anterior si la conexión se cortaba o el hash fallaba.

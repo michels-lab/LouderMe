@@ -85,11 +85,13 @@ internal sealed class PcmFormatAdapter
     {
         if (f is null || f.Channels is < 1 or > 8) return false;
         if (f.SampleRate is < 8000 or > 192000) return false;
-        // WAVEFORMATEXTENSIBLE may declare fewer valid bits than the
-        // sample container. Only full-width PCM16, PCM24 and float32 work.
+        // Windows also permits 24 valid PCM bits LEFT-aligned in 32 bits.
+        // Reject every other partial-valid-bit format, including float32.
+        bool isPcm24In32 = IsPcm24In32(f);
         if (f is WaveFormatExtensible ext)
         {
-            if (ext.ValidBitsPerSample != f.BitsPerSample) return false;
+            if (ext.ValidBitsPerSample != f.BitsPerSample && !isPcm24In32)
+                return false;
             if (ext.ChannelMask != 0 &&
                 BitOperations.PopCount(unchecked((uint)ext.ChannelMask)) != f.Channels)
                 return false;
@@ -97,12 +99,12 @@ internal sealed class PcmFormatAdapter
         }
         else if (f.Channels > 2) return false;
         var isFloat = IsFloat(f);
-        var isPcm = IsPcm16(f) || IsPcm24(f);
+        var isPcm = IsPcm16(f) || IsPcm24(f) || isPcm24In32;
         return (isFloat || isPcm) &&
             f.BlockAlign == f.Channels * (f.BitsPerSample / 8);
     }
 
-    private static bool IsFloat(WaveFormat format) =>
+    internal static bool IsFloat(WaveFormat format) =>
         format.BitsPerSample == 32 &&
         (format.Encoding == WaveFormatEncoding.IeeeFloat ||
          (format is WaveFormatExtensible ext && ext.SubFormat == FloatSubtype));
@@ -117,11 +119,17 @@ internal sealed class PcmFormatAdapter
         (format.Encoding == WaveFormatEncoding.Pcm ||
          (format is WaveFormatExtensible ext && ext.SubFormat == PcmSubtype));
 
+    private static bool IsPcm24In32(WaveFormat format) =>
+        format is WaveFormatExtensible ext &&
+        format.BitsPerSample == 32 &&
+        ext.ValidBitsPerSample == 24 &&
+        ext.SubFormat == PcmSubtype;
+
     private static void ValidateFormat(WaveFormat format)
     {
         if (!IsSupported(format))
             throw new NotSupportedException(
-                "The experimental route requires PCM16, PCM24 or IEEE float32, mono to eight channels.");
+                "The experimental route requires PCM16, packed PCM24, left-aligned PCM24/32 or IEEE float32, mono to eight channels.");
     }
 
     /// <summary>Decode into a caller-owned scratch buffer. No allocation per packet.</summary>
@@ -143,6 +151,15 @@ internal sealed class PcmFormatAdapter
                 sample = BinaryPrimitives.ReadSingleLittleEndian(source.AsSpan(offset));
             else if (sampleBytes == sizeof(short))
                 sample = BinaryPrimitives.ReadInt16LittleEndian(source.AsSpan(offset)) / 32768f;
+            else if (sampleBytes == sizeof(int))
+            {
+                // Windows WAVEFORMATEXTENSIBLE uses LEFT-aligned valid bits.
+                int aligned = BinaryPrimitives.ReadInt32LittleEndian(source.AsSpan(offset));
+                if ((aligned & 0xff) != 0)
+                    throw new InvalidDataException(
+                        "PCM24-in-32 contains nonzero low padding bits.");
+                sample = (aligned >> 8) / 8388608f;
+            }
             else
             {
                 // Packed signed little-endian 24-bit PCM: extend bit 23,
@@ -266,9 +283,19 @@ internal sealed class PcmFormatAdapter
                 {
                     float scaled = value < 0f ? value * 8388608f : value * 8388607f;
                     int signed24 = (int)MathF.Round(scaled);
-                    output[byteOffset] = (byte)signed24;
-                    output[byteOffset + 1] = (byte)(signed24 >> 8);
-                    output[byteOffset + 2] = (byte)(signed24 >> 16);
+                    if (_output.BitsPerSample == 24)
+                    {
+                        output[byteOffset] = (byte)signed24;
+                        output[byteOffset + 1] = (byte)(signed24 >> 8);
+                        output[byteOffset + 2] = (byte)(signed24 >> 16);
+                    }
+                    else
+                    {
+                        // Signed PCM24 occupies top 24 bits; bottom eight
+                        // must remain zero, never reinterpret as IEEE float.
+                        BinaryPrimitives.WriteInt32LittleEndian(
+                            output.Slice(byteOffset), signed24 << 8);
+                    }
                 }
             }
             emitted++;
@@ -372,6 +399,7 @@ internal sealed class PcmFormatAdapter
             throw new InvalidOperationException("Unimplemented integer PCM32 accepted as IEEE float32.");
 
         TestExtensiblePrecisionAndChannelLayouts();
+        TestPcm24In32PrecisionAndFrames();
         TestStreamingResample(48000, 44100, 480, 2);
         TestStreamingResample(44100, 48000, 441, 2);
         TestStreamingResample(48000, 96000, 480, 2);
@@ -409,13 +437,14 @@ internal sealed class PcmFormatAdapter
     {
         var packedStereo = new WaveFormatExtensible(48000, 24, 2);
         var floatStereo = new WaveFormatExtensible(48000, 32, 2);
-        if (!IsSupported(packedStereo) || !IsSupported(floatStereo))
+        var aligned24 = new WaveFormatExtensible(48000, 32, 2, false, 24, 0x3);
+        if (!IsSupported(packedStereo) || !IsSupported(floatStereo) ||
+            !IsSupported(aligned24))
             throw new InvalidOperationException("Full-width extensible PCM24/float32 was rejected.");
         foreach (var bad in new WaveFormat[]
         {
             new WaveFormatExtensible(48000, 24, 2, false, 20, 0x3),
             new WaveFormatExtensible(48000, 32, 2, true, 24, 0x3),
-            new WaveFormatExtensible(48000, 32, 2, false, 24, 0x3),
             new WaveFormatExtensible(48000, 24, 2, false, 24, 0x1),
             new WaveFormatExtensible(48000, 24, 6, false, 24, 0),
             new WaveFormat(48000, 24, 6)
@@ -438,6 +467,68 @@ internal sealed class PcmFormatAdapter
         catch (NotSupportedException) { }
         _ = new PcmFormatAdapter(new WaveFormatExtensible(48000, 24, 8),
             new WaveFormatExtensible(48000, 32, 8));
+    }
+
+    private static void TestPcm24In32PrecisionAndFrames()
+    {
+        var alignedFormat = new WaveFormatExtensible(48000, 32, 1, false, 24, 0x4);
+        var ieee = WaveFormat.CreateIeeeFloatWaveFormat(48000, 1);
+        byte[] aligned = [
+            0x00, 0x00, 0x00, 0x80,  // -8388608 / 8388608
+            0x00, 0x00, 0x00, 0x00,  // zero
+            0x00, 0x00, 0x00, 0x40,  // +0.5
+            0x00, 0xff, 0xff, 0x7f   // +8388607 / 8388608
+        ];
+        var decoder = new PcmFormatAdapter(alignedFormat, ieee);
+        byte[] floats = decoder.Decode(aligned, aligned.Length);
+        AssertClose(BinaryPrimitives.ReadSingleLittleEndian(floats.AsSpan(0)), -1f);
+        AssertClose(BinaryPrimitives.ReadSingleLittleEndian(floats.AsSpan(4)), 0f);
+        AssertClose(BinaryPrimitives.ReadSingleLittleEndian(floats.AsSpan(8)), 0.5f);
+        AssertClose(BinaryPrimitives.ReadSingleLittleEndian(floats.AsSpan(12)),
+            8388607f / 8388608f);
+        byte[] roundtrip = new PcmFormatAdapter(ieee, alignedFormat)
+            .Encode(floats, floats.Length);
+        if (roundtrip.Length != aligned.Length ||
+            !roundtrip.AsSpan(0, 12).SequenceEqual(aligned.AsSpan(0, 12)) ||
+            roundtrip[12] != 0 || roundtrip[15] != 0x7f ||
+            roundtrip[14] != 0xff || roundtrip[13] is not (0xfe or 0xff))
+            throw new InvalidOperationException("PCM24-in-32 rail/zero padding corrupted.");
+
+        byte[] invalid = (byte[])aligned.Clone();
+        invalid[8] = 1; // lowest eight bits may not contain signal.
+        try
+        {
+            decoder.DecodeInto(invalid, invalid.Length, new byte[16]);
+            throw new InvalidOperationException("Nonzero PCM24-in-32 pad accepted.");
+        }
+        catch (InvalidDataException) { }
+        if (IsSupported(new WaveFormat(48000, 32, 1)) ||
+            IsSupported(new WaveFormatExtensible(48000, 32, 1, false, 32, 0x4)) ||
+            IsSupported(new WaveFormatExtensible(48000, 32, 1, true, 24, 0x4)))
+            throw new InvalidOperationException("PCM32/partial-float alias accepted.");
+
+        // Compare two successive stereo formats through actual adapter
+        // decode->encode paths at complete 24-bit sample boundaries.
+        var packedFormat = new WaveFormat(44100, 24, 2);
+        var alignedStereo = new WaveFormatExtensible(44100, 32, 2, false, 24, 0x3);
+        var packedToAligned = new PcmFormatAdapter(packedFormat, alignedStereo);
+        var alignedToPacked = new PcmFormatAdapter(alignedStereo, packedFormat);
+        byte[] packed = new byte[18]; // 3 stereo frames
+        for (int frame = 0; frame < 3; frame++)
+        {
+            int offset = frame * 6;
+            packed[offset + 2] = 0x40; // left +0.5
+            packed[offset + 5] = 0xc0; // right -0.5
+        }
+        byte[] normalized = packedToAligned.Decode(packed, packed.Length);
+        byte[] padded = packedToAligned.Encode(normalized, normalized.Length);
+        byte[] normalizedAgain = alignedToPacked.Decode(padded, padded.Length);
+        byte[] unpacked = alignedToPacked.Encode(normalizedAgain, normalizedAgain.Length);
+        if (unpacked.Length != packed.Length ||
+            !unpacked.AsSpan().SequenceEqual(packed))
+            throw new InvalidOperationException(
+                "PCM24 pack/unpack changed signs, channels, or sample alignment.");
+        Console.WriteLine("PASS: PCM24-in-32 signed left alignment, pad zeros, frame conversion and no PCM32/float aliases.");
     }
 
     // Same real streaming implementation: old allocating convenience calls

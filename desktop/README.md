@@ -1,3 +1,7 @@
+## Granada 2026-11-05 — atomic verified Windows installer download
+
+The updater writes untrusted HTTP bytes to a unique .part staging file, not over an existing verified .exe. It enforces a 256-MiB bound, validates declared length and SHA-256 and moves the candidate to the executable name only after success. Interrupted, corrupt or cancelled transfers preserve the previous installer. The --check-update-contract Windows CI test runs file-backed negative and positive fixtures. No release or production update is claimed. Audit: ../docs/audits/GRANADA_2026-11-05_ATOMIC_WINDOWS_UPDATE.md.
+
 # LouderMe Desktop
 
 Native Windows edition of LouderMe.

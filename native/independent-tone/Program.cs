@@ -89,6 +89,12 @@ internal static class Program
         bool isFloat32 = format.BitsPerSample == 32 &&
             (format.Encoding == WaveFormatEncoding.IeeeFloat ||
              format is WaveFormatExtensible e2 && e2.SubFormat == FloatSubtype);
+        if (format is WaveFormatExtensible ext &&
+            (ext.ValidBitsPerSample != format.BitsPerSample ||
+             (ext.ChannelMask != 0 &&
+              System.Numerics.BitOperations.PopCount(unchecked((uint)ext.ChannelMask)) != format.Channels)))
+            throw new NotSupportedException(
+                "Independent app tone cannot encode partial-valid-bit or invalid-layout samples.");
         if ((!isPcm16 && !isPcm24 && !isFloat32) ||
             format.SampleRate is < 8000 or > 192000 ||
             format.Channels is < 1 or > 2 ||
@@ -168,6 +174,9 @@ internal static class Program
             new WaveFormat(48000, 8, 2),
             new WaveFormat(48000, 32, 2), // Integer PCM32 is not IEEE float.
             WaveFormat.CreateIeeeFloatWaveFormat(48000, 3),
+            new WaveFormatExtensible(48000, 24, 2, false, 20, 0x3),
+            new WaveFormatExtensible(48000, 32, 2, true, 24, 0x3),
+            new WaveFormatExtensible(48000, 24, 2, false, 24, 0x1),
         })
         {
             try { CreateTone(bad); }

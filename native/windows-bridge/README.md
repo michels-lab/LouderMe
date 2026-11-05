@@ -1,3 +1,7 @@
+## Granada 2026-11-05 — valid bits and speaker masks of Windows PCM
+
+The experimental bridge now rejects partial-valid-bit PCM in WAVEFORMATEXTENSIBLE (e.g. 20 in 24 or 24 in 32) rather than mis-decoding its level. For 3–8 channels, it requires an explicit coherent speaker mask and identical source/sink masks instead of silently treating different 5.1/7.1 speaker orders as the same PCM. The receive-only probe now preserves the 8-channel mask in its float32 scratch format; the independent app tone source rejects ambiguous extensible descriptors. Windows CI has negative vectors and valid full-width PCM24/float32 matrices. No installed virtual driver, physical route or new release is implied. Audit: ../../docs/audits/GRANADA_2026-11-05_PCM_LAYOUT_VALID_BITS.md.
+
 ## Granada 2026-11-04 — packed PCM24 in independent Windows audio LAB
 
 El formato **PCM24 little-endian con muestras de tres bytes** ahora atraviesa el generador de audio de una aplicación independiente, la captura virtual WASAPI, el decodificador con scratch preasignado, el DSP float32 y la conversión de salida física. Se admiten PCM16, PCM24 y IEEE float32, pero **no PCM32 entero ni muestras PCM24 de cuatro bytes**. No se infiere formato por el tamaño del paquete: el mix seleccionado debe declararlo explícitamente.

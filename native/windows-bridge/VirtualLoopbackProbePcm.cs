@@ -23,8 +23,11 @@ internal sealed class VirtualLoopbackProbePcm
             captureFormat.Channels is < 1 or > 8)
             throw new NotSupportedException(
                 "Virtual loopback probe needs supported PCM16, PCM24 or IEEE float32, mono-to-eight-channel mix.");
-        EvidenceFormat = WaveFormat.CreateIeeeFloatWaveFormat(
-            captureFormat.SampleRate, captureFormat.Channels);
+        EvidenceFormat = captureFormat.Channels > 2
+            ? new WaveFormatExtensible(captureFormat.SampleRate, 32,
+                captureFormat.Channels, ((WaveFormatExtensible)captureFormat).ChannelMask)
+            : WaveFormat.CreateIeeeFloatWaveFormat(
+                captureFormat.SampleRate, captureFormat.Channels);
         _decoder = new PcmFormatAdapter(captureFormat, EvidenceFormat);
         // Reserve once, BEFORE the WASAPI callback. Overlarge capture packets
         // reject safely rather than allocate under an audio callback.
@@ -83,11 +86,13 @@ internal sealed class VirtualLoopbackProbePcm
         {
             foreach (int sampleBits in new[] { 16, 24, 32 })
             {
-                foreach (int channels in new[] { 1, 2 })
+                foreach (int channels in new[] { 1, 2, 8 })
                 {
-                    WaveFormat capture = sampleBits == 32
-                        ? WaveFormat.CreateIeeeFloatWaveFormat(rate, channels)
-                        : new WaveFormat(rate, sampleBits, channels);
+                    WaveFormat capture = channels > 2
+                        ? new WaveFormatExtensible(rate, sampleBits, channels)
+                        : sampleBits == 32
+                            ? WaveFormat.CreateIeeeFloatWaveFormat(rate, channels)
+                            : new WaveFormat(rate, sampleBits, channels);
                     var decoder = new VirtualLoopbackProbePcm(capture);
                     var verifier = new LoopbackToneVerifier(decoder.EvidenceFormat);
                     byte[] tone = CreateInternalTone(capture);

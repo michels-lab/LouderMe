@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 289,
-  "classified_files_total": 285,
-  "docs_content_inspected": 91,
+  "tracked_files_total": 290,
+  "classified_files_total": 286,
+  "docs_content_inspected": 92,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,7 +12,7 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 83,
+    "document": 84,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
@@ -23,7 +23,7 @@
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "26ffafc01935675a2346a28b8a8588725652ae5fc8552b090b6274ab74cfc2d1",
+  "inventory_fingerprint": "534e64a8e7e3aa44e84e88921f428e2e59352d2e712cf120af8aed07436d9829",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -234,7 +234,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "4ed1387e900d96da8672e15a99728271b11b423f"
+      "blob": "11df194c0f947cb37c57de5b121fc6f7c74fea14"
     },
     {
       "path": "README.md",
@@ -1448,6 +1448,13 @@
       "blob": "acb5c5cbdb32016c19f93d86b4b017fb84fcbc46"
     },
     {
+      "path": "docs/audits/GRANADA_2026-11-05_PCM_LAYOUT_VALID_BITS.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "d2ad53cf310b1340075ef793cc8ec8e0df535a30"
+    },
+    {
       "path": "docs/product-reviews/2026-10-21-native-windows-audio-evidence.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -1536,7 +1543,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "807e8cc32b9bf725a1152b9a84af539d733c83c9"
+      "blob": "1172cba4c3b68044def1662f1721b6800f7d9015"
     },
     {
       "path": "native/virtual-driver/DefaultRenderGuard.ps1",
@@ -1809,7 +1816,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "6de339c505056a236e71ebb0d0752daf54f13570"
+      "blob": "b1086f7304a555d79dcc41f54a9945b2bc27e184"
     },
     {
       "path": "native/windows-bridge/PhysicalRouteStimulus.cs",
@@ -1837,7 +1844,7 @@
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "fb299a2d4e0c23ab8e62d71f9d839eafcce1b808"
+      "blob": "657193eb2786c5913058174fa7ea464d9bc9b587"
     },
     {
       "path": "native/windows-bridge/RenderProgressWatchdog.cs",
@@ -1851,7 +1858,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "0bdd4b1ad673ec271dc51e8de14e9fb0658ea24c"
+      "blob": "7304fa35bdb7d27afe81971481b1a13edd0dd652"
     },
     {
       "path": "native/windows-bridge/StreamingDownsampleLowPass.cs",
@@ -1865,7 +1872,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "ea5f7224b2d482f4e45b85fe1fa021d4463303d5"
+      "blob": "af8193a67b5035dffbc9b48af2ea339ecba8180c"
     },
     {
       "path": "settings.gradle.kts",

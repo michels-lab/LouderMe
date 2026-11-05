@@ -43,11 +43,14 @@ internal static class PhysicalRouteTone
     {
         foreach (int rate in new[] { 44100, 48000, 96000 })
         foreach (int channels in new[] { 1, 2 })
-        foreach (int bits in new[] { 16, 24, 32 })
+        foreach (int bits in new[] { 16, 24, 32, 132 })
         {
-            var format = bits == 32
-                ? WaveFormat.CreateIeeeFloatWaveFormat(rate, channels)
-                : new WaveFormat(rate, bits, channels);
+            var format = bits == 132
+                ? new WaveFormatExtensible(rate, 32, channels, false, 24,
+                    channels == 1 ? 0x4 : 0x3)
+                : bits == 32
+                    ? WaveFormat.CreateIeeeFloatWaveFormat(rate, channels)
+                    : new WaveFormat(rate, bits, channels);
             byte[] stimulus = Create(format);
             if (stimulus.Length != rate * DurationSeconds * format.BlockAlign)
                 throw new InvalidOperationException("Lab stimulus frames are missing.");

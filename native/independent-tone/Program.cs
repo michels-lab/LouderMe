@@ -89,13 +89,16 @@ internal static class Program
         bool isFloat32 = format.BitsPerSample == 32 &&
             (format.Encoding == WaveFormatEncoding.IeeeFloat ||
              format is WaveFormatExtensible e2 && e2.SubFormat == FloatSubtype);
+        bool isPcm24In32 = format is WaveFormatExtensible aligned &&
+            format.BitsPerSample == 32 && aligned.ValidBitsPerSample == 24 &&
+            aligned.SubFormat == PcmSubtype;
         if (format is WaveFormatExtensible ext &&
-            (ext.ValidBitsPerSample != format.BitsPerSample ||
+            ((ext.ValidBitsPerSample != format.BitsPerSample && !isPcm24In32) ||
              (ext.ChannelMask != 0 &&
               System.Numerics.BitOperations.PopCount(unchecked((uint)ext.ChannelMask)) != format.Channels)))
             throw new NotSupportedException(
                 "Independent app tone cannot encode partial-valid-bit or invalid-layout samples.");
-        if ((!isPcm16 && !isPcm24 && !isFloat32) ||
+        if ((!isPcm16 && !isPcm24 && !isPcm24In32 && !isFloat32) ||
             format.SampleRate is < 8000 or > 192000 ||
             format.Channels is < 1 or > 2 ||
             format.BlockAlign != format.Channels * format.BitsPerSample / 8)
@@ -119,9 +122,14 @@ internal static class Program
                 else
                 {
                     int signed24 = (int)MathF.Round(v * 8388607f);
-                    dest[0] = (byte)signed24;
-                    dest[1] = (byte)(signed24 >> 8);
-                    dest[2] = (byte)(signed24 >> 16);
+                    if (isPcm24In32)
+                        BinaryPrimitives.WriteInt32LittleEndian(dest, signed24 << 8);
+                    else
+                    {
+                        dest[0] = (byte)signed24;
+                        dest[1] = (byte)(signed24 >> 8);
+                        dest[2] = (byte)(signed24 >> 16);
+                    }
                 }
             }
         }
@@ -132,10 +140,13 @@ internal static class Program
     {
         foreach (int rate in new[] { 44100, 48000, 96000 })
         foreach (int channels in new[] { 1, 2 })
-        foreach (int bits in new[] { 16, 24, 32 })
+        foreach (int bits in new[] { 16, 24, 32, 132 })
         {
-            var format = bits == 32 ? WaveFormat.CreateIeeeFloatWaveFormat(rate, channels)
-                : new WaveFormat(rate, bits, channels);
+            var format = bits == 132
+                ? new WaveFormatExtensible(rate, 32, channels, false, 24,
+                    channels == 1 ? 0x4 : 0x3)
+                : bits == 32 ? WaveFormat.CreateIeeeFloatWaveFormat(rate, channels)
+                    : new WaveFormat(rate, bits, channels);
             byte[] pcm = CreateTone(format);
             if (pcm.Length != rate * DurationSeconds * format.BlockAlign)
                 throw new Exception("Independent application tone has invalid frame count.");
@@ -153,6 +164,13 @@ internal static class Program
                     if ((packed24 & 0x800000) != 0)
                         packed24 |= unchecked((int)0xFF000000);
                     sample = packed24 / 8388608.0;
+                }
+                else if (bits == 132)
+                {
+                    int raw = BinaryPrimitives.ReadInt32LittleEndian(pcm.AsSpan(at));
+                    if ((raw & 0xff) != 0)
+                        throw new Exception("Independent PCM24/32 source emitted nonzero padding.");
+                    sample = (raw >> 8) / 8388608.0;
                 }
                 else
                     sample = BinaryPrimitives.ReadSingleLittleEndian(pcm.AsSpan(at));
@@ -175,6 +193,7 @@ internal static class Program
             new WaveFormat(48000, 32, 2), // Integer PCM32 is not IEEE float.
             WaveFormat.CreateIeeeFloatWaveFormat(48000, 3),
             new WaveFormatExtensible(48000, 24, 2, false, 20, 0x3),
+            new WaveFormatExtensible(48000, 32, 2, false, 32, 0x3),
             new WaveFormatExtensible(48000, 32, 2, true, 24, 0x3),
             new WaveFormatExtensible(48000, 24, 2, false, 24, 0x1),
         })

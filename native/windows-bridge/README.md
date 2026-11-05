@@ -1,3 +1,7 @@
+## Granada 2026-11-05 — PCM24 in a 32-bit integer container
+
+Windows WAVEFORMATEXTENSIBLE endpoints can expose 24 valid, left-aligned signed bits in a 32-bit container. The native SysVAD LAB relay understands this but the bridge previously rejected the mix. The Windows bridge, independent source, virtual evidence receiver, physical-tone test and preflight now recognize **only** explicitly declared PCM24/32 (not full-width integer PCM32 or fake float32); unused low eight bits must be zero. Numeric regressions include signed rails, PCM24 packed↔aligned conversion and 44.1/48/96k probes. Does not prove a signed driver, installed endpoint or acoustic audio. Audit: ../../docs/audits/GRANADA_2026-11-05_PCM24_IN_32_WINDOWS.md.
+
 ## Granada 2026-11-05 — valid bits and speaker masks of Windows PCM
 
 The experimental bridge now rejects partial-valid-bit PCM in WAVEFORMATEXTENSIBLE (e.g. 20 in 24 or 24 in 32) rather than mis-decoding its level. For 3–8 channels, it requires an explicit coherent speaker mask and identical source/sink masks instead of silently treating different 5.1/7.1 speaker orders as the same PCM. The receive-only probe now preserves the 8-channel mask in its float32 scratch format; the independent app tone source rejects ambiguous extensible descriptors. Windows CI has negative vectors and valid full-width PCM24/float32 matrices. No installed virtual driver, physical route or new release is implied. Audit: ../../docs/audits/GRANADA_2026-11-05_PCM_LAYOUT_VALID_BITS.md.

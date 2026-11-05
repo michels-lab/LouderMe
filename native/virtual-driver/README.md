@@ -1,3 +1,7 @@
+## Granada 2026-11-05 — PCM24 in a 32-bit integer container
+
+Windows WAVEFORMATEXTENSIBLE endpoints can expose 24 valid, left-aligned signed bits in a 32-bit container. The native SysVAD LAB relay understands this but the bridge previously rejected the mix. The Windows bridge, independent source, virtual evidence receiver, physical-tone test and preflight now recognize **only** explicitly declared PCM24/32 (not full-width integer PCM32 or fake float32); unused low eight bits must be zero. Numeric regressions include signed rails, PCM24 packed↔aligned conversion and 44.1/48/96k probes. Does not prove a signed driver, installed endpoint or acoustic audio. Audit: ../../docs/audits/GRANADA_2026-11-05_PCM24_IN_32_WINDOWS.md.
+
 ## Granada 2026-11-03 — formatos PCM/float32 equivalentes en el loopback virtual
 
 Un source de Windows puede usar el encabezado `WAVE_FORMAT_PCM` mientras la captura usa `WAVE_FORMAT_EXTENSIBLE` con la misma representación de PCM, o la variante equivalente de float32. El relé anterior descartaba esas muestras por comparar el tipo de encabezado en lugar de la clase de sample. El nuevo `LouderMeLabPcmRelay.h` normaliza únicamente representaciones **byte-identical**: clase PCM vs IEEE float32, bits significativos, tasa, canales, frame y máscara de altavoces deben coincidir. No convierte muestras, jamás confunde float32 con PCM32 y no permite mapas de canales arbitrarios. [Pruebas y límites](../../docs/audits/GRANADA_2026-11-03_CANONICAL_WAVEFORMAT_PCM_MATCHING.md).

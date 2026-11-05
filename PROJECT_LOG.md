@@ -5,6 +5,13 @@
 
 ---
 
+## 2026-11-05 — Granada: actualizador Windows atómico (candidato)
+
+- **Bug funcional:** descargar directamente sobre LouderMe-Setup-vX.exe podía corromper un instalador anterior si la conexión se cortaba o el hash fallaba.
+- **Cambio:** staging .part, tope 256 MiB, Content-Length y SHA-256, cancelación y reemplazo final solo después de verificar. Pruebas herméticas del actualizador real preservan instalador bueno frente a SHA falso, truncamiento, tamaño excesivo y cancelación. Auditoría: docs/audits/GRANADA_2026-11-05_ATOMIC_WINDOWS_UPDATE.md. Requiere CI Windows exact-head; sin release.
+
+---
+
 ## 2026-11-05 — Operación Granada: precisión WAVEFORMATEXTENSIBLE y canales Windows (candidato)
 
 - **Riesgo corregido:** PCM24 con bits válidos inferiores al contenedor y layouts 5.1/7.1 distintos podían interpretarse como datos equivalentes. Validación del puente, preflight y captura virtual; el generador independiente también rechaza formatos ambiguos. El caso multicanal exige máscaras explícitas e idénticas; tests de extensible real, PCM24/float32 y ocho canales.

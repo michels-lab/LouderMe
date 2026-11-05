@@ -33,6 +33,7 @@ internal sealed class DesktopUpdateService
         "/michels-lab/LouderME-Releases/releases/download/";
     private const string OfficialReleasePath =
         "/michels-lab/LouderME-Releases/releases/tag/";
+    private const long MaxInstallerBytes = 256L * 1024 * 1024;
 
     private readonly HttpClient _http = new()
     {
@@ -145,7 +146,85 @@ internal sealed class DesktopUpdateService
             catch (InvalidDataException) { rejected = true; }
             if (!rejected) throw new InvalidOperationException("Cross-app or malformed update feed was accepted.");
         }
-        Console.WriteLine("PASS: official LouderMe feed, product, publisher URLs and SHA-256 validations.");
+        RunAtomicInstallerDownloadTestsAsync().GetAwaiter().GetResult();
+        Console.WriteLine("PASS: official LouderMe feed, publisher URLs, SHA-256 and atomic installer download.");
+    }
+
+    // Hermetic file-backed regression checks: no network or real installer.
+    private static async Task RunAtomicInstallerDownloadTestsAsync()
+    {
+        string dir = Path.Combine(Path.GetTempPath(), "LouderMe-Update-Test-" +
+            Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(dir);
+        try
+        {
+            byte[] valid = System.Text.Encoding.UTF8.GetBytes(
+                "LouderMe installer fixture: only a matching digest can publish");
+            string sha = Convert.ToHexStringLower(SHA256.HashData(valid));
+            string target = Path.Combine(dir, "LouderMe-Setup-v0.1.18.exe");
+
+            static void Preserved(string dir, string path, byte[] data)
+            {
+                if (!File.ReadAllBytes(path).AsSpan().SequenceEqual(data) ||
+                    Directory.EnumerateFiles(dir, "*.part").Any())
+                    throw new InvalidOperationException(
+                        "Failed transfer replaced a verified installer or left staging bytes.");
+            }
+            using (var good = new MemoryStream(valid, writable: false))
+            {
+                string result = await SaveVerifiedInstallerAsync(good, target, sha,
+                    valid.LongLength, null, CancellationToken.None);
+                if (result != target) throw new InvalidOperationException("Wrong update target.");
+                Preserved(dir, target, valid);
+            }
+            using (var badHash = new MemoryStream(new byte[] { 1, 2, 3 }))
+            {
+                try
+                {
+                    await SaveVerifiedInstallerAsync(badHash, target, sha, 3,
+                        null, CancellationToken.None);
+                    throw new InvalidOperationException("Bad update SHA was accepted.");
+                }
+                catch (InvalidDataException) { }
+                Preserved(dir, target, valid);
+            }
+            using (var truncated = new MemoryStream(valid, writable: false))
+            {
+                try
+                {
+                    await SaveVerifiedInstallerAsync(truncated, target, sha,
+                        valid.LongLength + 1, null, CancellationToken.None);
+                    throw new InvalidOperationException("Truncated download was accepted.");
+                }
+                catch (InvalidDataException) { }
+                Preserved(dir, target, valid);
+            }
+            using (var oversize = new MemoryStream(valid, writable: false))
+            {
+                try
+                {
+                    await SaveVerifiedInstallerAsync(oversize, target, sha,
+                        MaxInstallerBytes + 1, null, CancellationToken.None);
+                    throw new InvalidOperationException("Oversize download was accepted.");
+                }
+                catch (InvalidDataException) { }
+                Preserved(dir, target, valid);
+            }
+            using (var cancelled = new MemoryStream(valid, writable: false))
+            using (var cancel = new CancellationTokenSource())
+            {
+                cancel.Cancel();
+                try
+                {
+                    await SaveVerifiedInstallerAsync(cancelled, target, sha,
+                        valid.LongLength, null, cancel.Token);
+                    throw new InvalidOperationException("Cancelled update was accepted.");
+                }
+                catch (OperationCanceledException) { }
+                Preserved(dir, target, valid);
+            }
+        }
+        finally { Directory.Delete(dir, recursive: true); }
     }
 
     public async Task<string> DownloadInstallerAsync(
@@ -171,35 +250,71 @@ internal sealed class DesktopUpdateService
             cancellationToken);
         response.EnsureSuccessStatusCode();
 
-        var total = response.Content.Headers.ContentLength;
         await using var input = await response.Content.ReadAsStreamAsync(cancellationToken);
-        await using var output = File.Create(target);
+        return await SaveVerifiedInstallerAsync(
+            input, target, manifest.installerSha256,
+            response.Content.Headers.ContentLength, progress, cancellationToken);
+    }
 
-        var buffer = new byte[128 * 1024];
-        long copied = 0;
-        while (true)
+    // Never truncate a previous verified executable. Stage untrusted bytes
+    // on the same volume under a non-executable .part name; only a complete,
+    // SHA-matching candidate may atomically replace the final .exe.
+    private static async Task<string> SaveVerifiedInstallerAsync(
+        Stream input, string target, string expectedSha256,
+        long? declaredBytes, IProgress<int>? progress,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(input);
+        cancellationToken.ThrowIfCancellationRequested();
+        if (declaredBytes.HasValue &&
+            (declaredBytes.Value <= 0 || declaredBytes.Value > MaxInstallerBytes))
+            throw new InvalidDataException("Installer Content-Length exceeds the safe bound.");
+
+        string directory = Path.GetDirectoryName(target)
+            ?? throw new ArgumentException("Installer target has no parent.", nameof(target));
+        string stage = Path.Combine(directory, ".LouderMe-" +
+            Guid.NewGuid().ToString("N") + ".part");
+        try
         {
-            var read = await input.ReadAsync(buffer, cancellationToken);
-            if (read <= 0) break;
-            await output.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
-            copied += read;
-
-            if (total is > 0)
-                progress?.Report((int)Math.Clamp(copied * 100 / total.Value, 0, 100));
+            long copied = 0;
+            await using (var output = new FileStream(
+                stage, FileMode.CreateNew, FileAccess.Write, FileShare.None,
+                bufferSize: 128 * 1024, useAsync: true))
+            {
+                var buffer = new byte[128 * 1024];
+                while (true)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    int read = await input.ReadAsync(buffer, cancellationToken);
+                    if (read == 0) break;
+                    if (copied + read > MaxInstallerBytes ||
+                        (declaredBytes.HasValue && copied + read > declaredBytes.Value))
+                        throw new InvalidDataException("Installer exceeded declared or safe byte count.");
+                    await output.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
+                    copied += read;
+                    if (declaredBytes is > 0)
+                        progress?.Report((int)Math.Clamp(
+                            copied * 100 / declaredBytes.Value, 0, 99));
+                }
+                await output.FlushAsync(cancellationToken);
+            }
+            if (copied == 0 || (declaredBytes.HasValue && copied != declaredBytes.Value))
+                throw new InvalidDataException("Installer download was empty or truncated.");
+            string actual = await ComputeSha256Async(stage, cancellationToken);
+            if (!actual.Equals(expectedSha256, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException(
+                    "Installer SHA-256 mismatch; prior verified installer preserved.");
+            cancellationToken.ThrowIfCancellationRequested();
+            File.Move(stage, target, overwrite: true);
+            progress?.Report(100);
+            return target;
         }
-
-        await output.FlushAsync(cancellationToken);
-
-        var actual = await ComputeSha256Async(target, cancellationToken);
-        if (!actual.Equals(manifest.installerSha256, StringComparison.OrdinalIgnoreCase))
+        finally
         {
-            try { File.Delete(target); } catch { }
-            throw new InvalidDataException(
-                $"Downloaded installer failed SHA-256 verification. Expected {manifest.installerSha256}; got {actual}.");
+            try { if (File.Exists(stage)) File.Delete(stage); }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
         }
-
-        progress?.Report(100);
-        return target;
     }
 
     public static void LaunchInstaller(string path)

@@ -142,7 +142,7 @@ internal static class RoutePreflight
             }, physical with {
                 Format = new WaveFormatExtensible(48000, 32, 6, true, 32, 0x60f)
             }], "virtual-A", "physical-B");
-        Expect("INCOMPATIBLE_ROUTE_FORMATS",
+        Expect("UNSUPPORTED_MIX_FORMAT",
             [virtualSource, physical with {
                 Format = WaveFormat.CreateIeeeFloatWaveFormat(48000, 6)
             }], "virtual-A", "physical-B");

@@ -75,6 +75,8 @@ def verify(installed: Path, portable: Path, setup: Path, manifest: Path,
     if not isinstance(images, list) or len(images) != 6:
         raise ValueError("Six actual installed WinForms screenshots are mandatory")
     coverage = set()
+    verified_shots: dict[str, str] = {}
+    base = manifest.parent.resolve()
     for shot in images:
         if not isinstance(shot, dict) or (
             shot.get("platform") != "windows-desktop" or
@@ -88,6 +90,31 @@ def verify(installed: Path, portable: Path, setup: Path, manifest: Path,
         key = (viewport, surface)
         if key in coverage:
             raise ValueError("Duplicate WinForms screenshot replaces actual missing surface")
+        # Bind real image FILE BYTES to the final installed EXE, not merely the
+        # manifest's claims. The upstream image gate validates actual PNG pixels;
+        # a swap between that gate and shipping verification must still fail.
+        expected_name = f"{surface}-{viewport}.png"
+        rel = shot.get("path")
+        if rel != expected_name:
+            raise ValueError("WinForms screenshot path must identify its exact capture surface")
+        png = (base / rel).resolve()
+        if not png.is_relative_to(base) or not png.is_file() or png.is_symlink():
+            raise ValueError("Windows screenshot escaped proof bundle or disappeared")
+        expected_width, expected_height = (
+            (600, 520) if viewport == "compact" else (900, 700)
+        )
+        if (shot.get("width"), shot.get("height")) != (
+            expected_width, expected_height
+        ):
+            raise ValueError("Windows screenshot viewport dimensions were substituted")
+        image_sha = shot.get("sha256")
+        if not isinstance(image_sha, str) or not HEX64.fullmatch(image_sha):
+            raise ValueError("Windows screenshot checksum missing/invalid")
+        if hash_file(png) != image_sha:
+            raise ValueError("Windows screenshot file bytes changed after the image gate")
+        if image_sha in verified_shots.values():
+            raise ValueError("Same screenshot bytes reused for two distinct UI surfaces")
+        verified_shots[expected_name] = image_sha
         coverage.add(key)
     if coverage != {(v, s) for v in ("compact", "wide") for s in ("home", "about", "equalizer")}:
         raise ValueError("Missing full compact/wide installed Home/About/EQ coverage")
@@ -103,6 +130,8 @@ def verify(installed: Path, portable: Path, setup: Path, manifest: Path,
         "installed_executable_verified_by": "actual tested Inno Setup installation",
         "screenshot_manifest_sha256": hash_file(manifest),
         "screenshots": 6,
+        "rendered_screenshot_sha256": dict(sorted(verified_shots.items())),
+        "rendered_screenshot_files_verified": True,
         "automated_binary_and_visual_identity": "PASS",
         "windows_executable_signature": "NOT CHECKED",
         "post_release_owner_visual_review": "PENDING",
@@ -125,7 +154,7 @@ def main() -> int:
     report = verify(args.installed_exe, args.portable_exe, args.installer_exe,
                     args.visual_manifest, args.source_sha, args.output)
     print("PASS: installed Windows screenshot EXE matches published Portable byte for byte;")
-    print("      tested Setup hash and both sidecars bound to original source SHA.")
+    print("      tested Setup, two sidecars and six current screenshot FILE HASHES match source evidence.")
     print("      Signature, human review, and physical acoustic tests: NOT CERTIFIED.")
     return 0
 

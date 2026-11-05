@@ -5,6 +5,15 @@
 
 ---
 
+## 2026-11-04 — Granada: comprobar bytes de cada captura Windows en gate de publicación (candidato)
+
+- **Causa:** el validador de distribución Windows comparaba el EXE instalado, portable, Setup y metadatos del manifest, pero no abría ni comparaba el SHA256 de las seis capturas reales. Una imagen intercambiada/eliminada DESPUÉS del gate visual podía pasar la comprobación de procedencia final.
+- **Corrección candidata:** verificación de existencia, ruta canónica Home/About/Equalizer a 600×520 y 900×700, límites de directorio, dimensiones, 64 hex SHA256 y hash de archivo ACTUAL en `tools/verify_windows_shipping_provenance.py`, con seis digests inmutables en `shipping-provenance.json`. Los dos workflows Windows ya llaman al mismo validador antes del lanzamiento, por lo que el cambio altera un gate real y no solo documentación.
+- **Regresiones herméticas:** reemplazar o borrar screenshot entre gates, SHA falso/ausente, ruta a otro archivo o directorio, dimensiones falsas y archivo reutilizado. Deben rechazar el candidato ANTES de escribir informe de PASS. No se simula Windows ni revisión humana. [Auditoría](docs/audits/GRANADA_2026-11-04_WINDOWS_SCREENSHOT_BYTES.md).
+- **Pendiente:** CI exact-head Windows del PR, después instalación física/firmada y aceptación del release verdadero por separado. Android firmado ya cuenta con validador propio; #33 permanece abierto y la distribución estable queda sin cambios.
+
+---
+
 ## 2026-11-04 — Operación Granada: PCM24 en ruta Windows de app independiente (candidato)
 
 - **Problema:** la derivación SysVAD experimental ya admite transporte de PCM24 en frames completos, pero `PcmFormatAdapter`, el capturador virtual-only y el generador de otra aplicación Windows rechazaban ese formato. Un endpoint de 24 bits podía silenciar o impedir las pruebas pese a tener un relé kernel compatible.

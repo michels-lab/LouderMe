@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 288,
-  "classified_files_total": 284,
-  "docs_content_inspected": 90,
+  "tracked_files_total": 289,
+  "classified_files_total": 285,
+  "docs_content_inspected": 91,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,7 +12,7 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 82,
+    "document": 83,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
@@ -23,7 +23,7 @@
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "9be073d027c5d27d2c88c04e8155f5055bc8582b5bcc1e04cf4d961ed0f04d86",
+  "inventory_fingerprint": "26ffafc01935675a2346a28b8a8588725652ae5fc8552b090b6274ab74cfc2d1",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -234,7 +234,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "738425a0a3cbdf7b7284ca00630544857c276e1c"
+      "blob": "4ed1387e900d96da8672e15a99728271b11b423f"
     },
     {
       "path": "README.md",
@@ -1441,6 +1441,13 @@
       "blob": "7487c87fea1f1a8fdd824b8dcbf3479f59d4d65b"
     },
     {
+      "path": "docs/audits/GRANADA_2026-11-04_WINDOWS_SCREENSHOT_BYTES.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "acb5c5cbdb32016c19f93d86b4b017fb84fcbc46"
+    },
+    {
       "path": "docs/product-reviews/2026-10-21-native-windows-audio-evidence.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -1963,7 +1970,7 @@
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "ed32c9bc96fb911f1c1c7bcb42dbf8f359116dca"
+      "blob": "8d93a0e4572c55c8fa67e4105fa52b2cc6cebb0e"
     },
     {
       "path": "tools/tests/test_android_developer_harness.py",
@@ -2005,7 +2012,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "3540127d2bbe542ff3a9b42db5acfe300c6cda67"
+      "blob": "9e5eab0236d907cb8652f0992905a69fadeb7343"
     },
     {
       "path": "tools/visual_release_gate.py",

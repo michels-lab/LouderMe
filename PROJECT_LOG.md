@@ -1,3 +1,12 @@
+## 2026-11-04 — Operación Granada: PCM24 en ruta Windows de app independiente (candidato)
+
+- **Problema:** la derivación SysVAD experimental ya admite transporte de PCM24 en frames completos, pero `PcmFormatAdapter`, el capturador virtual-only y el generador de otra aplicación Windows rechazaban ese formato. Un endpoint de 24 bits podía silenciar o impedir las pruebas pese a tener un relé kernel compatible.
+- **Cambios en rama `feat/granada-pcm24-virtual-route-20261104`:** codificación/decodificación signed 24-bit little-endian en 3 bytes con extensión de signo y conversión float32 sin asignaciones por callback; soportado tanto como entrada virtual y como mezcla física negociada. Generador de app independiente, tono interno, monitor y preflight se alinean con PCM24. PCM32 entero/24 válido en 32 bits permanecen rechazados explícitamente.
+- **Pruebas nuevas:** valores extremos de signo, cuantización a un LSB en rail positivo, matrices PCM24 44.1/48/96k mono/estéreo/8ch, fragmentación, silencio, paquetes PCM24 truncados/sobredimensionados, fuente independiente y rutas de tono. Windows CI (build .NET 10, auto-pruebas de adaptador/captura/tonos y C++ DSP) debe validar el SHA del PR. Ninguna autoprueba representa sonido real.
+- **Punto de reentrada:** confirmar CI exact-head y después ensayo aislado en VM con driver permitido, antes/después de silencio, proceso independiente → loopback virtual → DSP → salida física, firma y rollback del driver. Issue #48 sigue abierto. **Sin release nuevo**; versión pública Android 0.1.12 + Windows 0.1.17.
+
+---
+
 ## 2026-11-03 — Operación Granada: reloj WaveRT + PCM equivalente + loopback PCM16 integrados
 
 - **PR #140** integrado (`191d231f79767e9938e8a07e7f1b47bc1a969d20`): reloj WaveRT basado en frames completos a 44.1/48/96 kHz, protección de reanudación (máximo 250 ms por callback). CI derivación SysVAD, WDK x64/INF-CAT y Android verde.

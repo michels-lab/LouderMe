@@ -384,7 +384,7 @@ internal static class Program
                 if (!PcmFormatAdapter.IsSupported(recordedFormat) ||
                     recordedFormat.Channels is < 1 or > 2)
                     throw new NotSupportedException(
-                        "Physical LAB monitor requires PCM16/float32 mono or stereo.");
+                        "Physical LAB monitor requires PCM16/PCM24/float32 mono or stereo.");
                 var floatMonitor = WaveFormat.CreateIeeeFloatWaveFormat(
                     recordedFormat.SampleRate, recordedFormat.Channels);
                 monitorDecoder = new PcmFormatAdapter(recordedFormat, floatMonitor);
@@ -526,7 +526,7 @@ internal static class Program
                 Console.WriteLine($"DSP: {boost}% gain, own C++ engine, EQ " +
                     (eqText is null ? "disabled" : $"enabled ({eqText} dB)"));
                 Console.WriteLine($"Formats: virtual {inputFormat}; physical {outputFormat}");
-                Console.WriteLine("PCM16/float32 conversion + linear rate adaptation; matching channels or mono/stereo map.");
+                Console.WriteLine("PCM16/PCM24/float32 conversion + linear rate adaptation; matching channels or mono/stereo map.");
                 Console.WriteLine("Reusable callback PCM scratch; maximum 500ms capture packet, no per-packet managed PCM buffer allocation.");
                 Console.WriteLine("Press Ctrl+C to stop; this is not a shipped system driver.");
                 if (args.Contains("--interactive-controls"))
@@ -747,7 +747,7 @@ internal static class Program
 
         using var capture = new WasapiLoopbackCapture(endpoint);
         var format = capture.WaveFormat;
-        // WASAPI endpoints may expose otherwise equivalent PCM16 or float32
+        // WASAPI endpoints may expose PCM16, packed PCM24 or float32
         // virtual mix formats. Verify both via the same float32 tone evidence
         // without ever changing OS defaults or constructing a physical sink.
         var virtualPcm = new VirtualLoopbackProbePcm(format);

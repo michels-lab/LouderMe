@@ -4,7 +4,7 @@ using NAudio.Wave;
 namespace LouderMeAudioBridge;
 
 /// <summary>
-/// Stateful PCM16/float32 decoder and linear-interpolation format adapter for
+/// Stateful PCM16/PCM24/float32 decoder and linear-interpolation format adapter for
 /// the *experimental* virtual-to-physical route. Consumed only by the capture
 /// callback. This is not a true-peak-quality production resampler.
 /// </summary>
@@ -76,9 +76,9 @@ internal sealed class PcmFormatAdapter
         if (f.Channels is < 1 or > 8) return false;
         if (f.SampleRate is < 8000 or > 192000) return false;
         var isFloat = IsFloat(f);
-        var isPcm = IsPcm16(f);
+        var isPcm = IsPcm16(f) || IsPcm24(f);
         return (isFloat || isPcm) &&
-            f.BlockAlign == f.Channels * (isFloat ? sizeof(float) : sizeof(short));
+            f.BlockAlign == f.Channels * (f.BitsPerSample / 8);
     }
 
     private static bool IsFloat(WaveFormat format) =>
@@ -91,11 +91,16 @@ internal sealed class PcmFormatAdapter
         (format.Encoding == WaveFormatEncoding.Pcm ||
          (format is WaveFormatExtensible ext && ext.SubFormat == PcmSubtype));
 
+    private static bool IsPcm24(WaveFormat format) =>
+        format.BitsPerSample == 24 &&
+        (format.Encoding == WaveFormatEncoding.Pcm ||
+         (format is WaveFormatExtensible ext && ext.SubFormat == PcmSubtype));
+
     private static void ValidateFormat(WaveFormat format)
     {
         if (!IsSupported(format))
             throw new NotSupportedException(
-                "The experimental route requires PCM16 or IEEE float32, mono to eight channels.");
+                "The experimental route requires PCM16, PCM24 or IEEE float32, mono to eight channels.");
     }
 
     /// <summary>Decode into a caller-owned scratch buffer. No allocation per packet.</summary>
@@ -108,11 +113,25 @@ internal sealed class PcmFormatAdapter
         int bytesNeeded = checked(samples * sizeof(float));
         if (destination.Length < bytesNeeded)
             throw new ArgumentException("Preallocated PCM decode scratch too small.", nameof(destination));
+        int sampleBytes = _input.BitsPerSample / 8;
         for (int i = 0; i < samples; i++)
         {
-            var sample = _inputFloat
-                ? BinaryPrimitives.ReadSingleLittleEndian(source.AsSpan(i * sizeof(float)))
-                : BinaryPrimitives.ReadInt16LittleEndian(source.AsSpan(i * sizeof(short))) / 32768f;
+            int offset = i * sampleBytes;
+            float sample;
+            if (_inputFloat)
+                sample = BinaryPrimitives.ReadSingleLittleEndian(source.AsSpan(offset));
+            else if (sampleBytes == sizeof(short))
+                sample = BinaryPrimitives.ReadInt16LittleEndian(source.AsSpan(offset)) / 32768f;
+            else
+            {
+                // Packed signed little-endian 24-bit PCM: extend bit 23,
+                // preserving full-scale negative values without allocation.
+                int value = source[offset] | (source[offset + 1] << 8) |
+                    (source[offset + 2] << 16);
+                if ((value & 0x800000) != 0)
+                    value |= unchecked((int)0xFF000000);
+                sample = value / 8388608f;
+            }
             if (!float.IsFinite(sample))
                 throw new InvalidDataException("Nonfinite input PCM.");
             BinaryPrimitives.WriteSingleLittleEndian(destination.Slice(i * sizeof(float)), sample);
@@ -210,17 +229,25 @@ internal sealed class PcmFormatAdapter
                     throw new InvalidDataException("Nonfinite native DSP output.");
                 value = Math.Clamp(value, -1f, 1f);
                 int byteOffset = emitted * _output.BlockAlign +
-                    channel * (_outputFloat ? sizeof(float) : sizeof(short));
+                    channel * (_output.BitsPerSample / 8);
                 if (_outputFloat)
                 {
                     BinaryPrimitives.WriteSingleLittleEndian(
                         output.Slice(byteOffset), value);
                 }
-                else
+                else if (_output.BitsPerSample == 16)
                 {
                     float scaled = value < 0f ? value * 32768f : value * 32767f;
                     BinaryPrimitives.WriteInt16LittleEndian(
                         output.Slice(byteOffset), (short)MathF.Round(scaled));
+                }
+                else
+                {
+                    float scaled = value < 0f ? value * 8388608f : value * 8388607f;
+                    int signed24 = (int)MathF.Round(scaled);
+                    output[byteOffset] = (byte)signed24;
+                    output[byteOffset + 1] = (byte)(signed24 >> 8);
+                    output[byteOffset + 2] = (byte)(signed24 >> 16);
                 }
             }
             emitted++;
@@ -302,6 +329,27 @@ internal sealed class PcmFormatAdapter
             BinaryPrimitives.ReadInt16LittleEndian(quantized.AsSpan(6)) != 32767)
             throw new InvalidOperationException("Float to PCM16 saturation failed.");
 
+        // Regression: 24-bit sign extension and asymmetric full-scale rails.
+        var pcm24 = new WaveFormat(48000, 24, 1);
+        var p24 = new PcmFormatAdapter(pcm24, ieee);
+        byte[] packed = [0, 0, 0x80, 0, 0, 0, 0, 0, 0x40, 0xff, 0xff, 0x7f];
+        byte[] unpacked = p24.Decode(packed, packed.Length);
+        AssertClose(BinaryPrimitives.ReadSingleLittleEndian(unpacked.AsSpan(0)), -1f);
+        AssertClose(BinaryPrimitives.ReadSingleLittleEndian(unpacked.AsSpan(4)), 0f);
+        AssertClose(BinaryPrimitives.ReadSingleLittleEndian(unpacked.AsSpan(8)), 0.5f);
+        AssertClose(BinaryPrimitives.ReadSingleLittleEndian(unpacked.AsSpan(12)), 8388607f / 8388608f);
+        byte[] encoded24 = new PcmFormatAdapter(ieee, pcm24).Encode(unpacked, unpacked.Length);
+        // Positive PCM is normalized by 2^23 and quantized by 2^23-1,
+        // so the maximum positive rail can legitimately differ by one LSB.
+        // The sign, middle 24-bit sample and negative rail must survive.
+        if (!encoded24.AsSpan(0, 9).SequenceEqual(packed.AsSpan(0, 9)) ||
+            encoded24[10] != 0xff || encoded24[11] != 0x7f ||
+            encoded24[9] is not (0xfe or 0xff))
+            throw new InvalidOperationException("PCM24 signed full-scale round-trip corrupted.");
+
+        if (IsSupported(new WaveFormat(48000, 32, 2)))
+            throw new InvalidOperationException("Unimplemented integer PCM32 accepted as IEEE float32.");
+
         TestStreamingResample(48000, 44100, 480, 2);
         TestStreamingResample(44100, 48000, 441, 2);
         TestStreamingResample(48000, 96000, 480, 2);
@@ -328,7 +376,7 @@ internal sealed class PcmFormatAdapter
         catch (NotSupportedException) { }
 
         Console.WriteLine(
-            "PASS: PCM16/float32 conversion, saturation, 44.1/48/96 kHz " +
+            "PASS: PCM16/PCM24/float32 conversion, saturation, 44.1/48/96 kHz " +
             "streaming, short-packet interpolation, mono/stereo mapping, " +
             "windowed-sinc anti-alias rejection at 96->48 and 48->44.1 kHz, " +
             "channel isolation, same-rate allocation fast path, bounded clock " +
@@ -341,19 +389,22 @@ internal sealed class PcmFormatAdapter
     public static void RunScratchSelfTests()
     {
         foreach ((int inputRate, int outputRate, int sourceChannels,
-                  int sinkChannels, bool pcm16) in new[]
+                  int sinkChannels, int sourceBits) in new[]
         {
-            (44100, 48000, 2, 2, true),
-            (48000, 44100, 2, 2, false),
-            (96000, 48000, 2, 2, false),
-            (48000, 96000, 1, 2, false),
-            (48000, 48000, 2, 1, true),
-            (48000, 48000, 8, 8, false)
+            (44100, 48000, 2, 2, 16),
+            (44100, 48000, 2, 2, 24),
+            (48000, 44100, 2, 2, 32),
+            (96000, 48000, 2, 2, 24),
+            (96000, 48000, 2, 2, 32),
+            (48000, 96000, 1, 2, 32),
+            (48000, 48000, 2, 1, 16),
+            (48000, 48000, 8, 8, 24),
+            (48000, 48000, 8, 8, 32)
         })
         {
-            var input = pcm16
-                ? new WaveFormat(inputRate, 16, sourceChannels)
-                : WaveFormat.CreateIeeeFloatWaveFormat(inputRate, sourceChannels);
+            var input = sourceBits == 32
+                ? WaveFormat.CreateIeeeFloatWaveFormat(inputRate, sourceChannels)
+                : new WaveFormat(inputRate, sourceBits, sourceChannels);
             var output = WaveFormat.CreateIeeeFloatWaveFormat(outputRate, sinkChannels);
             var allocating = new PcmFormatAdapter(input, output);
             var scratch = new PcmFormatAdapter(input, output);
@@ -374,11 +425,18 @@ internal sealed class PcmFormatAdapter
                             (absoluteFrame + frame) / inputRate);
                         if (ch % 2 != 0) sample = -sample;
                         int offset = frame * input.BlockAlign +
-                            ch * (pcm16 ? sizeof(short) : sizeof(float));
-                        if (pcm16)
+                            ch * (sourceBits / 8);
+                        if (sourceBits == 16)
                             BinaryPrimitives.WriteInt16LittleEndian(
                                 monoPacket.AsSpan(offset),
                                 (short)MathF.Round(sample * 32767));
+                        else if (sourceBits == 24)
+                        {
+                            int signed24 = (int)MathF.Round(sample * 8388607f);
+                            monoPacket[offset] = (byte)signed24;
+                            monoPacket[offset + 1] = (byte)(signed24 >> 8);
+                            monoPacket[offset + 2] = (byte)(signed24 >> 16);
+                        }
                         else
                             BinaryPrimitives.WriteSingleLittleEndian(
                                 monoPacket.AsSpan(offset), sample);
@@ -447,7 +505,7 @@ internal sealed class PcmFormatAdapter
                 "Audio callback PCM scratch path allocated managed heap memory: " +
                 allocated + " bytes over 256 warm packets.");
         Console.WriteLine(
-            "PASS: 6 PCM16/float32 44.1/48/96k mono/stereo/8ch equivalence " +
+            "PASS: 9 PCM16/PCM24/float32 44.1/48/96k mono/stereo/8ch equivalence " +
             "matrices x60 fragmented packets, scratch overflow guards and " +
             "256 warm conversion packets without managed PCM allocations.");
     }

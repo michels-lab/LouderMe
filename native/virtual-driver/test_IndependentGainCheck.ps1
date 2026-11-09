@@ -188,6 +188,32 @@ try {
   $a.independent_source_channels = '2'
   Assert-Rejected 'fabricated string independent source channels' $a $b
 
+  # Different 2ch/5.1/7.1 source layouts must not turn a downmix
+  # amplitude change into fake evidence of an effective Boost slider.
+  $a = Get-Baseline 100; $b = Get-Baseline 150
+  $b.independent_source_channels = 6
+  Assert-Rejected '100/150 compared different stereo and 5.1 inputs' $a $b
+
+  $a = Get-Baseline 100; $b = Get-Baseline 150
+  $b.independent_source_frames = 88200
+  Assert-Rejected '100/150 compared different input sample rates' $a $b
+
+  foreach ($bad in @(3, 4, 5, 7)) {
+    $a = Get-Baseline 100; $b = Get-Baseline 150
+    $b.independent_source_channels = $bad
+    Assert-Rejected "unknown surround input $bad" $a $b
+  }
+  foreach ($good in @(6, 8)) {
+    $a = Get-Baseline 100; $b = Get-Baseline 150
+    $a.independent_source_channels = $good
+    $b.independent_source_channels = $good
+    Write-Pair $a $b
+    $ratio = Test-LouderMeIndependentGain -EvidenceDir $dir -ExpectedSessionId $SessionId
+    if ([Math]::Abs($ratio - 1.5) -gt 0.000001) {
+      throw "Valid 5.1/7.1 equal-source Boost measurement rejected: $good"
+    }
+  }
+
   $a = Get-Baseline 100; $b = Get-Baseline 150
   $b.physical_monitor_frames = 192000.5
   Assert-Rejected 'fractional physical frame count' $a $b
@@ -286,6 +312,8 @@ try {
       bridge_binary_sha256 = ('c' * 64)
       source_binary_sha256 = ('d' * 64)
       virtual_monitor_frames = 192000
+      independent_source_frames = 96000
+      independent_source_channels = 2
       virtual_matched440_amplitude = 0.011
       virtual_coherence = 0.75
       physical_output_verified = $false
@@ -373,6 +401,29 @@ try {
   Assert-VirtualRejected 'source not independently generated' $v
   $v = Get-VirtualProof; $v.physical_output_verified = $true
   Assert-VirtualRejected 'virtual-only proof falsely certifies physical output' $v
+  $v = Get-VirtualProof; $v.Remove('independent_source_frames')
+  Assert-VirtualRejected 'missing virtual independent-source frame count' $v
+  $v = Get-VirtualProof; $v.independent_source_frames = 96001
+  Assert-VirtualRejected 'virtual tone source duration not an integral two seconds' $v
+  $v = Get-VirtualProof; $v.independent_source_channels = 3
+  Assert-VirtualRejected 'virtual source unsupported speaker count' $v
+  $v = Get-VirtualProof; $v.independent_source_channels = '6'
+  Assert-VirtualRejected 'source speaker count supplied as text' $v
+
+  # The real VM must match the source channels across its virtual-only
+  # capture and BOTH native DSP / physical gain passes.
+  Write-Pair (Get-Baseline 100) (Get-Baseline 150)
+  $v = Get-VirtualProof; $v.independent_source_channels = 6
+  Write-Virtual $v
+  Write-ValidVirtualSilence
+  $crossPhaseRejected = $false
+  try {
+    [void](Test-LouderMeIndependentGain -EvidenceDir $dir -ExpectedSessionId $SessionId -RequireVirtualProof)
+  } catch { $crossPhaseRejected = $true }
+  if (-not $crossPhaseRejected) {
+    throw 'Virtual 5.1 source incorrectly accepted as stereo physical A/B.'
+  }
+
   $v = Get-VirtualProof; $v.virtual_monitor_frames = 0
   Assert-VirtualRejected 'no actual virtual monitor samples' $v
   $v = Get-VirtualProof; $v.virtual_matched440_amplitude = 0.001

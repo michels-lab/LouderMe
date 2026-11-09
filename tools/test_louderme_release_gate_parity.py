@@ -46,6 +46,7 @@ def check_gates(build: str, release: str, about: str, project: str) -> None:
     for release_step in (
         "pwsh -File desktop/tools/verify_release_identity.ps1",
         "--check-apo-contract",
+        "--check-settings-contract",
         "--check-developer-contract",
         "--developer-smoke-test",
         "tools/visual_release_gate.py",
@@ -76,6 +77,8 @@ def main() -> None:
         (1, texts[1].replace("MichelsLabDarkLockup", "MichelsLabLockup")),
         (1, texts[1].replace("tools/visual_release_gate.py",
                             "tools/fake_visual_gate.py")),
+        (1, texts[1].replace("--check-settings-contract",
+                             "--skip-settings-contract")),
         (1, texts[1].replace("--check-developer-contract",
                             "--skip-developer-contract")),
     ]
@@ -91,7 +94,7 @@ def main() -> None:
         raise AssertionError("Unsafe release gate mutation was accepted")
     if not LOGO_SOURCE.is_file() or LOGO_SOURCE.stat().st_size != 526482:
         raise AssertionError("Approved Michel's Lab source PNG is missing")
-    print("PASS: build/release branding parity and 5 negative publishing regressions")
+    print("PASS: build/release branding parity and 6 negative publishing regressions")
 
 
 if __name__ == "__main__":

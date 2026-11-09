@@ -1,3 +1,10 @@
+## 2026-11-08 — Granada: preferencias Windows Boost/EQ resistentes a cortes (candidato)
+
+- **Problema:** File.WriteAllText truncaba directamente desktop-settings.json, y un cierre durante guardado podía perder ajustes de siete bandas y Boost. Se implementa stage .tmp, flush, rename atómico, normalización finita, preservación del archivo anterior ante error y lectura no destructiva del archivo legado corrupto.
+- **Pruebas reales:** --check-settings-contract con disco temporal, interrupción inyectada entre flush y rename, validación byte a byte de preferencias anteriores y separación estable/Developer. Gate en CI build+release y prueba de paridad. Auditoría: docs/audits/GRANADA_2026-11-08_ATOMIC_AUDIO_PREFERENCES.md. Pendientes CI de SHA exacto y prueba física #48; sin release.
+
+---
+
 ## 2026-11-05 — Granada: PCM24 válido en contenedor Windows de 32 bits (candidato)
 
 - **Corrección funcional:** Windows permite 24 bits significativos a la izquierda de un contenedor de 32. El puente y la app fuente los rechazaban o los confundían con float32, pese a que el kernel LAB ya los transportaba. Conversión nativa sin alocaciones por callback, padding inferior verificado, mismo subtipo y máscara de canales; fuente independiente, monitor virtual, tono físico y preflight se alinean.

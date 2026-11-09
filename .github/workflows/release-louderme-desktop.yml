@@ -125,6 +125,12 @@ jobs:
         shell: pwsh
         run: pwsh -File desktop/tools/verify_release_identity.ps1
 
+      - name: Prove atomic Boost and EQ preferences survive interrupted writes
+        shell: pwsh
+        run: |
+          dotnet run --project desktop/src/LouderMeDesktop/LouderMeDesktop.csproj -c Release --no-build -- --check-settings-contract
+          if ($LASTEXITCODE -ne 0) { throw "Windows Boost/EQ settings persistence contract failed." }
+
       - name: Verify Windows audio activation and attenuation restoration contracts
         shell: pwsh
         run: |

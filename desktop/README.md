@@ -1,3 +1,7 @@
+## Granada 2026-11-08 — crash-safe Boost/EQ desktop preferences
+
+The real Windows settings store writes full JSON to a flushed same-directory .tmp, then atomically replaces desktop-settings.json, keeping prior settings intact on failed writes. The Windows app's --check-settings-contract tests interruption just before rename, stable/Developer isolation, bounds and corrupt legacy JSON. Both build and stable-release workflows enforce it. This does not prove audio hardware or produce a public release. Audit: ../docs/audits/GRANADA_2026-11-08_ATOMIC_AUDIO_PREFERENCES.md.
+
 ## Granada 2026-11-05 — atomic verified Windows installer download
 
 The updater writes untrusted HTTP bytes to a unique .part staging file, not over an existing verified .exe. It enforces a 256-MiB bound, validates declared length and SHA-256 and moves the candidate to the executable name only after success. Interrupted, corrupt or cancelled transfers preserve the previous installer. The --check-update-contract Windows CI test runs file-backed negative and positive fixtures. No release or production update is claimed. Audit: ../docs/audits/GRANADA_2026-11-05_ATOMIC_WINDOWS_UPDATE.md.

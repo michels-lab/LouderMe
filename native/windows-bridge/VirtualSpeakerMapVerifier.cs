@@ -142,13 +142,43 @@ internal sealed class VirtualSpeakerMapVerifier
                         "Virtual speaker-map accepted identical 440Hz in all speakers.");
             }
         }
-        var wrong = WaveFormat.CreateIeeeFloatWaveFormat(48000, 3);
+        var stereo = WaveFormat.CreateIeeeFloatWaveFormat(48000, 2);
+        var invalidPacket = new VirtualSpeakerMapVerifier(stereo);
         try
         {
-            _ = new VirtualSpeakerMapVerifier(wrong);
-            throw new InvalidOperationException("Ambiguous 3-channel map accepted.");
+            invalidPacket.Add(new byte[stereo.BlockAlign - 1]);
+            throw new InvalidOperationException("Split speaker-map PCM frame accepted.");
         }
-        catch (NotSupportedException) { }
+        catch (InvalidDataException) { }
+        var nonfinite = new byte[stereo.BlockAlign];
+        BinaryPrimitives.WriteSingleLittleEndian(nonfinite, float.NaN);
+        try
+        {
+            invalidPacket.Add(nonfinite);
+            throw new InvalidOperationException("NaN virtual speaker-map samples accepted.");
+        }
+        catch (InvalidDataException) { }
+        var insufficient = new VirtualSpeakerMapVerifier(stereo);
+        insufficient.Add(new byte[stereo.BlockAlign * 100]);
+        if (insufficient.Evaluate().Passed)
+            throw new InvalidOperationException("Short virtual recording without source passed.");
+
+        foreach (WaveFormat bad in new WaveFormat[] {
+            WaveFormat.CreateIeeeFloatWaveFormat(48000, 3),
+            new WaveFormatExtensible(48000, 32, 6, true, 32, 0),
+            new WaveFormatExtensible(48000, 32, 6, true, 32, 0x63f),
+            new WaveFormatExtensible(48000, 32, 8, true, 32, 0x60f),
+            new WaveFormat(48000, 16, 2)
+        })
+        {
+            try
+            {
+                _ = new VirtualSpeakerMapVerifier(bad);
+                throw new InvalidOperationException(
+                    "Unsupported spatial WASAPI map or sample width was accepted.");
+            }
+            catch (NotSupportedException) { }
+        }
         Console.WriteLine(
             "PASS: speaker identity 1/2/5.1 back/side/7.1 detects missing, swapped, " +
             "or identical-frequency lanes with irregular WASAPI packet boundaries.");

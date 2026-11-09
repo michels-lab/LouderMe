@@ -888,10 +888,7 @@ internal static class Program
             VirtualSpeakerMapVerifier.SpeakerMapEvidence positional;
             lock (sync) positional = mapVerifier.Evaluate();
             Console.WriteLine(FormattableString.Invariant(
-                $"VIRTUAL_SPEAKER_MAP_PROOF frames={positional.Frames} " +
-                $"channels={positional.Channels} " +
-                $"minOwn={positional.MinOwnAmplitude:F6} " +
-                $"maxLeakage={positional.MaxForeignAmplitude:F6}"));
+                $"VIRTUAL_SPEAKER_MAP_PROOF frames={positional.Frames} channels={positional.Channels} minOwn={positional.MinOwnAmplitude:F6} maxLeakage={positional.MaxForeignAmplitude:F6}"));
             if (!positional.Passed)
             {
                 Console.Error.WriteLine(

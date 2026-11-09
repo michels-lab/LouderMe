@@ -96,6 +96,7 @@ internal static class Program
             if (args.Contains("--check-route-preflight"))
             {
                 RoutePreflight.RunSelfTests();
+                RouteFormatEpoch.RunSelfTests();
                 return 0;
             }
             if (args.Contains("--check-recovery"))
@@ -307,6 +308,12 @@ internal static class Program
             using var capture = new WasapiLoopbackCapture(source);
             var inputFormat = capture.WaveFormat;
             var outputFormat = physical.AudioClient.MixFormat;
+            // Capture the exact selected endpoint format epoch. A Windows
+            // Sound control-panel change can keep an endpoint ID Active but
+            // replace its mix format. The adapter/queue must never continue
+            // interpreting PCM using stale channel order or sample width.
+            var formatEpoch = new RouteFormatEpoch(
+                source.AudioClient.MixFormat, outputFormat);
             // Decode to native float32, run own DSP on ALL source channels,
             // then map explicit 5.1/7.1 speaker positions to a physical
             // front-stereo sink when needed. Unknown layouts fail closed.
@@ -580,6 +587,7 @@ internal static class Program
                 var routeStarted = Stopwatch.GetTimestamp();
                 long lastStats = routeStarted;
                 long lastObservedQueueResets = 0;
+                long lastFormatCheck = routeStarted;
                 while (!shutdown.Wait(250))
                 {
                     if (monitorError is not null)
@@ -612,6 +620,31 @@ internal static class Program
                     {
                         throw new AudioRouteRecoverableException(
                             "Windows invalidated one of the selected audio endpoints.");
+                    }
+                    // Endpoint State==Active alone is insufficient: USB /
+                    // Bluetooth / Windows Sound may renegotiate its mix
+                    // format without changing MMDevice.ID. Poll metadata
+                    // only on this console thread, never in WASAPI callback.
+                    if (Stopwatch.GetElapsedTime(lastFormatCheck) >=
+                        TimeSpan.FromSeconds(1))
+                    {
+                        try
+                        {
+                            formatEpoch.EnsureUnchanged(
+                                source.AudioClient.MixFormat,
+                                physical.AudioClient.MixFormat);
+                        }
+                        catch (System.Runtime.InteropServices.COMException)
+                        {
+                            throw new AudioRouteRecoverableException(
+                                "Windows invalidated the selected endpoint format metadata.");
+                        }
+                        catch (InvalidOperationException)
+                        {
+                            throw new AudioRouteRecoverableException(
+                                "Selected WASAPI mix format became unavailable.");
+                        }
+                        lastFormatCheck = Stopwatch.GetTimestamp();
                     }
                     // A render device's real clock can run tens/hundreds of
                     // ppm faster/slower than the capture endpoint. Steer the

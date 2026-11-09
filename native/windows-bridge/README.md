@@ -1,3 +1,7 @@
+## Granada 2026-11-09 — live endpoint mix-format epoch
+
+Virtual/physical WASAPI routes now reject in-place sample-rate, channel-count, sample depth, subformat or speaker-position changes even when the selected endpoint ID remains Active. The actual console loop re-queries both endpoint formats once per second, fails with recoverable exit 75 and cleans up capture/render instead of replaying stale decoded bytes. Auto-reconnect still selects only the exact original IDs and redoes full preflight. New `--check-route-preflight` tests cover 5.1 rear/side→7.1, stereo masks, precision and rate changes, no devices required. Audit: ../../docs/audits/GRANADA_2026-11-09_LIVE_WASAPI_FORMAT_EPOCH.md. Not physical sound proof.
+
 ## Granada 2026-11-08 — independent multichannel Windows sound-source lab
 
 The independent Windows-process 440 Hz source now supports explicit 5.1 back/side and 7.1 PCM16/24/24in32/float32, and external-app mode can feed multichannel source PCM through native C++ DSP to a physical stereo sink. Windows --check-tone exercises sample lanes at 44.1/48/96 kHz and rejects masks without defined speaker positions. The separate virtual-only 6/8ch marker gate remains in the SysVAD lab backlog. Still requires a signed installed SysVAD render endpoint advertising these formats for actual physical sound evidence. Audit: ../../docs/audits/GRANADA_2026-11-08_INDEPENDENT_SURROUND_PROOF.md.

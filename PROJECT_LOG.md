@@ -1,3 +1,10 @@
+## 2026-11-09 — Granada: sesión WASAPI invalida formatos PCM renegociados (candidato)
+
+- **Ruta funcional Windows:** si Windows Sound/USB/HDMI/Bluetooth cambia el formato de un endpoint sin desactivarlo, el puente no debe seguir transformando PCM con el formato viejo. Captura una identidad de muestra rate/bitdepth/validbits/mask/subtype por fuente y salida, y verifica en la hebra de gestión cada segundo; cualquier cambio libera WASAPI y devuelve interrupción recuperable (75), no altera salida default.
+- **Pruebas** por CI de rate, stereo/mono, 5.1 back/side/7.1, PCM24-in-32 e IEEE float. No se afirma que sonido físico pasó; WDK #151 y firma/VM #48 siguen pendientes. Sin release. Auditoría: docs/audits/GRANADA_2026-11-09_LIVE_WASAPI_FORMAT_EPOCH.md.
+
+---
+
 ## 2026-11-08 — Granada: fuente Windows independiente 5.1/7.1 (candidato)
 
 - **Prueba funcional ampliada:** el proceso separado de Windows ahora puede enviar PCM de 6/8 canales con máscaras 5.1 y 7.1 a endpoint virtual; el puente acepta ese audio real para su prueba con DSP nativo y bocinas estéreo, en vez de bloquearlo por la cantidad de canales.

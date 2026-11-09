@@ -4,6 +4,8 @@ object AudioBoostContract {
     const val ACTION_ENABLE = "com.michelslab.louderme.action.ENABLE"
     const val ACTION_SET_LEVEL = "com.michelslab.louderme.action.SET_LEVEL"
     const val ACTION_DISABLE = "com.michelslab.louderme.action.DISABLE"
+    const val ACTION_BOOST_UP = "com.michelslab.louderme.action.BOOST_UP"
+    const val ACTION_BOOST_DOWN = "com.michelslab.louderme.action.BOOST_DOWN"
     const val ACTION_STATE = "com.michelslab.louderme.action.STATE"
 
     const val ACTION_SET_EQ = "com.michelslab.louderme.action.SET_EQ"

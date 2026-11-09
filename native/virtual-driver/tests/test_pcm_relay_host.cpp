@@ -239,10 +239,12 @@ int main() {
         invalid.Format.wFormatTag = WAVE_FORMAT_EXTENSIBLE;
         invalid.Format.cbSize = 22;
         invalid.dwChannelMask = 0;
+        std::fill(packet.begin(), packet.end(), 0x55);
         relay.Publish(packet.data(), (ULONG)packet.size(), &invalid);
         relay.Consume(packet.data(), (ULONG)packet.size(), &invalid);
         Zeros(packet);
         invalid.dwChannelMask = channels == 6 ? 0x63FUL : 0x3FUL;
+        std::fill(packet.begin(), packet.end(), 0x55);
         relay.Publish(packet.data(), (ULONG)packet.size(), &invalid);
         relay.Consume(packet.data(), (ULONG)packet.size(), &invalid);
         Zeros(packet);

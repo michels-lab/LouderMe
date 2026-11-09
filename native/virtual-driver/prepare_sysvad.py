@@ -250,7 +250,7 @@ def patch_speaker_wavtable(text: str) -> str:
     )
     for symbol, old, new in macro_changes:
         pattern = rf"(?m)^(#define[ \t]+{symbol}[ \t]+){old}(?=[ \t])"
-        text, n = re.subn(pattern, rf"\\g<1>{new}", text)
+        text, n = re.subn(pattern, rf"\g<1>{new}", text)
         if n != 1:
             raise ValueError(f"Unpinned or already modified {symbol}: {n} matches")
 
@@ -261,7 +261,7 @@ def patch_speaker_wavtable(text: str) -> str:
         guid = ( "KSDATAFORMAT_SUBTYPE_IEEE_FLOAT"
                  if subtype == "float32" else "KSDATAFORMAT_SUBTYPE_PCM" )
         return (
-            "    { // LouderME LAB explicit {channels}ch {rate}Hz {subtype} "
+            "    {{ // LouderME LAB explicit {channels}ch {rate}Hz {subtype} "
             "{bits}/{valid} mask 0x{mask:X}\n"
             "        {{\n"
             "            sizeof(KSDATAFORMAT_WAVEFORMATEXTENSIBLE),\n"

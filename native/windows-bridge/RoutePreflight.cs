@@ -64,7 +64,7 @@ internal static class RoutePreflight
         if (!PcmFormatAdapter.IsSupported(source.Format) ||
             !PcmFormatAdapter.IsSupported(sink.Format))
             return Reject("UNSUPPORTED_MIX_FORMAT",
-                "Both selected endpoints must use PCM16, packed PCM24 or IEEE float32 with 1–8 channels at 8–192 kHz.");
+                "Both selected endpoints must use PCM16, packed PCM24, left-aligned PCM24/32 or IEEE float32 with 1–8 channels at 8–192 kHz.");
 
         try
         {
@@ -136,6 +136,14 @@ internal static class RoutePreflight
             [virtualSource with {
                 Format = new WaveFormatExtensible(48000, 24, 6, false, 24, 0)
             }, physical], "virtual-A", "physical-B");
+        Expect("STATIC_PREFLIGHT_READY",
+            [virtualSource with {
+                Format = new WaveFormatExtensible(48000, 32, 2, false, 24, 0x3)
+            }, physical], "virtual-A", "physical-B");
+        Expect("STATIC_PREFLIGHT_READY",
+            [virtualSource, physical with {
+                Format = new WaveFormatExtensible(48000, 32, 1, false, 24, 0x4)
+            }], "virtual-A", "physical-B");
         Expect("INCOMPATIBLE_ROUTE_FORMATS",
             [virtualSource with {
                 Format = new WaveFormatExtensible(48000, 24, 6, false, 24, 0x3f)

@@ -355,12 +355,12 @@ class AudioBoostService : Service() {
             .setContentIntent(pendingIntent)
             .addAction(
                 android.R.drawable.ic_media_rew,
-                "−25%",
+                "Boost −",
                 actionPendingIntent(AudioBoostContract.ACTION_BOOST_DOWN, 101),
             )
             .addAction(
                 android.R.drawable.ic_media_ff,
-                "+25%",
+                "Boost +",
                 actionPendingIntent(AudioBoostContract.ACTION_BOOST_UP, 102),
             )
             .addAction(
@@ -410,27 +410,7 @@ class AudioBoostService : Service() {
                 manager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
             }
 
-        return when {
-            devices.any {
-                it.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP ||
-                    it.type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO ||
-                    it.type == AudioDeviceInfo.TYPE_BLE_HEADSET ||
-                    it.type == AudioDeviceInfo.TYPE_BLE_SPEAKER
-            } -> "Bluetooth"
-
-            devices.any {
-                it.type == AudioDeviceInfo.TYPE_WIRED_HEADPHONES ||
-                    it.type == AudioDeviceInfo.TYPE_WIRED_HEADSET ||
-                    it.type == AudioDeviceInfo.TYPE_USB_HEADSET ||
-                    it.type == AudioDeviceInfo.TYPE_USB_DEVICE
-            } -> "Headphones / USB"
-
-            devices.any {
-                it.type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER
-            } -> "Phone speaker"
-
-            else -> "System output"
-        }
+        return AudioRouteLabel.describe(devices.map { it.type })
     }
 
     companion object {

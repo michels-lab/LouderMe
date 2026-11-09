@@ -86,7 +86,11 @@ internal static class Program
         }
     }
 
-    internal static byte[] CreateTone(WaveFormat format, bool speakerMap = false)
+    // Preserve the original normal 440-Hz standalone test/signal API.
+    internal static byte[] CreateTone(WaveFormat format) =>
+        CreateTone(format, speakerMap: false);
+
+    internal static byte[] CreateTone(WaveFormat format, bool speakerMap)
     {
         ArgumentNullException.ThrowIfNull(format);
         bool isPcm16 = format.BitsPerSample == 16 &&

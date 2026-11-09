@@ -86,7 +86,8 @@ function Test-LouderMeIndependentGain {
       }
     }
     foreach ($field in @('virtual_monitor_frames',
-                         'virtual_matched440_amplitude', 'virtual_coherence')) {
+                         'virtual_matched440_amplitude', 'virtual_coherence',
+                         'independent_source_frames', 'independent_source_channels')) {
       $value = $virtual.$field
       if ($null -eq $value -or $value -is [bool] -or
           $value -isnot [ValueType] -or
@@ -96,6 +97,11 @@ function Test-LouderMeIndependentGain {
     }
     if ([double]$virtual.virtual_monitor_frames -lt 4000 -or
         [double]$virtual.virtual_monitor_frames % 1 -ne 0 -or
+        [double]$virtual.independent_source_frames -lt 16000 -or
+        [double]$virtual.independent_source_frames -gt 384000 -or
+        [double]$virtual.independent_source_frames % 2 -ne 0 -or
+        [double]$virtual.independent_source_channels % 1 -ne 0 -or
+        [int]$virtual.independent_source_channels -notin @(1, 2, 6, 8) -or
         [double]$virtual.virtual_matched440_amplitude -lt 0.007 -or
         [double]$virtual.virtual_matched440_amplitude -gt 0.15 -or
         [double]$virtual.virtual_coherence -lt 0.50 -or
@@ -193,6 +199,7 @@ function Test-LouderMeIndependentGain {
     }
   }
   $m = @{}
+  $referenceSource = $null
   foreach ($boost in @(100, 150)) {
     $record = $records["independent-source-result-$boost.json"]
     if ($null -eq $record -or $record.status -cne 'PASS' -or
@@ -242,9 +249,24 @@ function Test-LouderMeIndependentGain {
         $pcmCounters.render_consumed_frames -gt $pcmCounters.physical_queued_frames -or
         $pcmCounters.dropped_frames -ne 0 -or
         $pcmCounters.independent_source_frames -lt 88200 -or
-        $pcmCounters.independent_source_channels -lt 1 -or
-        $pcmCounters.independent_source_channels -gt 8) {
+        $pcmCounters.independent_source_channels -notin @(1, 2, 6, 8)) {
       throw "Incomplete independent-source and physical-output PCM at $boost."
+    }
+    # A/B from different channel layouts or rates is not a gain comparison:
+    # 5.1/7.1->stereo downmix can change the measured amplitude on its own.
+    if ($null -eq $referenceSource) {
+      $referenceSource = @{
+        frames = $pcmCounters.independent_source_frames
+        channels = $pcmCounters.independent_source_channels
+      }
+    } elseif ($referenceSource.frames -ne $pcmCounters.independent_source_frames -or
+              $referenceSource.channels -ne $pcmCounters.independent_source_channels) {
+      throw 'Cannot compare Boost 100/150: independent source format changed.'
+    }
+    if ($RequireVirtualProof -and
+        ($pcmCounters.independent_source_frames -ne [double]$virtual.independent_source_frames -or
+         $pcmCounters.independent_source_channels -ne [double]$virtual.independent_source_channels)) {
+      throw 'Virtual-only and physical A/B proofs came from different independent PCM source formats.'
     }
     $amp = [double]$record.physical_matched440_amplitude
     $coherence = [double]$record.physical_coherence

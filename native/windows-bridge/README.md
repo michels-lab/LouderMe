@@ -1,6 +1,6 @@
 ## Granada 2026-11-08 — independent multichannel Windows sound-source lab
 
-The independent Windows-process 440 Hz source now supports explicit 5.1 back/side and 7.1 PCM16/24/24in32/float32, and external-app mode can feed multichannel source PCM through native C++ DSP to a physical stereo sink. Windows --check-tone exercises sample lanes at 44.1/48/96 kHz and rejects masks without defined speaker positions. Virtual-only independent-source probe accepts 6/8ch markers. Still requires a signed installed SysVAD render endpoint advertising these formats for actual physical sound evidence. Audit: ../../docs/audits/GRANADA_2026-11-08_INDEPENDENT_SURROUND_PROOF.md.
+The independent Windows-process 440 Hz source now supports explicit 5.1 back/side and 7.1 PCM16/24/24in32/float32, and external-app mode can feed multichannel source PCM through native C++ DSP to a physical stereo sink. Windows --check-tone exercises sample lanes at 44.1/48/96 kHz and rejects masks without defined speaker positions. The separate virtual-only 6/8ch marker gate remains in the SysVAD lab backlog. Still requires a signed installed SysVAD render endpoint advertising these formats for actual physical sound evidence. Audit: ../../docs/audits/GRANADA_2026-11-08_INDEPENDENT_SURROUND_PROOF.md.
 
 ## Granada 2026-11-08 — 5.1/7.1 app playback to physical stereo
 

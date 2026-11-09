@@ -33,9 +33,6 @@ class IndependentSourceBoundaryTests(unittest.TestCase):
         self.assertIn('new WasapiOut(device, AudioClientShareMode.Shared', text)
         self.assertIn('LouderMe Virtual', text)
         self.assertIn('EXTERNAL_APP_TONE_FINISHED', text)
-        self.assertIn('channels=[1268]', (
-            ROOT / 'native/virtual-driver/probe_independent_virtual_pcm.ps1'
-        ).read_text())
         self.assertIn('CreateTone(WaveFormat format)', text)
         for forbidden in ('AudioEngine', 'NativeDsp', 'DataFlow.Capture',
                           'SetDefault', 'pnputil', 'devcon', 'HttpClient'):

@@ -102,7 +102,7 @@ try {
   $resultSource = Receive-LouderMeLabChildOutput -Child $source -TimeoutMs 6000
   if ($resultSource.ExitCode -ne 0 -or
       @($resultSource.StdOut -split '\r?\n' | Where-Object {
-        $_ -match '^EXTERNAL_APP_TONE_FINISHED 440Hz frames=[0-9]+ channels=[1268];'
+        $_ -match '^EXTERNAL_APP_TONE_FINISHED 440Hz frames=[0-9]+ channels=[12];'
       }).Count -ne 1) {
     throw 'Separate app failed to complete its exact 440 Hz PCM into the selected virtual endpoint.'
   }

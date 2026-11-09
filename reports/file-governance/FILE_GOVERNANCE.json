@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 294,
-  "classified_files_total": 290,
-  "docs_content_inspected": 96,
+  "tracked_files_total": 295,
+  "classified_files_total": 291,
+  "docs_content_inspected": 97,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,7 +12,7 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 88,
+    "document": 89,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
@@ -23,7 +23,7 @@
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "6bb9b9c0fd31ab01f837e8134bab9edd4c7a56bfb851059c3c3707172b796f69",
+  "inventory_fingerprint": "c42ba051860554aec032a967a804c1a34967769eb0061a62c2b6f3bc2779848a",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -234,7 +234,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "0857066c44a65e12e1e63d3fa30f0c2481061d80"
+      "blob": "f3284a94e30c7238a4eb3994f8e9bcf12eeca7d8"
     },
     {
       "path": "README.md",
@@ -1483,6 +1483,13 @@
       "blob": "df224280bd7d282e1fb1b3c16d5da930d756aafe"
     },
     {
+      "path": "docs/audits/GRANADA_2026-11-08_SURROUND_DOWNMIX.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "7f67e71e052fe05160c03cdac47bcd432964f670"
+    },
+    {
       "path": "docs/product-reviews/2026-10-21-native-windows-audio-evidence.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -1844,7 +1851,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "3f37b17869889e6d7671bde211e5c921ae3a4457"
+      "blob": "2b2c46bd9b4eaa2e25a7bd2e7c05d717984e8d87"
     },
     {
       "path": "native/windows-bridge/PhysicalRouteStimulus.cs",
@@ -1865,14 +1872,14 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "4cf565df34767b18afe2c790f3fa880375cbc761"
+      "blob": "c5d4247f8907f08bf94dc3e327f6d99dc9f15092"
     },
     {
       "path": "native/windows-bridge/README.md",
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "9c5298ba0e5d6ef3ad7296fdcc1037a5f8eb9e25"
+      "blob": "a824462a7693f69e6579237f350d3c97a377b425"
     },
     {
       "path": "native/windows-bridge/RenderProgressWatchdog.cs",
@@ -1886,7 +1893,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "08fa4a9042a8e8b208a4aa8a63cc8b2aa0048894"
+      "blob": "a58464f39e79c1c0e6245559294a300a000b5cb2"
     },
     {
       "path": "native/windows-bridge/StreamingDownsampleLowPass.cs",

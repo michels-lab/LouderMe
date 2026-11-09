@@ -23,6 +23,17 @@ internal sealed class VirtualLoopbackProbePcm
             captureFormat.Channels is < 1 or > 8)
             throw new NotSupportedException(
                 "Virtual loopback probe needs supported PCM16, PCM24 or IEEE float32, mono-to-eight-channel mix.");
+        // A valid channel count alone cannot identify the speakers.
+        // Fail closed on any multichannel format that isn't one of the
+        // actual SysVAD 5.1 back/side or 7.1 Windows render masks.
+        if (captureFormat.Channels > 2 &&
+            (captureFormat is not WaveFormatExtensible ext ||
+             (captureFormat.Channels == 6 &&
+              ext.ChannelMask is not (0x3f or 0x60f)) ||
+             (captureFormat.Channels == 8 && ext.ChannelMask != 0x63f) ||
+             captureFormat.Channels is not (6 or 8)))
+            throw new NotSupportedException(
+                "Virtual surround PCM requires explicit standard 5.1/7.1 speaker positions.");
         EvidenceFormat = captureFormat.Channels > 2
             ? new WaveFormatExtensible(captureFormat.SampleRate, 32,
                 captureFormat.Channels, ((WaveFormatExtensible)captureFormat).ChannelMask)
@@ -92,18 +103,19 @@ internal sealed class VirtualLoopbackProbePcm
         {
             foreach (int sampleBits in new[] { 16, 24, 32, 132 })
             {
-                foreach (int channels in new[] { 1, 2, 8 })
+                foreach ((int channels, int mask) in new[] {
+                    (1, 0x4), (2, 0x3), (6, 0x3f), (6, 0x60f), (8, 0x63f)
+                })
                 {
-                    WaveFormat capture = sampleBits == 132
-                        ? new WaveFormatExtensible(rate, 32, channels, false, 24,
-                            channels == 1 ? 0x4 : channels == 2 ? 0x3 : 0x63f)
-                        : channels > 2
-                            ? new WaveFormatExtensible(rate, sampleBits, channels)
-                            : sampleBits == 32
-                                ? WaveFormat.CreateIeeeFloatWaveFormat(rate, channels)
-                                : new WaveFormat(rate, sampleBits, channels);
+                    WaveFormat capture = channels > 2 || sampleBits == 132
+                        ? new WaveFormatExtensible(rate, sampleBits == 132 ? 32 : sampleBits,
+                            channels, sampleBits == 32, sampleBits == 132 ? 24 : sampleBits, mask)
+                        : sampleBits == 32
+                            ? WaveFormat.CreateIeeeFloatWaveFormat(rate, channels)
+                            : new WaveFormat(rate, sampleBits, channels);
                     var decoder = new VirtualLoopbackProbePcm(capture);
-                    var verifier = new LoopbackToneVerifier(decoder.EvidenceFormat);
+                    var verifier = new LoopbackToneVerifier(
+                        decoder.EvidenceFormat, requireEverySpeakerLane: true);
                     byte[] tone = CreateInternalTone(capture);
                     int framesPerPacket = 137;
                     int cursor = 0;
@@ -123,13 +135,30 @@ internal sealed class VirtualLoopbackProbePcm
                         throw new InvalidOperationException(
                             $"Virtual {rate}Hz {channels}ch {(sampleBits == 132 ? "PCM24-in-32" : sampleBits == 32 ? "float32" : $"PCM{sampleBits}")} proof failed: {e}");
                     // No source must not be accepted, regardless of encoding.
-                    var quiet = new LoopbackToneVerifier(decoder.EvidenceFormat);
+                    var quiet = new LoopbackToneVerifier(
+                        decoder.EvidenceFormat, requireEverySpeakerLane: true);
                     byte[] silence = new byte[rate / 4 * capture.BlockAlign];
                     decoder.AddPacket(quiet, silence, silence.Length);
                     if (quiet.Evaluate().Passed)
                         throw new InvalidOperationException("No-source virtual capture accepted silence.");
                 }
             }
+        }
+
+        foreach (WaveFormat invalid in new WaveFormat[] {
+            new WaveFormat(48000, 24, 6),
+            new WaveFormatExtensible(48000, 24, 6, false, 24, 0),
+            new WaveFormatExtensible(48000, 24, 6, false, 24, 0x33f),
+            new WaveFormatExtensible(48000, 32, 8, true, 32, 0x3f)
+        })
+        {
+            try
+            {
+                _ = new VirtualLoopbackProbePcm(invalid);
+                throw new InvalidOperationException(
+                    "Unsupported virtual surround mask was accepted.");
+            }
+            catch (NotSupportedException) { }
         }
 
         var floatFormat = WaveFormat.CreateIeeeFloatWaveFormat(48000, 2);
@@ -190,6 +219,7 @@ internal sealed class VirtualLoopbackProbePcm
         catch (NotSupportedException) { }
 
         Console.WriteLine("PASS: virtual WASAPI receive-only PCM16/PCM24/float32 decoder and owned-tone encode " +
-            "44.1/48/96k mono/stereo, exact 440Hz identity, reject silent/misaligned/oversized PCM16/24, NaN and integer PCM32.");
+            "44.1/48/96k mono/stereo/5.1 back+side/7.1, every-lane 440Hz identity, " +
+            "reject silence, unknown speaker masks, unaligned/oversized PCM, NaN and integer PCM32.");
     }
 }

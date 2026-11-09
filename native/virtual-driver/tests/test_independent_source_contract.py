@@ -134,6 +134,34 @@ class IndependentSourceBoundaryTests(unittest.TestCase):
         native_ci=(ROOT / ".github/workflows/native-audio-engine-ci.yml").read_text()
         self.assertIn("probe_independent_virtual_pcm.ps1", native_ci)
 
+    def test_virtual_surround_source_and_lane_integrity_are_required(self):
+        root = ROOT / "native/virtual-driver"
+        runner = (root / "probe_independent_virtual_pcm.ps1").read_text()
+        parser = (root / "VirtualSourceCompletionCheck.ps1").read_text()
+        fixture = (root / "test_VirtualSourceCompletionCheck.ps1").read_text()
+        native = (ROOT / ".github/workflows/native-audio-engine-ci.yml").read_text()
+        virtual = (ROOT / "native/windows-bridge/VirtualLoopbackProbePcm.cs").read_text()
+        verifier = (ROOT / "native/windows-bridge/LoopbackToneVerifier.cs").read_text()
+        bridge = BRIDGE.read_text()
+        for token in ("VirtualSourceCompletionCheck.ps1",
+                      "Test-LouderMeVirtualSourceCompletion",
+                      "independent_source_channels = $sourceEvidence.channels",
+                      "independent_source_frames = $sourceEvidence.frames"):
+            self.assertIn(token, runner)
+        for token in ("channels=(?<channels>1|2|6|8)",
+                      "$markers.Count -ne 1", "$frames -gt 384000"):
+            self.assertIn(token, parser)
+        for token in ("@(1,2,6,8)", "ambiguous channels",
+                      "invalid second completion", "odd frames"):
+            self.assertIn(token, fixture)
+        self.assertIn("test_VirtualSourceCompletionCheck.ps1", native)
+        self.assertIn("requireEverySpeakerLane: true", bridge)
+        self.assertIn("requireEverySpeakerLane: true", virtual)
+        self.assertIn("0x60f", virtual)
+        self.assertIn("0x63f", virtual)
+        self.assertIn("mutedLane: silent", verifier)
+        self.assertIn("_laneSine[channel]", verifier)
+
     def test_virtual_only_positive_requires_no_source_windows_before_and_after(self):
         root = ROOT / "native/virtual-driver"
         runner = (root / "probe_independent_virtual_pcm.ps1").read_text()

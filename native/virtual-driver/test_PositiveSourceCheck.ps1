@@ -58,6 +58,15 @@ Assert-Rejected -Reason 'duplicate finished process' -ToneOutput ($goodSource + 
 Assert-Rejected -Reason 'incorrect independent frequency' -ToneOutput ($goodSource.Replace('440Hz','500Hz'))
 Assert-Rejected -Reason 'too little independent PCM' -ToneOutput ($goodSource.Replace('frames=96000','frames=1'))
 Assert-Rejected -Reason 'no independent channels' -ToneOutput ($goodSource.Replace('channels=2','channels=0'))
+foreach ($badChannels in @(3, 4, 5, 7)) {
+  Assert-Rejected -Reason "unrecognized surround channel count $badChannels" -ToneOutput ($goodSource.Replace('channels=2',"channels=$badChannels"))
+}
+foreach ($goodChannels in @(6, 8)) {
+  $valid = Test-LouderMePositiveSourceRoute -ExitCode 0 -StdOut $goodOut -StdErr '' -SourceExitCode 0 -SourceStdOut ($goodSource.Replace('channels=2',"channels=$goodChannels")) -SourceStdErr ''
+  if ($valid.independent_source_channels -ne $goodChannels) {
+    throw "Valid 5.1/7.1 independent source was rejected: $goodChannels"
+  }
+}
 Assert-Rejected -Reason 'no real bridge PASS' -BridgeOutput ($goodOut.Replace('PASS: LAB independent source','INFO: LAB independent source'))
 Assert-Rejected -Reason 'duplicate pasted PASS' -BridgeOutput ($goodOut + ($goodOut -split 'PASS: LAB independent source')[1].Insert(0,'PASS: LAB independent source'))
 Assert-Rejected -Reason 'inflated success claim' -BridgeOutput ($goodOut.Replace('NOT general third-party/default-app audio proof or acoustic loudness.','General third-party audio proven.'))

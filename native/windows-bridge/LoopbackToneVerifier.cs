@@ -20,8 +20,10 @@ internal sealed class LoopbackToneVerifier
     private double _projectionSin;
     private double _projectionCos;
     private double _peak;
+    private readonly double[]? _laneSine;
+    private readonly double[]? _laneCosine;
 
-    public LoopbackToneVerifier(WaveFormat mix)
+    public LoopbackToneVerifier(WaveFormat mix, bool requireEverySpeakerLane = false)
     {
         ArgumentNullException.ThrowIfNull(mix);
         if (mix.BitsPerSample != 32 ||
@@ -36,6 +38,11 @@ internal sealed class LoopbackToneVerifier
         _sampleRate = mix.SampleRate;
         _channels = mix.Channels;
         _radiansPerFrame = 2 * Math.PI * FrequencyHz / mix.SampleRate;
+        if (requireEverySpeakerLane)
+        {
+            _laneSine = new double[_channels];
+            _laneCosine = new double[_channels];
+        }
     }
 
     public void Add(ReadOnlySpan<byte> pcm)
@@ -45,6 +52,9 @@ internal sealed class LoopbackToneVerifier
             throw new InvalidDataException("Misaligned float32 loopback packet.");
         for (int index = 0; index < pcm.Length; index += blockSize)
         {
+            double angle = (_frames % _sampleRate) * _radiansPerFrame;
+            double sine = Math.Sin(angle);
+            double cosine = Math.Cos(angle);
             double mono = 0;
             for (int channel = 0; channel < _channels; channel++)
             {
@@ -53,6 +63,11 @@ internal sealed class LoopbackToneVerifier
                 if (!float.IsFinite(value))
                     throw new InvalidDataException("Nonfinite PCM from virtual loopback.");
                 mono += value;
+                if (_laneSine is not null)
+                {
+                    _laneSine[channel] += value * sine;
+                    _laneCosine![channel] += value * cosine;
+                }
             }
 
             // Our lab stimulus is identical on all channels. Averaging allows
@@ -64,9 +79,8 @@ internal sealed class LoopbackToneVerifier
             // Maintain the sample index across WASAPI callback boundaries.
             // Both sine and cosine projections are necessary because the
             // loopback stream starts at an unknown phase relative to playback.
-            double angle = (_frames % _sampleRate) * _radiansPerFrame;
-            _projectionSin += mono * Math.Sin(angle);
-            _projectionCos += mono * Math.Cos(angle);
+            _projectionSin += mono * sine;
+            _projectionCos += mono * cosine;
             _frames++;
         }
     }
@@ -90,6 +104,20 @@ internal sealed class LoopbackToneVerifier
                     matchedAmplitude >= 0.007 &&
                     coherence >= 0.50 &&
                     _peak <= 0.15;
+        if (pass && _laneSine is not null)
+        {
+            // The LAB independent source emits the tone in EVERY lane.
+            // Average-only evidence used to hide a missing 5.1/7.1 speaker.
+            // Preallocated projections impose no callback allocation.
+            double threshold = Math.Max(0.004, 0.40 * matchedAmplitude);
+            for (int channel = 0; channel < _channels; channel++)
+            {
+                double amplitude = 2.0 / _frames * Math.Sqrt(
+                    _laneSine[channel] * _laneSine[channel] +
+                    _laneCosine![channel] * _laneCosine[channel]);
+                if (amplitude < threshold) { pass = false; break; }
+            }
+        }
         return new ToneEvidence(_frames, rms, _peak, matchedAmplitude,
             coherence, pass);
     }
@@ -122,6 +150,26 @@ internal sealed class LoopbackToneVerifier
                 throw new InvalidOperationException("Insufficient frames were accepted.");
         }
 
+        // Real source always produces a 440Hz tone in every speaker lane.
+        // Verify each isolated 5.1 back/side and 7.1 lane can be detected.
+        foreach (var layout in new[] {
+            new WaveFormatExtensible(48000, 32, 6, true, 32, 0x3f),
+            new WaveFormatExtensible(48000, 32, 6, true, 32, 0x60f),
+            new WaveFormatExtensible(48000, 32, 8, true, 32, 0x63f)
+        })
+        {
+            var validSurround = Generate(layout, 440, 0.025f, true,
+                requireEveryLane: true);
+            if (!validSurround.Passed)
+                throw new InvalidOperationException(
+                    "Valid multichannel source was rejected: " + validSurround);
+            for (int silent = 0; silent < layout.Channels; silent++)
+                if (Generate(layout, 440, 0.025f, true,
+                    requireEveryLane: true, mutedLane: silent).Passed)
+                    throw new InvalidOperationException(
+                        "False virtual PCM proof: silent speaker channel " + silent);
+        }
+
         var f = WaveFormat.CreateIeeeFloatWaveFormat(48000, 2);
         var verifier = new LoopbackToneVerifier(f);
         try
@@ -141,13 +189,14 @@ internal sealed class LoopbackToneVerifier
         catch (InvalidDataException) { }
         Console.WriteLine(
             "PASS: phase-insensitive 440 Hz WASAPI loopback identity check, " +
-            "44.1/48/96 kHz streaming chunks, reject 880 Hz/DC/silence/short/NaN.");
+            "44.1/48/96 kHz chunks, reject 880 Hz/DC/silence/short/NaN and missing 5.1/7.1 speaker channels.");
     }
 
     private static ToneEvidence Generate(WaveFormat mix, int toneHz, float amplitude,
-        bool addSilence, int? framesLimit = null)
+        bool addSilence, int? framesLimit = null,
+        bool requireEveryLane = false, int? mutedLane = null)
     {
-        var verifier = new LoopbackToneVerifier(mix);
+        var verifier = new LoopbackToneVerifier(mix, requireEveryLane);
         int limit = framesLimit ?? (addSilence ? mix.SampleRate * 3 : mix.SampleRate);
         int written = 0;
         int tick = 0;
@@ -170,7 +219,7 @@ internal sealed class LoopbackToneVerifier
                 for (int ch = 0; ch < mix.Channels; ch++)
                     BinaryPrimitives.WriteSingleLittleEndian(
                         packet.AsSpan(frame * mix.BlockAlign + ch * sizeof(float)),
-                        value);
+                        mutedLane == ch ? 0f : value);
             }
             verifier.Add(packet);
             written += frames;

@@ -56,7 +56,7 @@ function Test-LouderMePositiveSourceRoute {
   if (-not [double]::IsFinite($sourceFrames) -or
       -not [double]::IsFinite($sourceChannels) -or
       $sourceFrames -lt 88200 -or $sourceFrames % 1 -ne 0 -or
-      $sourceChannels -lt 1 -or $sourceChannels -gt 8 -or
+      $sourceChannels -notin @(1, 2, 6, 8) -or
       $sourceChannels % 1 -ne 0) {
     throw 'Separate 440Hz source did not report plausible real PCM output.'
   }

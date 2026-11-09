@@ -48,6 +48,17 @@ object EqualizerPresets {
 
     fun sanitize(gainsDb: List<Float>): List<Float> =
         frequenciesHz.indices.map { index ->
-            gainsDb.getOrElse(index) { 0f }.coerceIn(-10f, 10f)
+            val gain = gainsDb.getOrElse(index) { 0f }
+            if (gain.isFinite()) gain.coerceIn(-10f, 10f) else 0f
         }
+
+    /**
+     * Preserve each band's position even if a persisted token is malformed.
+     * Dropping invalid tokens shifts all subsequent frequency assignments.
+     */
+    fun fromStoredString(raw: String?, preset: EqualizerPreset): List<Float> =
+        sanitize(
+            raw?.split(",")?.map { token -> token.trim().toFloatOrNull() ?: 0f }
+                ?: gainsFor(preset)
+        )
 }

@@ -5,9 +5,10 @@
 
 class LouderMeLabPcmRelay final
 {
-    // Multiple of every permitted mono/stereo PCM frame size: 2, 3, 4, 6, 8.
-    // A 65536-byte ring cuts 24-bit stereo frames after wraparound.
-    static const ULONG Capacity = 65520; // bounded, nonpaged and frame-aligned
+    // LCM(2,3,4,6,8,12,16,18,24,32) = 288 bytes. All mono/stereo
+    // and 5.1/7.1 16/24/32-bit frames wrap ONLY on whole-frame boundaries.
+    // Nonpaged FIFO remains bounded; no per-callback allocation.
+    static const ULONG Capacity = 65376; // 227 * 288 bytes
     KSPIN_LOCK m_Lock;
     BYTE* m_Buffer;
     ULONG m_Read;
@@ -18,13 +19,17 @@ class LouderMeLabPcmRelay final
     USHORT m_BlockAlign;
     USHORT m_SampleKind;
     USHORT m_ValidBits;
+    ULONG m_ChannelMask;
     ULONG m_Rate;
     BOOLEAN m_HaveFormat;
 
     static BOOLEAN Supported(_In_opt_ const WAVEFORMATEXTENSIBLE* format)
     {
-        if (format == NULL || format->Format.nChannels < 1 ||
-            format->Format.nChannels > 2 ||
+        if (format == NULL ||
+            (format->Format.nChannels != 1 &&
+             format->Format.nChannels != 2 &&
+             format->Format.nChannels != 6 &&
+             format->Format.nChannels != 8) ||
             format->Format.nSamplesPerSec < 8000 ||
             format->Format.nSamplesPerSec > 192000 ||
             format->Format.nBlockAlign == 0 ||
@@ -48,11 +53,21 @@ class LouderMeLabPcmRelay final
              (extended && IsEqualGUIDAligned(
                  format->SubFormat, KSDATAFORMAT_SUBTYPE_IEEE_FLOAT))) &&
             format->Format.wBitsPerSample == 32;
-        // Mono defaults to front-center (0x4); stereo is front left+right
-        // (0x3). An alternate channel map cannot be silently reinterpreted.
-        if (extended && format->dwChannelMask != 0 &&
-            format->dwChannelMask !=
-                (format->Format.nChannels == 1 ? 0x4UL : 0x3UL))
+        // Mono/stereo wrappers may omit a mask; 5.1/7.1 MUST name
+        // exact speaker positions so virtual->physical downmix is safe.
+        // Do not accept arbitrary 6/8-channel layouts or maskless samples.
+        const ULONG channels = format->Format.nChannels;
+        if (channels > 2)
+        {
+            if (!extended ||
+                (channels == 6 &&
+                 format->dwChannelMask != 0x3FUL &&
+                 format->dwChannelMask != 0x60FUL) ||
+                (channels == 8 && format->dwChannelMask != 0x63FUL))
+                return FALSE;
+        }
+        else if (extended && format->dwChannelMask != 0 &&
+                 format->dwChannelMask != (channels == 1 ? 0x4UL : 0x3UL))
             return FALSE;
         // A 24-valid-bit sample in a 32-bit container is supported only
         // when BOTH formats explicitly agree on that nonstandard precision.
@@ -91,6 +106,16 @@ class LouderMeLabPcmRelay final
         return format->Format.wBitsPerSample;
     }
 
+    // A legacy mono/stereo wrapper and an equivalent extensible
+    // wrapper carry the same canonical speaker map. Surround requires
+    // a fully explicit validated mask and may NOT be reinterpreted.
+    static ULONG CanonicalMask(_In_ const WAVEFORMATEXTENSIBLE* format)
+    {
+        if (format->Format.nChannels == 1) return 0x4UL;
+        if (format->Format.nChannels == 2) return 0x3UL;
+        return format->dwChannelMask; // Supported() demands EXTENSIBLE
+    }
+
     BOOLEAN SameFormat(_In_ const WAVEFORMATEXTENSIBLE* format) const
     {
         return m_HaveFormat && m_Channels == format->Format.nChannels &&
@@ -98,7 +123,8 @@ class LouderMeLabPcmRelay final
                m_BlockAlign == format->Format.nBlockAlign &&
                m_Rate == format->Format.nSamplesPerSec &&
                m_SampleKind == SampleKind(format) &&
-               m_ValidBits == ValidBits(format);
+               m_ValidBits == ValidBits(format) &&
+               m_ChannelMask == CanonicalMask(format);
     }
 
     VOID Remember(_In_ const WAVEFORMATEXTENSIBLE* format)
@@ -109,6 +135,7 @@ class LouderMeLabPcmRelay final
         m_Rate = format->Format.nSamplesPerSec;
         m_SampleKind = SampleKind(format);
         m_ValidBits = ValidBits(format);
+        m_ChannelMask = CanonicalMask(format);
         m_HaveFormat = TRUE;
     }
 
@@ -116,7 +143,8 @@ public:
     LouderMeLabPcmRelay() :
         m_Buffer(NULL), m_Read(0), m_Write(0), m_Count(0),
         m_Channels(0), m_Bits(0), m_BlockAlign(0),
-        m_SampleKind(0), m_ValidBits(0), m_Rate(0), m_HaveFormat(FALSE)
+        m_SampleKind(0), m_ValidBits(0), m_ChannelMask(0),
+        m_Rate(0), m_HaveFormat(FALSE)
     {
         KeInitializeSpinLock(&m_Lock);
     }

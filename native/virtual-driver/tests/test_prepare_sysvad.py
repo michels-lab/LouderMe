@@ -100,7 +100,11 @@ SYSVAD.TopologySpeaker.szPname="SYSVAD Topology Speaker"
     def test_relay_uses_bounded_per_miniport_nonpaged_fifo(self):
         header = (HERE.parent / "LouderMeLabPcmRelay.h").read_text()
         self.assertIn("KSPIN_LOCK m_Lock", header)
-        self.assertIn("Capacity = 65520", header)
+        self.assertIn("Capacity = 65376", header)
+        self.assertIn("m_ChannelMask == CanonicalMask(format)", header)
+        self.assertIn("m_ChannelMask = CanonicalMask(format)", header)
+        self.assertIn("channels == 6", header)
+        self.assertIn("channels == 8", header)
         self.assertIn("format->Format.cbSize >= 22", header)
         self.assertNotIn("sizeof(WAVEFORMATEXTENSIBLE) -", header)
         self.assertIn("KSDATAFORMAT_SUBTYPE_IEEE_FLOAT", header)

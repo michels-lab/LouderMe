@@ -1,3 +1,10 @@
+## 2026-11-08 — Granada: kernel SysVAD LAB 5.1/7.1 sin tramas cortadas (candidato)
+
+- **Bloqueo del driver:** el FIFO de captura WaveRT admitía solo mono/estéreo y 65520 bytes, tamaño NO divisible por tramas 7.1 de 32 bits. Nuevo FIFO de 65376 bytes (múltiplo de 288) y transporte explícito 5.1 trasero/lateral + 7.1, con máscara integrada en identidad del stream para nunca cruzar canales ante cambio de formato.
+- **Ejecución real en pruebas:** encabezado kernel host con 5.1/7.1, PCM16/24/float32, circularidad con sobreescritura, expulsión de formatos ambiguos, silencio sin fuente y clock 44.1k a 192k en tramas de hasta 32 bytes. Mantiene pruebas concurrentes y DRM. Auditoría: docs/audits/GRANADA_2026-11-08_WAVERT_SURROUND_FRAMES.md. Driver sigue sin instalar/firmar; falta verificar si pin SysVAD anuncia multicanal en VM (#48). Sin release.
+
+---
+
 ## 2026-11-08 — Granada: invalidar prueba audible al cambiar salida Windows (candidato)
 
 - **Fallo funcional:** el resultado 'Yes' del test de -18 dB seguía mostrado después de cambiar de bocinas a Bluetooth/HDMI, aunque nunca se había probado ese endpoint. Ahora un cambio o desconexión de salida invalida la respuesta y avisa que se debe revisar Equalizer APO Configurator.

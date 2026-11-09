@@ -86,7 +86,8 @@ static WAVEFORMATEXTENSIBLE Fmt(ULONG rate = 48000, USHORT channels = 2,
     f.SubFormat = floatSubtype ?
         KSDATAFORMAT_SUBTYPE_IEEE_FLOAT : KSDATAFORMAT_SUBTYPE_PCM;
     f.Samples.wValidBitsPerSample = bits;
-    f.dwChannelMask = channels == 2 ? 0x3UL : 0x4UL;
+    f.dwChannelMask = channels == 1 ? 0x4UL : channels == 2 ? 0x3UL :
+        channels == 6 ? 0x3FUL : channels == 8 ? 0x63FUL : 0;
     return f;
 }
 static void Zeros(const std::vector<BYTE>& v) {
@@ -131,15 +132,15 @@ int main() {
     relay.Consume(quiet.data(), (ULONG)quiet.size(), &stereo);
     assert(quiet == data);
 
-    // A full circular-buffer overwrite keeps the newest 65520 bytes.
+    // A full circular-buffer overwrite keeps the newest 65376 bytes.
     relay.Reset();
     std::vector<BYTE> longSource(66536);
     for (std::size_t i = 0; i < longSource.size(); ++i)
         longSource[i] = BYTE(i % 251);
     relay.Publish(longSource.data(), (ULONG)longSource.size(), &stereo);
-    std::vector<BYTE> complete(65520);
+    std::vector<BYTE> complete(65376);
     relay.Consume(complete.data(), (ULONG)complete.size(), &stereo);
-    assert(std::equal(complete.begin(), complete.end(), longSource.end() - 65520));
+    assert(std::equal(complete.begin(), complete.end(), longSource.end() - 65376));
     relay.Consume(quiet.data(), (ULONG)quiet.size(), &stereo);
     Zeros(quiet);
 
@@ -176,9 +177,76 @@ int main() {
     for (std::size_t i = 0; i < source24.size(); ++i)
         source24[i] = BYTE((i * 7) % 253);
     relay.Publish(source24.data(), (ULONG)source24.size(), &pcm24);
-    std::vector<BYTE> result24(65520);
+    std::vector<BYTE> result24(65376);
     relay.Consume(result24.data(), (ULONG)result24.size(), &pcm24);
-    assert(std::equal(result24.begin(), result24.end(), source24.end() - 65520));
+    assert(std::equal(result24.begin(), result24.end(), source24.end() - 65376));
+
+    // Virtual kernel render-to-loopback must transport actual 5.1/7.1
+    // frames byte-for-byte without cutting interleaved channels at wrap.
+    // Both 5.1 speaker orders and 7.1 are validated; 5.1 masks must not
+    // be reinterpreted as each other across a capture epoch.
+    for (auto layout : {0x3FUL, 0x60FUL, 0x63FUL})
+    {
+        USHORT channels = layout == 0x63FUL ? 8 : 6;
+        for (USHORT bits : {USHORT(16), USHORT(24), USHORT(32)})
+        {
+            auto surround = Fmt(48000, channels, bits,
+                WAVE_FORMAT_EXTENSIBLE, bits == 32);
+            surround.dwChannelMask = layout;
+            ULONG frameBytes = surround.Format.nBlockAlign;
+            std::vector<BYTE> pcm(65376 + frameBytes * 6);
+            for (std::size_t frame = 0; frame < pcm.size() / frameBytes; frame++)
+                for (ULONG b = 0; b < frameBytes; b++)
+                    pcm[frame * frameBytes + b] =
+                        BYTE((frame % 251) + 1);
+            relay.Reset();
+            relay.Publish(pcm.data(), (ULONG)pcm.size(), &surround);
+            std::vector<BYTE> got(65376);
+            relay.Consume(got.data(), (ULONG)got.size(), &surround);
+            assert(std::equal(got.begin(), got.end(), pcm.end() - 65376));
+            for (std::size_t offset = 0; offset < got.size(); offset += frameBytes)
+                for (ULONG b = 1; b < frameBytes; ++b)
+                    assert(got[offset + b] == got[offset]);
+            std::vector<BYTE> silence(frameBytes * 4, 0xCC);
+            relay.Consume(silence.data(), (ULONG)silence.size(), &surround);
+            Zeros(silence);
+
+            if (channels == 6)
+            {
+                auto wrongSpeakers = surround;
+                wrongSpeakers.dwChannelMask =
+                    layout == 0x3FUL ? 0x60FUL : 0x3FUL;
+                relay.Publish(pcm.data(), frameBytes * 4, &surround);
+                relay.Consume(silence.data(), (ULONG)silence.size(),
+                    &wrongSpeakers);
+                Zeros(silence);  // no left/right speaker re-interpretation
+                relay.Consume(silence.data(), (ULONG)silence.size(), &surround);
+                Zeros(silence);  // stale format epoch was invalidated
+            }
+        }
+    }
+
+    // Invalid multichannel legacy wrappers, missing masks and unexpected
+    // positions never expose the FIFO, even if frame sizes are valid.
+    for (USHORT channels : {USHORT(6), USHORT(8)})
+    {
+        auto invalid = Fmt(48000, channels, 24, WAVE_FORMAT_PCM);
+        relay.Reset();
+        std::vector<BYTE> packet(invalid.Format.nBlockAlign * 4, 0x55);
+        relay.Publish(packet.data(), (ULONG)packet.size(), &invalid);
+        relay.Consume(packet.data(), (ULONG)packet.size(), &invalid);
+        Zeros(packet);
+        invalid.Format.wFormatTag = WAVE_FORMAT_EXTENSIBLE;
+        invalid.Format.cbSize = 22;
+        invalid.dwChannelMask = 0;
+        relay.Publish(packet.data(), (ULONG)packet.size(), &invalid);
+        relay.Consume(packet.data(), (ULONG)packet.size(), &invalid);
+        Zeros(packet);
+        invalid.dwChannelMask = channels == 6 ? 0x63FUL : 0x3FUL;
+        relay.Publish(packet.data(), (ULONG)packet.size(), &invalid);
+        relay.Consume(packet.data(), (ULONG)packet.size(), &invalid);
+        Zeros(packet);
+    }
 
     // Host and extensible IEEE-float 32-bit samples are supported without
     // touching bytes; unknown GUID and float16 are never considered PCM.

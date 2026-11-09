@@ -298,7 +298,7 @@ def patch_speaker_wavtable(text: str) -> str:
                   "SpeakerAudioEngineSupportedDeviceFormats"):
         pattern = (
             rf"(KSDATAFORMAT_WAVEFORMATEXTENSIBLE[ \t]+{table}"
-            rf"\[\][ \t]*=[ \t]*\{{)(.*?)(\n\}};)"
+            rf"\[\]\s*=\s*\{{)(.*?)(\n\}};)"
         )
         matches = list(re.finditer(pattern, text, flags=re.S))
         if len(matches) != 1:

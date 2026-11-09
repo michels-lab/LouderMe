@@ -18,6 +18,7 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 . (Join-Path $PSScriptRoot 'LabEvidenceDirectory.ps1')
 . (Join-Path $PSScriptRoot 'LabProcessGuard.ps1')
+. (Join-Path $PSScriptRoot 'VirtualSourceCompletionCheck.ps1')
 $vm = Get-CimInstance -ClassName Win32_ComputerSystem
 if ("$($vm.Manufacturer) $($vm.Model)" -notmatch '(?i)Virtual Machine|VMware|VirtualBox|QEMU|KVM|Xen|Parallels') {
   throw 'Isolated virtual PCM check requires an actual disposable Windows VM.'
@@ -100,12 +101,7 @@ try {
     '--external-app-source', '--confirm-experimental'
   )
   $resultSource = Receive-LouderMeLabChildOutput -Child $source -TimeoutMs 6000
-  if ($resultSource.ExitCode -ne 0 -or
-      @($resultSource.StdOut -split '\r?\n' | Where-Object {
-        $_ -match '^EXTERNAL_APP_TONE_FINISHED 440Hz frames=[0-9]+ channels=[12];'
-      }).Count -ne 1) {
-    throw 'Separate app failed to complete its exact 440 Hz PCM into the selected virtual endpoint.'
-  }
+  $sourceEvidence = Test-LouderMeVirtualSourceCompletion -ExitCode $resultSource.ExitCode -StdOut $resultSource.StdOut -StdErr $resultSource.StdErr
   $resultBridge = Receive-LouderMeLabChildOutput -Child $bridge -TimeoutMs 8000
   $stdout = ($readyLines.ToArray() -join [Environment]::NewLine) +
     [Environment]::NewLine + $resultBridge.StdOut
@@ -151,6 +147,8 @@ try {
         [Text.Encoding]::UTF8.GetBytes($VirtualEndpointId))).ToLowerInvariant()
     bridge_binary_sha256 = (Get-FileHash -LiteralPath $BridgeDll -Algorithm SHA256).Hash.ToLowerInvariant()
     source_binary_sha256 = (Get-FileHash -LiteralPath $IndependentToneDll -Algorithm SHA256).Hash.ToLowerInvariant()
+    independent_source_frames = $sourceEvidence.frames
+    independent_source_channels = $sourceEvidence.channels
     virtual_monitor_frames = $frames
     virtual_matched440_amplitude = $amplitude
     virtual_coherence = $coherence

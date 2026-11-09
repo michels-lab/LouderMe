@@ -1,3 +1,7 @@
+## Granada 2026-11-09 — full-channel virtual loopback evidence
+
+The LAB virtual-only WASAPI proof now requires the independent 440Hz tone in **all** lanes of declared 5.1 back/side and 7.1 mixes (standard masks only). The previous verifier could average 7 working lanes and still claim 8-channel virtual transport; strict per-lane sine/cosine projections are preallocated once outside the capture callback. Real virtual-only probing uses this stricter mode, while physical WASAPI monitoring retains its separate downmix-compatible behavior. Existing no-source controls remain mandatory. Audit: ../../docs/audits/GRANADA_2026-11-09_VIRTUAL_SURROUND_SOURCE_PROOF.md.
+
 ## Granada 2026-11-09 — live endpoint mix-format epoch
 
 Virtual/physical WASAPI routes now reject in-place sample-rate, channel-count, sample depth, subformat or speaker-position changes even when the selected endpoint ID remains Active. The actual console loop re-queries both endpoint formats once per second, fails with recoverable exit 75 and cleans up capture/render instead of replaying stale decoded bytes. Auto-reconnect still selects only the exact original IDs and redoes full preflight. New `--check-route-preflight` tests cover 5.1 rear/side→7.1, stereo masks, precision and rate changes, no devices required. Audit: ../../docs/audits/GRANADA_2026-11-09_LIVE_WASAPI_FORMAT_EPOCH.md. Not physical sound proof.

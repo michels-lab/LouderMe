@@ -799,7 +799,11 @@ internal static class Program
         byte[]? audio = externalSource
             ? null : VirtualLoopbackProbePcm.CreateInternalTone(format);
 
-        var verifier = new LoopbackToneVerifier(virtualPcm.EvidenceFormat);
+        // In virtual-only mode, a 440Hz average is not sufficient:
+        // every negotiated 5.1/7.1 speaker lane must contain the tone.
+        // Physical monitoring intentionally keeps OS-mix-compatible mode.
+        var verifier = new LoopbackToneVerifier(
+            virtualPcm.EvidenceFormat, requireEverySpeakerLane: true);
         var sync = new object();
         Exception? callbackError = null;
         Exception? captureError = null;

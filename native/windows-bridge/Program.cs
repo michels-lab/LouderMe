@@ -69,6 +69,7 @@ internal static class Program
             if (args.Contains("--check-virtual-formats"))
             {
                 VirtualLoopbackProbePcm.RunSelfTests();
+                VirtualSpeakerMapVerifier.RunSelfTests();
                 return 0;
             }
             if (args.Contains("--check-route-tone"))
@@ -245,6 +246,9 @@ internal static class Program
                 return DirectPhysicalDspProbe.Run(matching[0], directBoost, directEq);
             }
 
+            if (args.Contains("--probe-virtual-speaker-map"))
+                return ProbeVirtualEndpoint(devices, args,
+                    externalSource: true, speakerMap: true);
             if (args.Contains("--probe-virtual-external"))
                 return ProbeVirtualEndpoint(devices, args, externalSource: true);
             if (args.Contains("--probe-virtual"))
@@ -766,7 +770,8 @@ internal static class Program
     }
 
     private static int ProbeVirtualEndpoint(
-        IEnumerable<MMDevice> devices, string[] args, bool externalSource)
+        IEnumerable<MMDevice> devices, string[] args, bool externalSource,
+        bool speakerMap = false)
     {
         // Virtual ONLY: in external mode this process MUST NOT generate PCM,
         // open a render client or have any access to the physical speaker.
@@ -774,10 +779,13 @@ internal static class Program
         if (!args.Contains("--confirm-experimental"))
             throw new ArgumentException("Probe requires explicit --confirm-experimental.");
         if (externalSource &&
-            (args.Length != 4 || args[0] != "--probe-virtual-external" ||
+            (args.Length != 4 ||
+             args[0] != (speakerMap
+                 ? "--probe-virtual-speaker-map" : "--probe-virtual-external") ||
              args[1] != "--source-id" || args[3] != "--confirm-experimental"))
             throw new ArgumentException(
-                "Usage: --probe-virtual-external --source-id EXACT_VIRTUAL_ID --confirm-experimental.");
+                "Usage: --probe-virtual-external or --probe-virtual-speaker-map " +
+                "--source-id EXACT_VIRTUAL_ID --confirm-experimental.");
         var sourceId = GetArg(args, "--source-id")
             ?? throw new ArgumentException("Probe requires --source-id.");
         var endpoints = devices.Where(d => d.ID == sourceId).Take(2).ToArray();
@@ -802,8 +810,12 @@ internal static class Program
         // In virtual-only mode, a 440Hz average is not sufficient:
         // every negotiated 5.1/7.1 speaker lane must contain the tone.
         // Physical monitoring intentionally keeps OS-mix-compatible mode.
-        var verifier = new LoopbackToneVerifier(
+        var verifier = speakerMap ? null : new LoopbackToneVerifier(
             virtualPcm.EvidenceFormat, requireEverySpeakerLane: true);
+        // Maps 440+53*lane on an independently synthesized source.
+        // The bridge itself never generates per-speaker pilot tones.
+        var mapVerifier = speakerMap
+            ? new VirtualSpeakerMapVerifier(virtualPcm.EvidenceFormat) : null;
         var sync = new object();
         Exception? callbackError = null;
         Exception? captureError = null;
@@ -821,7 +833,12 @@ internal static class Program
                 try
                 {
                     if (e.BytesRecorded > 0)
-                        virtualPcm.AddPacket(verifier, e.Buffer, e.BytesRecorded);
+                    {
+                        if (mapVerifier is not null)
+                            virtualPcm.AddPacket(mapVerifier, e.Buffer, e.BytesRecorded);
+                        else
+                            virtualPcm.AddPacket(verifier!, e.Buffer, e.BytesRecorded);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -866,8 +883,28 @@ internal static class Program
         if (callbackError is not null)
             throw new IOException("Invalid virtual endpoint PCM packet.", callbackError);
 
+        if (mapVerifier is not null)
+        {
+            VirtualSpeakerMapVerifier.SpeakerMapEvidence positional;
+            lock (sync) positional = mapVerifier.Evaluate();
+            Console.WriteLine(FormattableString.Invariant(
+                $"VIRTUAL_SPEAKER_MAP_PROOF frames={positional.Frames} " +
+                $"channels={positional.Channels} " +
+                $"minOwn={positional.MinOwnAmplitude:F6} " +
+                $"maxLeakage={positional.MaxForeignAmplitude:F6}"));
+            if (!positional.Passed)
+            {
+                Console.Error.WriteLine(
+                    "FAIL: independent virtual speaker position signature missing, swapped or leaking.");
+                return 3;
+            }
+            Console.WriteLine(
+                "PASS: independent Windows process -> LouderMe virtual WASAPI positional speaker map. No physical output or DSP was opened.");
+            return 0;
+        }
+
         LoopbackToneVerifier.ToneEvidence evidence;
-        lock (sync) evidence = verifier.Evaluate();
+        lock (sync) evidence = verifier!.Evaluate();
         Console.WriteLine(FormattableString.Invariant(
             $"Virtual PCM proof: frames={evidence.Frames} RMS={evidence.Rms:F5} peak={evidence.Peak:F5} matched440={evidence.Matched440Amplitude:F5} coherence={evidence.Coherence:F3}"));
         if (externalSource)

@@ -1,3 +1,10 @@
+## 2026-11-08 — Granada: invalidar prueba audible al cambiar salida Windows (candidato)
+
+- **Fallo funcional:** el resultado 'Yes' del test de -18 dB seguía mostrado después de cambiar de bocinas a Bluetooth/HDMI, aunque nunca se había probado ese endpoint. Ahora un cambio o desconexión de salida invalida la respuesta y avisa que se debe revisar Equalizer APO Configurator.
+- **Implementación:** el test guarda identidad de salida + revisión antes de empezar y revalida ambas después de la respuesta; también detecta A→B→A visto por la UI. Mejor manejo del dispositivo anterior si falla la búsqueda del nuevo.
+- **CI:** casos deterministas del contrato en --check-apo-contract, existente en build y release Windows. Auditoría: docs/audits/GRANADA_2026-11-08_OUTPUT_CHANGE_EVIDENCE.md. CI exact-head pendiente; no release ni prueba física #48.
+
+---
 ## 2026-11-08 — Granada: preferencias Windows Boost/EQ resistentes a cortes (candidato)
 
 - **Problema:** File.WriteAllText truncaba directamente desktop-settings.json, y un cierre durante guardado podía perder ajustes de siete bandas y Boost. Se implementa stage .tmp, flush, rename atómico, normalización finita, preservación del archivo anterior ante error y lectura no destructiva del archivo legado corrupto.

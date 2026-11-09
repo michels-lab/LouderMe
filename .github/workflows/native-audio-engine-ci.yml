@@ -28,6 +28,8 @@ on:
       - 'native/virtual-driver/test_VirtualSourceSilenceCheck.ps1'
       - 'native/virtual-driver/VirtualSourceCompletionCheck.ps1'
       - 'native/virtual-driver/test_VirtualSourceCompletionCheck.ps1'
+      - 'native/virtual-driver/VirtualSpeakerMapCheck.ps1'
+      - 'native/virtual-driver/test_VirtualSpeakerMapCheck.ps1'
       - 'native/virtual-driver/run_disposable_lab.ps1'
       - '.github/workflows/native-audio-engine-ci.yml'
   pull_request:
@@ -58,6 +60,8 @@ on:
       - 'native/virtual-driver/test_VirtualSourceSilenceCheck.ps1'
       - 'native/virtual-driver/VirtualSourceCompletionCheck.ps1'
       - 'native/virtual-driver/test_VirtualSourceCompletionCheck.ps1'
+      - 'native/virtual-driver/VirtualSpeakerMapCheck.ps1'
+      - 'native/virtual-driver/test_VirtualSpeakerMapCheck.ps1'
       - 'native/virtual-driver/run_disposable_lab.ps1'
       - '.github/workflows/native-audio-engine-ci.yml'
 
@@ -152,6 +156,11 @@ jobs:
         run: |
           pwsh -NoProfile -File native/virtual-driver/test_VirtualSourceCompletionCheck.ps1
           if ($LASTEXITCODE -ne 0) { throw 'Virtual independent 5.1/7.1 PCM source completion regression.' }
+      - name: Verify separate-app per-speaker frequency map output and reject swapped Windows lanes
+        shell: pwsh
+        run: |
+          pwsh -NoProfile -File native/virtual-driver/test_VirtualSpeakerMapCheck.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'Virtual 5.1/7.1 speaker-position mapping evidence gate regressed.' }
       - name: Reject fake independent source/physical-loopback successes
         shell: pwsh
         run: |
@@ -239,6 +248,8 @@ jobs:
                               'native/virtual-driver/test_VirtualSourceSilenceCheck.ps1',
                               'native/virtual-driver/VirtualSourceCompletionCheck.ps1',
                               'native/virtual-driver/test_VirtualSourceCompletionCheck.ps1',
+                              'native/virtual-driver/VirtualSpeakerMapCheck.ps1',
+                              'native/virtual-driver/test_VirtualSpeakerMapCheck.ps1',
                               'native/virtual-driver/IndependentGainCheck.ps1',
                               'native/virtual-driver/test_IndependentGainCheck.ps1',
                               'native/virtual-driver/NoSourceControlCheck.ps1',

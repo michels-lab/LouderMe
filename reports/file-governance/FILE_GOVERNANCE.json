@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 296,
-  "classified_files_total": 292,
-  "docs_content_inspected": 98,
+  "tracked_files_total": 297,
+  "classified_files_total": 293,
+  "docs_content_inspected": 99,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,7 +12,7 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 90,
+    "document": 91,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
@@ -23,7 +23,7 @@
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "c783140a2970dd8c2390567c47fc0c4e71557d283892134599f6f8a96f5e0f7d",
+  "inventory_fingerprint": "1f5d5959c196abe8ac74baaf236e814f4f6ffc17cfd72795a8bdbd7d3ee10c4a",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -122,7 +122,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "f2204a3e1b9d45da0c4dc760b294e848d0e373f9"
+      "blob": "31389274562cbf4e22bd2ba2dc7d5dde1ebbbc07"
     },
     {
       "path": ".github/workflows/release-louderme-desktop.yml",
@@ -234,7 +234,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "64c9d4a74ebedab36cd3b52568c998eaa6dcc7be"
+      "blob": "527969fd70f0a41ebb01e14f2b78aabd9c6a1c9a"
     },
     {
       "path": "README.md",
@@ -1497,6 +1497,13 @@
       "blob": "7f67e71e052fe05160c03cdac47bcd432964f670"
     },
     {
+      "path": "docs/audits/GRANADA_2026-11-08_WAVERT_SURROUND_FRAMES.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "878a1f8fb73e58f52f4e2ff11fe1fbd2eb72f71c"
+    },
+    {
       "path": "docs/product-reviews/2026-10-21-native-windows-audio-evidence.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -1627,14 +1634,14 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "324df3dce7bdf4459d42719479ca81b8f3047115"
+      "blob": "ba4ccd6aa48b1d519f4ff36dc4faee8ce633aeae"
     },
     {
       "path": "native/virtual-driver/LouderMeLabPcmRelay.h",
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "1b0ebd1f7fd83653afae6cdfad18d4c6a1797645"
+      "blob": "1477cb5207812b135891dbb082ebfea9390f3ede"
     },
     {
       "path": "native/virtual-driver/NoSourceControlCheck.ps1",
@@ -1655,7 +1662,7 @@
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "3e3d9d1dfec71393f7c8353454d45de0d11eb595"
+      "blob": "56f78f88372f7135783fa445dc75ad0cdf8985f8"
     },
     {
       "path": "native/virtual-driver/VirtualSourceSilenceCheck.ps1",
@@ -1669,7 +1676,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "047888c921915c84a7bf8e71bbce1583f22bf266"
+      "blob": "6a2c0ca755dcc83b29b3de89614ad234c1754633"
     },
     {
       "path": "native/virtual-driver/probe_independent_app_route.ps1",
@@ -1767,21 +1774,21 @@
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "0e95e5b814ad371dd619477f5170ed65c5cf6ed4"
+      "blob": "d10a555ad4ca4afec5199b4779f2e1730ff0d388"
     },
     {
       "path": "native/virtual-driver/tests/test_pcm_relay_host.cpp",
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "9129cea05bfcc05cb268a81ae1792c92f565449a"
+      "blob": "b0e176e5f861e9107f3a04dcdb9a6254308abbf9"
     },
     {
       "path": "native/virtual-driver/tests/test_prepare_sysvad.py",
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "4015d4494b156f69dcdf4e6855f033ec4b4342de"
+      "blob": "34cade4acf809b87373828f860b7b3f75ec2ad93"
     },
     {
       "path": "native/virtual-driver/validate_lab_package.ps1",

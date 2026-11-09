@@ -33,7 +33,7 @@ public:
         const ULONGLONG wholeFrames = scaledFrames / 1000ULL;
         // Do not let a suspended VM or stalled timer force multi-second
         // work inside a kernel DPC. Cap a single callback to 250 ms of
-        // frames, safely below the ULONG byte limit even at 192 kHz stereo.
+        // frames, below the ULONG byte limit at 192 kHz 7.1/32-bit too.
         // Old audio is dropped rather than scheduling an unbounded catch-up.
         const ULONGLONG maxWholeFrames = framesPerSecond / 4ULL;
         if (wholeFrames > maxWholeFrames)

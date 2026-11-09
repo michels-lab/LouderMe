@@ -1,3 +1,10 @@
+## 2026-11-08 — Granada: formatos 5.1/7.1 anunciados realmente al render SysVAD (candidato)
+
+- El `speakerwavtable.h` de Microsoft fijado en el proyecto **solo ofrecía 2ch/16-bit**; aunque el relé transportara 8ch, Windows nunca habría negociado la fuente 5.1/7.1. `prepare_sysvad.py` ahora anuncia formatos WAVEFORMATEXTENSIBLE de 6/8ch, 44.1/48/96k, PCM16/24/24in32/float32, máscaras front/back/side exactas en host y engine; mantiene default stereo/indices y descarta formatos ilegales.
+- Pruebas de derivación: parche exacto contra código original, 72 formatos, invariantes de tabla y rechazo de drift upstream. Sin driver instalado ni autorización de Windows, y WDK INF/CAT bloqueado por instalación SDK en CI. Auditar: docs/audits/GRANADA_2026-11-08_WAVERT_SURROUND_FRAMES.md. Sin release.
+
+---
+
 ## 2026-11-08 — Granada: kernel SysVAD LAB 5.1/7.1 sin tramas cortadas (candidato)
 
 - **Bloqueo del driver:** el FIFO de captura WaveRT admitía solo mono/estéreo y 65520 bytes, tamaño NO divisible por tramas 7.1 de 32 bits. Nuevo FIFO de 65376 bytes (múltiplo de 288) y transporte explícito 5.1 trasero/lateral + 7.1, con máscara integrada en identidad del stream para nunca cruzar canales ante cambio de formato.

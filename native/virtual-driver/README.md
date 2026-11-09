@@ -1,3 +1,7 @@
+## Granada 2026-11-08 — actual SysVAD 5.1/7.1 format negotiation
+
+The pinned Microsoft speaker format table was stereo/16-bit only. The lab SysVAD derivation now adds explicit 5.1 back/side and 7.1 host+engine speaker formats (44.1/48/96 kHz PCM16/24/24in32/float32) while retaining stock stereo mode defaults and the offload pin. The loopback pin shares host formats. Source derivation guard + host tests prove declared formats but **not** actual signed/installed Windows negotiation. The driver package still requires WDK INF/CAT validation and a consented disposable-VM physical route proof.
+
 ## Granada 2026-11-08 — frame-aligned kernel relay for 5.1/7.1 Windows mixes
 
 LouderMe's pinned SysVAD LAB relay now accepts only explicit 5.1 back/side and 7.1 WAVEFORMATEXTENSIBLE masks alongside mono/stereo, preserving exact channel layouts across WaveRT capture/render. The bounded nonpaged ring uses 65376 bytes (multiple of 288), so 8-channel 32-bit and 6-channel packed PCM24 packets cannot be torn at wrap; host-compiled tests check real byte identity, mask switches and clock frame sizes. This does **not** prove that the SysVAD render pin advertises multichannel formats, nor that a signed driver is installed or audible. Audit: ../../docs/audits/GRANADA_2026-11-08_WAVERT_SURROUND_FRAMES.md.

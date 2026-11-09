@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 312,
-  "classified_files_total": 308,
-  "docs_content_inspected": 104,
+  "tracked_files_total": 317,
+  "classified_files_total": 313,
+  "docs_content_inspected": 105,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,12 +12,12 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 96,
+    "document": 97,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
-    "source": 104,
-    "test": 39,
+    "source": 106,
+    "test": 41,
     "text_metadata": 2,
     "workflow": 11
   },
@@ -25,8 +25,8 @@
     "POTENTIAL_UNLOGGED_CHANGES": 1
   },
   "finding_total": 1,
-  "inventory_fingerprint": "f71287d4e33d5a841a42879226fe61b64c1f52987ca44031c7438e3780790479",
-  "evidence_fingerprint": "66af31b0a8c07cc60bf0df8ccc966f5461580776c2ee9e390aaeb6900ada23fc",
+  "inventory_fingerprint": "4c4161efec5374ffa7e81058c77e67afb1b3d82ce45e124b3a1195aa3ecbc92f",
+  "evidence_fingerprint": "cb624c6c54f64f11cc89ddc813532ef67ba01283b3a3c728688c62713363f3cf",
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/chatgpt-task.yml",
@@ -327,7 +327,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "7a37b11372c727c6f0f2e246c966527c841a9113"
+      "blob": "c471a679823d0e6ec542b312feef19d3f04817ed"
     },
     {
       "path": "app/src/main/java/com/michelslab/louderme/audio/AudioBoostStateStore.kt",
@@ -386,6 +386,13 @@
       "blob": "f6080e25b138847a2b891ee074d9b2e088a0f163"
     },
     {
+      "path": "app/src/main/java/com/michelslab/louderme/audio/MediaRouteContinuity.kt",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "c217ee4d91aebac04c7a8655b892a843b0b1f42c"
+    },
+    {
       "path": "app/src/main/java/com/michelslab/louderme/audio/PeakProtectionPolicy.kt",
       "role": "source",
       "purpose": "code/test implementation",
@@ -404,21 +411,28 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "7e9392562985b9aa59a241ccd6f5fec7f7c9c9fa"
+      "blob": "c24eeb31d45826643521b15251abbdc91a624724"
     },
     {
       "path": "app/src/main/java/com/michelslab/louderme/audio/SessionZeroEqualizer.kt",
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "8d74eb3b383a0013e2fcd3bf1308b3f749325a74"
+      "blob": "a4623f85773aa40729b207a4bb5a0cf792fe58cf"
     },
     {
       "path": "app/src/main/java/com/michelslab/louderme/startup/BootCompletedReceiver.kt",
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "bc13e4df07b224ec3e1def9642936a82a9b00e30"
+      "blob": "a7f76241fc5c981ce2ec9fcad7d9614f949d5529"
+    },
+    {
+      "path": "app/src/main/java/com/michelslab/louderme/startup/BootResumePolicy.kt",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "bf0990cd77f0b21d9cc7d0cb8422f5b823c64dc4"
     },
     {
       "path": "app/src/main/java/com/michelslab/louderme/startup/StartupPreferences.kt",
@@ -659,6 +673,13 @@
       "blob": "6d67d9b8ab4989ab4d00836c52752f4c5c30218b"
     },
     {
+      "path": "app/src/test/java/com/michelslab/louderme/audio/MediaRouteContinuityTest.kt",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "d58c1ba82d12dfa74acb3290b19c7522fc354d79"
+    },
+    {
       "path": "app/src/test/java/com/michelslab/louderme/audio/PeakProtectionPolicyTest.kt",
       "role": "test",
       "purpose": "code/test implementation",
@@ -671,6 +692,13 @@
       "purpose": "code/test implementation",
       "certainty": "rule",
       "blob": "a7836a6c46946fe73ceaadb7e16e03350f213017"
+    },
+    {
+      "path": "app/src/test/java/com/michelslab/louderme/startup/BootResumePolicyTest.kt",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "5898ce1a525486a1b7f79c1e9e7f98512bdd5fc7"
     },
     {
       "path": "app/src/test/java/com/michelslab/louderme/ui/DeveloperNavigationEvidenceTest.kt",
@@ -1569,6 +1597,13 @@
       "blob": "b49044a38a7f0b335a41b912c6d7add1679fde21"
     },
     {
+      "path": "docs/audits/GRANADA_2026-11-09_ANDROID_ROUTE_RECOVERY.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "b1b620cc3fbaae944a38d13acad8e6765d07d683"
+    },
+    {
       "path": "docs/audits/GRANADA_2026-11-09_LIVE_WASAPI_FORMAT_EPOCH.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -2187,11 +2222,11 @@
   ],
   "findings": [
     {
-      "id": "0b865f8f7f55b125",
+      "id": "39478fd8e19860c9",
       "code": "POTENTIAL_UNLOGGED_CHANGES",
       "severity": "review",
       "path": "PROJECT_LOG.md",
-      "observation": "13 implementation/config paths changed since this log's last commit; examples: app/src/main/java/com/michelslab/louderme/audio/AudioBoostContract.kt, app/src/main/java/com/michelslab/louderme/audio/AudioBoostService.kt, app/src/main/java/com/michelslab/louderme/audio/AudioRouteLabel.kt, app/src/main/java/com/michelslab/louderme/audio/BoostQuickLevels.kt, app/src/main/java/com/michelslab/louderme/audio/EqualizerModels.kt, app/src/main/java/com/michelslab/louderme/audio/EqualizerStateStore.kt",
+      "observation": "18 implementation/config paths changed since this log's last commit; examples: app/src/main/java/com/michelslab/louderme/audio/AudioBoostContract.kt, app/src/main/java/com/michelslab/louderme/audio/AudioBoostService.kt, app/src/main/java/com/michelslab/louderme/audio/AudioRouteLabel.kt, app/src/main/java/com/michelslab/louderme/audio/BoostQuickLevels.kt, app/src/main/java/com/michelslab/louderme/audio/EqualizerModels.kt, app/src/main/java/com/michelslab/louderme/audio/EqualizerStateStore.kt",
       "recommendation": "Inspect diffs and reconcile only meaningful decisions/results in the canonical log",
       "state": "REVIEW_REQUIRED"
     }

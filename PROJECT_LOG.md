@@ -1,3 +1,10 @@
+## 2026-11-09 — Granada: Boost 100/150 no compara canales ni tasas diferentes (candidato)
+
+- **Corrección funcional de prueba:** antes la aceptación de Boost Windows podía comparar el nivel al 100% con fuente estéreo y al 150% con fuente 5.1/7.1. La diferencia de downmix podía parecer ganancia de DSP. El gate ahora exige idénticos canales y cantidad de tramas en ambos pases. Si se exige prueba virtual previa, los dos pases deben coincidir también con los canales/tramas registrados por la fuente virtual.
+- **Regresiones PowerShell** sin hardware: 2ch→6ch, cambio 48→44.1 kHz, canales 3/4/5/7, muestras virtuales falsas o ausentes, discrepancia virtual-física y casos positivos con 6 y 8 canales. Conserva controles de silencio, SHA-256 de ejecutables y endpoints, frames realmente consumidos y razón de ganancia 1.30–1.70. Documento: docs/audits/GRANADA_2026-11-09_SOURCE_FORMAT_AB_GAIN.md. Sin RC/release; #48 requiere pruebas en VM con bocinas.
+
+---
+
 ## 2026-11-09 — Granada: completar prueba de fuente independiente 5.1/7.1 y detectar canales perdidos (candidato)
 
 - **Fallo funcional corregido:** el laboratorio de Windows seguía rechazando una señal de una app separada con 6 u 8 canales, aunque ya se habían integrado generador, downmix y driver. Ahora acepta *solo* 1/2/6/8, verifica dos segundos de PCM, un único marcador real, cero errores del proceso y registra número de canales/tramas de la fuente en evidencia inmutable.

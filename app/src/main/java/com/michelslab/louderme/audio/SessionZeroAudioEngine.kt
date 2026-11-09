@@ -182,6 +182,17 @@ class SessionZeroAudioEngine : AudioEngine {
         )
     }
 
+    /**
+     * Check that this service still owns an enabled session-0 effect after
+     * Android changes the playback route. This does not certify audible gain.
+     * If an implementation throws during device teardown, treat it as lost.
+     */
+    fun hasActiveEffect(): Boolean =
+        runCatching {
+            loudnessEnhancer?.let { it.enabled && it.hasControl() } == true ||
+                dynamicsProcessing?.let { it.enabled && it.hasControl() } == true
+        }.getOrDefault(false)
+
     override fun disable(): AudioEngineResult {
         runCatching { loudnessEnhancer?.setEnabled(false) }
         runCatching { dynamicsProcessing?.setEnabled(false) }

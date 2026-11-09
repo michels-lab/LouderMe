@@ -1,3 +1,10 @@
+## 2026-11-09 — Granada: sesión WASAPI invalida formatos PCM renegociados (candidato)
+
+- **Ruta funcional Windows:** si Windows Sound/USB/HDMI/Bluetooth cambia el formato de un endpoint sin desactivarlo, el puente no debe seguir transformando PCM con el formato viejo. Captura una identidad de muestra rate/bitdepth/validbits/mask/subtype por fuente y salida, y verifica en la hebra de gestión cada segundo; cualquier cambio libera WASAPI y devuelve interrupción recuperable (75), no altera salida default.
+- **Pruebas** por CI de rate, stereo/mono, 5.1 back/side/7.1, PCM24-in-32 e IEEE float. No se afirma que sonido físico pasó; WDK #151 y firma/VM #48 siguen pendientes. Sin release. Auditoría: docs/audits/GRANADA_2026-11-09_LIVE_WASAPI_FORMAT_EPOCH.md.
+
+---
+
 ## 2026-11-08 — Granada: formatos 5.1/7.1 anunciados realmente al render SysVAD (candidato)
 
 - El `speakerwavtable.h` de Microsoft fijado en el proyecto **solo ofrecía 2ch/16-bit**; aunque el relé transportara 8ch, Windows nunca habría negociado la fuente 5.1/7.1. `prepare_sysvad.py` ahora anuncia formatos WAVEFORMATEXTENSIBLE de 6/8ch, 44.1/48/96k, PCM16/24/24in32/float32, máscaras front/back/side exactas en host y engine; mantiene default stereo/indices y descarta formatos ilegales.

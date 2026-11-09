@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 302,
-  "classified_files_total": 298,
-  "docs_content_inspected": 101,
+  "tracked_files_total": 303,
+  "classified_files_total": 299,
+  "docs_content_inspected": 102,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,7 +12,7 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 93,
+    "document": 94,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
@@ -23,7 +23,7 @@
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "e9f742ac926586c48a20cf3d2ae9c17c183c8287af3a5b01e40e808f444a1d0e",
+  "inventory_fingerprint": "dd72781e4e799c5cb17e236ae6ee14d9002298ecd587e8e2c32443e096b86e3c",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -234,7 +234,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "0a1f8c87fbb664b5e687073bc4bda6ec90fb4c7a"
+      "blob": "a7c598df71a52164c829fea1742891ddc9daed39"
     },
     {
       "path": "README.md",
@@ -1511,6 +1511,13 @@
       "blob": "2258c4d7f11c71a1584a60c8ed2e51b3675d16bb"
     },
     {
+      "path": "docs/audits/GRANADA_2026-11-09_SOURCE_FORMAT_AB_GAIN.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "222096c668f4d8ada9afcd8b9232d246a3f9e32b"
+    },
+    {
       "path": "docs/audits/GRANADA_2026-11-09_VIRTUAL_SURROUND_SOURCE_PROOF.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -1620,7 +1627,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "66cc7c0de3d2f34eb20e36409888cef511d1303d"
+      "blob": "bc12b3686425776d4c6ac3ac7866206e0def3d00"
     },
     {
       "path": "native/virtual-driver/LabEvidenceDirectory.ps1",
@@ -1676,7 +1683,7 @@
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "5adc81669c019b0a2e109b2501774b10dae0e09d"
+      "blob": "8c59f8e091dd61febfcefe5830bc4d2d5d22b1d6"
     },
     {
       "path": "native/virtual-driver/VirtualSourceCompletionCheck.ps1",
@@ -1732,7 +1739,7 @@
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "9535584666eebd6d97f6ac79b0f2d0ccfabf7cff"
+      "blob": "fa09970f44674cebbab77dd6bb7a1015c7ea3420"
     },
     {
       "path": "native/virtual-driver/test_LabEvidenceDirectory.ps1",

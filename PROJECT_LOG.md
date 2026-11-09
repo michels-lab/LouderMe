@@ -1,3 +1,9 @@
+## 2026-11-08 — Granada: fuente Windows independiente 5.1/7.1 (candidato)
+
+- **Prueba funcional ampliada:** el proceso separado de Windows ahora puede enviar PCM de 6/8 canales con máscaras 5.1 y 7.1 a endpoint virtual; el puente acepta ese audio real para su prueba con DSP nativo y bocinas estéreo, en vez de bloquearlo por la cantidad de canales.
+- **CI:** casos de PCM16/24/24en32/float32 en 44.1/48/96 kHz, exactitud de bytes por canal y rechazo de máscaras ambiguas; script de evidencia virtual reconoce 6/8 sin cambiar controles sin fuente. El driver instalado y firma real aún son #48. Auditoría: docs/audits/GRANADA_2026-11-08_INDEPENDENT_SURROUND_PROOF.md. Sin release.
+
+---
 ## 2026-11-08 — Granada: ruta Windows 5.1/7.1→estéreo real (candidato)
 
 - **Funcionalidad:** antes la ruta virtual→física rechazaba 6/8 canales cuando las bocinas o audífonos eran estéreo. Nuevo downmix de máscaras oficiales 5.1 traseras/laterales y 7.1, speaker-aware, preserva izquierda/derecha, mezcla central y envolventes a -3 dB, excluye LFE y normaliza para evitar clipping por suma. Se aplica después del DSP nativo y antes de WASAPI físico, con coeficientes preasignados sin alocación por callback.

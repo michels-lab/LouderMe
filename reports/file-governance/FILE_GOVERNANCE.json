@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 299,
-  "classified_files_total": 295,
-  "docs_content_inspected": 100,
+  "tracked_files_total": 302,
+  "classified_files_total": 298,
+  "docs_content_inspected": 101,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,18 +12,18 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 92,
+    "document": 93,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
-    "source": 100,
-    "test": 34,
+    "source": 101,
+    "test": 35,
     "text_metadata": 2,
     "workflow": 11
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "6aa88641c0762fa3b60c3bbd89433e71db867b5dfeb62b5585b81eccf38128ba",
+  "inventory_fingerprint": "e9f742ac926586c48a20cf3d2ae9c17c183c8287af3a5b01e40e808f444a1d0e",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -108,7 +108,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "cc8be97e25c4c4637b0aad41ad3f907e43522da7"
+      "blob": "312ce7bf4ea0680e940816e090ef535f07e69a90"
     },
     {
       "path": ".github/workflows/native-physical-lab-manual.yml",
@@ -234,7 +234,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "583069c6e2c2f9f1bc63d45a744a66f74e655640"
+      "blob": "0a1f8c87fbb664b5e687073bc4bda6ec90fb4c7a"
     },
     {
       "path": "README.md",
@@ -1511,6 +1511,13 @@
       "blob": "2258c4d7f11c71a1584a60c8ed2e51b3675d16bb"
     },
     {
+      "path": "docs/audits/GRANADA_2026-11-09_VIRTUAL_SURROUND_SOURCE_PROOF.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "529082fcfdb0ceea26b1ad327ecd34f2bdf89f10"
+    },
+    {
       "path": "docs/product-reviews/2026-10-21-native-windows-audio-evidence.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -1662,14 +1669,21 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "0b12f40ead7acc02d351beaba26cae55ff7eaa39"
+      "blob": "5228494d0b9aef024a1b4d2be096aa43b1d2c645"
     },
     {
       "path": "native/virtual-driver/README.md",
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "56f78f88372f7135783fa445dc75ad0cdf8985f8"
+      "blob": "5adc81669c019b0a2e109b2501774b10dae0e09d"
+    },
+    {
+      "path": "native/virtual-driver/VirtualSourceCompletionCheck.ps1",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "fb29fddedeef937ed4475dad26d9a057a5b3d99f"
     },
     {
       "path": "native/virtual-driver/VirtualSourceSilenceCheck.ps1",
@@ -1697,7 +1711,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "e6b5a05519ff2bf1b592bdc0a393e0a124bf2518"
+      "blob": "e7fb298cd80abe5a823eb454de17fd977a6def18"
     },
     {
       "path": "native/virtual-driver/run_disposable_lab.ps1",
@@ -1753,7 +1767,14 @@
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "6c599c35f8dd50c1b53d26a1e26a773a9ec893b0"
+      "blob": "2e13e360e6c93b5b2ce707756c815a6192aea7c5"
+    },
+    {
+      "path": "native/virtual-driver/test_VirtualSourceCompletionCheck.ps1",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "3ff280751aede8ccf6305f37086ad14b61bb59be"
     },
     {
       "path": "native/virtual-driver/test_VirtualSourceSilenceCheck.ps1",
@@ -1774,7 +1795,7 @@
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "e4c65a0fa8e1d2073fba93b5d3291bfb1e8f2f14"
+      "blob": "305de1ed52559e26ed37442d9a5f6a3cf0858afc"
     },
     {
       "path": "native/virtual-driver/tests/test_pcm_frame_clock_host.cpp",
@@ -1851,7 +1872,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "4d171d56c8fcd447c45d1d953cbb58c303eb9c3c"
+      "blob": "bfff8bd692673751d1fcc40296a6d7c1e0a62728"
     },
     {
       "path": "native/windows-bridge/LouderMeAudioBridge.csproj",
@@ -1893,14 +1914,14 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "704c7a43a582b38af013170bf21721f27dd8ab19"
+      "blob": "5693fd5d39de034c17847ed6cf114304652237fd"
     },
     {
       "path": "native/windows-bridge/README.md",
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "407ecb1c2508abf95e410e1f3c9bc02f6def05a8"
+      "blob": "7eecbb2f92d0eadf7997015ea77c39b1bae8300f"
     },
     {
       "path": "native/windows-bridge/RenderProgressWatchdog.cs",
@@ -1935,7 +1956,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "3eae49dbccf0641aff4bc81e06d1c281984d54f6"
+      "blob": "8bb1eadab1319e6185d6fe8b03d72acf51d13b18"
     },
     {
       "path": "settings.gradle.kts",

@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 291,
-  "classified_files_total": 287,
-  "docs_content_inspected": 93,
+  "tracked_files_total": 292,
+  "classified_files_total": 288,
+  "docs_content_inspected": 94,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,7 +12,7 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 85,
+    "document": 86,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
@@ -23,7 +23,7 @@
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "0d7f2d3b034729bb9d139872b9d366e7b94d88078d6a3b411f0a270a876f62e8",
+  "inventory_fingerprint": "7d5c4f799d1d4d6368f3459cdc122006d128b692766155e996289ef61fca7d71",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -234,7 +234,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "b9442df458a00a13e42f936adbcd8fe39eaa66c6"
+      "blob": "1d9cfd7a2f9f5de72b30641bb8e64fd863fee394"
     },
     {
       "path": "README.md",
@@ -1455,6 +1455,13 @@
       "blob": "b903e26696b402f2b1b46184117a8b1f7d0076b2"
     },
     {
+      "path": "docs/audits/GRANADA_2026-11-05_PCM24_IN_32_WINDOWS.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "01be1b4af75716b95a2d9d0c017fa66b94d60b10"
+    },
+    {
       "path": "docs/audits/GRANADA_2026-11-05_PCM_LAYOUT_VALID_BITS.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -1550,7 +1557,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "1172cba4c3b68044def1662f1721b6800f7d9015"
+      "blob": "07e49936e13fb8d835f3f7fdaaaa8f50246a3e37"
     },
     {
       "path": "native/virtual-driver/DefaultRenderGuard.ps1",
@@ -1620,7 +1627,7 @@
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "fc451d655178bae9b66b7351773c87932f904760"
+      "blob": "3e3d9d1dfec71393f7c8353454d45de0d11eb595"
     },
     {
       "path": "native/virtual-driver/VirtualSourceSilenceCheck.ps1",
@@ -1823,7 +1830,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "b1086f7304a555d79dcc41f54a9945b2bc27e184"
+      "blob": "3f37b17869889e6d7671bde211e5c921ae3a4457"
     },
     {
       "path": "native/windows-bridge/PhysicalRouteStimulus.cs",
@@ -1837,7 +1844,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "d57901936a2fc1276bcc79ffae958a49d28daaba"
+      "blob": "d42a741303084e58d4287cb5a187b9cab30b99a4"
     },
     {
       "path": "native/windows-bridge/Program.cs",
@@ -1851,7 +1858,7 @@
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "657193eb2786c5913058174fa7ea464d9bc9b587"
+      "blob": "9c5298ba0e5d6ef3ad7296fdcc1037a5f8eb9e25"
     },
     {
       "path": "native/windows-bridge/RenderProgressWatchdog.cs",
@@ -1865,7 +1872,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "7304fa35bdb7d27afe81971481b1a13edd0dd652"
+      "blob": "08fa4a9042a8e8b208a4aa8a63cc8b2aa0048894"
     },
     {
       "path": "native/windows-bridge/StreamingDownsampleLowPass.cs",
@@ -1879,7 +1886,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "af8193a67b5035dffbc9b48af2ea339ecba8180c"
+      "blob": "3eae49dbccf0641aff4bc81e06d1c281984d54f6"
     },
     {
       "path": "settings.gradle.kts",

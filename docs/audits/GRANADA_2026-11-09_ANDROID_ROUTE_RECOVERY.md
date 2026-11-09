@@ -14,6 +14,12 @@ PR #158 began responding to Android output-device callbacks but only changed the
 4. When a newly activated Boost is unsupported or errors out, the service releases the stale engine before stopping. Reconnection preserves the selected Boost percentage, updates route broadcasts/foreground notification and reapplies saved EQ when Boost successfully attaches.
 5. Pure JUnit regression tests cover runtime ID replacement with an identical label, canonical identity despite order/duplicates, duplicate-callback no-ops, single bounded empty snapshot retry and attachment-loss recovery decisions.
 
+## Opt-in restart at BOOT_COMPLETED
+
+- Android 13+ does not require the `POST_NOTIFICATIONS` runtime permission to **start** a foreground service, according to Android's official notification runtime-permission documentation. LouderMe previously blocked its opt-in boot restore if the user had denied that permission. The boot receiver now honors the saved opt-in + previously running state without imposing a redundant notification-permission gate (the system may still hide the user-facing notification).
+- `BootResumePolicy` centralizes the opt-in/status/percentage decision and has JVM tests for disabled settings, stopped/failed sessions and clamped Boost. The receiver uses a guarded `startForegroundService()` call; a platform/OEM background-start rejection no longer crashes the broadcast or leaves a saved ATTACHED state. Instead, the app saves an ERROR with instructions to manually restart.
+- Some Android versions/OEMs enforce additional background foreground-service launch restrictions. Permission-free boot restore is not a promise that every Android build permits the launch, and must be exercised on a real device.
+
 ## Verification and limits
 
 - Android GitHub CI must compile/test Play, Direct and Developer flavors and run actual emulator Home/About/Developer validation before merge. No private signing material is accessed in this branch.

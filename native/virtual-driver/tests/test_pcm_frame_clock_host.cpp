@@ -58,7 +58,9 @@ int main()
 
     for (ULONG rate : {8000U, 44100U, 48000U, 96000U, 192000U})
         for (USHORT frame : {USHORT(2), USHORT(3), USHORT(4),
-                             USHORT(6), USHORT(8)})
+                             USHORT(6), USHORT(8), USHORT(12),
+                             USHORT(16), USHORT(18), USHORT(24),
+                             USHORT(32)})
         {
             ExerciseEveryMillisecond(rate, frame);
             ExerciseJitteredIntervals(rate, frame);

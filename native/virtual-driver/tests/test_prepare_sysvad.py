@@ -82,6 +82,52 @@ SYSVAD.TopologySpeaker.szPname="SYSVAD Topology Speaker"
         self.assertIn("g_DisableToneGenerator = 1", actual)
         self.assertNotIn('L"DoNotCreateDataFiles"', actual)
 
+    def test_louderme_speaker_pin_advertises_actual_51_71_mix_formats(self):
+        # The real pinned speakerwavtable is exercised by the source-derivation
+        # CI. A minimal table fixture protects the exact patch contract here.
+        source = """
+#define SPEAKER_DEVICE_MAX_CHANNELS                 2       // Max Channels.
+#define SPEAKER_HOST_MAX_CHANNELS                   2       // Max Channels.
+#define SPEAKER_HOST_MAX_BITS_PER_SAMPLE            16      // Max Bits Per Sample
+KSDATAFORMAT_WAVEFORMATEXTENSIBLE SpeakerAudioEngineSupportedDeviceFormats[] =
+{
+    { // original
+        { 0 }
+    }
+};
+KSDATAFORMAT_WAVEFORMATEXTENSIBLE SpeakerHostPinSupportedDeviceFormats[] =
+{
+    { // original stereo 48k
+        { 0 }
+    }
+};
+MODE_AND_DEFAULT_FORMAT SpeakerHostPinSupportedDeviceModes[] =
+{
+    { STATIC_AUDIO_SIGNALPROCESSINGMODE_DEFAULT,
+      &SpeakerHostPinSupportedDeviceFormats[3].DataFormat }
+};
+"""
+        patched = MODULE.patch_speaker_wavtable(source)
+        self.assertIn("SPEAKER_HOST_MAX_CHANNELS                   8", patched)
+        self.assertIn("SPEAKER_HOST_MAX_BITS_PER_SAMPLE            32", patched)
+        self.assertEqual(patched.count("LouderME LAB explicit"), 72)
+        for mask in ("0x3FUL", "0x60FUL", "0x63FUL"):
+            self.assertIn(mask, patched)
+        for rate in ("44100", "48000", "96000"):
+            self.assertIn(rate, patched)
+        for subtype in ("pcm16", "pcm24", "pcm24in32", "float32"):
+            self.assertIn(subtype, patched)
+        self.assertIn("&SpeakerHostPinSupportedDeviceFormats[3].DataFormat", patched)
+        with self.assertRaises(ValueError):
+            MODULE.patch_speaker_wavtable(patched)
+        with self.assertRaises(ValueError):
+            MODULE.patch_speaker_wavtable(source.replace(
+                "SPEAKER_HOST_MAX_CHANNELS                   2",
+                "SPEAKER_HOST_MAX_CHANNELS                   3"))
+        parser = (HERE.parent / "prepare_sysvad.py").read_text()
+        self.assertIn('"EndpointsCommon/speakerwavtable.h": patch_speaker_wavtable', parser)
+        self.assertIn('"lab_speaker_surround_format_table_source": True', parser)
+
     def test_frame_clock_helper_is_bounded_and_pinned(self):
         source = (HERE.parent / "LouderMeLabFrameClock.h").read_text()
         self.assertIn("class LouderMeLabFrameClock final", source)
@@ -100,7 +146,11 @@ SYSVAD.TopologySpeaker.szPname="SYSVAD Topology Speaker"
     def test_relay_uses_bounded_per_miniport_nonpaged_fifo(self):
         header = (HERE.parent / "LouderMeLabPcmRelay.h").read_text()
         self.assertIn("KSPIN_LOCK m_Lock", header)
-        self.assertIn("Capacity = 65520", header)
+        self.assertIn("Capacity = 65376", header)
+        self.assertIn("m_ChannelMask == CanonicalMask(format)", header)
+        self.assertIn("m_ChannelMask = CanonicalMask(format)", header)
+        self.assertIn("channels == 6", header)
+        self.assertIn("channels == 8", header)
         self.assertIn("format->Format.cbSize >= 22", header)
         self.assertNotIn("sizeof(WAVEFORMATEXTENSIBLE) -", header)
         self.assertIn("KSDATAFORMAT_SUBTYPE_IEEE_FLOAT", header)

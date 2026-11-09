@@ -234,6 +234,89 @@ def patch_adapter(text: str) -> str:
     return text
 
 
+def patch_speaker_wavtable(text: str) -> str:
+    """Advertise explicit 5.1/7.1 host and loopback PCM in the pinned lab pin.
+
+    SysVAD's stock speakerwavtable.h offers only 2-channel/16-bit formats.
+    A wider FIFO alone cannot make Windows negotiate 6/8 channels. Add exact
+    standard speaker-mask entries for the system-render host and the device
+    engine; the loopback pin reuses the host formats. Keep the legacy stereo
+    entries and their stable mode-default indices untouched.
+    """
+    macro_changes = (
+        ("SPEAKER_DEVICE_MAX_CHANNELS", "2", "8"),
+        ("SPEAKER_HOST_MAX_CHANNELS", "2", "8"),
+        ("SPEAKER_HOST_MAX_BITS_PER_SAMPLE", "16", "32"),
+    )
+    for symbol, old, new in macro_changes:
+        pattern = rf"(?m)^(#define[ \t]+{symbol}[ \t]+){old}(?=[ \t])"
+        text, n = re.subn(pattern, rf"\g<1>{new}", text)
+        if n != 1:
+            raise ValueError(f"Unpinned or already modified {symbol}: {n} matches")
+
+    def new_entry(channels: int, mask: int, rate: int, bits: int,
+                  subtype: str, valid: int) -> str:
+        align = channels * bits // 8
+        bytes_per_second = rate * align
+        guid = ( "KSDATAFORMAT_SUBTYPE_IEEE_FLOAT"
+                 if subtype == "float32" else "KSDATAFORMAT_SUBTYPE_PCM" )
+        return (
+            "    {{ // LouderME LAB explicit {channels}ch {rate}Hz {subtype} "
+            "{bits}/{valid} mask 0x{mask:X}\n"
+            "        {{\n"
+            "            sizeof(KSDATAFORMAT_WAVEFORMATEXTENSIBLE),\n"
+            "            0, 0, 0,\n"
+            "            STATICGUIDOF(KSDATAFORMAT_TYPE_AUDIO),\n"
+            "            STATICGUIDOF({guid}),\n"
+            "            STATICGUIDOF(KSDATAFORMAT_SPECIFIER_WAVEFORMATEX)\n"
+            "        }},\n"
+            "        {{\n"
+            "            {{ WAVE_FORMAT_EXTENSIBLE, {channels}, {rate}, "
+            "{bytes_per_second}, {align}, {bits},\n"
+            "              sizeof(WAVEFORMATEXTENSIBLE) - sizeof(WAVEFORMATEX) }},\n"
+            "            {valid}, 0x{mask:X}UL, STATICGUIDOF({guid})\n"
+            "        }}\n"
+            "    }}"
+        ).format(
+            channels=channels, rate=rate, subtype=subtype, bits=bits,
+            valid=valid, mask=mask, bytes_per_second=bytes_per_second,
+            align=align, guid=guid
+        )
+
+    entries = [
+        new_entry(channels, mask, rate, bits, subtype, valid)
+        for channels, mask in ((6, 0x3F), (6, 0x60F), (8, 0x63F))
+        for rate in (44100, 48000, 96000)
+        for bits, subtype, valid in (
+            (16, "pcm16", 16),
+            (24, "pcm24", 24),
+            (32, "pcm24in32", 24),
+            (32, "float32", 32),
+        )
+    ]
+    for table in ("SpeakerHostPinSupportedDeviceFormats",
+                  "SpeakerAudioEngineSupportedDeviceFormats"):
+        pattern = (
+            rf"(KSDATAFORMAT_WAVEFORMATEXTENSIBLE[ \t]+{table}"
+            rf"\[\]\s*=\s*\{{)(.*?)(\n\}};)"
+        )
+        matches = list(re.finditer(pattern, text, flags=re.S))
+        if len(matches) != 1:
+            raise ValueError(f"Upstream SysVAD {table} format table changed")
+        match = matches[0]
+        prior = match.group(2).rstrip()
+        if not prior.endswith("}") or prior.endswith(",}"):
+            raise ValueError(f"Unrecognized SysVAD format-table boundary in {table}")
+        replacement = match.group(1) + prior + ",\n" + ",\n".join(entries) + match.group(3)
+        text = text[:match.start()] + replacement + text[match.end():]
+
+    if text.count("LouderME LAB explicit 8ch 96000Hz float32") != 2:
+        raise ValueError("Multichannel 96k/float32 format advertisement was not generated")
+    if "SpeakerHostPinSupportedDeviceFormats[3].DataFormat" not in text:
+        raise ValueError("Default Windows speaker-mode format was lost")
+    return text
+
+
 def patch_minwavert_header(text: str) -> str:
     """Attach a per-miniport, nonpaged PCM FIFO; never use a global ring."""
     # The pinned WDK source may be CRLF; exact source anchors use LF.
@@ -498,6 +581,7 @@ def prepare(repo: Path, dry_run: bool = False) -> dict:
         "TabletAudioSample/TabletAudioSample.rc": patch_resource,
         "adapter.cpp": patch_adapter,
         "EndpointsCommon/minwavert.h": patch_minwavert_header,
+        "EndpointsCommon/speakerwavtable.h": patch_speaker_wavtable,
         "EndpointsCommon/minwavert.cpp": patch_minwavert_cpp,
         "EndpointsCommon/minwavertstream.cpp": patch_minwavertstream_cpp,
         "TabletAudioSample/TabletAudioSample.vcxproj": patch_project_for_desktop
@@ -554,6 +638,7 @@ def prepare(repo: Path, dry_run: bool = False) -> dict:
         "recording_to_file_enabled": False,
         "sample_tone_generator_enabled": False,
         "lab_render_loopback_relay_source": True,
+        "lab_speaker_surround_format_table_source": True,
         "lab_frame_accurate_dma_clock": True,
         "render_loopback_relay_installed_or_verified": False,
         "driver_signed": False,

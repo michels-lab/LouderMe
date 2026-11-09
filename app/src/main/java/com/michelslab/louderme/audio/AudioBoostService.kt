@@ -7,10 +7,14 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.media.AudioAttributes
+import android.media.AudioDeviceCallback
 import android.media.AudioDeviceInfo
 import android.media.AudioManager
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import com.michelslab.louderme.MainActivity
 
 class AudioBoostService : Service() {
@@ -18,12 +22,27 @@ class AudioBoostService : Service() {
     private var equalizer: SessionZeroEqualizer? = null
     private var lastState = AudioEngineUiState()
     private var equalizerState = EqualizerUiState()
+    private var deviceCallbackRegistered = false
+    private val deviceCallback = object : AudioDeviceCallback() {
+        override fun onAudioDevicesAdded(addedDevices: Array<out AudioDeviceInfo>?) {
+            refreshOutputRoute()
+        }
+
+        override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>?) {
+            refreshOutputRoute()
+        }
+    }
 
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
         lastState = AudioBoostStateStore.read(this)
         equalizerState = EqualizerStateStore.read(this)
+        getSystemService(AudioManager::class.java).registerAudioDeviceCallback(
+            deviceCallback,
+            Handler(Looper.getMainLooper()),
+        )
+        deviceCallbackRegistered = true
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -46,6 +65,22 @@ class AudioBoostService : Service() {
                     lastState.percent
                 )
                 activate(percent)
+            }
+
+            AudioBoostContract.ACTION_BOOST_UP,
+            AudioBoostContract.ACTION_BOOST_DOWN -> {
+                // Notification actions must never re-enable a previously
+                // stopped session from a stale PendingIntent.
+                if (lastState.isRunning) {
+                    val next = if (action == AudioBoostContract.ACTION_BOOST_UP) {
+                        BoostQuickLevels.next(lastState.percent)
+                    } else {
+                        BoostQuickLevels.previous(lastState.percent)
+                    }
+                    if (next != lastState.percent || engine == null) activate(next)
+                } else {
+                    stopSelf()
+                }
             }
 
             AudioBoostContract.ACTION_SET_EQ -> {
@@ -84,6 +119,11 @@ class AudioBoostService : Service() {
     }
 
     override fun onDestroy() {
+        if (deviceCallbackRegistered) {
+            getSystemService(AudioManager::class.java)
+                .unregisterAudioDeviceCallback(deviceCallback)
+            deviceCallbackRegistered = false
+        }
         engine?.release()
         equalizer?.release()
         engine = null
@@ -274,6 +314,14 @@ class AudioBoostService : Service() {
             .notify(NOTIFICATION_ID, buildNotification(state))
     }
 
+    private fun actionPendingIntent(action: String, requestCode: Int): PendingIntent =
+        PendingIntent.getService(
+            this,
+            requestCode,
+            Intent(this, AudioBoostService::class.java).setAction(action),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+
     private fun buildNotification(state: AudioEngineUiState): Notification {
         val launchIntent = Intent(this, MainActivity::class.java)
         val pendingIntent = PendingIntent.getActivity(
@@ -305,6 +353,21 @@ class AudioBoostService : Service() {
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setContentIntent(pendingIntent)
+            .addAction(
+                android.R.drawable.ic_media_rew,
+                "−25%",
+                actionPendingIntent(AudioBoostContract.ACTION_BOOST_DOWN, 101),
+            )
+            .addAction(
+                android.R.drawable.ic_media_ff,
+                "+25%",
+                actionPendingIntent(AudioBoostContract.ACTION_BOOST_UP, 102),
+            )
+            .addAction(
+                android.R.drawable.ic_media_pause,
+                "Stop",
+                actionPendingIntent(AudioBoostContract.ACTION_DISABLE, 103),
+            )
             .build()
     }
 
@@ -322,9 +385,30 @@ class AudioBoostService : Service() {
             .createNotificationChannel(channel)
     }
 
+    private fun refreshOutputRoute() {
+        if (!lastState.isRunning) return
+        val route = detectOutputRoute()
+        if (route == lastState.outputRoute) return
+        val refreshed = lastState.copy(outputRoute = route)
+        publishState(refreshed)
+        updateNotification(refreshed)
+    }
+
     private fun detectOutputRoute(): String {
         val manager = getSystemService(AudioManager::class.java)
-        val devices = manager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
+        // Connected outputs are not necessarily the output selected for media.
+        // API 33+ reports the routing anticipated for MEDIA; on earlier
+        // versions only the available-device approximation is accessible here.
+        val devices: Array<out AudioDeviceInfo> =
+            if (Build.VERSION.SDK_INT >= 33) {
+                manager.getAudioDevicesForAttributes(
+                    AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
+                        .build()
+                ).toTypedArray()
+            } else {
+                manager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
+            }
 
         return when {
             devices.any {

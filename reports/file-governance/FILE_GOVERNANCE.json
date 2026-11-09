@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 295,
-  "classified_files_total": 291,
-  "docs_content_inspected": 97,
+  "tracked_files_total": 296,
+  "classified_files_total": 292,
+  "docs_content_inspected": 98,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,7 +12,7 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 89,
+    "document": 90,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
@@ -23,7 +23,7 @@
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "c42ba051860554aec032a967a804c1a34967769eb0061a62c2b6f3bc2779848a",
+  "inventory_fingerprint": "c783140a2970dd8c2390567c47fc0c4e71557d283892134599f6f8a96f5e0f7d",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -234,7 +234,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "f3284a94e30c7238a4eb3994f8e9bcf12eeca7d8"
+      "blob": "64c9d4a74ebedab36cd3b52568c998eaa6dcc7be"
     },
     {
       "path": "README.md",
@@ -1476,6 +1476,13 @@
       "blob": "14bcdf9c47e161099579b46d2ad69736271f5ffe"
     },
     {
+      "path": "docs/audits/GRANADA_2026-11-08_INDEPENDENT_SURROUND_PROOF.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "1fde14fbaa87727bf617e1b0728fc02120ef544f"
+    },
+    {
       "path": "docs/audits/GRANADA_2026-11-08_OUTPUT_CHANGE_EVIDENCE.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -1578,7 +1585,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "07e49936e13fb8d835f3f7fdaaaa8f50246a3e37"
+      "blob": "366d5770273e4b7e005a25f19c71df6e37b60dec"
     },
     {
       "path": "native/virtual-driver/DefaultRenderGuard.ps1",
@@ -1872,14 +1879,14 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "c5d4247f8907f08bf94dc3e327f6d99dc9f15092"
+      "blob": "bf6c381e5ed78a8c97d0428d4a928f11f86e8387"
     },
     {
       "path": "native/windows-bridge/README.md",
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "a824462a7693f69e6579237f350d3c97a377b425"
+      "blob": "46a021d7589a45fbf022385ef4280c10d2b32fd6"
     },
     {
       "path": "native/windows-bridge/RenderProgressWatchdog.cs",

@@ -386,7 +386,9 @@ class AudioBoostService : Service() {
     }
 
     private fun refreshOutputRoute() {
-        if (!lastState.isRunning) return
+        // On service recreation, persisted ATTACHED isn't a live engine.
+        // An initial device callback must not broadcast that stale status.
+        if (!lastState.isRunning || engine == null) return
         val route = detectOutputRoute()
         if (route == lastState.outputRoute) return
         val refreshed = lastState.copy(outputRoute = route)

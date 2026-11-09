@@ -23,13 +23,23 @@ class AudioBoostService : Service() {
     private var lastState = AudioEngineUiState()
     private var equalizerState = EqualizerUiState()
     private var deviceCallbackRegistered = false
+    private var currentMediaRoute: MediaRouteContinuity? = null
+    private var transientEmptyReadAttempts = 0
+    private val routeHandler = Handler(Looper.getMainLooper())
+    private val routeRefresh = Runnable { refreshOutputRoute() }
+
+    private fun scheduleRouteRefresh(delayMs: Long = 300L) {
+        routeHandler.removeCallbacks(routeRefresh)
+        routeHandler.postDelayed(routeRefresh, delayMs)
+    }
+
     private val deviceCallback = object : AudioDeviceCallback() {
         override fun onAudioDevicesAdded(addedDevices: Array<out AudioDeviceInfo>?) {
-            refreshOutputRoute()
+            scheduleRouteRefresh()
         }
 
         override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>?) {
-            refreshOutputRoute()
+            scheduleRouteRefresh()
         }
     }
 
@@ -119,6 +129,9 @@ class AudioBoostService : Service() {
     }
 
     override fun onDestroy() {
+        routeHandler.removeCallbacks(routeRefresh)
+        currentMediaRoute = null
+        transientEmptyReadAttempts = 0
         if (deviceCallbackRegistered) {
             getSystemService(AudioManager::class.java)
                 .unregisterAudioDeviceCallback(deviceCallback)
@@ -147,11 +160,12 @@ class AudioBoostService : Service() {
 
     private fun activate(requestedPercent: Int) {
         val percent = requestedPercent.coerceIn(100, 250)
+        val initialRoute = readMediaRoute()
         val starting = AudioEngineUiState(
             status = AudioEngineStatus.STARTING,
             percent = percent,
             gainDb = BoostMath.percentToDb(percent),
-            outputRoute = detectOutputRoute(),
+            outputRoute = initialRoute.label,
             implementation = "Session 0 compatibility probe",
             message = "Attaching audio engine…",
         )
@@ -174,11 +188,14 @@ class AudioBoostService : Service() {
             )
         }
 
+        val actualRoute = readMediaRoute()
+        currentMediaRoute = actualRoute
+        transientEmptyReadAttempts = 0
         val state = AudioEngineUiState(
             status = result.status,
             percent = result.percent,
             gainDb = result.gainDb,
-            outputRoute = detectOutputRoute(),
+            outputRoute = actualRoute.label,
             implementation = result.implementation,
             message = result.message,
         )
@@ -191,6 +208,11 @@ class AudioBoostService : Service() {
         } else {
             equalizer?.release()
             equalizer = null
+            // A failed attachment must not leave a stale engine for a later
+            // notification action or service restart.
+            engine?.release()
+            engine = null
+            currentMediaRoute = null
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
         }
@@ -223,6 +245,9 @@ class AudioBoostService : Service() {
     }
 
     private fun deactivate() {
+        routeHandler.removeCallbacks(routeRefresh)
+        currentMediaRoute = null
+        transientEmptyReadAttempts = 0
         val rememberedPercent = lastState.percent.coerceIn(100, 250)
         runCatching { engine?.disable() }
         engine?.release()
@@ -386,21 +411,53 @@ class AudioBoostService : Service() {
     }
 
     private fun refreshOutputRoute() {
-        // On service recreation, persisted ATTACHED isn't a live engine.
-        // An initial device callback must not broadcast that stale status.
+        // A persisted ATTACHED state is not sufficient after recreation.
         if (!lastState.isRunning || engine == null) return
-        val route = detectOutputRoute()
-        if (route == lastState.outputRoute) return
-        val refreshed = lastState.copy(outputRoute = route)
+
+        val next = readMediaRoute()
+        if (MediaRouteRecoveryPolicy.deferTransientEmpty(
+                currentMediaRoute, next, transientEmptyReadAttempts,
+            )
+        ) {
+            // A fast Bluetooth/USB handoff can temporarily report no media
+            // endpoint. Sample once more rather than immediately cycling DSP.
+            transientEmptyReadAttempts++
+            scheduleRouteRefresh(700L)
+            return
+        }
+        transientEmptyReadAttempts = 0
+        if (!MediaRouteRecoveryPolicy.hasChanged(currentMediaRoute, next)) return
+
+        currentMediaRoute = next
+
+        val owned = (engine as? SessionZeroAudioEngine)?.hasActiveEffect() == true
+        if (MediaRouteRecoveryPolicy.mustReattachBoost(
+                lastState.isRunning, engine != null, owned,
+            )
+        ) {
+            // Recheck a lost effect instead of merely changing the route label.
+            // activate() owns the status broadcast, EQ replay and notification.
+            activate(lastState.percent)
+            return
+        }
+
+        val refreshed = lastState.copy(outputRoute = next.label)
         publishState(refreshed)
-        updateNotification(refreshed)
+
+        if (equalizerState.enabled && equalizer?.hasActiveEffect() != true) {
+            // The Boost may still be owned when only the EQ was lost.
+            equalizer?.release()
+            equalizer = null
+            applyEqualizer()
+        } else {
+            updateNotification(refreshed)
+        }
     }
 
-    private fun detectOutputRoute(): String {
+    private fun readMediaRoute(): MediaRouteContinuity {
         val manager = getSystemService(AudioManager::class.java)
-        // Connected outputs are not necessarily the output selected for media.
-        // API 33+ reports the routing anticipated for MEDIA; on earlier
-        // versions only the available-device approximation is accessible here.
+        // Android 13+ predicts the routed MEDIA endpoints; older Android
+        // exposes only a best-effort list of currently connected outputs.
         val devices: Array<out AudioDeviceInfo> =
             if (Build.VERSION.SDK_INT >= 33) {
                 manager.getAudioDevicesForAttributes(
@@ -411,9 +468,13 @@ class AudioBoostService : Service() {
             } else {
                 manager.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
             }
-
-        return AudioRouteLabel.describe(devices.map { it.type })
+        return MediaRouteContinuity.from(
+            label = AudioRouteLabel.describe(devices.map { it.type }),
+            devices = devices.map { it.type to it.id },
+        )
     }
+
+    private fun detectOutputRoute(): String = readMediaRoute().label
 
     companion object {
         private const val CHANNEL_ID = "louderme_boost"

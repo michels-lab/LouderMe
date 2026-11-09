@@ -56,9 +56,11 @@ class SessionZeroEqualizer {
             }
 
             val enableCode = effect.setEnabled(true)
-            val attached = enableCode == AudioEffect.SUCCESS &&
-                effect.enabled &&
-                effect.hasControl()
+            val attached = SessionZeroAttachmentPolicy.isAttached(
+                enableCode == AudioEffect.SUCCESS,
+                effect.enabled,
+                effect.hasControl(),
+            )
 
             EqualizerApplyResult(
                 status = if (attached) {

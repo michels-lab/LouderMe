@@ -51,7 +51,13 @@ class AudioBoostService : Service() {
             AudioBoostContract.ACTION_SET_EQ -> {
                 equalizerState = EqualizerStateStore.read(this)
                 if (lastState.isRunning) {
-                    applyEqualizer()
+                    if (engine == null) {
+                        // The system may recreate this service with only saved
+                        // UI state. Reattach Boost before applying its EQ.
+                        activate(lastState.percent)
+                    } else {
+                        applyEqualizer()
+                    }
                 } else {
                     publishEqualizerState(
                         equalizerState.copy(
@@ -82,6 +88,18 @@ class AudioBoostService : Service() {
         equalizer?.release()
         engine = null
         equalizer = null
+        // Graceful service teardown must not leave a persisted "attached" UI.
+        // An abrupt process kill never reaches this callback; Android's
+        // START_STICKY restoration path still rechecks actual attachment.
+        if (lastState.isRunning) {
+            publishState(
+                lastState.copy(
+                    status = AudioEngineStatus.OFF,
+                    implementation = "Not attached",
+                    message = "Boost service stopped. Enable Boost to reconnect.",
+                )
+            )
+        }
         super.onDestroy()
     }
 
@@ -159,6 +177,9 @@ class AudioBoostService : Service() {
                 message = result.message,
             )
         )
+        // EQ presets and the disabled state must be reflected in the
+        // foreground notification immediately, not only after Boost changes.
+        if (lastState.isRunning) updateNotification(lastState)
     }
 
     private fun deactivate() {

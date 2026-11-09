@@ -14,15 +14,14 @@ object EqualizerStateStore {
             )
         }.getOrDefault(EqualizerPreset.FLAT)
 
-        val stored = prefs.getString("gains_db", null)
-            ?.split(",")
-            ?.mapNotNull { it.toFloatOrNull() }
+        
 
         return EqualizerUiState(
             enabled = prefs.getBoolean("enabled", true),
             preset = preset,
-            gainsDb = EqualizerPresets.sanitize(
-                stored ?: EqualizerPresets.gainsFor(preset)
+            gainsDb = EqualizerPresets.fromStoredString(
+                prefs.getString("gains_db", null),
+                preset,
             ),
             status = EqualizerStatus.READY,
             implementation = "Waiting for audio engine",

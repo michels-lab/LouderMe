@@ -75,7 +75,7 @@ internal static class RoutePreflight
         catch (NotSupportedException)
         {
             return Reject("INCOMPATIBLE_ROUTE_FORMATS",
-                "Sample-rate ratio or channel mapping cannot be handled safely by this bridge.");
+                "Sample-rate ratio or selected speaker-mask layout cannot be mapped safely by this bridge.");
         }
 
         return new(true, "STATIC_PREFLIGHT_READY",
@@ -149,6 +149,19 @@ internal static class RoutePreflight
                 Format = new WaveFormatExtensible(48000, 24, 6, false, 24, 0x3f)
             }, physical with {
                 Format = new WaveFormatExtensible(48000, 32, 6, true, 32, 0x60f)
+            }], "virtual-A", "physical-B");
+        foreach ((int channels, int mask) in new[] { (6, 0x3f), (6, 0x60f), (8, 0x63f) })
+            Expect("STATIC_PREFLIGHT_READY",
+                [virtualSource with {
+                    Format = new WaveFormatExtensible(48000, 24, channels, false, 24, mask)
+                }, physical with {
+                    Format = WaveFormat.CreateIeeeFloatWaveFormat(48000, 2)
+                }], "virtual-A", "physical-B");
+        Expect("INCOMPATIBLE_ROUTE_FORMATS",
+            [virtualSource with {
+                Format = new WaveFormatExtensible(48000, 32, 8, true, 32, 0x63f)
+            }, physical with {
+                Format = new WaveFormatExtensible(48000, 32, 2, true, 32, 0xC)
             }], "virtual-A", "physical-B");
         Expect("UNSUPPORTED_MIX_FORMAT",
             [virtualSource, physical with {

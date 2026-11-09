@@ -1,3 +1,7 @@
+## Granada 2026-11-08 — 5.1/7.1 app playback to physical stereo
+
+Experimental Windows' virtual→physical PCM bridge now supports explicit WAVEFORMATEXTENSIBLE 5.1 back/side and 7.1 speaker masks downmixed to FL+FR stereo. Owned C++ DSP still runs before downmix. Each output preserves stereo side identity, folds center/surround at -3 dB raw and omits LFE, with conservative headroom normalization (not a calibrated mastering downmix). Coefficients are preallocated; Windows CLI selftests include channel impulses, full-scale and 96→48 fragmented packets. Unknown masks remain refused. This does not install a signed driver or prove audible third-party audio. Audit: ../../docs/audits/GRANADA_2026-11-08_SURROUND_DOWNMIX.md.
+
 ## Granada 2026-11-05 — PCM24 in a 32-bit integer container
 
 Windows WAVEFORMATEXTENSIBLE endpoints can expose 24 valid, left-aligned signed bits in a 32-bit container. The native SysVAD LAB relay understands this but the bridge previously rejected the mix. The Windows bridge, independent source, virtual evidence receiver, physical-tone test and preflight now recognize **only** explicitly declared PCM24/32 (not full-width integer PCM32 or fake float32); unused low eight bits must be zero. Numeric regressions include signed rails, PCM24 packed↔aligned conversion and 44.1/48/96k probes. Does not prove a signed driver, installed endpoint or acoustic audio. Audit: ../../docs/audits/GRANADA_2026-11-05_PCM24_IN_32_WINDOWS.md.

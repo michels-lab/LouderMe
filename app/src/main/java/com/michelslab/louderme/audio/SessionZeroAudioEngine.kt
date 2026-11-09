@@ -33,11 +33,11 @@ class SessionZeroAudioEngine : AudioEngine {
             val descriptor = effect.descriptor
 
             AudioEngineResult(
-                status = if (
-                    enableCode == AudioEffect.SUCCESS &&
-                    enabled &&
-                    hasControl
-                ) {
+                status = if (SessionZeroAttachmentPolicy.isAttached(
+                    enableCode == AudioEffect.SUCCESS,
+                    enabled,
+                    hasControl,
+                )) {
                     AudioEngineStatus.ATTACHED
                 } else {
                     AudioEngineStatus.DEGRADED
@@ -45,7 +45,11 @@ class SessionZeroAudioEngine : AudioEngine {
                 percent = safePercent,
                 gainDb = gainDb,
                 implementation = "Session 0 · ${descriptor.name} · ${descriptor.implementor}",
-                message = if (enabled && hasControl) {
+                message = if (SessionZeroAttachmentPolicy.isAttached(
+                    enableCode == AudioEffect.SUCCESS,
+                    enabled,
+                    hasControl,
+                )) {
                     if (safePercent >= PeakProtectionPolicy.ENABLE_FROM_PERCENT) {
                         "Engine attached. Android LoudnessEnhancer compresses samples that would exceed the supported sample range; this path was audibly validated on the target Samsung device."
                     } else {
@@ -57,11 +61,17 @@ class SessionZeroAudioEngine : AudioEngine {
             )
         }
 
-        if (loudnessResult.isSuccess) {
-            dynamicsProcessing?.release()
+        if (loudnessResult.getOrNull()?.status == AudioEngineStatus.ATTACHED) {
+            runCatching { dynamicsProcessing?.release() }
             dynamicsProcessing = null
             return loudnessResult.getOrThrow()
         }
+
+        // A created effect that reports no ownership is not a working Boost.
+        // Release it before trying DynamicsProcessing to avoid stacking effects.
+        runCatching { loudnessEnhancer?.setEnabled(false) }
+        runCatching { loudnessEnhancer?.release() }
+        loudnessEnhancer = null
 
         val dynamicsResult = runCatching {
             val effect = dynamicsProcessing ?: DynamicsProcessing(0).also {
@@ -103,11 +113,11 @@ class SessionZeroAudioEngine : AudioEngine {
             val descriptor = effect.descriptor
 
             AudioEngineResult(
-                status = if (
-                    enableCode == AudioEffect.SUCCESS &&
-                    enabled &&
-                    hasControl
-                ) {
+                status = if (SessionZeroAttachmentPolicy.isAttached(
+                    enableCode == AudioEffect.SUCCESS,
+                    enabled,
+                    hasControl,
+                )) {
                     AudioEngineStatus.ATTACHED
                 } else {
                     AudioEngineStatus.DEGRADED
@@ -115,7 +125,11 @@ class SessionZeroAudioEngine : AudioEngine {
                 percent = safePercent,
                 gainDb = gainDb,
                 implementation = "Session 0 fallback · ${descriptor.name} · ${descriptor.implementor}",
-                message = if (enabled && hasControl) {
+                message = if (SessionZeroAttachmentPolicy.isAttached(
+                    enableCode == AudioEffect.SUCCESS,
+                    enabled,
+                    hasControl,
+                )) {
                     "Dynamics engine attached. $protectionNote. Compatibility can still vary by device."
                 } else {
                     "Dynamics effect opened, but LouderMe does not have full control. $protectionNote."
@@ -123,9 +137,7 @@ class SessionZeroAudioEngine : AudioEngine {
             )
         }
 
-        if (dynamicsResult.isSuccess) {
-            loudnessEnhancer?.release()
-            loudnessEnhancer = null
+        if (dynamicsResult.getOrNull()?.status == AudioEngineStatus.ATTACHED) {
             return dynamicsResult.getOrThrow()
         }
 
@@ -146,9 +158,18 @@ class SessionZeroAudioEngine : AudioEngine {
             gainDb = gainDb,
             implementation = "No usable session-0 engine",
             message = buildString {
+                append("Neither session-0 effect confirmed an enabled, controllable Boost. ")
                 append("This device rejected the public session-0 compatibility path. ")
                 append("Advertised effects: ")
                 append(advertised.ifBlank { "none reported" })
+                loudnessResult.getOrNull()?.let {
+                    append(". Loudness opened without full control: ")
+                    append(it.message)
+                }
+                dynamicsResult.getOrNull()?.let {
+                    append(". Dynamics opened without full control: ")
+                    append(it.message)
+                }
                 loudnessResult.exceptionOrNull()?.message?.let {
                     append(". Loudness: ")
                     append(it)

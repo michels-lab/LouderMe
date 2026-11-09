@@ -19,6 +19,7 @@ Set-StrictMode -Version Latest
 . (Join-Path $PSScriptRoot 'LabEvidenceDirectory.ps1')
 . (Join-Path $PSScriptRoot 'LabProcessGuard.ps1')
 . (Join-Path $PSScriptRoot 'VirtualSourceCompletionCheck.ps1')
+. (Join-Path $PSScriptRoot 'VirtualSpeakerMapCheck.ps1')
 $vm = Get-CimInstance -ClassName Win32_ComputerSystem
 if ("$($vm.Manufacturer) $($vm.Model)" -notmatch '(?i)Virtual Machine|VMware|VirtualBox|QEMU|KVM|Xen|Parallels') {
   throw 'Isolated virtual PCM check requires an actual disposable Windows VM.'
@@ -132,11 +133,67 @@ try {
       $coherence -lt 0.50 -or $coherence -gt 1.0) {
     throw 'Virtual loopback lacks real numeric 440 Hz PCM evidence from the separate app.'
   }
-  # The separate source has completed and the positive loopback process
-  # exited. A second real receive-only capture must now reject residual tone.
-  # Do this BEFORE writing the positive PASS record.
+  # A 440-Hz tone in every lane cannot reveal whether Windows swapped
+  # the 5.1 back/side or 7.1 speakers. Repeat the real independent-process
+  # virtual-only proof with a DIFFERENT frequency for each speaker position.
+  # Mono needs no position test; the 440-Hz causal proof remains mandatory.
+  $mapInfo = $null
+  $mapStdout = ''
+  if ($sourceEvidence.channels -gt 1) {
+    $mapBridge = $null
+    $mapSource = $null
+    try {
+      $mapBridge = Start-LouderMeLabChild -Executable 'dotnet' -DeferStdOutDrain -Arguments @(
+        $BridgeDll, '--probe-virtual-speaker-map', '--source-id', $VirtualEndpointId,
+        '--confirm-experimental'
+      )
+      $mapDeadline = [DateTime]::UtcNow.AddSeconds(12)
+      $mapReadiness = [Collections.Generic.List[string]]::new()
+      $mapReady = $false
+      $mapChars = 0
+      while ([DateTime]::UtcNow -lt $mapDeadline -and -not $mapBridge.Process.HasExited) {
+        $nextLine = $mapBridge.Process.StandardOutput.ReadLineAsync()
+        $remainingMs = [Math]::Max(1, [int]($mapDeadline - [DateTime]::UtcNow).TotalMilliseconds)
+        if (-not $nextLine.Wait($remainingMs)) { break }
+        $line = $nextLine.Result
+        if ($null -eq $line) { break }
+        $mapReadiness.Add($line)
+        $mapChars += $line.Length
+        if ($mapReadiness.Count -gt 128 -or $mapChars -gt 32768) {
+          throw 'Speaker-map WASAPI readiness output exceeded the safe limit.'
+        }
+        if ($line -ceq 'EXTERNAL_VIRTUAL_READY') { $mapReady = $true; break }
+      }
+      if (-not $mapReady) {
+        throw 'The independent speaker-map source was never launched: virtual capture not ready.'
+      }
+      $mapBridge.StdOutTask = $mapBridge.Process.StandardOutput.ReadToEndAsync()
+      $mapSource = Start-LouderMeLabChild -Executable 'dotnet' -Arguments @(
+        $IndependentToneDll, '--device-id', $VirtualEndpointId,
+        '--external-app-source', '--speaker-map', '--confirm-experimental'
+      )
+      $speakerSourceResult = Receive-LouderMeLabChildOutput -Child $mapSource -TimeoutMs 6000
+      $speakerSource = Test-LouderMeSpeakerMapSource -ExitCode $speakerSourceResult.ExitCode -StdOut $speakerSourceResult.StdOut -StdErr $speakerSourceResult.StdErr
+      if ($speakerSource.channels -ne $sourceEvidence.channels -or
+          $speakerSource.frames -ne $sourceEvidence.frames) {
+        throw 'Speaker-map source changed the independent channel count or frame rate since the 440-Hz virtual proof.'
+      }
+      $speakerBridgeResult = Receive-LouderMeLabChildOutput -Child $mapBridge -TimeoutMs 8000
+      $mapStdout = ($mapReadiness.ToArray() -join [Environment]::NewLine) +
+        [Environment]::NewLine + $speakerBridgeResult.StdOut
+      $mapInfo = Test-LouderMeSpeakerMapReceiver -ExitCode $speakerBridgeResult.ExitCode -StdOut $mapStdout -StdErr $speakerBridgeResult.StdErr -ExpectedChannels $speakerSource.channels -SourceFrames $speakerSource.frames
+    } finally {
+      foreach ($child in @($mapSource, $mapBridge)) {
+        if ($null -ne $child) { Stop-LouderMeLabChild -Child $child }
+      }
+    }
+    Write-Host 'PASS: independent app virtual speaker-map frequency signature preserved every selected channel position.'
+  }
+  # Both independently sourced runs are finished. Now reject residual
+  # 440Hz after the speaker-identity run, not merely after the first run.
   Invoke-VirtualNoSourceControl after
-  $redacted = $stdout.Replace($VirtualEndpointId, '[REDACTED_ENDPOINT_ID]')
+  $redacted = ($stdout + [Environment]::NewLine + $mapStdout).Replace(
+    $VirtualEndpointId, '[REDACTED_ENDPOINT_ID]')
   Write-LouderMeLabTextOnce -Path $logPath -Content $redacted
   $record = [ordered]@{
     status = 'PASS'
@@ -152,6 +209,10 @@ try {
     virtual_monitor_frames = $frames
     virtual_matched440_amplitude = $amplitude
     virtual_coherence = $coherence
+    speaker_map_verified = [bool]($null -ne $mapInfo)
+    speaker_map_channels = $(if ($null -ne $mapInfo) { $mapInfo.channels } else { 0 })
+    speaker_map_min_own_amplitude = $(if ($null -ne $mapInfo) { $mapInfo.min_own_amplitude } else { 0.0 })
+    speaker_map_max_leakage_amplitude = $(if ($null -ne $mapInfo) { $mapInfo.max_leakage_amplitude } else { 0.0 })
     physical_output_verified = $false
     global_windows_audio_verified = $false
     acoustic_spl_verified = $false

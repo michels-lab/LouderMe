@@ -1,3 +1,10 @@
+## 2026-11-08 — Granada: ruta Windows 5.1/7.1→estéreo real (candidato)
+
+- **Funcionalidad:** antes la ruta virtual→física rechazaba 6/8 canales cuando las bocinas o audífonos eran estéreo. Nuevo downmix de máscaras oficiales 5.1 traseras/laterales y 7.1, speaker-aware, preserva izquierda/derecha, mezcla central y envolventes a -3 dB, excluye LFE y normaliza para evitar clipping por suma. Se aplica después del DSP nativo y antes de WASAPI físico, con coeficientes preasignados sin alocación por callback.
+- **Pruebas:** vectores por canal, silencio LFE, canales laterales/traseros, rechazo de máscaras ambiguas, amplitud saturada, interop 6/8→2 con fragmentos 96→48, preflight. Gate Windows CI exact SHA; evidencia física y firma del driver #48 siguen pendientes. Auditoría: docs/audits/GRANADA_2026-11-08_SURROUND_DOWNMIX.md. Sin RC ni release.
+
+---
+
 ## 2026-11-08 — Granada: invalidar prueba audible al cambiar salida Windows (candidato)
 
 - **Fallo funcional:** el resultado 'Yes' del test de -18 dB seguía mostrado después de cambiar de bocinas a Bluetooth/HDMI, aunque nunca se había probado ese endpoint. Ahora un cambio o desconexión de salida invalida la respuesta y avisa que se debe revisar Equalizer APO Configurator.

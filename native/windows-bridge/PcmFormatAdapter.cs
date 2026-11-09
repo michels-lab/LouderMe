@@ -25,6 +25,9 @@ internal sealed class PcmFormatAdapter
     private readonly double _inputFramesPerOutputFrame;
     private readonly float[] _lastFrame;
     private readonly StreamingDownsampleLowPass? _antiAlias;
+    // Precomputed once per route. Null outside explicit 5.1/7.1 -> stereo.
+    private readonly float[]? _surroundLeft;
+    private readonly float[]? _surroundRight;
     private double _nextPosition;
     private double _rateAdjustmentPpm;
     private bool _hasLastFrame;
@@ -35,11 +38,27 @@ internal sealed class PcmFormatAdapter
         _output = output ?? throw new ArgumentNullException(nameof(output));
         ValidateFormat(input);
         ValidateFormat(output);
+        bool downmixSurround = input.Channels is 6 or 8 && output.Channels == 2;
         if (input.Channels != output.Channels &&
             !(input.Channels == 1 && output.Channels == 2) &&
-            !(input.Channels == 2 && output.Channels == 1))
+            !(input.Channels == 2 && output.Channels == 1) &&
+            !downmixSurround)
             throw new NotSupportedException(
-                "Only matching channel layouts or explicit mono/stereo conversions are supported.");
+                "Only matching channels, mono/stereo, or explicit 5.1/7.1 to stereo conversion are supported.");
+        if (downmixSurround)
+        {
+            if (input is not WaveFormatExtensible surround ||
+                (surround.ChannelMask != 0x3f && surround.ChannelMask != 0x60f &&
+                 surround.ChannelMask != 0x63f) ||
+                (input.Channels == 6 && surround.ChannelMask == 0x63f) ||
+                (input.Channels == 8 && surround.ChannelMask != 0x63f) ||
+                (output is WaveFormatExtensible stereo &&
+                 stereo.ChannelMask != 0x3))
+                throw new NotSupportedException(
+                    "Surround downmix requires an explicit standard 5.1/7.1 speaker mask and a front-left/right stereo sink.");
+            (_surroundLeft, _surroundRight) = BuildSurroundStereoMatrix(
+                surround.ChannelMask, input.Channels);
+        }
         // Frame-interleaving alone does not identify which speaker owns each
         // channel. Reject mismatched explicit speaker masks before any PCM moves.
         if (input.Channels == output.Channels &&
@@ -329,8 +348,71 @@ internal sealed class PcmFormatAdapter
         BinaryPrimitives.ReadSingleLittleEndian(
             pcm.Slice((frame * _channels + channel) * sizeof(float)));
 
+    // Microsoft speaker-mask order is ascending speaker bit, not
+    // necessarily intuitive "channel 0..N" order. Preserve front left/right,
+    // fold center and each surround at -3 dB, and leave LFE out of stereo.
+    // Normalize each row by its absolute sum to protect correlated full-scale
+    // inputs from clipping; DSP processing still happens on every input channel
+    // before this render-only mapping. No callback heap allocation.
+    private static (float[] Left, float[] Right) BuildSurroundStereoMatrix(
+        int speakerMask, int sourceChannels)
+    {
+        const float surround = 0.70710678f;
+        float[] left = new float[sourceChannels];
+        float[] right = new float[sourceChannels];
+        uint remaining = unchecked((uint)speakerMask);
+        for (int channel = 0; channel < sourceChannels; channel++)
+        {
+            uint speaker = remaining & (0u - remaining);
+            remaining &= remaining - 1;
+            switch (speaker)
+            {
+                case 0x1u: left[channel] = 1f; break;    // FL
+                case 0x2u: right[channel] = 1f; break;   // FR
+                case 0x4u: left[channel] = right[channel] = surround; break; // FC
+                case 0x8u: break;                        // LFE is not full range
+                case 0x10u: left[channel] = surround; break; // BL
+                case 0x20u: right[channel] = surround; break; // BR
+                case 0x200u: left[channel] = surround; break; // SL
+                case 0x400u: right[channel] = surround; break; // SR
+                default: throw new NotSupportedException(
+                    "Unexpected speaker position in stereo downmix.");
+            }
+        }
+        float lsum = left.Sum();
+        float rsum = right.Sum();
+        if (lsum < 1 || rsum < 1)
+            throw new NotSupportedException("Surround mix is missing a front stereo pair.");
+        for (int c = 0; c < sourceChannels; c++)
+        {
+            left[c] /= lsum;
+            right[c] /= rsum;
+        }
+        return (left, right);
+    }
+
+    private float MixSurround(ReadOnlySpan<byte> samples, int frame, int sinkChannel)
+    {
+        float[] weights = sinkChannel == 0 ? _surroundLeft! : _surroundRight!;
+        float total = 0f;
+        for (int channel = 0; channel < _channels; channel++)
+            total += ReadFloat(samples, frame, channel) * weights[channel];
+        return total;
+    }
+
+    private float MixSurroundHistory(int sinkChannel)
+    {
+        float[] weights = sinkChannel == 0 ? _surroundLeft! : _surroundRight!;
+        float total = 0f;
+        for (int channel = 0; channel < _channels; channel++)
+            total += _lastFrame[channel] * weights[channel];
+        return total;
+    }
+
     private float ReadMappedHistory(int sinkChannel)
     {
+        if (_surroundLeft is not null)
+            return MixSurroundHistory(sinkChannel);
         // Equal-weight stereo → mono preserves symmetric signals and
         // avoids summing two full-scale samples above the valid range.
         if (_channels == 2 && _outputChannels == 1)
@@ -341,6 +423,8 @@ internal sealed class PcmFormatAdapter
 
     private float ReadMappedFloat(ReadOnlySpan<byte> pcm, int frame, int sinkChannel)
     {
+        if (_surroundLeft is not null)
+            return MixSurround(pcm, frame, sinkChannel);
         if (_channels == 2 && _outputChannels == 1)
             return (ReadFloat(pcm, frame, 0) +
                     ReadFloat(pcm, frame, 1)) * 0.5f;
@@ -406,6 +490,7 @@ internal sealed class PcmFormatAdapter
         TestStreamingResample(96000, 48000, 960, 2);
 
         TestMonoStereoMapping();
+        TestSurroundToStereoDownmix();
         TestShortPacketBoundaries(44100, 48000);
         TestShortPacketBoundaries(48000, 44100);
         TestShortPacketBoundaries(48000, 96000);
@@ -427,10 +512,10 @@ internal sealed class PcmFormatAdapter
 
         Console.WriteLine(
             "PASS: PCM16/PCM24/float32 conversion, saturation, 44.1/48/96 kHz " +
-            "streaming, short-packet interpolation, mono/stereo mapping, " +
+            "streaming, short-packet interpolation, mono/stereo and explicit 5.1/7.1 downmix, " +
             "windowed-sinc anti-alias rejection at 96->48 and 48->44.1 kHz, " +
             "channel isolation, same-rate allocation fast path, bounded clock " +
-            "adjustment and unsupported 5.1 rejection.");
+            "adjustment and unsupported maskless/ambiguous multichannel rejection.");
     }
 
     private static void TestExtensiblePrecisionAndChannelLayouts()
@@ -547,16 +632,21 @@ internal sealed class PcmFormatAdapter
             (48000, 96000, 1, 2, 32),
             (48000, 48000, 2, 1, 16),
             (48000, 48000, 8, 8, 24),
-            (48000, 48000, 8, 8, 32)
+            (48000, 48000, 8, 8, 32),
+            (48000, 48000, 6, 2, 24),
+            (96000, 48000, 8, 2, 32)
         })
         {
             var input = sourceChannels > 2
-                ? new WaveFormatExtensible(inputRate, sourceBits, sourceChannels)
+                ? new WaveFormatExtensible(inputRate, sourceBits, sourceChannels,
+                    sourceBits == 32, sourceBits,
+                    sourceChannels == 6 ? 0x3f : 0x63f)
                 : sourceBits == 32
                     ? WaveFormat.CreateIeeeFloatWaveFormat(inputRate, sourceChannels)
                     : new WaveFormat(inputRate, sourceBits, sourceChannels);
             var output = sinkChannels > 2
-                ? new WaveFormatExtensible(outputRate, 32, sinkChannels)
+                ? new WaveFormatExtensible(outputRate, 32, sinkChannels,
+                    true, 32, sinkChannels == 6 ? 0x3f : 0x63f)
                 : WaveFormat.CreateIeeeFloatWaveFormat(outputRate, sinkChannels);
             var allocating = new PcmFormatAdapter(input, output);
             var scratch = new PcmFormatAdapter(input, output);
@@ -657,9 +747,94 @@ internal sealed class PcmFormatAdapter
                 "Audio callback PCM scratch path allocated managed heap memory: " +
                 allocated + " bytes over 256 warm packets.");
         Console.WriteLine(
-            "PASS: 9 PCM16/PCM24/float32 44.1/48/96k mono/stereo/8ch equivalence " +
+            "PASS: 11 PCM16/PCM24/float32 44.1/48/96k mono/stereo/5.1/7.1 equivalence " +
             "matrices x60 fragmented packets, scratch overflow guards and " +
             "256 warm conversion packets without managed PCM allocations.");
+    }
+
+    private static void TestSurroundToStereoDownmix()
+    {
+        var stereo = WaveFormat.CreateIeeeFloatWaveFormat(48000, 2);
+        const float centerWeight = 0.70710678f;
+        foreach ((int mask, int channels) in new[] {
+            (0x3f, 6), (0x60f, 6), (0x63f, 8)
+        })
+        {
+            var source = new WaveFormatExtensible(
+                48000, 32, channels, true, 32, mask);
+            var adapter = new PcmFormatAdapter(source, stereo);
+            int frames = 16;
+            byte[] input = new byte[frames * channels * sizeof(float)];
+            // Every speaker receives one isolated frame. No channel swapping,
+            // and no LFE leaked into the left/right full-range speakers.
+            int[] bits = Enumerable.Range(0, 32)
+                .Select(i => 1 << i).Where(bit => (mask & bit) != 0).ToArray();
+            float denominator = 1f + centerWeight +
+                (mask == 0x63f ? 2f * centerWeight : centerWeight);
+            for (int channel = 0; channel < channels; channel++)
+            {
+                BinaryPrimitives.WriteSingleLittleEndian(
+                    input.AsSpan((channel * channels + channel) * sizeof(float)), 1f);
+            }
+            byte[] result = adapter.Encode(input, input.Length);
+            if (result.Length != frames * stereo.BlockAlign)
+                throw new InvalidOperationException("Surround downmix changed frame count.");
+            for (int channel = 0; channel < channels; channel++)
+            {
+                int speaker = bits[channel];
+                float left = BinaryPrimitives.ReadSingleLittleEndian(
+                    result.AsSpan(channel * stereo.BlockAlign));
+                float right = BinaryPrimitives.ReadSingleLittleEndian(
+                    result.AsSpan(channel * stereo.BlockAlign + 4));
+                float expectedL = speaker switch
+                {
+                    0x1 => 1f, 0x4 or 0x10 or 0x200 => centerWeight, _ => 0f
+                };
+                float expectedR = speaker switch
+                {
+                    0x2 => 1f, 0x4 or 0x20 or 0x400 => centerWeight, _ => 0f
+                };
+                AssertClose(left, expectedL / denominator);
+                AssertClose(right, expectedR / denominator);
+            }
+
+            // All full-scale channels correlated: normalized stereo may not
+            // exceed unity, regardless of the number of surround pairs.
+            var allOnes = new byte[frames * channels * sizeof(float)];
+            for (int sample = 0; sample < frames * channels; sample++)
+                BinaryPrimitives.WriteSingleLittleEndian(
+                    allOnes.AsSpan(sample * 4), 1f);
+            var positive = new PcmFormatAdapter(source, stereo)
+                .Encode(allOnes, allOnes.Length);
+            for (int i = 0; i < positive.Length; i += 4)
+                AssertClose(BinaryPrimitives.ReadSingleLittleEndian(
+                    positive.AsSpan(i)), 1f);
+
+            // Nonstandard layouts and non-front stereo sinks must never map.
+            foreach (int invalidMask in new[] { 0x33f, 0x55f })
+            {
+                if (BitOperations.PopCount(unchecked((uint)invalidMask)) != channels)
+                    continue;
+                try
+                {
+                    _ = new PcmFormatAdapter(
+                        new WaveFormatExtensible(48000, 32, channels, true,
+                            32, invalidMask), stereo);
+                    throw new InvalidOperationException("Unknown surround layout accepted.");
+                }
+                catch (NotSupportedException) { }
+            }
+        }
+        try
+        {
+            _ = new PcmFormatAdapter(
+                new WaveFormatExtensible(48000, 32, 6, true, 32, 0x3f),
+                new WaveFormatExtensible(48000, 32, 2, true, 32, 0xC));
+            throw new InvalidOperationException("Non-front two-channel sink accepted.");
+        }
+        catch (NotSupportedException) { }
+        Console.WriteLine("PASS: speaker-aware 5.1 back/side and 7.1 stereo downmix, LFE exclusion, " +
+            "bounded coherent peaks, channel isolation and invalid-layout rejection.");
     }
 
     private static void TestMonoStereoMapping()

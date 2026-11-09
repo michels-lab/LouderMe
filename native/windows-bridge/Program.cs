@@ -307,9 +307,9 @@ internal static class Program
             using var capture = new WasapiLoopbackCapture(source);
             var inputFormat = capture.WaveFormat;
             var outputFormat = physical.AudioClient.MixFormat;
-            // Decode to native float32 and adapt the processed stream to the
-            // actual physical mix format; explicit mono/stereo mapping is
-            // supported. Multichannel conversion still fails closed.
+            // Decode to native float32, run own DSP on ALL source channels,
+            // then map explicit 5.1/7.1 speaker positions to a physical
+            // front-stereo sink when needed. Unknown layouts fail closed.
             var adapter = new PcmFormatAdapter(inputFormat, outputFormat);
             // One reusable pair of scratch arrays per isolated route.
             // Reserve 500 ms of input outside WASAPI callbacks; an abnormal
@@ -526,7 +526,7 @@ internal static class Program
                 Console.WriteLine($"DSP: {boost}% gain, own C++ engine, EQ " +
                     (eqText is null ? "disabled" : $"enabled ({eqText} dB)"));
                 Console.WriteLine($"Formats: virtual {inputFormat}; physical {outputFormat}");
-                Console.WriteLine("PCM16/PCM24/float32 conversion + linear rate adaptation; matching channels or mono/stereo map.");
+                Console.WriteLine("PCM16/PCM24/float32 conversion + linear rate adaptation; matching channels, mono/stereo or explicit speaker-aware 5.1/7.1->stereo map.");
                 Console.WriteLine("Reusable callback PCM scratch; maximum 500ms capture packet, no per-packet managed PCM buffer allocation.");
                 Console.WriteLine("Press Ctrl+C to stop; this is not a shipped system driver.");
                 if (args.Contains("--interactive-controls"))

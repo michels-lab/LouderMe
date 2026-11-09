@@ -252,9 +252,23 @@ jobs:
             }
             # Microsoft official Windows SDK/WDK v28000, same major release
             # as the pinned SysVAD and WDK NuGet compiler dependencies.
-            foreach ($id in @('Microsoft.WindowsSDK.10.0.28000','Microsoft.WindowsWDK.10.0.28000')) {
-              & winget install --id $id --exact --source winget --silent --disable-interactivity --accept-source-agreements --accept-package-agreements
-              if ($LASTEXITCODE -ne 0) { throw "$id installation failed (code $LASTEXITCODE)." }
+            # WinGet's default SDK log path can exceed the bootstrapper's
+            # nested MSI log path limit (error 0x80070057 / 0x8A150006).
+            # Use a short path instead of AppInstaller's nested DiagOutputDir.
+            $logRoot = Join-Path $env:RUNNER_TEMP 'wdk-logs'
+            New-Item -ItemType Directory -Path $logRoot -Force | Out-Null
+            foreach ($package in @(
+              @{ Id = 'Microsoft.WindowsSDK.10.0.28000'; Log = 'sdk.log' },
+              @{ Id = 'Microsoft.WindowsWDK.10.0.28000'; Log = 'wdk.log' }
+            )) {
+              $id = $package.Id
+              $installLog = Join-Path $logRoot $package.Log
+              & winget install --id $id --exact --source winget --silent --disable-interactivity --accept-source-agreements --accept-package-agreements --log $installLog
+              if ($LASTEXITCODE -ne 0) {
+                # Fail the job rather than claiming driver deployability.
+                if (Test-Path $installLog) { Get-Content $installLog -Tail 35 | Write-Host }
+                throw "$id installation failed (code $LASTEXITCODE); INF/CAT validation NOT run."
+              }
             }
           }
           foreach ($tool in @('StampInf','InfVerif','Inf2Cat')) {

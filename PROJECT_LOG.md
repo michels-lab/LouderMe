@@ -1,3 +1,10 @@
+## 2026-11-09 — Granada: completar prueba de fuente independiente 5.1/7.1 y detectar canales perdidos (candidato)
+
+- **Fallo funcional corregido:** el laboratorio de Windows seguía rechazando una señal de una app separada con 6 u 8 canales, aunque ya se habían integrado generador, downmix y driver. Ahora acepta *solo* 1/2/6/8, verifica dos segundos de PCM, un único marcador real, cero errores del proceso y registra número de canales/tramas de la fuente en evidencia inmutable.
+- **Fallo de comprobación de audio:** antes una media de ocho canales podía aprobar 440Hz incluso si faltaba una bocina; ahora se calculan proyecciones 440Hz por canal, preasignadas y verificadas en la ruta real del capturador virtual. Se rechazan canales perdidos en 5.1 trasero/lateral/7.1 y máscaras ambiguas sin cambiar la monitorización de salida física. Pruebas PowerShell y C# de señales PCM16/24/24en32/float32 y falsos marcadores. Gates CI Windows nativo y Android antes de merge; **no** son ensayos con driver firmado instalado ni bocinas. Auditoría docs/audits/GRANADA_2026-11-09_VIRTUAL_SURROUND_SOURCE_PROOF.md; #48 sigue abierto, sin release.
+
+---
+
 ## 2026-11-09 — Granada: sesión WASAPI invalida formatos PCM renegociados (candidato)
 
 - **Ruta funcional Windows:** si Windows Sound/USB/HDMI/Bluetooth cambia el formato de un endpoint sin desactivarlo, el puente no debe seguir transformando PCM con el formato viejo. Captura una identidad de muestra rate/bitdepth/validbits/mask/subtype por fuente y salida, y verifica en la hebra de gestión cada segundo; cualquier cambio libera WASAPI y devuelve interrupción recuperable (75), no altera salida default.

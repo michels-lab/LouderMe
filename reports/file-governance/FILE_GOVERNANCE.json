@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 292,
-  "classified_files_total": 288,
-  "docs_content_inspected": 94,
+  "tracked_files_total": 293,
+  "classified_files_total": 289,
+  "docs_content_inspected": 95,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,7 +12,7 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 86,
+    "document": 87,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
@@ -23,7 +23,7 @@
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "7d5c4f799d1d4d6368f3459cdc122006d128b692766155e996289ef61fca7d71",
+  "inventory_fingerprint": "719c510a37fc700ea4a78ae2e548ce9998f7424bd8879d348120921686bdad53",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -87,7 +87,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "9558623eb8fe559a094463e677032da84344db6a"
+      "blob": "e0fcc813db772f65a871af5348f5c75998d54e10"
     },
     {
       "path": ".github/workflows/file-governance-audit.yml",
@@ -129,7 +129,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "4fddde76ff41ad7a196e0d183f99a740e978766c"
+      "blob": "847be86b4930fada828c0d3e71e81d3379003a24"
     },
     {
       "path": ".github/workflows/restore-canonical-android-asset.yml",
@@ -234,7 +234,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "1d9cfd7a2f9f5de72b30641bb8e64fd863fee394"
+      "blob": "91716785970103fba4c8bf1fe88787cedf89f537"
     },
     {
       "path": "README.md",
@@ -675,7 +675,7 @@
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "0004ed54541f94b083ef95adc21d663540e0c110"
+      "blob": "f125734bff875d7bd80664654225be17f6cc87a8"
     },
     {
       "path": "desktop/docs/GRANADA_RELEASE_READINESS_2026-10-20.md",
@@ -864,7 +864,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "e387627dfc67d7d4c9b4f9ea6287974cda579f50"
+      "blob": "5e48c18588d848a9431dea93996e0ea1e778e992"
     },
     {
       "path": "desktop/src/LouderMeDesktop/DesktopUpdateService.cs",
@@ -948,7 +948,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "04ce8627d6811a17ba5922204a6d92b11debc941"
+      "blob": "77d91ea21c1ff39b6ec11e60cc08fba0432a2154"
     },
     {
       "path": "desktop/src/LouderMeDesktop/SplashForm.cs",
@@ -1469,6 +1469,13 @@
       "blob": "d2ad53cf310b1340075ef793cc8ec8e0df535a30"
     },
     {
+      "path": "docs/audits/GRANADA_2026-11-08_ATOMIC_AUDIO_PREFERENCES.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "14bcdf9c47e161099579b46d2ad69736271f5ffe"
+    },
+    {
       "path": "docs/product-reviews/2026-10-21-native-windows-audio-evidence.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -1977,7 +1984,7 @@
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "2b2fdfd19373466263c3a3c0c8dfb7e160fe7b60"
+      "blob": "e7a291a9142a46cef3616d63fa115615b1155dbd"
     },
     {
       "path": "tools/test_repository_file_auditor.py",

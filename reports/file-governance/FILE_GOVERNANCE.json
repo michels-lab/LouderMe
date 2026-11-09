@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 307,
-  "classified_files_total": 303,
-  "docs_content_inspected": 103,
+  "tracked_files_total": 312,
+  "classified_files_total": 308,
+  "docs_content_inspected": 104,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,12 +12,12 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 95,
+    "document": 96,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
-    "source": 102,
-    "test": 37,
+    "source": 104,
+    "test": 39,
     "text_metadata": 2,
     "workflow": 11
   },
@@ -25,8 +25,8 @@
     "POTENTIAL_UNLOGGED_CHANGES": 1
   },
   "finding_total": 1,
-  "inventory_fingerprint": "f07bf79512eb889a0d00fbc719712c704f6a273d8d8aa7430c5b562790721dae",
-  "evidence_fingerprint": "ddeb913e8ec6481db75d488ec5cca00c7db2df133c0671399b4cd8f673567e23",
+  "inventory_fingerprint": "f71287d4e33d5a841a42879226fe61b64c1f52987ca44031c7438e3780790479",
+  "evidence_fingerprint": "66af31b0a8c07cc60bf0df8ccc966f5461580776c2ee9e390aaeb6900ada23fc",
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/chatgpt-task.yml",
@@ -320,14 +320,14 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "f54c14cd22d396e6a93fde977b85fc072b1c33d6"
+      "blob": "d6815812f41aededf4ce75cb06e44aba60898464"
     },
     {
       "path": "app/src/main/java/com/michelslab/louderme/audio/AudioBoostService.kt",
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "e649dc236900c35532c7dd43a7877814dce1559f"
+      "blob": "7a37b11372c727c6f0f2e246c966527c841a9113"
     },
     {
       "path": "app/src/main/java/com/michelslab/louderme/audio/AudioBoostStateStore.kt",
@@ -351,11 +351,25 @@
       "blob": "62ca5a4d1de3feeb00d24fe18863b70973f16b80"
     },
     {
+      "path": "app/src/main/java/com/michelslab/louderme/audio/AudioRouteLabel.kt",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "85660419e226c1f4fe800e5e6065b96c582b1bc6"
+    },
+    {
       "path": "app/src/main/java/com/michelslab/louderme/audio/BoostMath.kt",
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
       "blob": "7ec3d2544d8715e0d4389d9a7fb8b265a08a52ca"
+    },
+    {
+      "path": "app/src/main/java/com/michelslab/louderme/audio/BoostQuickLevels.kt",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "7f7911d1bff58e602715408003566ee7f4d90ccc"
     },
     {
       "path": "app/src/main/java/com/michelslab/louderme/audio/EqualizerModels.kt",
@@ -610,11 +624,25 @@
       "blob": "aa8c63f97b7e66ee5233701e45c16e4eb01e2fd0"
     },
     {
+      "path": "app/src/test/java/com/michelslab/louderme/audio/AudioRouteLabelTest.kt",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "4f3384bbb2cc4692f356d3cab77b675744d5ad08"
+    },
+    {
       "path": "app/src/test/java/com/michelslab/louderme/audio/BoostMathTest.kt",
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
       "blob": "0a3c9a92b7d98e71d08cadbaf510fc8b036bc44f"
+    },
+    {
+      "path": "app/src/test/java/com/michelslab/louderme/audio/BoostQuickLevelsTest.kt",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "4d9c1e19d9d7a1c52e4a2f9e3b0c0a3936974724"
     },
     {
       "path": "app/src/test/java/com/michelslab/louderme/audio/EqualizerPresetsTest.kt",
@@ -1534,6 +1562,13 @@
       "blob": "6b8e0e13925d99e5f434ad6d4105dc61e222bdd7"
     },
     {
+      "path": "docs/audits/GRANADA_2026-11-09_ANDROID_NOTIFICATION_AND_ROUTE.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "b49044a38a7f0b335a41b912c6d7add1679fde21"
+    },
+    {
       "path": "docs/audits/GRANADA_2026-11-09_LIVE_WASAPI_FORMAT_EPOCH.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -2152,11 +2187,11 @@
   ],
   "findings": [
     {
-      "id": "47d116d0badd23b6",
+      "id": "0b865f8f7f55b125",
       "code": "POTENTIAL_UNLOGGED_CHANGES",
       "severity": "review",
       "path": "PROJECT_LOG.md",
-      "observation": "8 implementation/config paths changed since this log's last commit; examples: app/src/main/java/com/michelslab/louderme/audio/AudioBoostService.kt, app/src/main/java/com/michelslab/louderme/audio/EqualizerModels.kt, app/src/main/java/com/michelslab/louderme/audio/EqualizerStateStore.kt, app/src/main/java/com/michelslab/louderme/audio/SessionZeroAttachmentPolicy.kt, app/src/main/java/com/michelslab/louderme/audio/SessionZeroAudioEngine.kt, app/src/main/java/com/michelslab/louderme/audio/SessionZeroEqualizer.kt",
+      "observation": "13 implementation/config paths changed since this log's last commit; examples: app/src/main/java/com/michelslab/louderme/audio/AudioBoostContract.kt, app/src/main/java/com/michelslab/louderme/audio/AudioBoostService.kt, app/src/main/java/com/michelslab/louderme/audio/AudioRouteLabel.kt, app/src/main/java/com/michelslab/louderme/audio/BoostQuickLevels.kt, app/src/main/java/com/michelslab/louderme/audio/EqualizerModels.kt, app/src/main/java/com/michelslab/louderme/audio/EqualizerStateStore.kt",
       "recommendation": "Inspect diffs and reconcile only meaningful decisions/results in the canonical log",
       "state": "REVIEW_REQUIRED"
     }

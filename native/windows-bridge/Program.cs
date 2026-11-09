@@ -322,9 +322,18 @@ internal static class Program
                 adapter.RequiredOutputCapacity(maxCaptureFrames)];
             var clockController = new AdaptiveBufferClock();
             var processingTelemetry = new AudioProcessingTelemetry();
-            if (provePhysicalRoute && inputFormat.Channels is < 1 or > 2)
+            // The owned tone test remains mono/stereo; the separate
+            // Windows source process may supply a negotiated 5.1/7.1
+            // format. Native DSP handles every source channel, then
+            // the PCM adapter folds them into the selected stereo sink.
+            if (ownTone && inputFormat.Channels is < 1 or > 2)
                 throw new NotSupportedException(
-                    "Physical-route lab proof requires a mono or stereo virtual mix.");
+                    "Owned physical-route tone proof requires mono or stereo source.");
+            if (proveExternalAppRoute &&
+                (inputFormat.Channels is 6 or 8) &&
+                outputFormat.Channels != 2)
+                throw new NotSupportedException(
+                    "Independent 5.1/7.1 proof needs an actual front-stereo physical output.");
 
             using var engine = new NativeDsp(
                 inputFormat.SampleRate, inputFormat.Channels, boost);

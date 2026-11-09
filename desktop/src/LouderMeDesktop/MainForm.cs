@@ -27,6 +27,8 @@ internal sealed class MainForm : Form
     private FlowLayoutPanel? _boostQuickActions;
     private bool _diagnosticRunning;
     private bool? _lastAudioTestHeard;
+    private string? _lastObservedOutputId;
+    private long _outputSelectionRevision;
     private string? _startupProbeRecoveryNotice;
     private readonly CheckBox _eqEnabled = new();
     private readonly ComboBox _preset = new();
@@ -865,19 +867,39 @@ internal sealed class MainForm : Form
         root.Controls.Add(footer);
     }
 
+    private void ObserveOutputIdentity(string? id)
+    {
+        if (OutputRouteEvidencePolicy.Changed(_lastObservedOutputId, id))
+        {
+            _outputSelectionRevision++;
+            _lastAudioTestHeard = null;
+            _engineStatus.ForeColor = Gold;
+            _engineStatus.Text =
+                "WINDOWS OUTPUT CHANGED. The previous listening result does not " +
+                "apply to this device. Check Equalizer APO Configurator and repeat " +
+                "the four-second audio-path test.";
+        }
+        _lastObservedOutputId = id;
+    }
+
     private void SyncDeviceVolume()
     {
         if (_loading || _volume.Capture || _mute.Focused) return;
         try
         {
             _audio.Refresh();
+            ObserveOutputIdentity(_audio.DeviceId);
             _loading = true;
             _deviceValue.Text = _audio.DeviceName;
             _volume.Value = Math.Clamp(_audio.VolumePercent, 0, 100);
             _volumeValue.Text = $"{_volume.Value}%";
             _mute.Checked = _audio.Muted;
         }
-        catch (Exception ex) { _deviceValue.Text = $"Device unavailable: {ex.Message}"; }
+        catch (Exception ex)
+        {
+            _deviceValue.Text = $"Device unavailable: {ex.Message}";
+            ObserveOutputIdentity(null);
+        }
         finally { _loading = false; }
     }
 
@@ -887,6 +909,7 @@ internal sealed class MainForm : Form
         try
         {
             _audio.Refresh();
+            ObserveOutputIdentity(_audio.DeviceId);
             _deviceValue.Text = _audio.DeviceName;
             _volume.Value = Math.Clamp(_audio.VolumePercent, _volume.Minimum, _volume.Maximum);
             _volumeValue.Text = $"{_volume.Value}%";
@@ -980,6 +1003,22 @@ internal sealed class MainForm : Form
             MessageBoxIcon.Question) != DialogResult.Yes)
             return;
 
+        // A user's listening answer only belongs to the output used for
+        // this exact test, including during the answer dialog.
+        string testOutputId;
+        try
+        {
+            _audio.Refresh();
+            testOutputId = _audio.DeviceId;
+            ObserveOutputIdentity(testOutputId);
+        }
+        catch (Exception ex)
+        {
+            ShowEngineError(ex);
+            return;
+        }
+        long revisionAtStart = _outputSelectionRevision;
+
         // Bind the temporary effect and its restoration to the SAME
         // immutable values even if a deferred UI event arrives mid-test.
         var testSettings = new DesktopAudioSettings
@@ -1026,13 +1065,39 @@ internal sealed class MainForm : Form
 
         if (performed)
         {
-            _lastAudioTestHeard = MessageBox.Show(
+            bool heard = MessageBox.Show(
                 "Did the sound become clearly QUIETER during the four-second test? " +
                 "If not, Equalizer APO may not be attached to your actual Windows " +
                 "playback output, or the app uses exclusive mode.",
                 "Did LouderMe change your sound?",
                 MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes;
 
+            bool sameOutput;
+            try
+            {
+                _audio.Refresh();
+                string currentId = _audio.DeviceId;
+                ObserveOutputIdentity(currentId);
+                sameOutput = OutputRouteEvidencePolicy.SameVerifiedOutput(
+                    testOutputId, currentId, revisionAtStart, _outputSelectionRevision);
+            }
+            catch (Exception)
+            {
+                ObserveOutputIdentity(null);
+                sameOutput = false;
+            }
+            if (!sameOutput)
+            {
+                _lastAudioTestHeard = null;
+                _engineStatus.ForeColor = Gold;
+                _engineStatus.Text =
+                    "OUTPUT CHANGED DURING LISTENING TEST. The answer cannot " +
+                    "verify processing on this playback output. Recheck Equalizer " +
+                    "APO Configurator and repeat the test.";
+                return;
+            }
+
+            _lastAudioTestHeard = heard;
             _engineStatus.ForeColor = _lastAudioTestHeard.Value ? Cyan : Red;
             _engineStatus.Text = _lastAudioTestHeard.Value
                 ? "You confirmed audible -18 dB attenuation. " +

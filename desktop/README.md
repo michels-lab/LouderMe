@@ -1,3 +1,7 @@
+## Granada 2026-11-08 — Windows output hot-swap and listening evidence
+
+The desktop clears previous user-reported -18 dB listening evidence if Windows changes/disconnects its playback device. A test snapshots the exact endpoint identity plus selection revision and discards an answer if the route changes while listening or answering. The existing Windows APO contract now tests identity and A→B→A invalidation without a sound device. This does not prove an APO is attached to a new physical output. Audit: ../docs/audits/GRANADA_2026-11-08_OUTPUT_CHANGE_EVIDENCE.md.
+
 ## Granada 2026-11-08 — crash-safe Boost/EQ desktop preferences
 
 The real Windows settings store writes full JSON to a flushed same-directory .tmp, then atomically replaces desktop-settings.json, keeping prior settings intact on failed writes. The Windows app's --check-settings-contract tests interruption just before rename, stable/Developer isolation, bounds and corrupt legacy JSON. Both build and stable-release workflows enforce it. This does not prove audio hardware or produce a public release. Audit: ../docs/audits/GRANADA_2026-11-08_ATOMIC_AUDIO_PREFERENCES.md.

@@ -93,6 +93,12 @@ class SessionZeroEqualizer {
         }
     }
 
+    /** Revalidate ownership without setting EQ parameters or allocating effects. */
+    fun hasActiveEffect(): Boolean =
+        runCatching {
+            equalizer?.let { it.enabled && it.hasControl() } == true
+        }.getOrDefault(false)
+
     fun disable() {
         runCatching { equalizer?.setEnabled(false) }
     }

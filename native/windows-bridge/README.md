@@ -1,3 +1,7 @@
+## Granada 2026-11-09 — independent per-speaker frequency map
+
+The virtual-only experimental bridge adds `--probe-virtual-speaker-map --source-id EXACT_VIRTUAL_ID --confirm-experimental` for an externally launched independent Windows source with `--speaker-map`. Each 2/5.1-back/5.1-side/7.1 speaker position carries 440+53×lane Hz. `VirtualSpeakerMapVerifier` accumulates per-channel/per-frequency sine/cosine projections in preallocated arrays without recording PCM or allocating in callbacks; each position must contain its own pilot and reject foreign frequencies above 30% of the correct amplitude. Real normal 440 Hz proof, physical DSP gain evidence, and the legacy source path remain unchanged. Numeric fixture vectors cover absent/misrouted signals and packet fragmentation; this is not a real speaker test. Audit: ../../docs/audits/GRANADA_2026-11-09_WINDOWS_SPEAKER_MAP.md.
+
 ## Granada 2026-11-09 — full-channel virtual loopback evidence
 
 The LAB virtual-only WASAPI proof now requires the independent 440Hz tone in **all** lanes of declared 5.1 back/side and 7.1 mixes (standard masks only). The previous verifier could average 7 working lanes and still claim 8-channel virtual transport; strict per-lane sine/cosine projections are preallocated once outside the capture callback. Real virtual-only probing uses this stricter mode, while physical WASAPI monitoring retains its separate downmix-compatible behavior. Existing no-source controls remain mandatory. Audit: ../../docs/audits/GRANADA_2026-11-09_VIRTUAL_SURROUND_SOURCE_PROOF.md.

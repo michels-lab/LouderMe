@@ -638,12 +638,15 @@ internal sealed class PcmFormatAdapter
         })
         {
             var input = sourceChannels > 2
-                ? new WaveFormatExtensible(inputRate, sourceBits, sourceChannels)
+                ? new WaveFormatExtensible(inputRate, sourceBits, sourceChannels,
+                    sourceBits == 32, sourceBits,
+                    sourceChannels == 6 ? 0x3f : 0x63f)
                 : sourceBits == 32
                     ? WaveFormat.CreateIeeeFloatWaveFormat(inputRate, sourceChannels)
                     : new WaveFormat(inputRate, sourceBits, sourceChannels);
             var output = sinkChannels > 2
-                ? new WaveFormatExtensible(outputRate, 32, sinkChannels)
+                ? new WaveFormatExtensible(outputRate, 32, sinkChannels,
+                    true, 32, sinkChannels == 6 ? 0x3f : 0x63f)
                 : WaveFormat.CreateIeeeFloatWaveFormat(outputRate, sinkChannels);
             var allocating = new PcmFormatAdapter(input, output);
             var scratch = new PcmFormatAdapter(input, output);
@@ -826,7 +829,7 @@ internal sealed class PcmFormatAdapter
         {
             _ = new PcmFormatAdapter(
                 new WaveFormatExtensible(48000, 32, 6, true, 32, 0x3f),
-                new WaveFormatExtensible(48000, 32, 2, true, 32, 0xCu));
+                new WaveFormatExtensible(48000, 32, 2, true, 32, 0xC));
             throw new InvalidOperationException("Non-front two-channel sink accepted.");
         }
         catch (NotSupportedException) { }

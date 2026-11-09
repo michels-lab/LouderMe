@@ -137,7 +137,7 @@ internal sealed class VirtualSpeakerMapVerifier
                         throw new InvalidOperationException(
                             "Virtual speaker-map accepted a switched speaker " + badLane);
                 }
-                if (Generate(format, allSameTone: true).Passed)
+                if (channels > 1 && Generate(format, allSameTone: true).Passed)
                     throw new InvalidOperationException(
                         "Virtual speaker-map accepted identical 440Hz in all speakers.");
             }

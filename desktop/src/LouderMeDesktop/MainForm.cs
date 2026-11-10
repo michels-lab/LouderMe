@@ -48,6 +48,8 @@ internal sealed class MainForm : Form
 
     private bool _loading;
     private readonly System.Windows.Forms.Timer _deviceVolumeSyncTimer = new() { Interval = 1500 };
+    private readonly System.Windows.Forms.Timer _eqApplyTimer = new() { Interval = 180 };
+    private bool _eqApplyPending;
 
     private static readonly Color Bg = Color.FromArgb(6, 9, 16);
     private static readonly Color Surface = Color.FromArgb(12, 20, 34);
@@ -102,6 +104,9 @@ internal sealed class MainForm : Form
         _deviceVolumeSyncTimer.Tick += (_, _) => SyncDeviceVolume();
         _deviceVolumeSyncTimer.Start();
 
+        _eqApplyTimer.Tick += (_, _) => FlushPendingEqualizerApply();
+        FormClosing += (_, _) => FlushPendingEqualizerApply(force: true);
+
         if (!DeveloperMode.Enabled)
             Shown += async (_, _) => await CheckForUpdatesAsync(silent: true);
     }
@@ -112,6 +117,8 @@ internal sealed class MainForm : Form
         {
             _deviceVolumeSyncTimer.Stop();
             _deviceVolumeSyncTimer.Dispose();
+            _eqApplyTimer.Stop();
+            _eqApplyTimer.Dispose();
             if (_wheelFilter is not null)
                 Application.RemoveMessageFilter(_wheelFilter);
             _audio.Dispose();
@@ -741,6 +748,7 @@ internal sealed class MainForm : Form
             if (_loading || index < 0 || index >= _eqBands.Length) return;
             _eqBands[index].Value = (decimal)db;
         };
+        _eqWave.BandEditCompleted += () => FlushPendingEqualizerApply();
         layout.SetColumnSpan(_eqWave, 2);
         layout.Controls.Add(_eqWave, 0, 2);
 
@@ -797,8 +805,9 @@ internal sealed class MainForm : Form
                 finally { _loading = false; }
                 _settings.EqualizerGainsDb[index] = (float)value.Value;
                 _eqWave.Gains = _settings.EqualizerGainsDb;
-                ApplyProcessing();
+                ScheduleEqualizerApply();
             };
+            value.Leave += (_, _) => FlushPendingEqualizerApply();
             value.Name = $"eq-band-{EqualizerPresets.FrequenciesHz[i]}";
             _eqBands[i] = value;
 
@@ -1001,10 +1010,33 @@ internal sealed class MainForm : Form
         RefreshEngineStatus();
     }
 
+    private void ScheduleEqualizerApply()
+    {
+        if (_loading || _diagnosticRunning) return;
+        // Numeric/keyboard edits settle after 180ms. Graph drags commit
+        // as soon as the edit completes, without blocking every mouse move.
+        _eqApplyPending = true;
+        _eqApplyTimer.Stop();
+        _eqApplyTimer.Start();
+    }
+
+    private void FlushPendingEqualizerApply(bool force = false)
+    {
+        if (!EqualizerCommitPolicy.ShouldCommit(_eqApplyPending, _eqWave.IsDragging, force))
+            return;
+        _eqApplyTimer.Stop();
+        _eqApplyPending = false;
+        ApplyProcessing();
+    }
+
     private void ApplyProcessing()
     {
         if (_loading) return;
 
+        // A preset/Boost toggle commits immediately and supersedes any
+        // previously queued custom-band edit.
+        _eqApplyTimer.Stop();
+        _eqApplyPending = false;
         DesktopSettingsStore.Save(_settings);
         if (_diagnosticRunning) return;
         var status = _apo.GetStatus(_settings);

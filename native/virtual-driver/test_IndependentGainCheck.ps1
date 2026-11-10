@@ -316,6 +316,10 @@ try {
       independent_source_channels = 2
       virtual_matched440_amplitude = 0.011
       virtual_coherence = 0.75
+      speaker_map_verified = $true
+      speaker_map_channels = 2
+      speaker_map_min_own_amplitude = 0.011
+      speaker_map_max_leakage_amplitude = 0.0003
       physical_output_verified = $false
       global_windows_audio_verified = $false
       acoustic_spl_verified = $false
@@ -422,6 +426,37 @@ try {
   } catch { $crossPhaseRejected = $true }
   if (-not $crossPhaseRejected) {
     throw 'Virtual 5.1 source incorrectly accepted as stereo physical A/B.'
+  }
+
+  $v = Get-VirtualProof; $v.speaker_map_verified = $false
+  Assert-VirtualRejected '2ch virtual proof omitted separate speaker-position measurement' $v
+  $v = Get-VirtualProof; $v.Remove('speaker_map_verified')
+  Assert-VirtualRejected 'speaker-position verification field absent' $v
+  $v = Get-VirtualProof; $v.speaker_map_channels = 6
+  Assert-VirtualRejected 'physical mono/stereo source falsely tied to 5.1 speaker-map evidence' $v
+  $v = Get-VirtualProof; $v.speaker_map_min_own_amplitude = 0.001
+  Assert-VirtualRejected 'one channel lacks expected speaker-frequency signature' $v
+  $v = Get-VirtualProof; $v.speaker_map_max_leakage_amplitude = 0.009
+  Assert-VirtualRejected 'surround lanes were swapped or crossmixed' $v
+  $v = Get-VirtualProof; $v.speaker_map_max_leakage_amplitude = '0.001'
+  Assert-VirtualRejected 'speaker-map amplitudes were forged as text' $v
+  $v = Get-VirtualProof; $v.speaker_map_channels = 2.5
+  Assert-VirtualRejected 'fractional speaker-map channel count' $v
+
+  foreach ($layout in @(6, 8)) {
+    $a = Get-Baseline 100; $b = Get-Baseline 150
+    $a.independent_source_channels = $layout
+    $b.independent_source_channels = $layout
+    Write-Pair $a $b
+    $v = Get-VirtualProof
+    $v.independent_source_channels = $layout
+    $v.speaker_map_channels = $layout
+    Write-Virtual $v
+    Write-ValidVirtualSilence
+    $matching = Test-LouderMeIndependentGain -EvidenceDir $dir -ExpectedSessionId $SessionId -RequireVirtualProof
+    if ([Math]::Abs($matching - 1.5) -gt 0.000001) {
+      throw "Matching 5.1/7.1 speaker-map virtual→physical Boost gate rejected: $layout"
+    }
   }
 
   $v = Get-VirtualProof; $v.virtual_monitor_frames = 0

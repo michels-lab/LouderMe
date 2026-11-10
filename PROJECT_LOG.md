@@ -1,3 +1,12 @@
+## 2026-11-09 — Operación Granada: speaker-position PCM de Windows por canales reales (PR #156)
+
+- **Defecto funcional:** el laboratorio multicanal comprobaba que hubiera tono 440 Hz en todos los canales 5.1/7.1, pero no distinguía si Windows intercambiaba canales (p. ej. front-left/back-right) o copiaba la misma señal a todas las bocinas. La igualdad de amplitud no prueba identidad espacial.
+- **Código:** la app independiente incorpora modo *speaker-map* con señales distintivas 440+53·i Hz para cada speaker. El puente virtual WASAPI decodifica a float32 en scratch preasignado y comprueba la frecuencia correspondiente a cada posición y ausencia de frecuencias ajenas (crosstalk), con máximo 30% respecto a la correcta; rechaza canales perdidos y cambios de posición. No abre salida física ni aplica DSP en ese modo.
+- **Laboratorio de VM:** después del 440 Hz de fuente externa, el runner de VM ejecuta por separado la fuente y el monitor del mapa de posiciones para 2/6/8 canales. Registra evidencia numérica en la bitácora inmutable, conserva los controles de silencio *antes y después* y exige prueba de mapa antes de aceptar ganancia 100/150 cuando hay más de un canal. Mono solo requiere su prueba causal 440 Hz.
+- **Pruebas:** señal independiente PCM16/24/24en32/float32 para 2, 5.1 back, 5.1 side y 7.1; vector de WASAPI fragmentado, canales ausentes/intercambiados, todos a 440, contaminación, ausencia de fuente, fraude de marcadores y cotas. Compilación nativa Windows/Ubuntu, scripts PowerShell, WDK y Android se revisan en CI. **No se afirma sonido físico ni firma/distribución:** #48 requiere controlador instalado en VM autorizada y loopback real. Sin RC ni release.
+
+---
+
 ## 2026-11-09 — Granada: Boost 100/150 no compara canales ni tasas diferentes (candidato)
 
 - **Corrección funcional de prueba:** antes la aceptación de Boost Windows podía comparar el nivel al 100% con fuente estéreo y al 150% con fuente 5.1/7.1. La diferencia de downmix podía parecer ganancia de DSP. El gate ahora exige idénticos canales y cantidad de tramas en ambos pases. Si se exige prueba virtual previa, los dos pases deben coincidir también con los canales/tramas registrados por la fuente virtual.

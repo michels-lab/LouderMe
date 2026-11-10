@@ -66,6 +66,7 @@ internal static class Program
             {
                 EqualizerApoEngine.RunContractSelfTests();
                 OutputRouteEvidencePolicy.RunSelfTests();
+                EqualizerCommitPolicy.RunSelfTests();
                 return 0;
             }
             if (settingsContractTest)

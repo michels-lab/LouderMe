@@ -182,8 +182,11 @@ internal sealed class EqCurveControl : Control
 {
     private float[] _gains = new float[7];
     private int _draggedBand = -1;
+    private bool _editedDuringDrag;
 
+    public bool IsDragging => _draggedBand >= 0;
     public event Action<int, float>? BandEdited;
+    public event Action? BandEditCompleted;
 
     [Browsable(false)]
     [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -229,6 +232,7 @@ internal sealed class EqCurveControl : Control
         var db = (float)(Math.Round((10d - y * 20d) * 2d) / 2d);
         if (Math.Abs(db - _gains[_draggedBand]) < 0.001f) return;
         _gains[_draggedBand] = db;
+        _editedDuringDrag = true;
         BandEdited?.Invoke(_draggedBand, db);
         Invalidate();
     }
@@ -238,6 +242,7 @@ internal sealed class EqCurveControl : Control
         base.OnMouseDown(e);
         if (e.Button != MouseButtons.Left) return;
         _draggedBand = NearestBand(e.X);
+        _editedDuringDrag = false;
         Capture = true;
         ChangeBand(e.Location);
     }
@@ -251,8 +256,23 @@ internal sealed class EqCurveControl : Control
     protected override void OnMouseUp(MouseEventArgs e)
     {
         base.OnMouseUp(e);
-        _draggedBand = -1;
+        FinishBandEdit();
         Capture = false;
+    }
+
+    protected override void OnMouseCaptureChanged(EventArgs e)
+    {
+        base.OnMouseCaptureChanged(e);
+        if (!Capture) FinishBandEdit();
+    }
+
+    private void FinishBandEdit()
+    {
+        if (_draggedBand < 0) return;
+        _draggedBand = -1;
+        if (!_editedDuringDrag) return;
+        _editedDuringDrag = false;
+        BandEditCompleted?.Invoke();
     }
 
     protected override void OnPaint(PaintEventArgs e)

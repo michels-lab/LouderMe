@@ -201,15 +201,20 @@ jobs:
 
           sha256sum artifacts/*.apk > artifacts/validation.sha256
 
+      - name: Prove Android version metadata and no hardcoded release code drift
+        run: python3 -m unittest discover -s tools -p 'test_louderme_android_version_contract.py' -v
+
       - name: Prove the Developer-only version override is actually packaged
         shell: bash
+        env:
+          RELEASE_VERSION_CODE: ${{ steps.version.outputs.version_code }}
         run: |
           set -euo pipefail
           gradle :app:assembleDeveloperRelease -PdeveloperVersionCode=10001 --stacktrace
           AAPT="${ANDROID_HOME:-/usr/local/lib/android/sdk}/build-tools/36.0.0/aapt"
           "$AAPT" dump badging             app/build/outputs/apk/developer/release/app-developer-release-unsigned.apk             | grep -Fq "package: name='com.michelslab.louderme.developer' versionCode='10001'"
-          "$AAPT" dump badging app/build/outputs/apk/sideload/debug/app-sideload-debug.apk             | grep -Fq "package: name='com.michelslab.louderme' versionCode='13'"
-          echo "Developer override 10001 validated; existing public APK remains versionCode 13."
+          "$AAPT" dump badging app/build/outputs/apk/sideload/debug/app-sideload-debug.apk             | grep -Fq "package: name='com.michelslab.louderme' versionCode='$RELEASE_VERSION_CODE'"
+          echo "Developer override 10001 validated; public APK still uses versionCode $RELEASE_VERSION_CODE."
 
       - name: Upload validated Android artifacts
         uses: actions/upload-artifact@v4

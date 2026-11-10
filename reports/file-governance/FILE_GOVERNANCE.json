@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 317,
-  "classified_files_total": 313,
-  "docs_content_inspected": 105,
+  "tracked_files_total": 321,
+  "classified_files_total": 317,
+  "docs_content_inspected": 106,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,21 +12,19 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 97,
+    "document": 98,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
-    "source": 106,
-    "test": 41,
+    "source": 108,
+    "test": 42,
     "text_metadata": 2,
     "workflow": 11
   },
-  "finding_counts": {
-    "POTENTIAL_UNLOGGED_CHANGES": 1
-  },
-  "finding_total": 1,
-  "inventory_fingerprint": "4c4161efec5374ffa7e81058c77e67afb1b3d82ce45e124b3a1195aa3ecbc92f",
-  "evidence_fingerprint": "cb624c6c54f64f11cc89ddc813532ef67ba01283b3a3c728688c62713363f3cf",
+  "finding_counts": {},
+  "finding_total": 0,
+  "inventory_fingerprint": "f4cfaa21b5059eff29e8108b1b0d5090dbbe603004ddebbbcd92d6b6e356557c",
+  "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/chatgpt-task.yml",
@@ -110,7 +108,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "312ce7bf4ea0680e940816e090ef535f07e69a90"
+      "blob": "1f3f2ec5399d1ac6ff1ab3c5352407388154d968"
     },
     {
       "path": ".github/workflows/native-physical-lab-manual.yml",
@@ -236,7 +234,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "a7c598df71a52164c829fea1742891ddc9daed39"
+      "blob": "62a201fafe20391bc3adc7c75f40c3fe702a9ddf"
     },
     {
       "path": "README.md",
@@ -1625,6 +1623,13 @@
       "blob": "529082fcfdb0ceea26b1ad327ecd34f2bdf89f10"
     },
     {
+      "path": "docs/audits/GRANADA_2026-11-09_WINDOWS_SPEAKER_MAP.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "9713a56d05b9fe2e85bbbf8b30017633584b0932"
+    },
+    {
       "path": "docs/product-reviews/2026-10-21-native-windows-audio-evidence.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -1713,7 +1718,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "366d5770273e4b7e005a25f19c71df6e37b60dec"
+      "blob": "8f73a654455f3f9e68a1871a40c74d3b753fe01a"
     },
     {
       "path": "native/virtual-driver/DefaultRenderGuard.ps1",
@@ -1727,7 +1732,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "bc12b3686425776d4c6ac3ac7866206e0def3d00"
+      "blob": "ce91e2b895de87645d3102ed76c0653dd715456b"
     },
     {
       "path": "native/virtual-driver/LabEvidenceDirectory.ps1",
@@ -1783,7 +1788,7 @@
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "8c59f8e091dd61febfcefe5830bc4d2d5d22b1d6"
+      "blob": "ee90f7b2ea6ddd78a5990f33e1acf4941e2eddeb"
     },
     {
       "path": "native/virtual-driver/VirtualSourceCompletionCheck.ps1",
@@ -1798,6 +1803,13 @@
       "purpose": "code/test implementation",
       "certainty": "rule",
       "blob": "4a1f1ffdaa1bfcac31aab3d8d1a765170b892972"
+    },
+    {
+      "path": "native/virtual-driver/VirtualSpeakerMapCheck.ps1",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "5e6fc1ce978eaf4a225294cbd11014bdaf033977"
     },
     {
       "path": "native/virtual-driver/prepare_sysvad.py",
@@ -1818,7 +1830,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "e7fb298cd80abe5a823eb454de17fd977a6def18"
+      "blob": "877441bd6fd67e1f4f906fde02da7131d9befb01"
     },
     {
       "path": "native/virtual-driver/run_disposable_lab.ps1",
@@ -1839,7 +1851,7 @@
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "fa09970f44674cebbab77dd6bb7a1015c7ea3420"
+      "blob": "35c3098b77cb0fce04eda60034bb68e818cbe6dd"
     },
     {
       "path": "native/virtual-driver/test_LabEvidenceDirectory.ps1",
@@ -1891,6 +1903,13 @@
       "blob": "ffed1ce89012ddf1e7525864567b3f068379264f"
     },
     {
+      "path": "native/virtual-driver/test_VirtualSpeakerMapCheck.ps1",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "335dbe07b959a8ae98b824ba2be234623cdbebf1"
+    },
+    {
       "path": "native/virtual-driver/tests/test_default_render_guard.py",
       "role": "test",
       "purpose": "code/test implementation",
@@ -1902,7 +1921,7 @@
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "305de1ed52559e26ed37442d9a5f6a3cf0858afc"
+      "blob": "5d164a5c933027b29cd1e0a33c9d33b305f34203"
     },
     {
       "path": "native/virtual-driver/tests/test_pcm_frame_clock_host.cpp",
@@ -2021,14 +2040,14 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "5693fd5d39de034c17847ed6cf114304652237fd"
+      "blob": "83e5c3136820c0564170471d28f5716052eb8b2f"
     },
     {
       "path": "native/windows-bridge/README.md",
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "7eecbb2f92d0eadf7997015ea77c39b1bae8300f"
+      "blob": "16e74a2f0b4ab33b5997f46b29eb7463c74a5353"
     },
     {
       "path": "native/windows-bridge/RenderProgressWatchdog.cs",
@@ -2063,7 +2082,14 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "8bb1eadab1319e6185d6fe8b03d72acf51d13b18"
+      "blob": "ef1c57a677bb14cf2bbee041cc514775faf9d511"
+    },
+    {
+      "path": "native/windows-bridge/VirtualSpeakerMapVerifier.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "00a26561e45e0945be54473a437514d41a056b87"
     },
     {
       "path": "settings.gradle.kts",
@@ -2220,17 +2246,7 @@
       "blob": "724f2c9b5eb8b069e266eb1619375c97628d9202"
     }
   ],
-  "findings": [
-    {
-      "id": "39478fd8e19860c9",
-      "code": "POTENTIAL_UNLOGGED_CHANGES",
-      "severity": "review",
-      "path": "PROJECT_LOG.md",
-      "observation": "18 implementation/config paths changed since this log's last commit; examples: app/src/main/java/com/michelslab/louderme/audio/AudioBoostContract.kt, app/src/main/java/com/michelslab/louderme/audio/AudioBoostService.kt, app/src/main/java/com/michelslab/louderme/audio/AudioRouteLabel.kt, app/src/main/java/com/michelslab/louderme/audio/BoostQuickLevels.kt, app/src/main/java/com/michelslab/louderme/audio/EqualizerModels.kt, app/src/main/java/com/michelslab/louderme/audio/EqualizerStateStore.kt",
-      "recommendation": "Inspect diffs and reconcile only meaningful decisions/results in the canonical log",
-      "state": "REVIEW_REQUIRED"
-    }
-  ],
+  "findings": [],
   "untracked_audited": false,
   "ignored_audited": false,
   "binary_contents_audited": false,

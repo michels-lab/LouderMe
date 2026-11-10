@@ -1,5 +1,11 @@
 # LouderMe
 
+## Latest stable — Android 0.1.13 + Windows 0.1.18 (2026-11-10)
+
+**[Download the final official unified LouderMe release](https://github.com/michels-lab/LouderME-Releases/releases/tag/louderme-android-v0.1.13-desktop-v0.1.18)**: Android Direct v0.1.13 (`versionCode 14`, permanently signed) and Windows Desktop v0.1.18 (Setup x64 + Portable), six published assets including their SHA-256 sidecars. Both source tags `v0.1.13` and `desktop-v0.1.18` point to `01702015f1242775a474dfd9c7544207d4ccc23b`, with signed-APK installation/UI, Windows installed UI and unified checksum CI verified. The verified update feeds are [Android Direct](https://github.com/michels-lab/LouderME-Releases/blob/main/louderme/latest.json) and [Windows Desktop](https://github.com/michels-lab/LouderME-Releases/blob/main/louderme-desktop/latest.json). [Release evidence and hardware limits](PROJECT_LOG.md).
+
+This is a maintenance release of the **currently supported product**: Windows Global Boost/EQ still needs the user's Equalizer APO installation; a native Windows signed virtual audio driver is **not included**. Real-device audible amplification and app-to-physical bridge proof remain unverified under [issue #48](https://github.com/michels-lab/LouderMe/issues/48); Android phone acoustics and Google Play production likewise require separate device/provider checks. No RC/beta.
+
 ## Operación Granada — prueba directa del DSP nativo en salida física Windows (2026-10-30)
 
 Código experimental integrado ([PR #130](https://github.com/michels-lab/LouderMe/pull/130), CI nativa aprobada), todavía sin release: `--probe-direct-dsp` permite probar el **motor C++ propio** con un tono breve y una salida física Windows elegida explícitamente, aun sin driver virtual. La prueba recoge únicamente evidencia WASAPI local de identidad de señal; no capta audio general de terceros ni certifica sonido acústico o integración global. [Auditoría técnica](docs/audits/GRANADA_2026-10-30_DIRECT_NATIVE_DSP_PHYSICAL_PROBE.md). **No publicado; #46/#48 todavía abiertos.**

@@ -108,6 +108,37 @@ function Test-LouderMeIndependentGain {
         [double]$virtual.virtual_coherence -gt 1.0) {
       throw 'Independent virtual-source PCM lacks complete and coherent 440 Hz evidence.'
     }
+    # One fixed 440-Hz tone on every channel cannot prove correct physical
+    # speaker positions: a Windows 7.1 lane swap also preserves 440Hz.
+    # For every non-mono source, require the EXTRA independent frequency-map
+    # capture in the same VM session before accepting real physical A/B.
+    $virtualChannels = [int]$virtual.independent_source_channels
+    if ($virtualChannels -gt 1) {
+      if ($virtual.speaker_map_verified -cne $true) {
+        throw 'Multichannel virtual PCM proof lacks the separate speaker-position frequency measurement.'
+      }
+      foreach ($field in @('speaker_map_channels',
+                           'speaker_map_min_own_amplitude',
+                           'speaker_map_max_leakage_amplitude')) {
+        $value = $virtual.$field
+        if ($null -eq $value -or $value -is [bool] -or
+            $value -isnot [ValueType] -or
+            -not [double]::IsFinite([double]$value)) {
+          throw "Multichannel virtual speaker-map metric invalid: $field."
+        }
+      }
+      $mapChannels = [double]$virtual.speaker_map_channels
+      $mapOwn = [double]$virtual.speaker_map_min_own_amplitude
+      $mapLeak = [double]$virtual.speaker_map_max_leakage_amplitude
+      if ($mapChannels % 1 -ne 0 -or
+          $mapChannels -ne $virtualChannels -or
+          $mapOwn -lt 0.004 -or $mapOwn -gt 0.15 -or
+          $mapLeak -lt 0 -or $mapLeak -gt 0.30 * $mapOwn) {
+        throw 'Virtual speaker-map source reports incorrect, missing or crossmixed channels.'
+      }
+    } elseif ($virtual.speaker_map_verified -cne $false) {
+      throw 'Mono virtual source incorrectly claims or omits speaker-position verification.'
+    }
     # A matching positive virtual tone can be stale or another background
     # 440-Hz stream. Require SAME endpoint/binaries and a real completed
     # receive-only listener with NO source, both before and after the tone.

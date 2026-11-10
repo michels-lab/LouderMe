@@ -1,0 +1,21 @@
+# 2026-11-09 Granada: independent Windows WASAPI virtual speaker-position identity
+
+## Concrete root cause
+The virtual-only 5.1/7.1 PCM proof checked for a 440-Hz signal on all lanes. Because the independent process synthesized that SAME tone on all speaker channels, a driver or Windows audio rematrix that swapped positions, duplicated one speaker or mixed multiple channels could still satisfy every per-lane amplitude threshold. The laboratory therefore couldn't claim spatially correct virtual PCM even though the render channel count was 6 or 8.
+
+## Real functional implementation
+1. `native/independent-tone/Program.cs`: `--speaker-map` is an explicit option on the independent Windows-only virtual source. Each interleaved speaker lane carries **440 + 53 × channel index Hz**. Supports exact 1/2/6/8 PCM16, PCM24, PCM24-left-in-32 and float32 formats, standard WAVEFORMATEXTENSIBLE 5.1 back 0x3f / side 0x60f and 7.1 0x63f masks. Default standalone source still emits 440 Hz in every lane, preserving physical Boost 100/150 measurements. Both paths use explicit source endpoint IDs; never change Windows defaults.
+2. `native/windows-bridge/VirtualSpeakerMapVerifier.cs`: new virtual-only detector with preallocated per-lane/per-frequency sine and cosine projections. Streaming WASAPI PCM uses existing scratch decoder. Requires every lane to contain a sufficient signature and every foreign frequency to be at most 30% of its own pilot; rejects swaps, channel duplication, absent lanes, fully crossmixed signals, nonfinite PCM and unknown masks. Evaluates numeric results only, never saves raw audio or opens a physical sink.
+3. `native/windows-bridge/Program.cs`: explicit receive-only `--probe-virtual-speaker-map` distinct from existing `--probe-virtual-external`. The original 440-Hz causal window, no-source tests and physical monitor remain unchanged.
+4. `native/virtual-driver/probe_independent_virtual_pcm.ps1`: in a consented disposable Windows VM, first runs the existing independent app 440-Hz virtual proof. For stereo/5.1/7.1, starts a **new, separate** speaker-map bridge listener, waits for real virtual capture readiness, then launches the independent app in speaker-map mode. Parses strict real source completion and loopback evidence, verifies identical source frame/channel formats across passes, terminates only owned children, then executes the existing *after* source-absent control. Output is write-once numeric session evidence; endpoint IDs are redacted in local console log.
+5. `native/virtual-driver/IndependentGainCheck.ps1`: the later native DSP physical Boost A/B acceptance now refuses multichannel virtual evidence without the matching positional proof, with numeric amplitude, channel count and maximum leakage checks. Mono has no distinct positions, so requires the established source-only proof, not an impossible map.
+
+## Tests
+- Independent 440+53×lane source PCM fixtures for 2/5.1-back/5.1-side/7.1 and 44.1/48/96k, four sample encodings.
+- Hardware-free virtual WASAPI receiver self-tests across formats/masks with positive lanes and adversarial one-channel silence, speaker swaps, all-same-tone, and irregular streaming chunk boundaries.
+- Executed Windows PowerShell fixtures reject invalid/duplicated source and receiver completion, no readiness, wrong channels, missing pilot, excessive crosstalk, low frame counts and nonnumeric amplitudes.
+- Physical gain acceptance fixtures require the positional record to match the virtual and physical source at 100/150, including realistic 5.1 and 7.1 positive examples. Python contract tests guard the real VM ordering and no physical playback in the virtual monitor.
+- CI source compilation/host tests and WDK derivation are *not* evidence of physical sound.
+
+## Remaining limitations
+Speaker-frequency identity verifies virtual WASAPI channel lane order **only when run** with a signed/test-signed lab driver installed in an owner-consented snapshot-backed Windows VM. It does not independently certify OS speaker labels, true physical channel location, third-party app routing or acoustic response. The real installed-driver/physical loopback gain test and rollback are still required under #48. No RC and no consumer release.

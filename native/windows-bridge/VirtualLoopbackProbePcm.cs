@@ -55,6 +55,16 @@ internal sealed class VirtualLoopbackProbePcm
         verifier.Add(_floatScratch.AsSpan(0, decodedLength));
     }
 
+    // Alternative receive-only verifier: observe exact speaker positions
+    // without copying float32 PCM or allocating inside WASAPI callbacks.
+    public void AddPacket(VirtualSpeakerMapVerifier verifier, byte[] pcm, int recordedBytes)
+    {
+        ArgumentNullException.ThrowIfNull(verifier);
+        if (recordedBytes == 0) return;
+        int length = _decoder.DecodeInto(pcm, recordedBytes, _floatScratch);
+        verifier.Add(_floatScratch.AsSpan(0, length));
+    }
+
     public static byte[] CreateInternalTone(WaveFormat format)
     {
         ArgumentNullException.ThrowIfNull(format);

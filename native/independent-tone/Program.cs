@@ -20,6 +20,8 @@ internal static class Program
     internal const int Frequency = 440;
     internal const float Amplitude = 0.025f;
     internal const int DurationSeconds = 2;
+    // Distinct integral-Hz speaker identities, never used in physical Boost A/B.
+    internal static int SpeakerFrequency(int lane) => Frequency + lane * 53;
 
     private static int Main(string[] args)
     {
@@ -28,6 +30,7 @@ internal static class Program
             if (args.Contains("--check-tone"))
             {
                 TestTone();
+                TestSpeakerMap();
                 return 0;
             }
             if (!args.Contains("--confirm-experimental") ||
@@ -48,7 +51,8 @@ internal static class Program
                 throw new InvalidOperationException(
                     "Independent tone may play ONLY into LouderMe's named virtual render endpoint.");
             var format = device.AudioClient.MixFormat;
-            var pcm = CreateTone(format);
+            bool speakerMap = args.Contains("--speaker-map");
+            var pcm = CreateTone(format, speakerMap);
             using var reader = new RawSourceWaveStream(
                 new MemoryStream(pcm, writable: false), format);
             using var playback = new WasapiOut(device, AudioClientShareMode.Shared, true, 75);
@@ -65,9 +69,14 @@ internal static class Program
                 throw new TimeoutException("Separate application did not finish the 2 s tone.");
             if (playbackError is not null)
                 throw new IOException("Independent application audio endpoint failed.", playbackError);
-            Console.WriteLine(
-                $"EXTERNAL_APP_TONE_FINISHED 440Hz frames={format.SampleRate * DurationSeconds} " +
-                $"channels={format.Channels}; physical loopback is verified only by the separate bridge.");
+            if (speakerMap)
+                Console.WriteLine(
+                    $"EXTERNAL_APP_SPEAKER_MAP_FINISHED frames={format.SampleRate * DurationSeconds} " +
+                    $"channels={format.Channels}; virtual speaker mapping is verified only by the separate bridge.");
+            else
+                Console.WriteLine(
+                    $"EXTERNAL_APP_TONE_FINISHED 440Hz frames={format.SampleRate * DurationSeconds} " +
+                    $"channels={format.Channels}; physical loopback is verified only by the separate bridge.");
             return 0;
         }
         catch (Exception e)
@@ -77,7 +86,11 @@ internal static class Program
         }
     }
 
-    internal static byte[] CreateTone(WaveFormat format)
+    // Preserve the original normal 440-Hz standalone test/signal API.
+    internal static byte[] CreateTone(WaveFormat format) =>
+        CreateTone(format, speakerMap: false);
+
+    internal static byte[] CreateTone(WaveFormat format, bool speakerMap)
     {
         ArgumentNullException.ThrowIfNull(format);
         bool isPcm16 = format.BitsPerSample == 16 &&
@@ -115,10 +128,15 @@ internal static class Program
         var pcm = new byte[checked(frames * format.BlockAlign)];
         for (int frame = 0; frame < frames; frame++)
         {
-            float v = Amplitude * MathF.Sin(
-                2f * MathF.PI * Frequency * frame / format.SampleRate);
             for (int channel = 0; channel < format.Channels; channel++)
             {
+                // Channel-map mode gives each Windows speaker position a
+                // different 440+53*n Hz signature. The default mode keeps
+                // every lane at 440 Hz for the existing physical Boost A/B.
+                float v = Amplitude * MathF.Sin(
+                    2f * MathF.PI *
+                    (speakerMap ? SpeakerFrequency(channel) : Frequency) *
+                    frame / format.SampleRate);
                 var dest = pcm.AsSpan(frame * format.BlockAlign +
                     channel * (format.BitsPerSample / 8));
                 if (isFloat32)
@@ -141,6 +159,59 @@ internal static class Program
             }
         }
         return pcm;
+    }
+
+    private static void TestSpeakerMap()
+    {
+        foreach (int rate in new[] { 44100, 48000, 96000 })
+        foreach (int mask in new[] { 0x3, 0x3f, 0x60f, 0x63f })
+        foreach (int bits in new[] { 16, 24, 32, 132 })
+        {
+            int channels = mask == 0x3 ? 2 : mask == 0x63f ? 8 : 6;
+            var fmt = new WaveFormatExtensible(rate, bits == 132 ? 32 : bits,
+                channels, bits == 32, bits == 132 ? 24 : bits, mask);
+            var bytes = CreateTone(fmt, speakerMap: true);
+            int sampleWidth = fmt.BitsPerSample / 8;
+            // Spot-check each distinct speaker's own projection against
+            // other lanes. Avoid conflating source synthesis with physical
+            // proof or silently falling back to 440Hz in every speaker.
+            foreach (int lane in Enumerable.Range(0, channels))
+            {
+                double own = 0, foreign = 0;
+                int count = Math.Min(4096, rate * DurationSeconds);
+                for (int frame = 0; frame < count; frame++)
+                {
+                    int at = frame * fmt.BlockAlign + lane * sampleWidth;
+                    double value;
+                    if (bits == 16)
+                        value = BinaryPrimitives.ReadInt16LittleEndian(bytes.AsSpan(at)) / 32768.0;
+                    else if (bits == 24)
+                    {
+                        int raw = bytes[at] | bytes[at + 1] << 8 | bytes[at + 2] << 16;
+                        if ((raw & 0x800000) != 0) raw |= unchecked((int)0xff000000);
+                        value = raw / 8388608.0;
+                    }
+                    else if (bits == 132)
+                    {
+                        int raw = BinaryPrimitives.ReadInt32LittleEndian(bytes.AsSpan(at));
+                        if ((raw & 255) != 0)
+                            throw new InvalidOperationException("Speaker-map PCM24-in-32 padding lost.");
+                        value = (raw >> 8) / 8388608.0;
+                    }
+                    else
+                        value = BinaryPrimitives.ReadSingleLittleEndian(bytes.AsSpan(at));
+                    own += value * Math.Sin(2.0 * Math.PI * SpeakerFrequency(lane) * frame / rate);
+                    foreign += value * Math.Sin(2.0 * Math.PI *
+                        SpeakerFrequency((lane + 1) % channels) * frame / rate);
+                }
+                double ownAmp = Math.Abs(own * 2 / count);
+                double foreignAmp = Math.Abs(foreign * 2 / count);
+                if (ownAmp < 0.017 || foreignAmp > ownAmp * 0.25)
+                    throw new InvalidOperationException(
+                        $"Speaker-map synthesis identity failed lane={lane} mask={mask:x} bits={bits}.");
+            }
+        }
+        Console.WriteLine("PASS: each independent speaker lane emits its own 440+53*n Hz signature (2/5.1 back/5.1 side/7.1; PCM16/24/24-in-32/float32).");
     }
 
     private static void TestTone()

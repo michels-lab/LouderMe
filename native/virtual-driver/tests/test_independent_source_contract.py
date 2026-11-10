@@ -162,6 +162,37 @@ class IndependentSourceBoundaryTests(unittest.TestCase):
         self.assertIn("mutedLane: silent", verifier)
         self.assertIn("_laneSine[channel]", verifier)
 
+    def test_virtual_5_1_7_1_spatial_identity_is_enforced_before_physical_gain(self):
+        source = (ROOT / "native/independent-tone/Program.cs").read_text()
+        bridge = BRIDGE.read_text()
+        positional = (ROOT / "native/windows-bridge/VirtualSpeakerMapVerifier.cs").read_text()
+        vm = (ROOT / "native/virtual-driver/probe_independent_virtual_pcm.ps1").read_text()
+        gate = (ROOT / "native/virtual-driver/IndependentGainCheck.ps1").read_text()
+        parser = (ROOT / "native/virtual-driver/VirtualSpeakerMapCheck.ps1").read_text()
+        fixture = (ROOT / "native/virtual-driver/test_VirtualSpeakerMapCheck.ps1").read_text()
+        native_ci = (ROOT / ".github/workflows/native-audio-engine-ci.yml").read_text()
+        for token in ('--speaker-map', 'SpeakerFrequency(channel)',
+                      'EXTERNAL_APP_SPEAKER_MAP_FINISHED'):
+            self.assertIn(token, source)
+        self.assertIn('--probe-virtual-speaker-map', bridge)
+        self.assertIn('mapVerifier.Evaluate()', bridge)
+        for token in ('_sines', '_cosines', 'strongestAlien > own * 0.30',
+                      'mutedLane: badLane', 'swappedLane: badLane'):
+            self.assertIn(token, positional)
+        for token in ('--probe-virtual-speaker-map', 'Test-LouderMeSpeakerMapSource',
+                      'Test-LouderMeSpeakerMapReceiver', 'speaker_map_verified',
+                      'Invoke-VirtualNoSourceControl after'):
+            self.assertIn(token, vm)
+        self.assertLess(vm.index('Test-LouderMeSpeakerMapReceiver'),
+                        vm.index('Invoke-VirtualNoSourceControl after'))
+        for token in ('speaker_map_verified -cne $true',
+                      'speaker_map_max_leakage_amplitude'):
+            self.assertIn(token, gate)
+        for token in ('VIRTUAL_SPEAKER_MAP_PROOF', 'EXTERNAL_VIRTUAL_READY'):
+            self.assertIn(token, parser)
+        self.assertIn('speaker swap or full crossmix', fixture)
+        self.assertIn('test_VirtualSpeakerMapCheck.ps1', native_ci)
+
     def test_virtual_only_positive_requires_no_source_windows_before_and_after(self):
         root = ROOT / "native/virtual-driver"
         runner = (root / "probe_independent_virtual_pcm.ps1").read_text()

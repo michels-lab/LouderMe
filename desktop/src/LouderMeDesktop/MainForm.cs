@@ -29,6 +29,8 @@ internal sealed class MainForm : Form
     private bool? _lastAudioTestHeard;
     private string? _lastObservedOutputId;
     private long _outputSelectionRevision;
+    private string? _volumeGestureOutputId;
+    private bool _volumeGestureRejected;
     private string? _startupProbeRecoveryNotice;
     private readonly CheckBox _eqEnabled = new();
     private readonly ComboBox _preset = new();
@@ -402,15 +404,41 @@ internal sealed class MainForm : Form
         _volume.TickFrequency = 10;
         _volume.Dock = DockStyle.Fill;
         _volume.Margin = new Padding(0, 14, 0, 8);
+        // Bind a complete mouse drag to the endpoint present at MouseDown.
+        // Otherwise, after the first rejected event on an A->B hot-swap,
+        // later mouse-move events in that SAME drag would control B.
+        _volume.MouseDown += (_, _) =>
+        {
+            _volumeGestureOutputId = _lastObservedOutputId;
+            _volumeGestureRejected = false;
+        };
+        _volume.MouseUp += (_, _) => EndVolumeGesture();
+        _volume.MouseCaptureChanged += (_, _) =>
+        {
+            if (!_volume.Capture) EndVolumeGesture();
+        };
         _volume.ValueChanged += (_, _) =>
         {
-            if (_loading) return;
+            if (_loading || _volumeGestureRejected) return;
             try
             {
-                _audio.VolumePercent = _volume.Value;
+                var target = _volumeGestureOutputId ?? _lastObservedOutputId;
+                if (!_audio.TrySetVolumeForOutput(target, _volume.Value))
+                {
+                    _volumeGestureRejected = _volumeGestureOutputId is not null;
+                    // A new Windows default output must not receive a drag
+                    // event intended for the previous physical device.
+                    SyncDeviceVolume(force: true);
+                    return;
+                }
                 _volumeValue.Text = $"{_volume.Value}%";
             }
-            catch (Exception ex) { ShowEngineError(ex); }
+            catch (Exception ex)
+            {
+                _volumeGestureRejected = _volumeGestureOutputId is not null;
+                ShowEngineError(ex);
+                SyncDeviceVolume(force: true);
+            }
         };
         layout.SetColumnSpan(_volume, 2);
         layout.Controls.Add(_volume, 0, 2);
@@ -421,8 +449,16 @@ internal sealed class MainForm : Form
         _mute.CheckedChanged += (_, _) =>
         {
             if (_loading) return;
-            try { _audio.Muted = _mute.Checked; }
-            catch (Exception ex) { ShowEngineError(ex); }
+            try
+            {
+                if (!_audio.TrySetMuteForOutput(_lastObservedOutputId, _mute.Checked))
+                    SyncDeviceVolume(force: true);
+            }
+            catch (Exception ex)
+            {
+                ShowEngineError(ex);
+                SyncDeviceVolume(force: true);
+            }
         };
         layout.SetColumnSpan(_mute, 2);
         layout.Controls.Add(_mute, 0, 3);
@@ -882,9 +918,17 @@ internal sealed class MainForm : Form
         _lastObservedOutputId = id;
     }
 
-    private void SyncDeviceVolume()
+    private void EndVolumeGesture()
     {
-        if (_loading || _volume.Capture || _mute.Focused) return;
+        if (_volumeGestureOutputId is null && !_volumeGestureRejected) return;
+        _volumeGestureOutputId = null;
+        _volumeGestureRejected = false;
+        SyncDeviceVolume(force: true);
+    }
+
+    private void SyncDeviceVolume(bool force = false)
+    {
+        if (_loading || (!force && (_volume.Capture || _mute.Focused))) return;
         try
         {
             _audio.Refresh();
@@ -894,10 +938,19 @@ internal sealed class MainForm : Form
             _volume.Value = Math.Clamp(_audio.VolumePercent, 0, 100);
             _volumeValue.Text = $"{_volume.Value}%";
             _mute.Checked = _audio.Muted;
+            _volume.Enabled = true;
+            _mute.Enabled = true;
         }
         catch (Exception ex)
         {
+            // A disconnected/default-less output cannot receive fresh writes.
+            // The timer retries and re-enables controls when a render device
+            // returns; never preserve a stale enabled volume slider.
+            _loading = true;
             _deviceValue.Text = $"Device unavailable: {ex.Message}";
+            _volumeValue.Text = "—%";
+            _volume.Enabled = false;
+            _mute.Enabled = false;
             ObserveOutputIdentity(null);
         }
         finally { _loading = false; }

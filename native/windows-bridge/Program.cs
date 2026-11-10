@@ -589,6 +589,10 @@ internal static class Program
                           "Independent source app must start after EXTERNAL_SOURCE_READY; " +
                           "physical monitor has a 5-second total measurement window.");
 
+                // Device activation itself can take time. Re-check the
+                // pinned default-role tuple immediately before playback so
+                // a mid-initialization switch never starts bridge audio.
+                defaultRouteFence.VerifyOrPin(enumerator);
                 playback.Play();
                 capture.StartRecording();
                 monitor?.StartRecording();
@@ -729,6 +733,10 @@ internal static class Program
                 recordingStopped.Wait(TimeSpan.FromSeconds(5));
                 playback.Stop();
             }
+            // The bounded 4/5-second physical lab window may end between
+            // periodic polls. A final live role check is mandatory before
+            // claiming any virtual->physical proof, including no-source.
+            defaultRouteFence.VerifyOrPin(enumerator);
             if (provePhysicalRoute)
             {
                 if (monitorError is not null)

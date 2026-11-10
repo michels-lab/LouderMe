@@ -3,6 +3,7 @@
 This checks source guardrails only; installed signed APK evidence must come
 from a successful manual GitHub Actions workflow with a pinned owner signer.
 """
+import re
 import unittest
 from pathlib import Path
 
@@ -44,9 +45,29 @@ class SignedDeveloperContract(unittest.TestCase):
         source = (ROOT / "app/build.gradle.kts").read_text()
         self.assertIn("developerVersionCodeOverride", source)
         self.assertIn("applicationIdSuffix = \".developer\"", source)
-        self.assertIn('versionName = "0.1.12"', source)
-        self.assertIn("versionCode = 13", source)
+        name = re.search(r'\\bversionName\\s*=\\s*"([0-9]+\\.[0-9]+\\.[0-9]+)"', source)
+        code = re.search(r'\\bversionCode\\s*=\\s*([0-9]+)\\b', source)
+        self.assertIsNotNone(name, "Public versionName must be explicit")
+        self.assertIsNotNone(code, "Public versionCode must be explicit")
+        self.assertGreater(int(code.group(1)), 13)
+        self.assertGreater(tuple(map(int, name.group(1).split("."))), (0, 1, 12))
+        self.assertIn("developerVersionCodeOverride?.let { versionCode = it }", source)
+        self.assertNotRegex(source,
+                            r'versionCode\\s*=\\s*developerVersionCodeOverride\\s*\\?:\\s*[0-9]+')
         self.assertIn('buildConfigField("boolean", "DEVELOPER_EDITION", "true")', source)
+
+    def test_regression_developer_flavor_cannot_fallback_to_historical_public_code(self):
+        source = (ROOT / "app/build.gradle.kts").read_text()
+        # Original implementation pinned v0.1.12 even after public Gradle
+        # version advances. This is the exact behavior we must not restore.
+        broken = source.replace(
+            "developerVersionCodeOverride?.let { versionCode = it }",
+            "versionCode = developerVersionCodeOverride ?: 13")
+        self.assertNotEqual(source, broken)
+        self.assertRegex(broken,
+                         r'versionCode\\s*=\\s*developerVersionCodeOverride\\s*\\?:\\s*13')
+        self.assertNotRegex(source,
+                            r'versionCode\\s*=\\s*developerVersionCodeOverride\\s*\\?:\\s*13')
 
     def test_real_installed_upgrade_must_not_uninstall_or_reset_annotations(self):
         source = (ROOT / "tools/capture_android_developer.py").read_text()

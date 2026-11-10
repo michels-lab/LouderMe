@@ -41,9 +41,12 @@ internal static class Program
                      !args.Contains("--probe-app-route") &&
                      !args.Contains("--probe-virtual");
         int attempts = retry ? 3 : 1;
+        // Do not re-pin the Windows default route on an automatic retry.
+        // A user/device-initiated role change requires NEW explicit consent.
+        var defaultRouteFence = new DefaultRenderRouteFence();
         for (int attempt = 1; attempt <= attempts; attempt++)
         {
-            int exit = RunSingleSession(args);
+            int exit = RunSingleSession(args, defaultRouteFence);
             if (exit != 75 || attempt == attempts) return exit;
             Console.Error.WriteLine(
                 $"Experimental route interrupted. Same endpoint IDs only; " +
@@ -53,7 +56,8 @@ internal static class Program
         return 75;
     }
 
-    private static int RunSingleSession(string[] args)
+    private static int RunSingleSession(
+        string[] args, DefaultRenderRouteFence defaultRouteFence)
     {
         try
         {
@@ -98,6 +102,7 @@ internal static class Program
             {
                 RoutePreflight.RunSelfTests();
                 RouteFormatEpoch.RunSelfTests();
+                DefaultRenderRouteFence.RunSelfTests();
                 return 0;
             }
             if (args.Contains("--check-recovery"))
@@ -309,6 +314,11 @@ internal static class Program
                     "Experimental route preflight " + routePreflight.Code + ": " +
                     routePreflight.Explanation);
 
+            // A default-role switch while this bridge routes virtual PCM
+            // can bypass DSP or produce direct + processed audio at once.
+            // Capture the baseline BEFORE opening any stream, then pin it
+            // across every bounded reconnect; never change Windows defaults.
+            defaultRouteFence.VerifyOrPin(enumerator);
             using var capture = new WasapiLoopbackCapture(source);
             var inputFormat = capture.WaveFormat;
             var outputFormat = physical.AudioClient.MixFormat;
@@ -632,6 +642,10 @@ internal static class Program
                     if (Stopwatch.GetElapsedTime(lastFormatCheck) >=
                         TimeSpan.FromSeconds(1))
                     {
+                        // Check the three default-render roles BEFORE the
+                        // immutable format epoch. If any role changes, stop
+                        // both streams and forbid auto-reconnect (exit 76).
+                        defaultRouteFence.VerifyOrPin(enumerator);
                         try
                         {
                             formatEpoch.EnsureUnchanged(
@@ -756,6 +770,12 @@ internal static class Program
             }
             Console.WriteLine("Audio bridge stopped and endpoints released.");
             return 0;
+        }
+        catch (DefaultRenderRouteChangedException ex)
+        {
+            Console.Error.WriteLine(
+                "Unsafe Windows default playback change: " + ex.Message);
+            return 76; // terminal: fresh user approval required, NO retry
         }
         catch (AudioRouteRecoverableException ex)
         {

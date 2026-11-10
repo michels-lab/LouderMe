@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 326,
-  "classified_files_total": 322,
-  "docs_content_inspected": 109,
+  "tracked_files_total": 329,
+  "classified_files_total": 325,
+  "docs_content_inspected": 111,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,21 +12,19 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 101,
+    "document": 103,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
     "source": 110,
-    "test": 42,
+    "test": 43,
     "text_metadata": 2,
     "workflow": 11
   },
-  "finding_counts": {
-    "POTENTIAL_UNLOGGED_CHANGES": 1
-  },
-  "finding_total": 1,
-  "inventory_fingerprint": "7344e49d79c8009f9648c0d235e1e1c3491b10c44ccc2717a584d12d7c6aa40c",
-  "evidence_fingerprint": "9068abed2ede9c5dad1889244eb076cf11ad77350a69de559dd6365039c04b80",
+  "finding_counts": {},
+  "finding_total": 0,
+  "inventory_fingerprint": "23d767958497cc00221ea983ba5ee38854670b6fb51004f20dbb2003a8e0ec88",
+  "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/chatgpt-task.yml",
@@ -68,7 +66,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "b0acbdacc9895fad1151d08ddc4caec5e77b1412"
+      "blob": "03fce62cc0d0b08247bd51cbacee02d12568ac0a"
     },
     {
       "path": ".github/workflows/android-signing-artifact-hygiene.yml",
@@ -236,7 +234,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "62a201fafe20391bc3adc7c75f40c3fe702a9ddf"
+      "blob": "11fa90c255f683dc64515e6c904cece7ada69af8"
     },
     {
       "path": "README.md",
@@ -250,7 +248,7 @@
       "role": "build_script",
       "purpose": "platform build/project/installer script",
       "certainty": "inferred",
-      "blob": "e8f9f5f0efa8c35550acc2aba0402737ae96f516"
+      "blob": "041bb915be12e9f2829bc496d7e0945e3877ea44"
     },
     {
       "path": "app/src/developer/AndroidManifest.xml",
@@ -848,6 +846,13 @@
       "blob": "37f99059f58fa1799043eb7463c65df5f4673a0a"
     },
     {
+      "path": "desktop/releases/v0.1.18.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "72077cea25ad2786fad32d236aceec71d71706a4"
+    },
+    {
       "path": "desktop/releases/v0.1.2.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -1020,7 +1025,7 @@
       "role": "build_script",
       "purpose": "platform build/project/installer script",
       "certainty": "inferred",
-      "blob": "87ab1e496b40aa0e3e7590942eaa9b3d4ba908fc"
+      "blob": "87efad4c5113c2f9c19b2bfdb877d9dc41005f93"
     },
     {
       "path": "desktop/src/LouderMeDesktop/MainForm.cs",
@@ -1196,6 +1201,13 @@
       "purpose": "manual/decision/report/historical note",
       "certainty": "inferred",
       "blob": "3183bfb5b39fc7662388862b8423afe323be221b"
+    },
+    {
+      "path": "docs/RELEASE_NOTES_v0.1.13.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "60e2baa84f3d6d8e15a02c93482ddd38e41520ce"
     },
     {
       "path": "docs/RELEASE_NOTES_v0.1.2.md",
@@ -2199,6 +2211,13 @@
       "blob": "a870248906644f0c9e06ac6d01275857f71cc90f"
     },
     {
+      "path": "tools/test_louderme_android_version_contract.py",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "285262bb319d0d996e8e60e4bcaeda0d506b0ffe"
+    },
+    {
       "path": "tools/test_louderme_desktop_logo.py",
       "role": "test",
       "purpose": "code/test implementation",
@@ -2245,7 +2264,7 @@
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "7f7a92124ff322a4c05c97966bf1bd021576b2f3"
+      "blob": "a5b8c93ce9f26772b21b04c05de6ada290fa5e82"
     },
     {
       "path": "tools/tests/test_android_visual_navigation.py",
@@ -2283,17 +2302,7 @@
       "blob": "724f2c9b5eb8b069e266eb1619375c97628d9202"
     }
   ],
-  "findings": [
-    {
-      "id": "1b82fe790b8f18b0",
-      "code": "POTENTIAL_UNLOGGED_CHANGES",
-      "severity": "review",
-      "path": "PROJECT_LOG.md",
-      "observation": "7 implementation/config paths changed since this log's last commit; examples: desktop/src/LouderMeDesktop/AudioDeviceController.cs, desktop/src/LouderMeDesktop/BrandingControls.cs, desktop/src/LouderMeDesktop/EqualizerCommitPolicy.cs, desktop/src/LouderMeDesktop/MainForm.cs, desktop/src/LouderMeDesktop/Program.cs, native/windows-bridge/DefaultRenderRouteFence.cs",
-      "recommendation": "Inspect diffs and reconcile only meaningful decisions/results in the canonical log",
-      "state": "REVIEW_REQUIRED"
-    }
-  ],
+  "findings": [],
   "untracked_audited": false,
   "ignored_audited": false,
   "binary_contents_audited": false,

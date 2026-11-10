@@ -5,7 +5,7 @@ No file is auto-deleted or declared unused.
 
 ## Coverage
 
-Tracked: 321; classified: 317; readable documents: 106; above read cap: 0; findings: 0.
+Tracked: 322; classified: 318; readable documents: 107; above read cap: 0; findings: 1.
 
 ## File roles
 
@@ -16,7 +16,7 @@ Tracked: 321; classified: 317; readable documents: 106; above read cap: 0; findi
 | bitacora | 2 |
 | build_script | 7 |
 | config | 20 |
-| document | 98 |
+| document | 99 |
 | index | 6 |
 | installer_metadata | 1 |
 | license | 1 |
@@ -27,6 +27,7 @@ Tracked: 321; classified: 317; readable documents: 106; above read cap: 0; findi
 
 ## Findings (human review required)
 
+- **REVIEW / POTENTIAL_UNLOGGED_CHANGES** PROJECT_LOG.md: 2 implementation/config paths changed since this log's last commit; examples: desktop/src/LouderMeDesktop/AudioDeviceController.cs, desktop/src/LouderMeDesktop/MainForm.cs. Next: Inspect diffs and reconcile only meaningful decisions/results in the canonical log (ID f0102cfddfe65634)
 
 Complete path → purpose/role/certainty list lives in FILE_GOVERNANCE.json. SUMMARY.json has counts only for master polling.
 A dated file, duplicate, or suspicious name is an **investigation candidate**, not unwanted material.

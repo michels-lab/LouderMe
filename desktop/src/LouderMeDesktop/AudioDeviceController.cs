@@ -24,12 +24,45 @@ internal sealed class AudioDeviceController : IDisposable
 
     public void Refresh()
     {
-        // Acquire the new default endpoint before disposing of the old one.
-        // A hot-unplug lookup failure must not leave a disposed field in use.
-        var next = _enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+        // Never keep a disconnected endpoint available to a later slider
+        // write after the system reports no default media output.
+        MMDevice next;
+        try
+        {
+            next = _enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+        }
+        catch
+        {
+            _device?.Dispose();
+            _device = null;
+            throw;
+        }
         var old = _device;
         _device = next;
-        old?.Dispose();
+        if (old is not null && !ReferenceEquals(old, next))
+            old.Dispose();
+    }
+
+    // A trackbar click may arrive between device-refresh ticks. Bind each
+    // actual write to the exact endpoint identity displayed when the user
+    // interacted; a new default device must not inherit a stale slider event.
+    public bool TrySetVolumeForOutput(string? expectedId, int percent)
+    {
+        Refresh();
+        if (!OutputRouteEvidencePolicy.SafeToWrite(expectedId, _device!.ID))
+            return false;
+        _device.AudioEndpointVolume.MasterVolumeLevelScalar =
+            Math.Clamp(percent, 0, 100) / 100f;
+        return true;
+    }
+
+    public bool TrySetMuteForOutput(string? expectedId, bool mute)
+    {
+        Refresh();
+        if (!OutputRouteEvidencePolicy.SafeToWrite(expectedId, _device!.ID))
+            return false;
+        _device.AudioEndpointVolume.Mute = mute;
+        return true;
     }
 
     private MMDevice Device => _device ??= _enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
@@ -52,6 +85,10 @@ internal static class OutputRouteEvidencePolicy
         !string.IsNullOrWhiteSpace(previous) &&
         !string.Equals(previous, current, StringComparison.Ordinal);
 
+    public static bool SafeToWrite(string? displayedOutputId, string? nowOutputId) =>
+        !string.IsNullOrWhiteSpace(displayedOutputId) &&
+        string.Equals(displayedOutputId, nowOutputId, StringComparison.Ordinal);
+
     public static bool SameVerifiedOutput(
         string? probedDevice, string? nowDevice,
         long startingRevision, long nowRevision) =>
@@ -66,10 +103,16 @@ internal static class OutputRouteEvidencePolicy
             !SameVerifiedOutput("A", "A", 1, 1) ||
             SameVerifiedOutput("A", "B", 1, 1) ||
             SameVerifiedOutput("A", "A", 1, 3) ||
-            SameVerifiedOutput(null, "A", 1, 1))
+            SameVerifiedOutput(null, "A", 1, 1) ||
+            !SafeToWrite("A", "A") ||
+            SafeToWrite("A", "B") ||
+            SafeToWrite(null, "A") ||
+            SafeToWrite("", "A") ||
+            SafeToWrite("A", null) ||
+            SafeToWrite("a", "A"))
             throw new InvalidOperationException(
                 "Output change incorrectly retained an old physical listening test.");
         Console.WriteLine(
-            "PASS: output identity, unplug, A->B and A->B->A stale-evidence rejection.");
+            "PASS: output identity, unplug, A->B and A->B->A stale-evidence rejection, route-bound user volume writes.");
     }
 }

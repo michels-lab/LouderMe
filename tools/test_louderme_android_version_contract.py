@@ -31,8 +31,13 @@ def check_version_contract(gradle: str, workflow: str) -> tuple[str, int]:
     ):
         if required not in workflow:
             raise AssertionError("Android CI release package uses a stale/hardcoded version: " + required)
-    if re.search(r"versionCode='\d+'", workflow):
-        raise AssertionError("Do not hardcode the public versionCode in CI assertions")
+    # Developer's separately pinned signed upgrade fixture legitimately uses
+    # code 10001. Reject fixed codes ONLY for the public Direct package.
+    if re.search(
+        r"package: name='com\.michelslab\.louderme' versionCode='\d+'",
+        workflow,
+    ):
+        raise AssertionError("Do not hardcode the public Direct versionCode in CI assertions")
     return name.group(1), int(code.group(1))
 
 

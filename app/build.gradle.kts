@@ -43,7 +43,10 @@ android {
         create("developer") {
             dimension = "distribution"
             applicationIdSuffix = ".developer"
-            versionCode = developerVersionCodeOverride ?: 13
+            // Inherit the current public versionCode unless an explicit
+            // owner-only Developer override was provided. Never pin a stale
+            // public version number here when a new Direct release ships.
+            developerVersionCodeOverride?.let { versionCode = it }
             versionNameSuffix = developerVersionCodeOverride?.let { "-developer.$it" } ?: "-developer"
             buildConfigField("boolean", "DEVELOPER_EDITION", "true")
             // Updater is explicitly disabled in the developer app.

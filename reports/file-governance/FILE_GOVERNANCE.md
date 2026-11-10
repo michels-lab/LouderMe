@@ -5,7 +5,7 @@ No file is auto-deleted or declared unused.
 
 ## Coverage
 
-Tracked: 324; classified: 320; readable documents: 108; above read cap: 0; findings: 1.
+Tracked: 326; classified: 322; readable documents: 109; above read cap: 0; findings: 1.
 
 ## File roles
 
@@ -16,18 +16,18 @@ Tracked: 324; classified: 320; readable documents: 108; above read cap: 0; findi
 | bitacora | 2 |
 | build_script | 7 |
 | config | 20 |
-| document | 100 |
+| document | 101 |
 | index | 6 |
 | installer_metadata | 1 |
 | license | 1 |
-| source | 109 |
+| source | 110 |
 | test | 42 |
 | text_metadata | 2 |
 | workflow | 11 |
 
 ## Findings (human review required)
 
-- **REVIEW / POTENTIAL_UNLOGGED_CHANGES** PROJECT_LOG.md: 5 implementation/config paths changed since this log's last commit; examples: desktop/src/LouderMeDesktop/AudioDeviceController.cs, desktop/src/LouderMeDesktop/BrandingControls.cs, desktop/src/LouderMeDesktop/EqualizerCommitPolicy.cs, desktop/src/LouderMeDesktop/MainForm.cs, desktop/src/LouderMeDesktop/Program.cs. Next: Inspect diffs and reconcile only meaningful decisions/results in the canonical log (ID 68c4b3993a17116b)
+- **REVIEW / POTENTIAL_UNLOGGED_CHANGES** PROJECT_LOG.md: 7 implementation/config paths changed since this log's last commit; examples: desktop/src/LouderMeDesktop/AudioDeviceController.cs, desktop/src/LouderMeDesktop/BrandingControls.cs, desktop/src/LouderMeDesktop/EqualizerCommitPolicy.cs, desktop/src/LouderMeDesktop/MainForm.cs, desktop/src/LouderMeDesktop/Program.cs, native/windows-bridge/DefaultRenderRouteFence.cs. Next: Inspect diffs and reconcile only meaningful decisions/results in the canonical log (ID 1b82fe790b8f18b0)
 
 Complete path → purpose/role/certainty list lives in FILE_GOVERNANCE.json. SUMMARY.json has counts only for master polling.
 A dated file, duplicate, or suspicious name is an **investigation candidate**, not unwanted material.

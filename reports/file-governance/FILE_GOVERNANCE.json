@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 324,
-  "classified_files_total": 320,
-  "docs_content_inspected": 108,
+  "tracked_files_total": 326,
+  "classified_files_total": 322,
+  "docs_content_inspected": 109,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,11 +12,11 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 100,
+    "document": 101,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
-    "source": 109,
+    "source": 110,
     "test": 42,
     "text_metadata": 2,
     "workflow": 11
@@ -25,8 +25,8 @@
     "POTENTIAL_UNLOGGED_CHANGES": 1
   },
   "finding_total": 1,
-  "inventory_fingerprint": "780026a0499c639c5b04d35e0842a4db76a71ed8b99fbfc34c5f7b362dcc7a8e",
-  "evidence_fingerprint": "d5eaa734689ef1a49b624ed1dba1eb85d8d941908594c1eb6c95beea80f604e5",
+  "inventory_fingerprint": "7344e49d79c8009f9648c0d235e1e1c3491b10c44ccc2717a584d12d7c6aa40c",
+  "evidence_fingerprint": "9068abed2ede9c5dad1889244eb076cf11ad77350a69de559dd6365039c04b80",
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/chatgpt-task.yml",
@@ -1639,6 +1639,13 @@
       "blob": "9713a56d05b9fe2e85bbbf8b30017633584b0932"
     },
     {
+      "path": "docs/audits/GRANADA_2026-11-10_WINDOWS_DEFAULT_ROUTE_FENCE.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "b9c4dbe03430b375d419fc44ac65c8518462f8d1"
+    },
+    {
       "path": "docs/audits/GRANADA_2026-11-10_WINDOWS_EQ_EDIT_RESPONSE.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -1996,6 +2003,13 @@
       "blob": "07355a8c834152fc395643078ebefe0c78fd9932"
     },
     {
+      "path": "native/windows-bridge/DefaultRenderRouteFence.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "107a6792ae052e8407bf556fab8dffdca5dc148a"
+    },
+    {
       "path": "native/windows-bridge/DirectPhysicalDspProbe.cs",
       "role": "source",
       "purpose": "code/test implementation",
@@ -2063,7 +2077,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "83e5c3136820c0564170471d28f5716052eb8b2f"
+      "blob": "a596c56d9d0d46501bf0bcd819d7dc7d2f459b34"
     },
     {
       "path": "native/windows-bridge/README.md",
@@ -2271,11 +2285,11 @@
   ],
   "findings": [
     {
-      "id": "68c4b3993a17116b",
+      "id": "1b82fe790b8f18b0",
       "code": "POTENTIAL_UNLOGGED_CHANGES",
       "severity": "review",
       "path": "PROJECT_LOG.md",
-      "observation": "5 implementation/config paths changed since this log's last commit; examples: desktop/src/LouderMeDesktop/AudioDeviceController.cs, desktop/src/LouderMeDesktop/BrandingControls.cs, desktop/src/LouderMeDesktop/EqualizerCommitPolicy.cs, desktop/src/LouderMeDesktop/MainForm.cs, desktop/src/LouderMeDesktop/Program.cs",
+      "observation": "7 implementation/config paths changed since this log's last commit; examples: desktop/src/LouderMeDesktop/AudioDeviceController.cs, desktop/src/LouderMeDesktop/BrandingControls.cs, desktop/src/LouderMeDesktop/EqualizerCommitPolicy.cs, desktop/src/LouderMeDesktop/MainForm.cs, desktop/src/LouderMeDesktop/Program.cs, native/windows-bridge/DefaultRenderRouteFence.cs",
       "recommendation": "Inspect diffs and reconcile only meaningful decisions/results in the canonical log",
       "state": "REVIEW_REQUIRED"
     }

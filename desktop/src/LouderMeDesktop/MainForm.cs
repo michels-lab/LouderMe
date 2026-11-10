@@ -29,6 +29,8 @@ internal sealed class MainForm : Form
     private bool? _lastAudioTestHeard;
     private string? _lastObservedOutputId;
     private long _outputSelectionRevision;
+    private string? _volumeGestureOutputId;
+    private bool _volumeGestureRejected;
     private string? _startupProbeRecoveryNotice;
     private readonly CheckBox _eqEnabled = new();
     private readonly ComboBox _preset = new();
@@ -402,13 +404,28 @@ internal sealed class MainForm : Form
         _volume.TickFrequency = 10;
         _volume.Dock = DockStyle.Fill;
         _volume.Margin = new Padding(0, 14, 0, 8);
+        // Bind a complete mouse drag to the endpoint present at MouseDown.
+        // Otherwise, after the first rejected event on an A->B hot-swap,
+        // later mouse-move events in that SAME drag would control B.
+        _volume.MouseDown += (_, _) =>
+        {
+            _volumeGestureOutputId = _lastObservedOutputId;
+            _volumeGestureRejected = false;
+        };
+        _volume.MouseUp += (_, _) => EndVolumeGesture();
+        _volume.MouseCaptureChanged += (_, _) =>
+        {
+            if (!_volume.Capture) EndVolumeGesture();
+        };
         _volume.ValueChanged += (_, _) =>
         {
-            if (_loading) return;
+            if (_loading || _volumeGestureRejected) return;
             try
             {
-                if (!_audio.TrySetVolumeForOutput(_lastObservedOutputId, _volume.Value))
+                var target = _volumeGestureOutputId ?? _lastObservedOutputId;
+                if (!_audio.TrySetVolumeForOutput(target, _volume.Value))
                 {
+                    _volumeGestureRejected = _volumeGestureOutputId is not null;
                     // A new Windows default output must not receive a drag
                     // event intended for the previous physical device.
                     SyncDeviceVolume(force: true);
@@ -418,6 +435,7 @@ internal sealed class MainForm : Form
             }
             catch (Exception ex)
             {
+                _volumeGestureRejected = _volumeGestureOutputId is not null;
                 ShowEngineError(ex);
                 SyncDeviceVolume(force: true);
             }
@@ -898,6 +916,14 @@ internal sealed class MainForm : Form
                 "the four-second audio-path test.";
         }
         _lastObservedOutputId = id;
+    }
+
+    private void EndVolumeGesture()
+    {
+        if (_volumeGestureOutputId is null && !_volumeGestureRejected) return;
+        _volumeGestureOutputId = null;
+        _volumeGestureRejected = false;
+        SyncDeviceVolume(force: true);
     }
 
     private void SyncDeviceVolume(bool force = false)

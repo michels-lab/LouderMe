@@ -407,10 +407,20 @@ internal sealed class MainForm : Form
             if (_loading) return;
             try
             {
-                _audio.VolumePercent = _volume.Value;
+                if (!_audio.TrySetVolumeForOutput(_lastObservedOutputId, _volume.Value))
+                {
+                    // A new Windows default output must not receive a drag
+                    // event intended for the previous physical device.
+                    SyncDeviceVolume(force: true);
+                    return;
+                }
                 _volumeValue.Text = $"{_volume.Value}%";
             }
-            catch (Exception ex) { ShowEngineError(ex); }
+            catch (Exception ex)
+            {
+                ShowEngineError(ex);
+                SyncDeviceVolume(force: true);
+            }
         };
         layout.SetColumnSpan(_volume, 2);
         layout.Controls.Add(_volume, 0, 2);
@@ -421,8 +431,16 @@ internal sealed class MainForm : Form
         _mute.CheckedChanged += (_, _) =>
         {
             if (_loading) return;
-            try { _audio.Muted = _mute.Checked; }
-            catch (Exception ex) { ShowEngineError(ex); }
+            try
+            {
+                if (!_audio.TrySetMuteForOutput(_lastObservedOutputId, _mute.Checked))
+                    SyncDeviceVolume(force: true);
+            }
+            catch (Exception ex)
+            {
+                ShowEngineError(ex);
+                SyncDeviceVolume(force: true);
+            }
         };
         layout.SetColumnSpan(_mute, 2);
         layout.Controls.Add(_mute, 0, 3);
@@ -882,9 +900,9 @@ internal sealed class MainForm : Form
         _lastObservedOutputId = id;
     }
 
-    private void SyncDeviceVolume()
+    private void SyncDeviceVolume(bool force = false)
     {
-        if (_loading || _volume.Capture || _mute.Focused) return;
+        if (_loading || (!force && (_volume.Capture || _mute.Focused))) return;
         try
         {
             _audio.Refresh();
@@ -894,10 +912,19 @@ internal sealed class MainForm : Form
             _volume.Value = Math.Clamp(_audio.VolumePercent, 0, 100);
             _volumeValue.Text = $"{_volume.Value}%";
             _mute.Checked = _audio.Muted;
+            _volume.Enabled = true;
+            _mute.Enabled = true;
         }
         catch (Exception ex)
         {
+            // A disconnected/default-less output cannot receive fresh writes.
+            // The timer retries and re-enables controls when a render device
+            // returns; never preserve a stale enabled volume slider.
+            _loading = true;
             _deviceValue.Text = $"Device unavailable: {ex.Message}";
+            _volumeValue.Text = "—%";
+            _volume.Enabled = false;
+            _mute.Enabled = false;
             ObserveOutputIdentity(null);
         }
         finally { _loading = false; }

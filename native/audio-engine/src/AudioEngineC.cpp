@@ -25,7 +25,7 @@ void louderme_engine_destroy(louderme_engine_handle handle) {
 }
 
 int louderme_engine_set_boost(louderme_engine_handle handle, int enabled, int percent) {
-    if (!handle || percent < 100 || percent > 250) return -1;
+    if (!handle || percent < 100 || percent > 300) return -1;
     auto& engine = *static_cast<AudioEngine*>(handle);
     engine.setBoostPercent(percent);
     engine.setBoostEnabled(enabled != 0);

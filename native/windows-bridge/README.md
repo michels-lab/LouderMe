@@ -1,3 +1,9 @@
+## 2026-11-12 — Product Boost 300% accepted; laboratory limits separate
+
+The owner reported that the **published** LouderMe Android Direct 0.1.14 and Windows Desktop 0.1.19 releases work after personal testing, including the new **300%** Boost setting. Product Windows effects remain Equalizer APO-based. The native C++/C ABI and generic experimental bridge controls accept 100–300% and pass synthetic PCM tests, but **controlled physical-route probes retain their separate 100–150% limit** to avoid accidental full-output gain during hardware experiments. No signed, independent virtual Windows driver or third-party physical audio bridge was part of the stable bundle. Do not treat owner product acceptance as a native driver acceptance. [Owner record](../../docs/audits/GRANADA_2026-11-12_OWNER_ACCEPTANCE_LOUDERME_300PCT.md).
+
+---
+
 ## Granada 2026-11-09 — independent per-speaker frequency map
 
 The virtual-only experimental bridge adds `--probe-virtual-speaker-map --source-id EXACT_VIRTUAL_ID --confirm-experimental` for an externally launched independent Windows source with `--speaker-map`. Each 2/5.1-back/5.1-side/7.1 speaker position carries 440+53×lane Hz. `VirtualSpeakerMapVerifier` accumulates per-channel/per-frequency sine/cosine projections in preallocated arrays without recording PCM or allocating in callbacks; each position must contain its own pilot and reject foreign frequencies above 30% of the correct amplitude. Real normal 440 Hz proof, physical DSP gain evidence, and the legacy source path remain unchanged. Numeric fixture vectors cover absent/misrouted signals and packet fragmentation; this is not a real speaker test. Audit: ../../docs/audits/GRANADA_2026-11-09_WINDOWS_SPEAKER_MAP.md.

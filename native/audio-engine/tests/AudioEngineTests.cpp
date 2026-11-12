@@ -39,7 +39,7 @@ void unityAndBoost() {
 }
 void limiterAndChannels() {
     AudioEngine engine(48000, 2);
-    engine.setBoostPercent(250);
+    engine.setBoostPercent(300);
     engine.setBoostEnabled(true);
     std::vector<float> pcm(12000, 0.95f);
     for (std::size_t i = 1; i < pcm.size(); i += 2) pcm[i] = -0.95f;

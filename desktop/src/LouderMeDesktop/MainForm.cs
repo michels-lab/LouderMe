@@ -509,7 +509,7 @@ internal sealed class MainForm : Form
         layout.Controls.Add(values, 1, 1);
 
         _boost.Minimum = 100;
-        _boost.Maximum = 250;
+        _boost.Maximum = 300;
         _boost.TickFrequency = 25;
         _boost.SmallChange = 1;
         _boost.LargeChange = 25;
@@ -551,7 +551,7 @@ internal sealed class MainForm : Form
             Margin = new Padding(0, 4, 0, 8),
         };
         _boostQuickActions = quick;
-        foreach (var level in new[] { 100, 125, 150, 175, 200, 225, 250 })
+        foreach (var level in new[] { 100, 125, 150, 175, 200, 225, 250, 275, 300 })
         {
             var button = Button($"{level}%", Cyan);
             button.Name = $"boost-quick-{level}";
@@ -667,8 +667,8 @@ internal sealed class MainForm : Form
             MaximumSize = new Size(800, 0),
             Margin = new Padding(0, 8, 0, 0),
             Text =
-                "100–250% is mapped to real post-mix digital gain: 20·log10(percent/100). " +
-                "250% = +7.96 dB. The engine must be attached to the active playback device in Equalizer APO's Configurator. " +
+                "100–300% is mapped to real post-mix digital gain: 20·log10(percent/100). " +
+                "300% = +9.54 dB. The engine must be attached to the active playback device in Equalizer APO's Configurator. " +
                 "High positive gain can trigger Windows' final output limiting/compression on loud material. " +
                 "ASIO and WASAPI exclusive streams can bypass Windows APO effects.",
         };

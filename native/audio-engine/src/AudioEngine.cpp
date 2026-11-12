@@ -39,7 +39,7 @@ void AudioEngine::setBoostEnabled(bool enabled) noexcept {
 }
 
 void AudioEngine::setBoostPercent(int percent) noexcept {
-    boostPercent_ = std::clamp(percent, 100, 250);
+    boostPercent_ = std::clamp(percent, 100, 300);
     targetGain_ = boostEnabled_ ? boostPercent_ / 100.0 : 1.0;
     configureLimiterTarget();
 }

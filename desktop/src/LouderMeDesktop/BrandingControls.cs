@@ -121,7 +121,7 @@ internal sealed class AudioPulseControl : Control
         get => _boostPercent;
         set
         {
-            _boostPercent = Math.Clamp(value, 100, 250);
+            _boostPercent = Math.Clamp(value, 100, 300);
             Invalidate();
         }
     }
@@ -139,7 +139,7 @@ internal sealed class AudioPulseControl : Control
         base.OnPaint(e);
         e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
 
-        var amp = 0.18f + (BoostPercent - 100) / 150f * 0.30f;
+        var amp = 0.18f + (BoostPercent - 100) / 200f * 0.30f;
         var center = Height / 2f;
         using var path = new GraphicsPath();
         var points = 42;

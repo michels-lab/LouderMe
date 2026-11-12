@@ -1,5 +1,14 @@
 # Changelog
 
+## Operación Granada — Boost 300%, Android v0.1.14 / Windows v0.1.19 (2026-11-12)
+
+- Android: presets y control fino hasta 300%, servicio y motor session-0 alineados; el valor deja de truncarse silenciosamente a 250%.
+- Windows: slider, botones, preferencias persistentes, indicador de onda y configuración Equalizer APO hasta 300% (objetivo +9.54 dB); test de configuración aplicada.
+- DSP nativo experimental: límites C++, C ABI, buzón de controles y pruebas PCM actualizados a 300%, manteniendo el tope independiente de 150% en pruebas de salida física.
+- Pruebas en PR #165: pipelines Windows/Android y DSP; el 12/nov se preparan nuevas versiones públicas con pruebas de firma e instalación exigidas antes de anunciar la publicación.
+- Sigue sin demostrarse ganancia acústica real en un teléfono/PC específico ni driver virtual Windows independiente; no se incluyen funciones no verificadas, RC ni beta.
+
+
 ## Android + Desktop v0.1.11 — 2026-10-11
 
 ### Release scope

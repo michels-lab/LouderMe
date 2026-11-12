@@ -1,3 +1,14 @@
+## 2026-11-12 — Operación Granada: preparación estable 300% en Android 0.1.14 y Windows 0.1.19
+
+- Alcance funcional: PR #165 integrado añadió botones 275/300%, slider Android 1%-paso y Windows hasta 300%, almacenamiento/lectura, engine session-0 y C++/C ABI/managed bridge, sin alterar el tope experimental de prueba física 150%.
+- Evidencia ya confirmada: validación Android (tres jobs: variantes/unit tests, instalación Home/About en emulador, Developer instalado) y Windows (instalador/setup/portable) y DSP nativo (Ubuntu/Windows/interop) en PR #165. Son pruebas automatizadas, NO A/B acústico real.
+- Nueva comprobación end-to-end Windows: prueba del archivo APO aislado a 300%, exige `Preamp: +9.54 dB` y coincidencia de preferencias; release gate estable rechaza volver a slider/persistencia/onda de 250%.
+- Preparación de versiones no publicadas: Android v0.1.14/versionCode 15, Desktop v0.1.19, notas específicas por plataforma. Los workflows requieren compilación, signing permanente, instalación/capturas del APK firmado, checksums, instalación real Windows y procedencia antes de crear tags.
+- Publicación **NO afirmada** en este apunte: solo podrá considerarse realizada con tags de origen válidas, seis assets verificables y feeds del repo `LouderME-Releases` actualizados por el publisher. Prohibido fingir firma, modificar manualmente manifest o afirmar Boost de terceros/driver Windows por prueba CI.
+- Límites abiertos: audio real Samsung/teléfono y PC+APO; driver nativo y ruta física #48/#74; distribución Google Play y firma Authenticode no verificadas. Sin RC/beta.
+
+---
+
 ## 2026-11-10 — FINAL stable release published: Android Direct 0.1.13 / Desktop 0.1.18
 
 - **Owner explicitly approved:** `op granada y dale release`. PR [#164](https://github.com/michels-lab/LouderMe/pull/164) merged at source SHA `01702015f1242775a474dfd9c7544207d4ccc23b` after exact-head desktop Windows installer/portable smoke tests, Android variants/unit tests/emulated Home/About, installed Developer audit and signer hygiene.

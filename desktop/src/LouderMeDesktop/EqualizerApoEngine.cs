@@ -233,6 +233,16 @@ internal sealed class EqualizerApoEngine
                 throw new InvalidOperationException("A commented include was treated as live.");
 
             engine.Apply(settings);
+            // Prove that selecting 300% writes a real post-mix +9.54 dB
+            // Equalizer APO configuration and is reported as matching.
+            settings.BoostPercent = 300;
+            engine.Apply(settings);
+            var boostedConfig = File.ReadAllText(engine.LouderMeConfigPath);
+            if (!boostedConfig.Contains("Preamp: +9.54 dB", StringComparison.Ordinal) ||
+                !engine.GetStatus(settings).MatchesSettings)
+                throw new InvalidOperationException("300% Boost did not reach the active APO config.");
+            settings.BoostPercent = 200;
+            engine.Apply(settings);
             var ready = engine.GetStatus(settings);
             if (!ready.Configured || !ready.MatchesSettings)
                 throw new InvalidOperationException("Applied settings are not detected.");

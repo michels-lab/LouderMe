@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 331,
-  "classified_files_total": 327,
-  "docs_content_inspected": 113,
+  "tracked_files_total": 332,
+  "classified_files_total": 328,
+  "docs_content_inspected": 114,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,7 +12,7 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 105,
+    "document": 106,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
@@ -21,10 +21,12 @@
     "text_metadata": 2,
     "workflow": 11
   },
-  "finding_counts": {},
-  "finding_total": 0,
-  "inventory_fingerprint": "60866b7864eea22e3f49b25cd5f42d4135107aaabfadcc52ddc305dcc35950b6",
-  "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "finding_counts": {
+    "BROKEN_RELATIVE_LINK": 2
+  },
+  "finding_total": 2,
+  "inventory_fingerprint": "67953eae63c4136170969a2c032fbded1305270a5bf96d3ae19e815df5607fda",
+  "evidence_fingerprint": "728b2eac1e90c8e5522fb81612c631a8a4888caabe724aca9a00027178e0f153",
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/chatgpt-task.yml",
@@ -213,7 +215,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "78153c02be9ab1a0674a1b7f22c78749ddab6f0f"
+      "blob": "51dda477aff4eaed04efabe5544650e75152d499"
     },
     {
       "path": "LICENSE",
@@ -234,14 +236,14 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "2cb9f02784beace8a93c09c55b04629461f62239"
+      "blob": "3998eabaaccdc1ddfae9e63c25bbb165d38aca25"
     },
     {
       "path": "README.md",
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "65529f674cfc834c1fe8de101e92e8c96a9f533b"
+      "blob": "3e3f7c16234c7e4cf3e64c2e5d22561c81568079"
     },
     {
       "path": "app/build.gradle.kts",
@@ -752,7 +754,7 @@
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "a3217f8712df4174162e8306a813121e85ed9140"
+      "blob": "46b78ce0da2ee05dfd018a146d334108a304aeef"
     },
     {
       "path": "desktop/docs/GRANADA_RELEASE_READINESS_2026-10-20.md",
@@ -857,7 +859,7 @@
       "role": "document",
       "purpose": "manual/decision/report/historical note",
       "certainty": "inferred",
-      "blob": "604f948028ded3367cdbc8de270fe5946317cee6"
+      "blob": "1cad142f864cfd0be42e00f970a373f9f81e7929"
     },
     {
       "path": "desktop/releases/v0.1.2.md",
@@ -1144,7 +1146,7 @@
       "role": "document",
       "purpose": "manual/decision/report/historical note",
       "certainty": "inferred",
-      "blob": "320a74067065787280b9fe223b72f18638307523"
+      "blob": "1cd3463b47f5e4cf236ec4aa216f182bd319e1a1"
     },
     {
       "path": "docs/NATIVE_AUDIO_ENGINE_ARCHITECTURE.md",
@@ -1221,7 +1223,7 @@
       "role": "document",
       "purpose": "manual/decision/report/historical note",
       "certainty": "inferred",
-      "blob": "f91cdb306f932535eeb6788041b825f149d88b12"
+      "blob": "8494bf7202bb75bbbd540d78369a2750ef56826e"
     },
     {
       "path": "docs/RELEASE_NOTES_v0.1.2.md",
@@ -1686,6 +1688,13 @@
       "blob": "269bf1d2368620f71af996f854bf1d897229ec97"
     },
     {
+      "path": "docs/audits/GRANADA_2026-11-12_OWNER_ACCEPTANCE_LOUDERME_300PCT.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "25209c2c69696a4936251301fd74b1cf4466954a"
+    },
+    {
       "path": "docs/product-reviews/2026-10-21-native-windows-audio-evidence.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -1844,7 +1853,7 @@
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "ee90f7b2ea6ddd78a5990f33e1acf4941e2eddeb"
+      "blob": "c54847a0a3169ccfffb41a95d55363f40c5afca3"
     },
     {
       "path": "native/virtual-driver/VirtualSourceCompletionCheck.ps1",
@@ -2110,7 +2119,7 @@
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "16e74a2f0b4ab33b5997f46b29eb7463c74a5353"
+      "blob": "517d22725984f2d18970bc648e2b8bf0b15a6edc"
     },
     {
       "path": "native/windows-bridge/RenderProgressWatchdog.cs",
@@ -2316,7 +2325,26 @@
       "blob": "724f2c9b5eb8b069e266eb1619375c97628d9202"
     }
   ],
-  "findings": [],
+  "findings": [
+    {
+      "id": "add32cf1f0e74b20",
+      "code": "BROKEN_RELATIVE_LINK",
+      "severity": "confirmed",
+      "path": "docs/INFRASTRUCTURE_AUDIT.md",
+      "observation": "Missing: docs/docs/audits/GRANADA_2026-11-12_OWNER_ACCEPTANCE_LOUDERME_300PCT.md",
+      "recommendation": "Fix link or restore target",
+      "state": "REVIEW_REQUIRED"
+    },
+    {
+      "id": "e899946628b4703e",
+      "code": "BROKEN_RELATIVE_LINK",
+      "severity": "confirmed",
+      "path": "docs/RELEASE_NOTES_v0.1.14.md",
+      "observation": "Missing: docs/docs/audits/GRANADA_2026-11-12_OWNER_ACCEPTANCE_LOUDERME_300PCT.md",
+      "recommendation": "Fix link or restore target",
+      "state": "REVIEW_REQUIRED"
+    }
+  ],
   "untracked_audited": false,
   "ignored_audited": false,
   "binary_contents_audited": false,

@@ -5,7 +5,7 @@ No file is auto-deleted or declared unused.
 
 ## Coverage
 
-Tracked: 331; classified: 327; readable documents: 113; above read cap: 0; findings: 0.
+Tracked: 332; classified: 328; readable documents: 114; above read cap: 0; findings: 2.
 
 ## File roles
 
@@ -16,7 +16,7 @@ Tracked: 331; classified: 327; readable documents: 113; above read cap: 0; findi
 | bitacora | 2 |
 | build_script | 7 |
 | config | 20 |
-| document | 105 |
+| document | 106 |
 | index | 6 |
 | installer_metadata | 1 |
 | license | 1 |
@@ -27,6 +27,8 @@ Tracked: 331; classified: 327; readable documents: 113; above read cap: 0; findi
 
 ## Findings (human review required)
 
+- **CONFIRMED / BROKEN_RELATIVE_LINK** docs/INFRASTRUCTURE_AUDIT.md: Missing: docs/docs/audits/GRANADA_2026-11-12_OWNER_ACCEPTANCE_LOUDERME_300PCT.md. Next: Fix link or restore target (ID add32cf1f0e74b20)
+- **CONFIRMED / BROKEN_RELATIVE_LINK** docs/RELEASE_NOTES_v0.1.14.md: Missing: docs/docs/audits/GRANADA_2026-11-12_OWNER_ACCEPTANCE_LOUDERME_300PCT.md. Next: Fix link or restore target (ID e899946628b4703e)
 
 Complete path → purpose/role/certainty list lives in FILE_GOVERNANCE.json. SUMMARY.json has counts only for master polling.
 A dated file, duplicate, or suspicious name is an **investigation candidate**, not unwanted material.

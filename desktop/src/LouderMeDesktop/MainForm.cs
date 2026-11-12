@@ -107,7 +107,7 @@ internal sealed class MainForm : Form
         _eqApplyTimer.Tick += (_, _) => FlushPendingEqualizerApply();
         FormClosing += (_, _) => FlushPendingEqualizerApply(force: true);
 
-        if (!DeveloperMode.Enabled)
+        if (!DeveloperMode.Enabled && !StorePackageContext.IsPackaged)
             Shown += async (_, _) => await CheckForUpdatesAsync(silent: true);
     }
 
@@ -838,7 +838,7 @@ internal sealed class MainForm : Form
         var layout = (TableLayoutPanel)card.Controls[0];
 
         _startWithWindows.Text = "Start LouderMe with Windows";
-        if (DeveloperMode.Enabled) _startWithWindows.Enabled = false; // Never alter public auto-start via Developer UI.
+        if (DeveloperMode.Enabled || StorePackageContext.IsPackaged) _startWithWindows.Enabled = false; // Packaged apps use Store-managed startup tasks.
         _startWithWindows.AutoSize = true;
         _startWithWindows.ForeColor = TextPrimary;
         _startWithWindows.CheckedChanged += (_, _) =>
@@ -892,6 +892,11 @@ internal sealed class MainForm : Form
             _updateAction.Enabled = false;
             _updateAction.Text = "Updates: public edition only";
         }
+        else if (StorePackageContext.IsPackaged)
+        {
+            _updateAction.Enabled = false;
+            _updateAction.Text = "Updates via Microsoft Store";
+        }
         _updateAction.FlatStyle = FlatStyle.Flat;
         _updateAction.ForeColor = Cyan;
         _updateAction.BackColor = Surface;
@@ -903,7 +908,9 @@ internal sealed class MainForm : Form
 
         _updateStatus.AutoSize = true;
         _updateStatus.ForeColor = Muted;
-        _updateStatus.Text = $"v{_updates.CurrentVersionText} · stable";
+        _updateStatus.Text = StorePackageContext.IsPackaged
+            ? $"v{_updates.CurrentVersionText} · Microsoft Store"
+            : $"v{_updates.CurrentVersionText} · stable";
         _updateStatus.Margin = new Padding(6, 9, 14, 0);
 
         footer.Controls.Add(refresh);
@@ -1311,7 +1318,7 @@ internal sealed class MainForm : Form
 
     private async Task CheckForUpdatesAsync(bool silent)
     {
-        if (DeveloperMode.Enabled) return; // A developer test cannot install over the public app.
+        if (DeveloperMode.Enabled || StorePackageContext.IsPackaged) return; // Store owns MSIX updates; Developer never self-updates.
         try
         {
             if (!silent)
@@ -1357,6 +1364,7 @@ internal sealed class MainForm : Form
 
     private async Task HandleUpdateActionAsync()
     {
+        if (StorePackageContext.IsPackaged) return; // Never download/launch Inno Setup inside MSIX.
         if (_lastUpdateCheck?.UpdateAvailable != true || _lastUpdateCheck.Manifest is null)
         {
             await CheckForUpdatesAsync(silent: false);

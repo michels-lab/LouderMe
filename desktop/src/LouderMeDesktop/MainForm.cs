@@ -979,7 +979,7 @@ internal sealed class MainForm : Form
             _startWithWindows.Checked = StartupManager.IsEnabled();
 
             _boostEnabled.Checked = _settings.BoostEnabled;
-            _boost.Value = Math.Clamp(_settings.BoostPercent, 100, 250);
+            _boost.Value = Math.Clamp(_settings.BoostPercent, 100, 300);
             _boostValue.Text = $"{_boost.Value}%";
             _boostDb.Text = $"{BoostMath.PercentToDb(_boost.Value):+0.00;-0.00;0.00} dB";
             _boostWave.BoostPercent = _boost.Value;

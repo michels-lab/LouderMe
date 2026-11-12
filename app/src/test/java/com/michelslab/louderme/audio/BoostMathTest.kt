@@ -13,6 +13,7 @@ class BoostMathTest {
         assertEquals(6.021, BoostMath.percentToDb(200), 0.002)
         assertEquals(7.044, BoostMath.percentToDb(225), 0.002)
         assertEquals(7.959, BoostMath.percentToDb(250), 0.002)
+        assertEquals(9.542, BoostMath.percentToDb(300), 0.002)
     }
 
     @Test
@@ -22,5 +23,6 @@ class BoostMathTest {
         assertEquals(602, BoostMath.percentToMillibels(200))
         assertEquals(704, BoostMath.percentToMillibels(225))
         assertEquals(796, BoostMath.percentToMillibels(250))
+        assertEquals(954, BoostMath.percentToMillibels(300))
     }
 }

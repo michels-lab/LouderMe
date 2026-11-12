@@ -15,14 +15,16 @@ class BoostQuickLevelsTest {
     @Test
     fun notificationStepsClampAtSafeBoundaries() {
         assertEquals(100, BoostQuickLevels.previous(100))
-        assertEquals(250, BoostQuickLevels.next(250))
+        assertEquals(275, BoostQuickLevels.next(250))
+        assertEquals(300, BoostQuickLevels.next(275))
+        assertEquals(300, BoostQuickLevels.next(300))
         assertEquals(100, BoostQuickLevels.previous(-999))
-        assertEquals(250, BoostQuickLevels.next(999))
+        assertEquals(300, BoostQuickLevels.next(999))
     }
 
     @Test
     fun supportedPresetsRemainReachableInBothDirections() {
-        val levels = listOf(100, 125, 150, 175, 200, 225, 250)
+        val levels = listOf(100, 125, 150, 175, 200, 225, 250, 275, 300)
         var selected = 100
         for (i in 1 until levels.size) {
             selected = BoostQuickLevels.next(selected)

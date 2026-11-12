@@ -267,7 +267,7 @@ private fun HomeScreen(
                         onBoostLevelSelected(sliderValue.roundToInt())
                     },
                     valueRange = 100f..300f,
-                    steps = 149,
+                    steps = 199,
                     colors = SliderDefaults.colors(
                         thumbColor = LouderMeColors.Cyan,
                         activeTrackColor = LouderMeColors.Blue,

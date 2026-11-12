@@ -28,6 +28,8 @@ internal static class Program
             arg.Equals("--check-apo-contract", StringComparison.OrdinalIgnoreCase));
         var settingsContractTest = args.Any(arg =>
             arg.Equals("--check-settings-contract", StringComparison.OrdinalIgnoreCase));
+        var storeContractTest = args.Any(arg =>
+            arg.Equals("--check-store-contract", StringComparison.OrdinalIgnoreCase));
         // Explicit one-time UAC setup, intentionally performed before the
         // normal single-instance mutex and without starting the audio UI.
         if (args.Length > 0 && args[0].Equals("--setup-apo", StringComparison.OrdinalIgnoreCase))
@@ -47,7 +49,7 @@ internal static class Program
                 return 1;
             }
         }
-        var smokeTest = layoutSmokeTest || visualEvidence || updaterContractTest || apoContractTest || settingsContractTest || developerContractTest || developerSmokeTest || args.Any(arg =>
+        var smokeTest = layoutSmokeTest || visualEvidence || updaterContractTest || apoContractTest || settingsContractTest || storeContractTest || developerContractTest || developerSmokeTest || args.Any(arg =>
             arg.Equals("--smoke-test", StringComparison.OrdinalIgnoreCase));
 
         try
@@ -72,6 +74,11 @@ internal static class Program
             if (settingsContractTest)
             {
                 DesktopSettingsStore.RunContractSelfTests();
+                return 0;
+            }
+            if (storeContractTest)
+            {
+                StorePackageContext.RunContractSelfTests();
                 return 0;
             }
 

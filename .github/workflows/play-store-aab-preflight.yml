@@ -1,0 +1,99 @@
+name: LouderMe Google Play AAB preflight (no publication)
+
+on:
+  workflow_dispatch:
+    inputs:
+      sign_for_upload:
+        description: "Sign with an existing separately managed Play upload key (no Play Console upload)"
+        type: boolean
+        required: true
+        default: false
+  pull_request:
+    paths:
+      - 'app/**'
+      - '.github/workflows/play-store-aab-preflight.yml'
+      - 'tools/verify_play_bundle.py'
+      - 'tools/tests/test_play_bundle_verifier.py'
+      - 'docs/PLAY_STORE_READINESS.md'
+
+permissions:
+  contents: read
+
+jobs:
+  bundle:
+    name: Build and validate Play AAB (no Store submission)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - name: Prepare Android SDK 36
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDKMANAGER="${ANDROID_HOME:-/usr/local/lib/android/sdk}/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKMANAGER" ]; then
+            SDKMANAGER="/usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager"
+          fi
+          "$SDKMANAGER" "platforms;android-36" "build-tools;36.0.0"
+      - name: Test Play bundle contracts (including negative fixtures)
+        run: python3 -m unittest discover -s tools/tests -p test_play_bundle_verifier.py -v
+      - name: Build real unsigned Play release AAB and run Play unit tests
+        run: |
+          set -euo pipefail
+          gradle :app:testPlayDebugUnitTest :app:bundlePlayRelease --no-daemon
+          test -s app/build/outputs/bundle/playRelease/app-play-release.aab
+      - name: Verify Play identity, permissions separation and unsigned bundle
+        shell: bash
+        run: |
+          python3 tools/verify_play_bundle.py \
+            --bundle app/build/outputs/bundle/playRelease/app-play-release.aab
+      - name: Optionally sign candidate AAB with configured Play upload key
+        if: github.event_name == 'workflow_dispatch' && inputs.sign_for_upload
+        shell: bash
+        env:
+          LOUDERME_PLAY_UPLOAD_KEYSTORE_B64: ${{ secrets.LOUDERME_PLAY_UPLOAD_KEYSTORE_B64 }}
+          LOUDERME_PLAY_UPLOAD_STORE_PASSWORD: ${{ secrets.LOUDERME_PLAY_UPLOAD_STORE_PASSWORD }}
+          LOUDERME_PLAY_UPLOAD_KEY_PASSWORD: ${{ secrets.LOUDERME_PLAY_UPLOAD_KEY_PASSWORD }}
+          LOUDERME_PLAY_UPLOAD_KEY_ALIAS: ${{ secrets.LOUDERME_PLAY_UPLOAD_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          for name in LOUDERME_PLAY_UPLOAD_KEYSTORE_B64 LOUDERME_PLAY_UPLOAD_STORE_PASSWORD LOUDERME_PLAY_UPLOAD_KEY_PASSWORD LOUDERME_PLAY_UPLOAD_KEY_ALIAS; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing Play upload signing secret $name. Never use Direct/debug signer as fallback."
+              exit 1
+            fi
+          done
+          KEYSTORE="$RUNNER_TEMP/louderme-play-upload.jks"
+          trap 'rm -f "$KEYSTORE"' EXIT
+          printf '%s' "$LOUDERME_PLAY_UPLOAD_KEYSTORE_B64" | base64 --decode > "$KEYSTORE"
+          chmod 600 "$KEYSTORE"
+          BUNDLE=app/build/outputs/bundle/playRelease/app-play-release.aab
+          jarsigner -keystore "$KEYSTORE" \
+            -storepass:env LOUDERME_PLAY_UPLOAD_STORE_PASSWORD \
+            -keypass:env LOUDERME_PLAY_UPLOAD_KEY_PASSWORD \
+            "$BUNDLE" "$LOUDERME_PLAY_UPLOAD_KEY_ALIAS"
+          jarsigner -verify -verbose "$BUNDLE"
+          python3 tools/verify_play_bundle.py --bundle "$BUNDLE" --expect-signed
+      - name: Save checksum and exact build metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/play
+          cp app/build/outputs/bundle/playRelease/app-play-release.aab artifacts/play/LouderMe-play-upload-candidate.aab
+          (cd artifacts/play && sha256sum LouderMe-play-upload-candidate.aab > LouderMe-play-upload-candidate.aab.sha256)
+          printf 'source_sha=%s\nsigning_requested=%s\nchannel=play-internal-preflight\nno_store_upload=true\n' \
+            "$GITHUB_SHA" "${{ inputs.sign_for_upload || 'false' }}" > artifacts/play/provenance.txt
+      - name: Upload Play preflight artifact (never public release)
+        uses: actions/upload-artifact@v4
+        with:
+          name: LouderMe-Play-AAB-preflight-${{ github.sha }}
+          path: artifacts/play/
+          if-no-files-found: error
+          retention-days: 7

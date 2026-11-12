@@ -463,7 +463,14 @@ internal sealed class AboutForm : Form
         _updateStatus.Margin = new Padding(0, 9, 10, 0);
         layout.Controls.Add(_updateStatus, 0, 1);
 
-        _updateButton.Text = "Check for updates";
+        _updateButton.Text = StorePackageContext.IsPackaged
+            ? "Updates via Microsoft Store"
+            : "Check for updates";
+        if (StorePackageContext.IsPackaged)
+        {
+            _updateButton.Enabled = false;
+            _updateStatus.Text = "Microsoft Store manages updates for this installation.";
+        }
         _updateButton.AutoSize = true;
         _updateButton.FlatStyle = FlatStyle.Flat;
         _updateButton.ForeColor = Cyan;
@@ -534,6 +541,7 @@ internal sealed class AboutForm : Form
 
     private async Task HandleUpdateActionAsync()
     {
+        if (StorePackageContext.IsPackaged) return;
         try
         {
             _updateButton.Enabled = false;

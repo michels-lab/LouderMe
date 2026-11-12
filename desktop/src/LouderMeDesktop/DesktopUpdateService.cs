@@ -54,6 +54,7 @@ internal sealed class DesktopUpdateService
 
     public async Task<DesktopUpdateCheck> CheckAsync(CancellationToken cancellationToken = default)
     {
+        StorePackageContext.RejectExternalInstaller();
         var current = ParseVersion(CurrentVersionText);
 
         var manifest = await FetchUpdateManifestAsync(cancellationToken);
@@ -319,6 +320,7 @@ internal sealed class DesktopUpdateService
 
     public static void LaunchInstaller(string path)
     {
+        StorePackageContext.RejectExternalInstaller();
         _ = Process.Start(new ProcessStartInfo
         {
             FileName = path,

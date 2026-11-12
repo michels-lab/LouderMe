@@ -1,0 +1,166 @@
+name: LouderMe Microsoft Store MSIX preflight (no publication)
+
+on:
+  workflow_dispatch:
+    inputs:
+      identity_name:
+        description: "Exact Package/Identity/Name from Partner Center (blank = NON-UPLOADABLE preflight identity)"
+        type: string
+        required: false
+      publisher:
+        description: "Exact Package/Identity/Publisher from Partner Center (blank = NON-UPLOADABLE preflight publisher)"
+        type: string
+        required: false
+  pull_request:
+    paths:
+      - 'desktop/**'
+      - 'app/src/main/assets/branding/louderme/**'
+      - '.github/workflows/ms-store-msix-preflight.yml'
+      - 'tools/tests/test_store_msix_manifest.py'
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: Build full-trust MSIX and verify packaging (not Store certified)
+    runs-on: windows-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '10.0.x'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test MSIX manifest generator and refusal cases
+        shell: pwsh
+        run: |
+          python -m unittest discover -s tools/tests -p test_store_msix_manifest.py -v
+          if ($LASTEXITCODE -ne 0) { throw 'MSIX identity/manifest regression suite failed.' }
+      - name: Generate official LouderMe WinForms branding
+        shell: pwsh
+        run: |
+          choco install imagemagick --yes --no-progress
+          $magick = Get-Command magick -ErrorAction SilentlyContinue
+          if (-not $magick) {
+            $exe = Get-ChildItem "$env:ProgramFiles\ImageMagick*" -Filter magick.exe -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+            if (-not $exe) { throw 'ImageMagick magick.exe not found.' }
+            $magickPath = $exe.FullName
+          } else { $magickPath = $magick.Source }
+          pwsh -File desktop/installer/prepare-branding.ps1 -MagickPath $magickPath
+          if ($LASTEXITCODE -ne 0) { throw 'Canonical LouderMe branding generation failed.' }
+          "MAGICK_PATH=$magickPath" | Out-File -FilePath $env:GITHUB_ENV -Append
+      - name: Build Windows app and test separation of Store and EXE updater
+        shell: pwsh
+        run: |
+          dotnet restore desktop/src/LouderMeDesktop/LouderMeDesktop.csproj
+          if ($LASTEXITCODE -ne 0) { throw 'Restore failed.' }
+          dotnet build desktop/src/LouderMeDesktop/LouderMeDesktop.csproj -c Release --no-restore
+          if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
+          dotnet run --project desktop/src/LouderMeDesktop/LouderMeDesktop.csproj -c Release --no-build -- --check-store-contract
+          if ($LASTEXITCODE -ne 0) { throw 'MSIX updater-isolation contract failed.' }
+          dotnet run --project desktop/src/LouderMeDesktop/LouderMeDesktop.csproj -c Release --no-build -- --check-apo-contract
+          if ($LASTEXITCODE -ne 0) { throw 'Equalizer APO configuration regression failed.' }
+      - name: Publish original full-trust WinForms EXE for MSIX
+        shell: pwsh
+        run: |
+          $stage = Join-Path $PWD 'artifacts/msix/stage'
+          New-Item -ItemType Directory -Force $stage | Out-Null
+          dotnet publish desktop/src/LouderMeDesktop/LouderMeDesktop.csproj `
+            -c Release -r win-x64 --self-contained true `
+            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
+            -o $stage
+          if ($LASTEXITCODE -ne 0 -or -not (Test-Path "$stage/LouderMe.exe")) {
+            throw 'Missing real published WinForms runtime.'
+          }
+      - name: Generate MSIX official product tile assets
+        shell: pwsh
+        run: |
+          $stage = Join-Path $PWD 'artifacts/msix/stage'
+          $assets = Join-Path $stage 'Assets'
+          New-Item -ItemType Directory -Force $assets | Out-Null
+          $icon = 'app/src/main/assets/branding/louderme/official-app-icon.svg'
+          $lockup = 'app/src/main/assets/branding/louderme/official-lockup.svg'
+          $tiles = @(
+            @('Square44x44Logo.png', 44, 44),
+            @('Square150x150Logo.png', 150, 150),
+            @('Square310x310Logo.png', 310, 310),
+            @('StoreLogo.png', 50, 50)
+          )
+          foreach ($tile in $tiles) {
+            $output = Join-Path $assets $tile[0]
+            $dimensions = "$($tile[1])x$($tile[2])"
+            & $env:MAGICK_PATH -background none -density 220 $icon -resize $dimensions `
+              -gravity center -background '#0C1422' -extent $dimensions -strip $output
+            if ($LASTEXITCODE -ne 0 -or -not (Test-Path $output)) {
+              throw "MSIX logo failure: $($tile[0])"
+            }
+          }
+          & $env:MAGICK_PATH -background none -density 220 $lockup `
+            -resize '290x128' -gravity center -background white `
+            -extent '310x150' -strip (Join-Path $assets 'Wide310x150Logo.png')
+          if ($LASTEXITCODE -ne 0) { throw 'MSIX wide logo generation failed.' }
+      - name: Resolve official or deliberately NON-UPLOADABLE MSIX identity
+        id: identity
+        shell: pwsh
+        env:
+          STORE_IDENTITY_NAME: ${{ inputs.identity_name }}
+          STORE_IDENTITY_PUBLISHER: ${{ inputs.publisher }}
+        run: |
+          $name = $env:STORE_IDENTITY_NAME
+          $publisher = $env:STORE_IDENTITY_PUBLISHER
+          $preflight = [string]::IsNullOrWhiteSpace($name) -and [string]::IsNullOrWhiteSpace($publisher)
+          if ($preflight) {
+            $name='MichelsLab.LouderMe.Preflight'
+            $publisher='CN=LouderMe Store Preflight'
+          } elseif ([string]::IsNullOrWhiteSpace($name) -or [string]::IsNullOrWhiteSpace($publisher)) {
+            throw 'Enter both exact Partner Center Identity Name and Publisher; neither can be guessed.'
+          }
+          [xml]$project=Get-Content 'desktop/src/LouderMeDesktop/LouderMeDesktop.csproj'
+          $version=[string]$project.Project.PropertyGroup.Version
+          $parts=$version.Split('.')
+          if ($parts.Count -ne 3) { throw 'Desktop SemVer x.y.z needed.' }
+          $msixVersion="$version.0"
+          $stage = Join-Path $PWD 'artifacts/msix/stage'
+          $args=@('desktop/tools/create_store_manifest.py', '--identity-name', $name,
+            '--publisher', $publisher, '--version', $msixVersion, '--stage', $stage)
+          if ($preflight) { $args += '--preflight' }
+          python @args
+          if ($LASTEXITCODE -ne 0) { throw 'Store identity and full-trust manifest validation failed.' }
+          "version=$msixVersion" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "preflight=$($preflight.ToString().ToLowerInvariant())" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "identity=$name" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+      - name: Pack and unpack real MSIX with Windows SDK
+        shell: pwsh
+        run: |
+          $stage = Join-Path $PWD 'artifacts/msix/stage'
+          $out = Join-Path $PWD 'artifacts/msix/LouderMe-Store-PREFLIGHT.msix'
+          $sdk = Join-Path "${env:ProgramFiles(x86)}" 'Windows Kits/10/bin'
+          $makeappx = Get-ChildItem $sdk -Filter MakeAppx.exe -Recurse -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match '\\x64\\MakeAppx\.exe$' } |
+            Sort-Object FullName -Descending | Select-Object -First 1
+          if (-not $makeappx) { throw 'Windows SDK MakeAppx.exe x64 not installed.' }
+          & $makeappx.FullName pack /d $stage /p $out /o
+          if ($LASTEXITCODE -ne 0 -or -not (Test-Path $out)) { throw 'MSIX pack failed.' }
+          $check = Join-Path $PWD 'artifacts/msix/unpacked'
+          & $makeappx.FullName unpack /p $out /d $check /o
+          if ($LASTEXITCODE -ne 0 -or -not (Test-Path "$check/LouderMe.exe")) {
+            throw 'MSIX unpack/WinForms payload verification failed.'
+          }
+          $sourceHash=(Get-FileHash "$stage/LouderMe.exe" -Algorithm SHA256).Hash
+          $packedHash=(Get-FileHash "$check/LouderMe.exe" -Algorithm SHA256).Hash
+          if ($sourceHash -ne $packedHash) { throw 'MSIX changed LouderMe runtime bytes.' }
+          (Get-FileHash $out -Algorithm SHA256).Hash.ToLowerInvariant() |
+            Set-Content (Join-Path $PWD 'artifacts/msix/LouderMe-Store-PREFLIGHT.msix.sha256')
+          Write-Host 'PASS: real Windows SDK MSIX produced and unpacked; payload hashes preserved.'
+      - name: Upload unsigned MSIX preflight, never an approved Store release
+        uses: actions/upload-artifact@v4
+        with:
+          name: LouderMe-Store-MSIX-preflight-${{ github.sha }}
+          path: |
+            artifacts/msix/LouderMe-Store-PREFLIGHT.msix
+            artifacts/msix/LouderMe-Store-PREFLIGHT.msix.sha256
+          if-no-files-found: error
+          retention-days: 7

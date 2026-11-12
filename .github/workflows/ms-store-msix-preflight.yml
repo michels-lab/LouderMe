@@ -1,4 +1,4 @@
-name: LouderMe Microsoft Store MSIX preflight (no publication)
+name: LouderMe Microsoft Store MSIX GUI packaging preflight (native route blocked)
 
 on:
   workflow_dispatch:
@@ -23,7 +23,7 @@ permissions:
 
 jobs:
   package:
-    name: Build full-trust MSIX and verify packaging (not Store certified)
+    name: Build full-trust GUI MSIX only (native audio route not certified)
     runs-on: windows-latest
     timeout-minutes: 35
     steps:
@@ -52,6 +52,9 @@ jobs:
           pwsh -File desktop/installer/prepare-branding.ps1 -MagickPath $magickPath
           if ($LASTEXITCODE -ne 0) { throw 'Canonical LouderMe branding generation failed.' }
           "MAGICK_PATH=$magickPath" | Out-File -FilePath $env:GITHUB_ENV -Append
+      # This packages the GUI only. The store submission gate remains BLOCKED
+      # until the self-hosted virtual Windows endpoint and native DSP route
+      # are integrated and separately validated. No APO-based shipping path.
       - name: Build Windows app and test separation of Store and EXE updater
         shell: pwsh
         run: |
@@ -61,8 +64,6 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
           dotnet run --project desktop/src/LouderMeDesktop/LouderMeDesktop.csproj -c Release --no-build -- --check-store-contract
           if ($LASTEXITCODE -ne 0) { throw 'MSIX updater-isolation contract failed.' }
-          dotnet run --project desktop/src/LouderMeDesktop/LouderMeDesktop.csproj -c Release --no-build -- --check-apo-contract
-          if ($LASTEXITCODE -ne 0) { throw 'Equalizer APO configuration regression failed.' }
       - name: Publish original full-trust WinForms EXE for MSIX
         shell: pwsh
         run: |

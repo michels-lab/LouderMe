@@ -28,6 +28,10 @@ void unityAndBoost() {
     std::fill(mono.begin(), mono.end(), 0.1f);
     engine.process(mono.data(), mono.size());
     check(std::abs(mono.back() - 0.15f) < 0.001f, "150% gain");
+    engine.setBoostPercent(300);
+    std::fill(mono.begin(), mono.end(), 0.1f);
+    engine.process(mono.data(), mono.size());
+    check(std::abs(mono.back() - 0.30f) < 0.001f, "300% DSP gain");
     engine.setBoostEnabled(false);
     std::fill(mono.begin(), mono.end(), 0.1f);
     engine.process(mono.data(), mono.size());
@@ -232,11 +236,11 @@ void transparentFullScaleBypass() {
         auto original = pcm;
         engine.process(pcm.data(), pcm.size() / 2);
         check(pcm == original, "unity bypass compressed full-scale PCM");
-        engine.setBoostPercent(250);
+        engine.setBoostPercent(300);
         engine.setBoostEnabled(false);
         pcm = original;
         engine.process(pcm.data(), pcm.size() / 2);
-        check(pcm == original, "disabled 250% Boost altered dry PCM");
+        check(pcm == original, "disabled 300% Boost altered dry PCM");
         engine.setEqEnabled(true); // all seven gains at EXACT 0 dB
         pcm = original;
         engine.process(pcm.data(), pcm.size() / 2);

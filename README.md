@@ -55,7 +55,7 @@ LouderMe is an Android audio utility by **Michel's Lab** for increasing quiet me
 
 ## Current public release bundle
 
-**Latest verified public bundle: Android v0.1.14 + Windows Desktop v0.1.19 (2026-11-12).** The official [unified release](https://github.com/michels-lab/LouderME-Releases/releases/tag/louderme-android-v0.1.14-desktop-v0.1.19) contains the signed Android Direct APK, Windows Setup and Portable, plus individual SHA-256 checksums. The owner subsequently confirmed **el propietario confirmó que ya comprobó que todo funciona**; this records successful user acceptance of the released LouderMe experience, including the **300% Boost** feature, without claiming measured SPL or universal device compatibility. [Acceptance log](docs/audits/GRANADA_2026-11-12_OWNER_ACCEPTANCE_LOUDERME_300PCT.md).
+**Latest verified public bundle: Android v0.1.14 + Windows Desktop v0.1.19 (2026-11-12).** The official [unified release](https://github.com/michels-lab/LouderME-Releases/releases/tag/louderme-android-v0.1.14-desktop-v0.1.19) contains the signed Android Direct APK, Windows Setup and Portable, plus individual SHA-256 checksums. The owner subsequently confirmed **that all features work following personal testing**; this records successful user acceptance of the released LouderMe experience, including the **300% Boost** feature, without claiming measured SPL or universal device compatibility. [Acceptance log](docs/audits/GRANADA_2026-11-12_OWNER_ACCEPTANCE_LOUDERME_300PCT.md).
 
 Michel's Lab publishes the current stable Android and Windows binaries together on one public GitHub release page. Platform versions remain explicit when their release lines differ.
 

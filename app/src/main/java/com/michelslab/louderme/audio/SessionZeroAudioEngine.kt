@@ -18,7 +18,7 @@ class SessionZeroAudioEngine : AudioEngine {
     private var dynamicsProcessing: DynamicsProcessing? = null
 
     override fun enable(percent: Int): AudioEngineResult {
-        val safePercent = percent.coerceIn(100, 250)
+        val safePercent = percent.coerceIn(100, 300)
         val gainDb = BoostMath.percentToDb(safePercent)
 
         val loudnessResult = runCatching {

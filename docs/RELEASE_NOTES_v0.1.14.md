@@ -21,6 +21,6 @@ The unified LouderME-Releases publisher may update the public updater feed only 
 
 ## Verificación posterior al lanzamiento — 2026-11-12
 
-- **Confirmación del propietario:** «ya comprobé que todo funciona». Se registra su aceptación funcional de LouderMe con Boost hasta **300%** en las versiones estables de esta operación, incluida Android Direct v0.1.14. No se reportaron fallos nuevos en esta revisión.
+- **Confirmación del propietario:** el propietario confirmó que ya comprobó que todo funciona. Se registra su aceptación funcional de LouderMe con Boost hasta **300%** en las versiones estables de esta operación, incluida Android Direct v0.1.14. No se reportaron fallos nuevos en esta revisión.
 - **Evidencia de entrega:** [pipeline Android 43315685300](https://github.com/michels-lab/LouderMe/actions/runs/43315685300) correcto; compilación de sabores, firma Direct permanente e instalación del APK final firmado, UI Home/About y Developer. Publicador unificado [43326490451](https://github.com/michels-lab/LouderME-Releases/actions/runs/43326490451) correcto.
 - **Límite de la afirmación:** confirmación de uso aportada por el propietario, no sonometría ni mediciones A/B de señal, ni garantía de todas las rutas de audio de terceros. El canal Google Play sigue fuera de esta publicación. [Acta](docs/audits/GRANADA_2026-11-12_OWNER_ACCEPTANCE_LOUDERME_300PCT.md).

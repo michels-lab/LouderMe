@@ -18,13 +18,20 @@ int main() {
         require(engine != nullptr, "valid engine creation failed");
         std::vector<float> samples(2 * 4800, 0.1f);
         require(louderme_engine_set_boost(engine, 1, 150) == 0, "boost setter failed");
-        require(louderme_engine_set_boost(engine, 1, 251) != 0, "invalid boost accepted");
+        require(louderme_engine_set_boost(engine, 1, 301) != 0, "above-300 boost accepted");
+        require(louderme_engine_set_boost(engine, 1, 99) != 0, "below-100 boost accepted");
         std::array<float, 7> flat{};
         require(louderme_engine_set_eq(engine, 0, flat.data()) == 0, "EQ setter failed");
         require(louderme_engine_set_eq(engine, 0, nullptr) != 0, "null EQ accepted");
         require(louderme_engine_process(engine, samples.data(), samples.size() / 2) == 0,
                 "process failed");
         require(std::abs(samples.back() - 0.15f) < 0.001f, "ABI failed to process real gain");
+        require(louderme_engine_set_boost(engine, 1, 300) == 0, "300% ABI boost rejected");
+        for (auto& sample : samples) sample = 0.1f;
+        require(louderme_engine_process(engine, samples.data(), samples.size() / 2) == 0,
+                "300% ABI processing failed");
+        require(std::abs(samples.back() - 0.30f) < 0.001f,
+                "300% ABI failed to deliver 3x gain on low-level PCM");
         require(louderme_engine_process(engine, nullptr, 2) != 0, "null PCM accepted");
         louderme_engine_destroy(engine);
         std::puts("LouderME native C ABI: passed");

@@ -271,12 +271,12 @@ internal static class Program
             if (!args.Contains("--confirm-experimental") ||
                 string.IsNullOrWhiteSpace(sourceId) ||
                 string.IsNullOrWhiteSpace(outputId) ||
-                !int.TryParse(percentText, out var boost) || boost is < 100 or > 250)
+                !int.TryParse(percentText, out var boost) || boost is < 100 or > 300)
             {
                 Console.Error.WriteLine(
                     "Experimental only. Use --list-devices, then " +
                     "--source-id <LOUDERME_VIRTUAL_ENDPOINT_ID> --output-id <PHYSICAL_ENDPOINT_ID> " +
-                    "--boost <100-250> [--eq-db b1,b2,b3,b4,b5,b6,b7] --confirm-experimental");
+                    "--boost <100-300> [--eq-db b1,b2,b3,b4,b5,b6,b7] --confirm-experimental");
                 return 2;
             }
 
@@ -284,7 +284,7 @@ internal static class Program
                 throw new InvalidOperationException("Capture and physical output endpoints must differ.");
             // This probe intentionally emits audible sound through the chosen
             // physical sink. Keep lab signal quiet even if product boost
-            // normally allows 250%. No default-device modifications.
+            // normally allows 300%. No default-device modifications.
             if (provePhysicalRoute && boost is < 100 or > 150)
                 throw new ArgumentException(
                     "Physical-route lab proof requires --boost 100..150 to limit test output.");
@@ -579,7 +579,7 @@ internal static class Program
                         catch (IOException) { /* unavailable stdin: lab controls disabled */ }
                     }) { IsBackground = true, Name = "LouderMe-Lab-Controls" };
                     controlReader.Start();
-                    Console.WriteLine("LAB live controls: boost 100..250 | eq off | eq seven comma-separated dB values");
+                    Console.WriteLine("LAB live controls: boost 100..300 | eq off | eq seven comma-separated dB values");
                     Console.WriteLine("Changes are applied on the next capture callback; no UI/console thread touches DSP.");
                 }
                 if (provePhysicalRoute)

@@ -333,7 +333,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun requestBoost(percent: Int) {
-        val safePercent = percent.coerceIn(100, 250)
+        val safePercent = percent.coerceIn(100, 300)
 
         if (
             Build.VERSION.SDK_INT >= 33 &&

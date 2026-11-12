@@ -30,7 +30,7 @@ internal static class DesktopSettingsStore
         return new DesktopAudioSettings
         {
             BoostEnabled = settings.BoostEnabled,
-            BoostPercent = Math.Clamp(settings.BoostPercent, 100, 250),
+            BoostPercent = Math.Clamp(settings.BoostPercent, 100, 300),
             EqualizerEnabled = settings.EqualizerEnabled,
             Preset = string.IsNullOrWhiteSpace(settings.Preset) ? "Flat" : settings.Preset,
             EqualizerGainsDb = eq
@@ -114,7 +114,7 @@ internal static class DesktopSettingsStore
 
             var next = new DesktopAudioSettings
             {
-                BoostEnabled = true, BoostPercent = 250, Preset = "Custom",
+                BoostEnabled = true, BoostPercent = 300, Preset = "Custom",
                 EqualizerGainsDb = [-9, -7, -4, 0, 4, 7, 9]
             };
             bool interrupted = false;
@@ -130,7 +130,7 @@ internal static class DesktopSettingsStore
                 throw new InvalidOperationException("Interrupted write damaged last-good JSON.");
 
             SaveToPath(developer, next);
-            if (LoadFromPath(developer).BoostPercent != 250 ||
+            if (LoadFromPath(developer).BoostPercent != 300 ||
                 !File.ReadAllBytes(stable).AsSpan().SequenceEqual(preserved))
                 throw new InvalidOperationException("Developer preferences overwrote stable settings.");
 
@@ -140,7 +140,7 @@ internal static class DesktopSettingsStore
                 EqualizerGainsDb = [float.NaN, float.PositiveInfinity, -20, 0, 3, 9, 20]
             });
             var safe = LoadFromPath(stable);
-            if (safe.BoostPercent != 250 || safe.Preset != "Flat" ||
+            if (safe.BoostPercent != 300 || safe.Preset != "Flat" ||
                 safe.EqualizerGainsDb[0] != 0 || safe.EqualizerGainsDb[1] != 0 ||
                 safe.EqualizerGainsDb[2] != -10 || safe.EqualizerGainsDb[6] != 10)
                 throw new InvalidOperationException("Nonfinite/invalid EQ values reached persistence.");

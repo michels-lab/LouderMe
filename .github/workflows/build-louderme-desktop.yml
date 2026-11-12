@@ -134,12 +134,14 @@ jobs:
           }
 
           $ui=Get-Content 'desktop/src/LouderMeDesktop/MainForm.cs' -Raw
-          foreach ($required in @('Global Boost','250%','Install Equalizer APO','Open Configurator')) {
+          foreach ($required in @('Global Boost','300%','Install Equalizer APO','Open Configurator')) {
             if ($ui -notmatch [regex]::Escape($required)) { throw "Desktop boost UI contract missing: $required" }
           }
 
-          $db250=20*[Math]::Log10(2.5)
-          if ([Math]::Abs($db250-7.958800173) -gt 0.000001) { throw '250 percent gain conversion sanity check failed.' }
+          $db300=20*[Math]::Log10(3.0)
+          if ([Math]::Abs($db300-9.542425094) -gt 0.000001) { throw '300 percent gain conversion sanity check failed.' }
+          if ($mainUi -notmatch [regex]::Escape('_boost.Maximum = 300;')) { throw 'Desktop Boost slider cannot reach 300%.' }
+          if ($math -notmatch 'Math.Clamp\(percent, 100, 300\)') { throw 'Desktop DSP conversion still clamps below 300%.' }
 
           if ((git hash-object desktop/src/LouderMeDesktop/Assets/MichelDuarte.jpg) -ne '18fe1a68722850c3d8f918dc0799f46ffeb6dbaf') {
             throw 'Desktop Michel Duarte portrait is not the canonical asset.'

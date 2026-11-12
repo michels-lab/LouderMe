@@ -55,13 +55,13 @@ LouderMe is an Android audio utility by **Michel's Lab** for increasing quiet me
 
 ## Current public release bundle
 
-**Android v0.1.12 + Windows Desktop v0.1.17** (latest verified public unified bundle; GitHub release and updater metadata checked 2026-10-26). Both Windows Setup/Portable and the unchanged Android APK are available with verified SHA-256 sidecars in [the official unified release](https://github.com/michels-lab/LouderME-Releases/releases/tag/louderme-android-v0.1.12-desktop-v0.1.17). This does not certify real acoustic gain.
+**Latest verified public bundle: Android v0.1.14 + Windows Desktop v0.1.19 (2026-11-12).** The official [unified release](https://github.com/michels-lab/LouderME-Releases/releases/tag/louderme-android-v0.1.14-desktop-v0.1.19) contains the signed Android Direct APK, Windows Setup and Portable, plus individual SHA-256 checksums. The owner subsequently confirmed **«ya comprobé que todo funciona»**; this records successful user acceptance of the released LouderMe experience, including the **300% Boost** feature, without claiming measured SPL or universal device compatibility. [Acceptance log](docs/audits/GRANADA_2026-11-12_OWNER_ACCEPTANCE_LOUDERME_300PCT.md).
 
 Michel's Lab publishes the current stable Android and Windows binaries together on one public GitHub release page. Platform versions remain explicit when their release lines differ.
 
 ### Global Boost
-- 100%, 125%, 150%, 175%, 200%, 225%, 250%.
-- Fine 100–250% slider.
+- 100%, 125%, 150%, 175%, 200%, 225%, 250%, 275%, 300%.
+- Fine 100–300% slider.
 - Target signal-gain readout.
 - Output-route and engine diagnostics.
 
@@ -142,11 +142,11 @@ The customer-facing public binary channel groups the current stable Android and 
 
 When one platform is updated, the public publisher carries forward the validated current binaries of the other platform so the release remains complete.
 
-## Verified October 12, 2026 release
+## Historical release — October 12, 2026
 
-- [Latest unified public Android v0.1.12 + Windows v0.1.13 download](https://github.com/michels-lab/LouderME-Releases/releases/tag/louderme-android-v0.1.12-desktop-v0.1.13) — six APK/Setup/Portable and checksum assets verified by GitHub release metadata; runtime tests remain separate.
+- [Historical public Android v0.1.12 + Windows v0.1.13 download](https://github.com/michels-lab/LouderME-Releases/releases/tag/louderme-android-v0.1.12-desktop-v0.1.13) — six APK/Setup/Portable and checksum assets verified by GitHub release metadata; runtime tests remain separate.
 - [Release-publisher CI](https://github.com/michels-lab/LouderME-Releases/actions/runs/38231448218) passed; source commit for both tags: `ed0bd6da54c022ac05eba0b3760361f4bce056ff`.
 - Android Direct APK SHA-256: `0947e7f6b21f4c5beb10ebebe914d3420586504aa0bac7de42d1a565625a68a7`.
 - Windows Setup SHA-256: `9bc5def136fc35d01317e9892d599f6aefe5701758fafbf20941c0b459707501`.
 - Windows Portable SHA-256: `b18953af1fbd5d023a828c37eb8b691b1ee88297e91fa9ab6e684de670dcd324`.
-- Real-device audible Android/Windows audio behavior, native system-wide driver and Windows Authenticode signing **remain unverified**; CI passes do not constitute physical audio testing.
+- As of the historical 2026-10-12 release, real-device audio acceptance had not been reported. On 2026-11-12 the owner confirmed the current v0.1.14/v0.1.19 product works; quantitative acoustic SPL, standalone native Windows driver and Authenticode signing are separate evidence categories.

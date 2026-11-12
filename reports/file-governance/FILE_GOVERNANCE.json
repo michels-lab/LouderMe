@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 329,
-  "classified_files_total": 325,
-  "docs_content_inspected": 111,
+  "tracked_files_total": 331,
+  "classified_files_total": 327,
+  "docs_content_inspected": 113,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,7 +12,7 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 103,
+    "document": 105,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
@@ -21,12 +21,10 @@
     "text_metadata": 2,
     "workflow": 11
   },
-  "finding_counts": {
-    "POTENTIAL_UNLOGGED_CHANGES": 1
-  },
-  "finding_total": 1,
-  "inventory_fingerprint": "9bfa1ed299b58c3f48422e57e69b1b21d707308b01d5261b53ccb99a8e3ae679",
-  "evidence_fingerprint": "fd38ce8412806efe60180dbe4dba66ab4ba6fee999e2f4f97b007c9fa03f9879",
+  "finding_counts": {},
+  "finding_total": 0,
+  "inventory_fingerprint": "269932e554b0e20bf0cb800836e879808f8bb9f3c105c5e231e22fc875305497",
+  "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/chatgpt-task.yml",
@@ -131,7 +129,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "847be86b4930fada828c0d3e71e81d3379003a24"
+      "blob": "d11a887e9146084f5b5b1d584ce9cdd2ac951ebd"
     },
     {
       "path": ".github/workflows/restore-canonical-android-asset.yml",
@@ -215,7 +213,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "fd0cc2c347ef97836f82b1b0df225127285b9431"
+      "blob": "78153c02be9ab1a0674a1b7f22c78749ddab6f0f"
     },
     {
       "path": "LICENSE",
@@ -236,7 +234,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "c7f0caaed40020e006f89901a80bc4d68abf64d1"
+      "blob": "adfe3827f7f1ea01226d6697e7cb88272aac6d5f"
     },
     {
       "path": "README.md",
@@ -250,7 +248,7 @@
       "role": "build_script",
       "purpose": "platform build/project/installer script",
       "certainty": "inferred",
-      "blob": "041bb915be12e9f2829bc496d7e0945e3877ea44"
+      "blob": "0a43d6e741448f63b9579d2ffc23873cd8deb27e"
     },
     {
       "path": "app/src/developer/AndroidManifest.xml",
@@ -855,6 +853,13 @@
       "blob": "72077cea25ad2786fad32d236aceec71d71706a4"
     },
     {
+      "path": "desktop/releases/v0.1.19.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "604f948028ded3367cdbc8de270fe5946317cee6"
+    },
+    {
       "path": "desktop/releases/v0.1.2.md",
       "role": "document",
       "purpose": "manual/decision/report/historical note",
@@ -1006,7 +1011,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "b9c1d0af296497d98fdad6d1c220a3c9c921c2f7"
+      "blob": "6b641e44e229ada870e3e245fa84a4bc89eae01e"
     },
     {
       "path": "desktop/src/LouderMeDesktop/EqualizerCommitPolicy.cs",
@@ -1027,7 +1032,7 @@
       "role": "build_script",
       "purpose": "platform build/project/installer script",
       "certainty": "inferred",
-      "blob": "87efad4c5113c2f9c19b2bfdb877d9dc41005f93"
+      "blob": "2629e1e604933b58e3d666cffe7d9ff8a3cd9e5c"
     },
     {
       "path": "desktop/src/LouderMeDesktop/MainForm.cs",
@@ -1210,6 +1215,13 @@
       "purpose": "manual/decision/report/historical note",
       "certainty": "inferred",
       "blob": "60e2baa84f3d6d8e15a02c93482ddd38e41520ce"
+    },
+    {
+      "path": "docs/RELEASE_NOTES_v0.1.14.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "f91cdb306f932535eeb6788041b825f149d88b12"
     },
     {
       "path": "docs/RELEASE_NOTES_v0.1.2.md",
@@ -2304,17 +2316,7 @@
       "blob": "724f2c9b5eb8b069e266eb1619375c97628d9202"
     }
   ],
-  "findings": [
-    {
-      "id": "c5fe29f638edd773",
-      "code": "POTENTIAL_UNLOGGED_CHANGES",
-      "severity": "review",
-      "path": "PROJECT_LOG.md",
-      "observation": "19 implementation/config paths changed since this log's last commit; examples: .github/workflows/build-louderme-desktop.yml, app/src/main/java/com/michelslab/louderme/MainActivity.kt, app/src/main/java/com/michelslab/louderme/audio/AudioBoostService.kt, app/src/main/java/com/michelslab/louderme/audio/BoostQuickLevels.kt, app/src/main/java/com/michelslab/louderme/audio/SessionZeroAudioEngine.kt, app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt",
-      "recommendation": "Inspect diffs and reconcile only meaningful decisions/results in the canonical log",
-      "state": "REVIEW_REQUIRED"
-    }
-  ],
+  "findings": [],
   "untracked_audited": false,
   "ignored_audited": false,
   "binary_contents_audited": false,

@@ -1,3 +1,13 @@
+## 2026-11-12 — ACEPTACIÓN DEL PROPIETARIO: LouderMe 300% funciona en la versión estable publicada
+
+- **Confirmación directa:** tras la distribución Android Direct **v0.1.14** y Windows Desktop **v0.1.19**, el propietario comunicó: **«ya comprobé que todo funciona»**. Se registra como **aceptación funcional del usuario** de las versiones públicas y del objetivo de Boost hasta **300%**, sin incidencias nuevas reportadas en esta revisión.
+- **Producto y publicación:** [bundle estable unificado](https://github.com/michels-lab/LouderME-Releases/releases/tag/louderme-android-v0.1.14-desktop-v0.1.19); [Android release](https://github.com/michels-lab/LouderMe/actions/runs/43315685300), [Windows release](https://github.com/michels-lab/LouderMe/actions/runs/43315685361) y [publisher unificado](https://github.com/michels-lab/LouderME-Releases/actions/runs/43326490451) finalizaron correctamente; firmas/instalaciones/6 assets y feeds de actualizaciones verificados en los pipelines.
+- **Distinción de evidencia:** la prueba manual afirmada por el propietario no incluye datos crudos, medición acústica SPL, A/B cuantitativa, marca/modelo ni prueba de cada aplicación externa. Por tanto se puede afirmar **«el propietario confirmó que LouderMe funciona»**, pero NO «se midió volumen acústico 3×» ni «el driver Windows nativo independiente funciona». El 300% sigue representando +9.54 dB de amplitud digital solicitada.
+- **Estado de entregable:** ampliación al 300% **entregada, publicada y aceptada por el propietario**; no se requiere otro release por este cambio. Se conservan separados los pendientes de ruta física/driver Windows #48, publicación en Google Play y comprobaciones específicas de firma de Windows.
+- **Registro detallado:** [acta de aceptación funcional](docs/audits/GRANADA_2026-11-12_OWNER_ACCEPTANCE_LOUDERME_300PCT.md). Las entradas históricas con «pendiente de probar» reflejan su momento de redacción y no invalidan este estado posterior. Sin RC ni nueva compilación.
+
+---
+
 ## 2026-11-12 — FINAL verified stable release: LouderMe Android Direct 0.1.14 / Windows Desktop 0.1.19 (Boost 300%)
 
 - **Source shipped:** PR [#165](https://github.com/michels-lab/LouderMe/pull/165) provides end-to-end 300% UI, service, runtime, DSP/ABI and tests. PR [#166](https://github.com/michels-lab/LouderMe/pull/166) advances Android Direct to `0.1.14`/`versionCode 15` and Windows to `0.1.19`, adding an actual on-disk Equalizer APO `Preamp: +9.54 dB` integration regression, versioned notes and Windows stable-release guard. Main release source SHA `09f50a02c6feff6e8173fe9b4741bef607501333`.

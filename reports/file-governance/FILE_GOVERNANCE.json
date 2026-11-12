@@ -23,7 +23,7 @@
   },
   "finding_counts": {},
   "finding_total": 0,
-  "inventory_fingerprint": "269932e554b0e20bf0cb800836e879808f8bb9f3c105c5e231e22fc875305497",
+  "inventory_fingerprint": "60866b7864eea22e3f49b25cd5f42d4135107aaabfadcc52ddc305dcc35950b6",
   "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
   "files": [
     {
@@ -234,14 +234,14 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "adfe3827f7f1ea01226d6697e7cb88272aac6d5f"
+      "blob": "2cb9f02784beace8a93c09c55b04629461f62239"
     },
     {
       "path": "README.md",
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "32571cc04a01ce7ded021effd07ae4fb0e03e28b"
+      "blob": "65529f674cfc834c1fe8de101e92e8c96a9f533b"
     },
     {
       "path": "app/build.gradle.kts",

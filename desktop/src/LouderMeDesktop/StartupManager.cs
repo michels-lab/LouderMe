@@ -9,6 +9,7 @@ internal static class StartupManager
 
     public static bool IsEnabled()
     {
+        if (StorePackageContext.IsPackaged) return false; // MSIX cannot use unpackaged Run-key startup.
         using var key = Registry.CurrentUser.OpenSubKey(RunKey, writable: false);
         return key?.GetValue(ValueName) is string value &&
                !string.IsNullOrWhiteSpace(value);
@@ -16,6 +17,8 @@ internal static class StartupManager
 
     public static void SetEnabled(bool enabled)
     {
+        if (StorePackageContext.IsPackaged)
+            throw new NotSupportedException("Windows Store installs require Store-managed startup tasks.");
         using var key = Registry.CurrentUser.CreateSubKey(RunKey, writable: true)
             ?? throw new InvalidOperationException("Windows startup registry key is unavailable.");
 

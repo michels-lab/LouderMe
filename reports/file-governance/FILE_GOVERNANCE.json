@@ -25,8 +25,8 @@
     "POTENTIAL_UNLOGGED_CHANGES": 1
   },
   "finding_total": 1,
-  "inventory_fingerprint": "a02edac4999a40a93832e80f0a13480985106966c3cb8f447ba479c4da937e4d",
-  "evidence_fingerprint": "085b2ec908d1e926201173b5cb5c42d094a4d365a9d691385b562ee5d9fafb4b",
+  "inventory_fingerprint": "9bfa1ed299b58c3f48422e57e69b1b21d707308b01d5261b53ccb99a8e3ae679",
+  "evidence_fingerprint": "fd38ce8412806efe60180dbe4dba66ab4ba6fee999e2f4f97b007c9fa03f9879",
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/chatgpt-task.yml",
@@ -89,7 +89,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "e0fcc813db772f65a871af5348f5c75998d54e10"
+      "blob": "96840f608e014a4f5b161d281e14d825eb31d7f3"
     },
     {
       "path": ".github/workflows/file-governance-audit.yml",
@@ -411,7 +411,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "c24eeb31d45826643521b15251abbdc91a624724"
+      "blob": "4054fb202d21b6be7c7512fab26b1c32ddbc182a"
     },
     {
       "path": "app/src/main/java/com/michelslab/louderme/audio/SessionZeroEqualizer.kt",
@@ -488,7 +488,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "d7ca6af254ffa25f22fa84349502353d280d3c68"
+      "blob": "b1cceb03aa5f31fe7f3840d09a8ac90cb2fcbeb0"
     },
     {
       "path": "app/src/main/java/com/michelslab/louderme/ui/LouderMeTheme.kt",
@@ -649,7 +649,7 @@
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "0a3c9a92b7d98e71d08cadbaf510fc8b036bc44f"
+      "blob": "b41193d06b10fb1c8c45231a589809ccdd43f569"
     },
     {
       "path": "app/src/test/java/com/michelslab/louderme/audio/BoostQuickLevelsTest.kt",
@@ -943,7 +943,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "f121628f75678a9fe6339febf5076616bc0909a9"
+      "blob": "f91dc1f6fbc9ee769163091fa0e87a21774321ef"
     },
     {
       "path": "desktop/src/LouderMeDesktop/DesktopAudioSettings.cs",
@@ -1727,28 +1727,28 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "e83bf628423ff0bfd62515eb8cec35e7f6955632"
+      "blob": "6bffc1668966342d9adcd1b666ce5f23864cb0ef"
     },
     {
       "path": "native/audio-engine/src/AudioEngineC.cpp",
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "25faee996ef58183daabffef0c6225798cb4ce39"
+      "blob": "8682751cd583c6364912aa648837c92cd0cbc28f"
     },
     {
       "path": "native/audio-engine/tests/AudioEngineCAbiTests.cpp",
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "6b96ac5496cd9d0de19af2d76bf9c4efac639a4b"
+      "blob": "0c4a4e422c79e1fb9bb509985562c56502eb2c43"
     },
     {
       "path": "native/audio-engine/tests/AudioEngineTests.cpp",
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "e83fd17c7de1277600f505af0f02d6709dfb9127"
+      "blob": "b717339523d67c1b26a51fe7c2c65aaf54ee9dcf"
     },
     {
       "path": "native/independent-tone/LouderMeIndependentTone.csproj",
@@ -2042,7 +2042,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "cc5d355398faf99663c3c4ded62f2d5518aa8e6b"
+      "blob": "955c00507f260f48b0f31d8a33c3165514fe6de4"
     },
     {
       "path": "native/windows-bridge/LoopbackToneVerifier.cs",
@@ -2063,7 +2063,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "d028537fe8073a4592fd1cebe8a5cedd855ee7ad"
+      "blob": "c6165ec86ab00e209af46db5aad220e6414dc1b7"
     },
     {
       "path": "native/windows-bridge/PcmFormatAdapter.cs",
@@ -2091,7 +2091,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "a596c56d9d0d46501bf0bcd819d7dc7d2f459b34"
+      "blob": "cd1edd5069aaa1f427a5d9b77912c67b87d312c2"
     },
     {
       "path": "native/windows-bridge/README.md",
@@ -2306,11 +2306,11 @@
   ],
   "findings": [
     {
-      "id": "585d470f9a5c0069",
+      "id": "c5fe29f638edd773",
       "code": "POTENTIAL_UNLOGGED_CHANGES",
       "severity": "review",
       "path": "PROJECT_LOG.md",
-      "observation": "8 implementation/config paths changed since this log's last commit; examples: app/src/main/java/com/michelslab/louderme/MainActivity.kt, app/src/main/java/com/michelslab/louderme/audio/AudioBoostService.kt, app/src/main/java/com/michelslab/louderme/audio/BoostQuickLevels.kt, app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt, app/src/test/java/com/michelslab/louderme/audio/BoostQuickLevelsTest.kt, desktop/src/LouderMeDesktop/BoostMath.cs",
+      "observation": "19 implementation/config paths changed since this log's last commit; examples: .github/workflows/build-louderme-desktop.yml, app/src/main/java/com/michelslab/louderme/MainActivity.kt, app/src/main/java/com/michelslab/louderme/audio/AudioBoostService.kt, app/src/main/java/com/michelslab/louderme/audio/BoostQuickLevels.kt, app/src/main/java/com/michelslab/louderme/audio/SessionZeroAudioEngine.kt, app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt",
       "recommendation": "Inspect diffs and reconcile only meaningful decisions/results in the canonical log",
       "state": "REVIEW_REQUIRED"
     }

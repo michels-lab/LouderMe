@@ -27,7 +27,7 @@ Tracked: 329; classified: 325; readable documents: 111; above read cap: 0; findi
 
 ## Findings (human review required)
 
-- **REVIEW / POTENTIAL_UNLOGGED_CHANGES** PROJECT_LOG.md: 8 implementation/config paths changed since this log's last commit; examples: app/src/main/java/com/michelslab/louderme/MainActivity.kt, app/src/main/java/com/michelslab/louderme/audio/AudioBoostService.kt, app/src/main/java/com/michelslab/louderme/audio/BoostQuickLevels.kt, app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt, app/src/test/java/com/michelslab/louderme/audio/BoostQuickLevelsTest.kt, desktop/src/LouderMeDesktop/BoostMath.cs. Next: Inspect diffs and reconcile only meaningful decisions/results in the canonical log (ID 585d470f9a5c0069)
+- **REVIEW / POTENTIAL_UNLOGGED_CHANGES** PROJECT_LOG.md: 19 implementation/config paths changed since this log's last commit; examples: .github/workflows/build-louderme-desktop.yml, app/src/main/java/com/michelslab/louderme/MainActivity.kt, app/src/main/java/com/michelslab/louderme/audio/AudioBoostService.kt, app/src/main/java/com/michelslab/louderme/audio/BoostQuickLevels.kt, app/src/main/java/com/michelslab/louderme/audio/SessionZeroAudioEngine.kt, app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt. Next: Inspect diffs and reconcile only meaningful decisions/results in the canonical log (ID c5fe29f638edd773)
 
 Complete path → purpose/role/certainty list lives in FILE_GOVERNANCE.json. SUMMARY.json has counts only for master polling.
 A dated file, duplicate, or suspicious name is an **investigation candidate**, not unwanted material.

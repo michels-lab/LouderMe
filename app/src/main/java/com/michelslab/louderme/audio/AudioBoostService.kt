@@ -159,7 +159,7 @@ class AudioBoostService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun activate(requestedPercent: Int) {
-        val percent = requestedPercent.coerceIn(100, 250)
+        val percent = requestedPercent.coerceIn(100, 300)
         val initialRoute = readMediaRoute()
         val starting = AudioEngineUiState(
             status = AudioEngineStatus.STARTING,
@@ -248,7 +248,7 @@ class AudioBoostService : Service() {
         routeHandler.removeCallbacks(routeRefresh)
         currentMediaRoute = null
         transientEmptyReadAttempts = 0
-        val rememberedPercent = lastState.percent.coerceIn(100, 250)
+        val rememberedPercent = lastState.percent.coerceIn(100, 300)
         runCatching { engine?.disable() }
         engine?.release()
         equalizer?.release()

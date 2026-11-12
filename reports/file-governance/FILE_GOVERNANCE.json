@@ -25,8 +25,8 @@
     "POTENTIAL_UNLOGGED_CHANGES": 1
   },
   "finding_total": 1,
-  "inventory_fingerprint": "06006914437a9f6a78ef98a1a0f98e751686f5dff06143357abd9b40e848da39",
-  "evidence_fingerprint": "09ba51d596e43eca00c96ec3b8c8f9be635f8073266633b93e11d61f047384c8",
+  "inventory_fingerprint": "4b7fcf6f9bbb7bc644297b3c9e35baa3113514f6d61b09e72f4c4d4472c6de9f",
+  "evidence_fingerprint": "b491eb93678691d964b477b9fd5b510269d2f595c0136bcaa66677900c36d854",
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/chatgpt-task.yml",
@@ -488,7 +488,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "d8de4086780aebb193c87ec74ec8dcf1983ad90e"
+      "blob": "d7ca6af254ffa25f22fa84349502353d280d3c68"
     },
     {
       "path": "app/src/main/java/com/michelslab/louderme/ui/LouderMeTheme.kt",
@@ -656,7 +656,7 @@
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "4d9c1e19d9d7a1c52e4a2f9e3b0c0a3936974724"
+      "blob": "13491fb9923af6bf440fc82fed5ff92c6021ef0b"
     },
     {
       "path": "app/src/test/java/com/michelslab/louderme/audio/EqualizerPresetsTest.kt",
@@ -2306,11 +2306,11 @@
   ],
   "findings": [
     {
-      "id": "5cbcc45883b950ca",
+      "id": "9a656757b2fa9f28",
       "code": "POTENTIAL_UNLOGGED_CHANGES",
       "severity": "review",
       "path": "PROJECT_LOG.md",
-      "observation": "5 implementation/config paths changed since this log's last commit; examples: app/src/main/java/com/michelslab/louderme/MainActivity.kt, app/src/main/java/com/michelslab/louderme/audio/BoostQuickLevels.kt, desktop/src/LouderMeDesktop/BoostMath.cs, desktop/src/LouderMeDesktop/DesktopAudioSettings.cs, desktop/src/LouderMeDesktop/MainForm.cs",
+      "observation": "7 implementation/config paths changed since this log's last commit; examples: app/src/main/java/com/michelslab/louderme/MainActivity.kt, app/src/main/java/com/michelslab/louderme/audio/BoostQuickLevels.kt, app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt, app/src/test/java/com/michelslab/louderme/audio/BoostQuickLevelsTest.kt, desktop/src/LouderMeDesktop/BoostMath.cs, desktop/src/LouderMeDesktop/DesktopAudioSettings.cs",
       "recommendation": "Inspect diffs and reconcile only meaningful decisions/results in the canonical log",
       "state": "REVIEW_REQUIRED"
     }

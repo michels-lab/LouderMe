@@ -27,7 +27,7 @@ Tracked: 329; classified: 325; readable documents: 111; above read cap: 0; findi
 
 ## Findings (human review required)
 
-- **REVIEW / POTENTIAL_UNLOGGED_CHANGES** PROJECT_LOG.md: 5 implementation/config paths changed since this log's last commit; examples: app/src/main/java/com/michelslab/louderme/MainActivity.kt, app/src/main/java/com/michelslab/louderme/audio/BoostQuickLevels.kt, desktop/src/LouderMeDesktop/BoostMath.cs, desktop/src/LouderMeDesktop/DesktopAudioSettings.cs, desktop/src/LouderMeDesktop/MainForm.cs. Next: Inspect diffs and reconcile only meaningful decisions/results in the canonical log (ID 5cbcc45883b950ca)
+- **REVIEW / POTENTIAL_UNLOGGED_CHANGES** PROJECT_LOG.md: 7 implementation/config paths changed since this log's last commit; examples: app/src/main/java/com/michelslab/louderme/MainActivity.kt, app/src/main/java/com/michelslab/louderme/audio/BoostQuickLevels.kt, app/src/main/java/com/michelslab/louderme/ui/LouderMeApp.kt, app/src/test/java/com/michelslab/louderme/audio/BoostQuickLevelsTest.kt, desktop/src/LouderMeDesktop/BoostMath.cs, desktop/src/LouderMeDesktop/DesktopAudioSettings.cs. Next: Inspect diffs and reconcile only meaningful decisions/results in the canonical log (ID 9a656757b2fa9f28)
 
 Complete path → purpose/role/certainty list lives in FILE_GOVERNANCE.json. SUMMARY.json has counts only for master polling.
 A dated file, duplicate, or suspicious name is an **investigation candidate**, not unwanted material.

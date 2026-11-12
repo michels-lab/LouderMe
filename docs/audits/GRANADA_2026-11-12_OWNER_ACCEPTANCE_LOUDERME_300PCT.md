@@ -4,7 +4,7 @@
 
 ## Declaración del propietario
 
-Después de la publicación estable unificada de LouderMe, el propietario comunicó de forma explícita: **«ya comprobé que todo funciona»**. La confirmación se refiere al estado de LouderMe que se venía revisando en esta operación: **Android Direct v0.1.14, Windows Desktop v0.1.19 y la ampliación de Global Boost hasta 300%**.
+Después de la publicación estable unificada de LouderMe, el propietario comunicó de forma explícita que **ya comprobó que todo funciona**. La confirmación se refiere al estado de LouderMe que se venía revisando en esta operación: **Android Direct v0.1.14, Windows Desktop v0.1.19 y la ampliación de Global Boost hasta 300%**.
 
 **Estado:** aceptación funcional de usuario **confirmada por su declaración**. No hay incidencias funcionales nuevas comunicadas en esta revisión. Se considera cerrado el objetivo de entrega y uso del Boost 300% en las versiones públicas indicadas.
 

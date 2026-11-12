@@ -75,6 +75,16 @@ jobs:
           $math=Get-Content 'desktop/src/LouderMeDesktop/BoostMath.cs' -Raw
           if ($math -notmatch '20d \* Math\.Log10') { throw 'Percent-to-dB gain conversion is missing.' }
 
+          # The stable package must expose the full new Boost range, not just
+          # keep the older 250% slider while the native laboratory supports 300%.
+          $ui=Get-Content 'desktop/src/LouderMeDesktop/MainForm.cs' -Raw
+          $wave=Get-Content 'desktop/src/LouderMeDesktop/BrandingControls.cs' -Raw
+          foreach ($required in @('_boost.Maximum = 300;', '275, 300', 'Math.Clamp(_settings.BoostPercent, 100, 300)')) {
+            if (-not $ui.Contains($required)) { throw "Windows 300% Boost UI regression: $required" }
+          }
+          if (-not $wave.Contains('Math.Clamp(value, 100, 300)')) { throw 'Windows 300% waveform scale regressed.' }
+          if (-not $math.Contains('Math.Clamp(percent, 100, 300)')) { throw 'Windows 300% signal conversion regressed.' }
+
           $config=Get-Content 'desktop/src/LouderMeDesktop/EqualizerApoConfigBuilder.cs' -Raw
           foreach ($required in @('Device: all','Stage: post-mix','Channel: all','Preamp:','GraphicEQ:','Include: LouderMe.txt')) {
             if ($config -notmatch [regex]::Escape($required)) { throw "APO config contract missing: $required" }

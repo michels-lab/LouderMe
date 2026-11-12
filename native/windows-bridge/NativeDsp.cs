@@ -50,7 +50,7 @@ internal sealed class NativeDsp : IDisposable
     public void ConfigureBoost(int percent)
     {
         if (_handle == IntPtr.Zero) throw new ObjectDisposedException(nameof(NativeDsp));
-        if (percent is < 100 or > 250)
+        if (percent is < 100 or > 300)
             throw new ArgumentOutOfRangeException(nameof(percent));
         if (louderme_engine_set_boost(_handle, 1, percent) != 0)
             throw new InvalidOperationException("Native boost configuration failed.");

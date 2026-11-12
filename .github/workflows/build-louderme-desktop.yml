@@ -142,6 +142,8 @@ jobs:
           if ([Math]::Abs($db300-9.542425094) -gt 0.000001) { throw '300 percent gain conversion sanity check failed.' }
           if ($mainUi -notmatch [regex]::Escape('_boost.Maximum = 300;')) { throw 'Desktop Boost slider cannot reach 300%.' }
           if ($math -notmatch 'Math.Clamp\(percent, 100, 300\)') { throw 'Desktop DSP conversion still clamps below 300%.' }
+          $wave=Get-Content 'desktop/src/LouderMeDesktop/BrandingControls.cs' -Raw
+          if ($wave -notmatch 'Math.Clamp\(value, 100, 300\)') { throw 'Desktop Boost wave still clamps below 300%.' }
 
           if ((git hash-object desktop/src/LouderMeDesktop/Assets/MichelDuarte.jpg) -ne '18fe1a68722850c3d8f918dc0799f46ffeb6dbaf') {
             throw 'Desktop Michel Duarte portrait is not the canonical asset.'

@@ -21,10 +21,12 @@
     "text_metadata": 2,
     "workflow": 11
   },
-  "finding_counts": {},
-  "finding_total": 0,
-  "inventory_fingerprint": "2e81259e7ca125d227072526e73c7d422d97b8f9cac09b0350a747243840b44e",
-  "evidence_fingerprint": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "finding_counts": {
+    "POTENTIAL_UNLOGGED_CHANGES": 1
+  },
+  "finding_total": 1,
+  "inventory_fingerprint": "06006914437a9f6a78ef98a1a0f98e751686f5dff06143357abd9b40e848da39",
+  "evidence_fingerprint": "09ba51d596e43eca00c96ec3b8c8f9be635f8073266633b93e11d61f047384c8",
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/chatgpt-task.yml",
@@ -311,7 +313,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "ab5ded14974def73598e30d3e17e6cc35af2794d"
+      "blob": "5a87852d8ca5c669408795c7f352ba405ae50d7e"
     },
     {
       "path": "app/src/main/java/com/michelslab/louderme/audio/AudioBoostContract.kt",
@@ -367,7 +369,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "7f7911d1bff58e602715408003566ee7f4d90ccc"
+      "blob": "a44fbfc7bf85ac7b6b3ad7c75958340d842c0a6a"
     },
     {
       "path": "app/src/main/java/com/michelslab/louderme/audio/EqualizerModels.kt",
@@ -927,7 +929,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "07acbd83f93c51a40b5a5d22974650549fdb4bf1"
+      "blob": "5011eede1847c5034fd81f63d60460177ba69162"
     },
     {
       "path": "desktop/src/LouderMeDesktop/BrandAssets.cs",
@@ -948,7 +950,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "5e48c18588d848a9431dea93996e0ea1e778e992"
+      "blob": "5baa0764d37ab0a3e6c92a39e142fea6a5588659"
     },
     {
       "path": "desktop/src/LouderMeDesktop/DesktopUpdateService.cs",
@@ -1032,7 +1034,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "a358839046e355cfaba2ee48b9980c3b2c80e7c6"
+      "blob": "f810c0249d72ce261b1dfe9c9c7b5ebbe278d28b"
     },
     {
       "path": "desktop/src/LouderMeDesktop/Program.cs",
@@ -2302,7 +2304,17 @@
       "blob": "724f2c9b5eb8b069e266eb1619375c97628d9202"
     }
   ],
-  "findings": [],
+  "findings": [
+    {
+      "id": "5cbcc45883b950ca",
+      "code": "POTENTIAL_UNLOGGED_CHANGES",
+      "severity": "review",
+      "path": "PROJECT_LOG.md",
+      "observation": "5 implementation/config paths changed since this log's last commit; examples: app/src/main/java/com/michelslab/louderme/MainActivity.kt, app/src/main/java/com/michelslab/louderme/audio/BoostQuickLevels.kt, desktop/src/LouderMeDesktop/BoostMath.cs, desktop/src/LouderMeDesktop/DesktopAudioSettings.cs, desktop/src/LouderMeDesktop/MainForm.cs",
+      "recommendation": "Inspect diffs and reconcile only meaningful decisions/results in the canonical log",
+      "state": "REVIEW_REQUIRED"
+    }
+  ],
   "untracked_audited": false,
   "ignored_audited": false,
   "binary_contents_audited": false,

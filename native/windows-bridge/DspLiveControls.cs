@@ -130,7 +130,7 @@ internal sealed class DspControlMailbox
             {
                 var eq = new float[7];
                 eq[3] = i % 2 == 0 ? 3 : -3; // 1 kHz product band
-                concurrentQueue.Publish(100 + i % 151, true, eq);
+                concurrentQueue.Publish(100 + i % 201, true, eq);
             }
         });
         var chunk = new byte[480 * 2 * sizeof(float)];

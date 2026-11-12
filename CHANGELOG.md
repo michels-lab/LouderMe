@@ -2,7 +2,7 @@
 
 ## 2026-11-12 — Aceptación funcional del propietario (Android 0.1.14 / Windows 0.1.19)
 
-- **Confirmado por el propietario:** «ya comprobé que todo funciona», tras el release estable de LouderMe con Boost **100–300%** en Android Direct v0.1.14 y Windows Desktop v0.1.19. Estado del objetivo 300%: **entregado, publicado y aceptado**.
+- **Confirmado por el propietario:** el propietario confirmó que ya comprobó que todo funciona, tras el release estable de LouderMe con Boost **100–300%** en Android Direct v0.1.14 y Windows Desktop v0.1.19. Estado del objetivo 300%: **entregado, publicado y aceptado**.
 - Repositorio público de [descargas unificadas](https://github.com/michels-lab/LouderME-Releases/releases/tag/louderme-android-v0.1.14-desktop-v0.1.19) actualizado, con seis assets y feeds Android/Windows consistentes; CI de APK firmado y Setup/Portable aprobado.
 - La aceptación manual es testimonio del usuario, no una medición instrumental de sonoridad ni certificación de hardware/rutas universales. Windows Equalizer APO sigue siendo dependencia, y el driver nativo independiente/Google Play permanecen fuera del alcance de este lanzamiento.
 - Evidencia separada: [acta de aceptación](docs/audits/GRANADA_2026-11-12_OWNER_ACCEPTANCE_LOUDERME_300PCT.md). Registro documental solamente: sin modificar código, versiones, firmantes ni binarios.

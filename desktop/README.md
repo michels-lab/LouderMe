@@ -1,3 +1,7 @@
+## 2026-11-12 — Owner-verified stable Windows 0.1.19 (Boost 300%)
+
+The owner reports having tested the final LouderMe release and confirms its functionality. For the supported Windows Desktop **v0.1.19**, this records **manual user acceptance** of the shipped product/300% feature. The [unified stable download](https://github.com/michels-lab/LouderME-Releases/releases/tag/louderme-android-v0.1.14-desktop-v0.1.19) and the Windows Setup/Portable automated release tests are complete. The normal Global Boost path still relies on Equalizer APO installed and attached to the playback output. The statement is not a measured +9.54 dB SPL result or evidence of the experimental signed virtual driver. Full [acceptance log](../docs/audits/GRANADA_2026-11-12_OWNER_ACCEPTANCE_LOUDERME_300PCT.md).
+
 ## Granada 2026-11-08 — Windows output hot-swap and listening evidence
 
 The desktop clears previous user-reported -18 dB listening evidence if Windows changes/disconnects its playback device. A test snapshots the exact endpoint identity plus selection revision and discards an answer if the route changes while listening or answering. The existing Windows APO contract now tests identity and A→B→A invalidation without a sound device. This does not prove an APO is attached to a new physical output. Audit: ../docs/audits/GRANADA_2026-11-08_OUTPUT_CHANGE_EVIDENCE.md.
@@ -28,7 +32,7 @@ No browser or WebView is used for the desktop UI.
 LouderMe separates two controls:
 
 1. **System Output 0–100%** controls the Windows endpoint master volume.
-2. **Global Boost 100–250%** controls post-mix digital gain through the Windows APO effects path.
+2. **Global Boost 100–300%** controls post-mix digital gain through the Windows APO effects path.
 
 Boost uses:
 
@@ -39,8 +43,10 @@ Examples:
 - 150% = +3.52 dB
 - 200% = +6.02 dB
 - 250% = +7.96 dB
+- 275% = +8.79 dB
+- 300% = +9.54 dB
 
-LouderMe does not relabel the Windows 0–100 volume endpoint as 250%.
+LouderMe does not relabel the Windows 0–100 volume endpoint as 300%.
 
 ## System-wide engine
 LouderMe integrates with Equalizer APO 1.4.2 for the Windows system-effect layer.

@@ -1,3 +1,12 @@
+## Addendum — 2026-11-12: verified current LouderMe release, owner acceptance
+
+- The original infrastructure audit below remains a 2026-10-06 historical snapshot. The **current production release** is Android Direct **0.1.14** and Windows Desktop **0.1.19**, with Global Boost **100–300%**.
+- The owner confirmed that the released LouderMe application works following personal testing; this is recorded as **reported functional acceptance**, distinct from CI or physical acoustic measurement.
+- Both supported release pipelines and the unified publisher passed. Windows still uses user-installed **Equalizer APO** for supported global audio, while Android session-0 effects remain device-dependent. The source-only experimental native Windows driver remains unshipped.
+- Canonical [owner-acceptance record](docs/audits/GRANADA_2026-11-12_OWNER_ACCEPTANCE_LOUDERME_300PCT.md) and [public stable bundle](https://github.com/michels-lab/LouderME-Releases/releases/tag/louderme-android-v0.1.14-desktop-v0.1.19). No native independent output proof, measured SPL, Play Store approval or Windows Authenticode signature is inferred from owner confirmation.
+
+---
+
 # LouderMe — Infrastructure & External Services Audit
 
 Last reviewed: **2026-10-06**

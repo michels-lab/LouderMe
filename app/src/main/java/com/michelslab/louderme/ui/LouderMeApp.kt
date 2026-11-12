@@ -134,7 +134,7 @@ private fun HomeScreen(
     onEqPresetSelected: (EqualizerPreset) -> Unit,
     onEqBandChanged: (Int, Float) -> Unit,
 ) {
-    val levels = listOf(100, 125, 150, 175, 200, 225, 250)
+    val levels = listOf(100, 125, 150, 175, 200, 225, 250, 275, 300)
     var sliderValue by remember(audioState.percent) {
         mutableFloatStateOf(audioState.percent.toFloat())
     }
@@ -232,7 +232,7 @@ private fun HomeScreen(
                 PanelHeading(
                     eyebrow = "FINE TUNE",
                     title = "Manual gain",
-                    subtitle = "Drag anywhere from 100% to 250%.",
+                    subtitle = "Drag anywhere from 100% to 300%.",
                 )
 
                 Spacer(Modifier.height(8.dp))
@@ -266,7 +266,7 @@ private fun HomeScreen(
                     onValueChangeFinished = {
                         onBoostLevelSelected(sliderValue.roundToInt())
                     },
-                    valueRange = 100f..250f,
+                    valueRange = 100f..300f,
                     steps = 149,
                     colors = SliderDefaults.colors(
                         thumbColor = LouderMeColors.Cyan,
@@ -280,7 +280,7 @@ private fun HomeScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     MonoLabel("100%")
-                    MonoLabel("250%")
+                    MonoLabel("300%")
                 }
             }
 
@@ -1114,7 +1114,7 @@ private fun LaunchDeck() {
             FeatureCard(
                 tag = "PROTECTION",
                 title = "Limiter / compressor",
-                subtitle = "Control peaks and keep 225–250% more usable on hot material.",
+                subtitle = "Control peaks and keep 225–300% more usable on hot material.",
                 accent = LouderMeColors.Gold,
             )
             FeatureCard(

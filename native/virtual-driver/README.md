@@ -1,3 +1,9 @@
+## 2026-11-12 — Shipped LouderMe accepted; unsigned native virtual driver still experimental
+
+The owner confirms the **stable LouderMe product** functions after testing Android Direct 0.1.14 and Windows Desktop 0.1.19, including Boost up to 300%. This applies to the **published application**. The native Windows virtual-driver project remains a **separate unsigned lab prototype** excluded from the product installers. Its 100/150 physical-route test ceiling, driver signing/integration, third-party PCM and measurement evidence remain unchanged by the acceptance statement. [Owner acceptance record](../../docs/audits/GRANADA_2026-11-12_OWNER_ACCEPTANCE_LOUDERME_300PCT.md).
+
+---
+
 ## Granada 2026-11-09 — 5.1/7.1 Windows speaker-position proof (PR #156)
 
 An external Windows source can previously send 440 Hz in every virtual speaker lane, but that could not distinguish lane swaps or duplication. The isolated VM lab now launches a **second, independent source process** in `--speaker-map` mode: each speaker lane is tagged with 440+53×lane Hz, and a new receive-only `--probe-virtual-speaker-map` WASAPI listener checks the expected frequency and rejects strong foreign-channel energy. This runs after the original 440 Hz causal proof and before the source-absent post control, with bounded child processes and write-once evidence. For 2/6/8 channels the final independent physical Boost 100/150 validator **requires** source-channel-matched speaker-map evidence. Mono has no channel permutation and retains the original 440 Hz proof. Native and PowerShell CI cover synthetic swaps, missing lanes, crossmixing, false source-completion markers and fixture proof. No driver signing, real installed endpoint or acoustic proof from hosted CI. Audit: ../../docs/audits/GRANADA_2026-11-09_WINDOWS_SPEAKER_MAP.md.

@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 332,
-  "classified_files_total": 328,
-  "docs_content_inspected": 114,
+  "tracked_files_total": 340,
+  "classified_files_total": 336,
+  "docs_content_inspected": 115,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
   "roles": {
@@ -12,20 +12,20 @@
     "bitacora": 2,
     "build_script": 7,
     "config": 20,
-    "document": 106,
+    "document": 107,
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
-    "source": 110,
-    "test": 43,
+    "source": 113,
+    "test": 45,
     "text_metadata": 2,
-    "workflow": 11
+    "workflow": 13
   },
   "finding_counts": {
     "BROKEN_RELATIVE_LINK": 2
   },
   "finding_total": 2,
-  "inventory_fingerprint": "67953eae63c4136170969a2c032fbded1305270a5bf96d3ae19e815df5607fda",
+  "inventory_fingerprint": "cb571ecd4abee3d0f69f6122e576372dc6bf85622ff6c3776910b42c7653f4b9",
   "evidence_fingerprint": "728b2eac1e90c8e5522fb81612c631a8a4888caabe724aca9a00027178e0f153",
   "files": [
     {
@@ -106,6 +106,13 @@
       "blob": "39d00cbd64cc3aefa7c24b3e2535bd8c67091c57"
     },
     {
+      "path": ".github/workflows/ms-store-msix-preflight.yml",
+      "role": "workflow",
+      "purpose": "GitHub Actions automation",
+      "certainty": "rule",
+      "blob": "50fd424b7bd1ec4ce79e88cc903565569e6d87ec"
+    },
+    {
       "path": ".github/workflows/native-audio-engine-ci.yml",
       "role": "workflow",
       "purpose": "GitHub Actions automation",
@@ -125,6 +132,13 @@
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
       "blob": "31389274562cbf4e22bd2ba2dc7d5dde1ebbbc07"
+    },
+    {
+      "path": ".github/workflows/play-store-aab-preflight.yml",
+      "role": "workflow",
+      "purpose": "GitHub Actions automation",
+      "certainty": "rule",
+      "blob": "c537649fb687395955a582622288c4310f6b5298"
     },
     {
       "path": ".github/workflows/release-louderme-desktop.yml",
@@ -236,7 +250,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "3998eabaaccdc1ddfae9e63c25bbb165d38aca25"
+      "blob": "e3576b48bfdba3afe90375aebdf0874c8a32ad40"
     },
     {
       "path": "README.md",
@@ -894,7 +908,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "91281821c4c1b2d0ca855f0e0df8ab8235faba87"
+      "blob": "904b8204e476f8327214763d7907ac3771b02466"
     },
     {
       "path": "desktop/src/LouderMeDesktop/Assets/MichelDuarte.jpg",
@@ -964,7 +978,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "8e8afe32da11be7462d3f27eb3af30d61c607225"
+      "blob": "430ca286e85679eb97cdb9fc89041a6f2fc8cc80"
     },
     {
       "path": "desktop/src/LouderMeDesktop/DeveloperAudit.cs",
@@ -1041,14 +1055,14 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "6d232ebbd1096b19d86441694e585a0bd444b085"
+      "blob": "456f420f85becc3613776ecf59e231ade2764a6b"
     },
     {
       "path": "desktop/src/LouderMeDesktop/Program.cs",
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "7395057b0e7305a5c15f88740f5527c636ff0696"
+      "blob": "4e8d52f8e262a20258d918eaa3aa936b0a4e7e74"
     },
     {
       "path": "desktop/src/LouderMeDesktop/SplashForm.cs",
@@ -1062,7 +1076,14 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "628569245789275704af30e4a9258b1425d39633"
+      "blob": "ad80bbc37d770a0d7b60d955ddf8576c0d0aea41"
+    },
+    {
+      "path": "desktop/src/LouderMeDesktop/StorePackageContext.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "3c1f6bd6e0b019048453e3a4e37a2053d687bd15"
     },
     {
       "path": "desktop/tools/capture_windows_visual.ps1",
@@ -1077,6 +1098,13 @@
       "purpose": "code/test implementation",
       "certainty": "rule",
       "blob": "b6cc5d3582e3024cd44bf52a9ee2a576944fd900"
+    },
+    {
+      "path": "desktop/tools/create_store_manifest.py",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "2e0b6ae36937c81d8d8bcbd055193d6ec183fce1"
     },
     {
       "path": "desktop/tools/verify_release_identity.ps1",
@@ -1160,7 +1188,7 @@
       "role": "document",
       "purpose": "manual/decision/report/historical note",
       "certainty": "inferred",
-      "blob": "93747516db4298ff1807e922ffd121fa445f0820"
+      "blob": "83610e6762f496bd2c94f82130e951b05511680b"
     },
     {
       "path": "docs/PRIVACY_POLICY.md",
@@ -1287,6 +1315,13 @@
       "purpose": "manual/decision/report/historical note",
       "certainty": "inferred",
       "blob": "bfdc1757c8b231db63edb1ec391e2ab9eca722a1"
+    },
+    {
+      "path": "docs/STORE_DISTRIBUTION_NATIVE_ROUTE_2026-11-12.md",
+      "role": "document",
+      "purpose": "manual/decision/report/historical note",
+      "certainty": "inferred",
+      "blob": "094c872c70dac1687d559306909f9f729f77ca95"
     },
     {
       "path": "docs/WINDOWS_DEVELOPER_AUDIO_READINESS_2026-10-20.md",
@@ -2297,11 +2332,32 @@
       "blob": "62be9e9889f541ce4c61a1a6ec5346042091c1dd"
     },
     {
+      "path": "tools/tests/test_play_bundle_verifier.py",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "63445dac7c37fb1e01db8ca1afa437a805d93859"
+    },
+    {
       "path": "tools/tests/test_signed_android_evidence.py",
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
       "blob": "2b8a437341bb5c4e1f3e7cc8924c6b3698e4cf3b"
+    },
+    {
+      "path": "tools/tests/test_store_msix_manifest.py",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "5395ed4757ec54389f5397019ddf5f34c6500b28"
+    },
+    {
+      "path": "tools/verify_play_bundle.py",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "5eac7b02bea5a2b0ef689d0cd2d79414e03dbf7d"
     },
     {
       "path": "tools/verify_signed_android_evidence.py",

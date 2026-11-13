@@ -76,6 +76,24 @@ jobs:
           if ($LASTEXITCODE -ne 0 -or -not (Test-Path "$stage/LouderMe.exe")) {
             throw 'Missing real published WinForms runtime.'
           }
+      - name: Build and package LouderMe's own read-only native route diagnostic
+        shell: pwsh
+        run: |
+          $native = Join-Path $PWD 'artifacts/msix/stage/native'
+          New-Item -ItemType Directory -Force $native | Out-Null
+          dotnet restore native/windows-bridge/LouderMeAudioBridge.csproj
+          if ($LASTEXITCODE -ne 0) { throw 'Native route diagnostic restore failed.' }
+          dotnet run --project native/windows-bridge/LouderMeAudioBridge.csproj -c Release -- --check-route-preflight
+          if ($LASTEXITCODE -ne 0) { throw 'Native route metadata contract failed.' }
+          dotnet publish native/windows-bridge/LouderMeAudioBridge.csproj `
+            -c Release -r win-x64 --self-contained true `
+            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
+            -o $native
+          if ($LASTEXITCODE -ne 0 -or -not (Test-Path "$native/LouderMeAudioBridge.exe")) {
+            throw 'Native route diagnostic binary absent from MSIX payload.'
+          }
+          # No virtual driver, APO installer, raw user endpoint IDs or
+          # physical audio evidence is created by this packaging step.
       - name: Generate MSIX official product tile assets
         shell: pwsh
         run: |

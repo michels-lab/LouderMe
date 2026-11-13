@@ -102,6 +102,13 @@ class VmKitTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.build()
 
+    def test_driver_dsp_commit_and_actions_run_must_match(self):
+        with self.assertRaises(ValueError):
+            vm.build(self.stage, self.kit, "b" * 40, "43329002049")
+        with self.assertRaises(ValueError):
+            vm.build(self.stage, self.kit, "0" * 40, "43342673254")
+        self.assertFalse(self.kit.exists())
+
     def test_extra_executable_symlink_path_and_case_alias_refused(self):
         extra = self.stage / "evil.exe"
         extra.write_bytes(b"MZ")

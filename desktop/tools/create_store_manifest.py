@@ -94,6 +94,8 @@ def check_manifest(output: Path, stage: Path,
         raise AssertionError("FullTrust permission missing from MSIX")
     if not (stage / "LouderMe.exe").is_file():
         raise AssertionError("Missing compiled LouderMe.exe payload")
+    if not (stage / "native" / "LouderMeAudioBridge.exe").is_file():
+        raise AssertionError("Missing independent LouderMe native bridge diagnostic")
     for asset in ASSETS:
         p = stage / "Assets" / asset
         if not p.is_file() or p.stat().st_size < 100:

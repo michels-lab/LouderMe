@@ -87,7 +87,13 @@ internal static class NativeRouteReadiness
         catch (System.ComponentModel.Win32Exception) { /* No new unsafe action. */ }
     }
 
-    internal static NativeRouteStatus ParseDiagnostic(string json)
+    internal static NativeRouteStatus ParseDiagnostic(string json) =>
+        ParseDiagnostic(json, explicitlySelected: false);
+
+    internal static NativeRouteStatus ParseSelectedDiagnostic(string json) =>
+        ParseDiagnostic(json, explicitlySelected: true);
+
+    private static NativeRouteStatus ParseDiagnostic(string json, bool explicitlySelected)
     {
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
@@ -122,10 +128,13 @@ internal static class NativeRouteReadiness
         if (!ready && code == "STATIC_PREFLIGHT_READY")
             throw new JsonException("Native readiness/code contradiction.");
 
-        // Explicit empty route selection is the ONLY diagnostic mode the
-        // GUI invokes: ready=true must never arrive without user-selected IDs.
-        if (ready)
+        // Ordinary automatic GUI diagnostics always lack endpoints; a selected
+        // preflight may acknowledge metadata-only readiness but NEVER playback.
+        if (ready && !explicitlySelected)
             throw new JsonException("Read-only GUI probe unexpectedly selected an audio route.");
+        if (ready)
+            return new NativeRouteStatus(code, true,
+                "Virtual and physical endpoint metadata are compatible for a controlled lab session; audio, driver signing and physical gain remain UNVERIFIED.");
 
         return new NativeRouteStatus(code, false, code switch
         {
@@ -147,6 +156,23 @@ internal static class NativeRouteReadiness
             "{\"code\":\"VIRTUAL_ENDPOINT_NOT_FOUND\",\"ready_for_controlled_lab_only\":false" + claims + "}");
         if (missing.StaticLabPreflightReady || missing.Code != "VIRTUAL_ENDPOINT_NOT_FOUND")
             throw new InvalidOperationException("Absent virtual endpoint was called ready.");
+
+        var selected = ParseSelectedDiagnostic(
+            "{\"code\":\"STATIC_PREFLIGHT_READY\",\"ready_for_controlled_lab_only\":true" + claims + "}");
+        if (!selected.StaticLabPreflightReady || selected.Message.Contains("audio verified", StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Explicit selected metadata contract regressed.");
+        if (ParseSelectedDiagnostic(
+            "{\"code\":\"VIRTUAL_ENDPOINT_NOT_FOUND\",\"ready_for_controlled_lab_only\":false" + claims + "}")
+            .StaticLabPreflightReady)
+            throw new InvalidOperationException("Missing selected endpoint was called ready.");
+        try
+        {
+            ParseSelectedDiagnostic(
+                "{\"code\":\"STATIC_PREFLIGHT_READY\",\"ready_for_controlled_lab_only\":true" +
+                claims.Replace("\"real_audio_verified\":false", "\"real_audio_verified\":true") + "}");
+            throw new InvalidOperationException("Forged live audio proof passed selected route parser.");
+        }
+        catch (JsonException) { /* expected fail closed */ }
 
         var unselected = ParseDiagnostic(
             "{\"code\":\"SELECTION_REQUIRED\",\"ready_for_controlled_lab_only\":false" + claims + "}");

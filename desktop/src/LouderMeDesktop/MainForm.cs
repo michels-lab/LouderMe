@@ -24,6 +24,7 @@ internal sealed class MainForm : Form
     private readonly Label _engineStatus = new();
     private readonly Button _connectEngineAction = new();
     private readonly Button _nativeRouteCheckAction = new();
+    private readonly Button _nativeRouteLabAction = new();
     private readonly Button _audioPathTestAction = new();
     private FlowLayoutPanel? _boostQuickActions;
     private bool _diagnosticRunning;
@@ -646,6 +647,23 @@ internal sealed class MainForm : Form
         _nativeRouteCheckAction.Visible = storePackage;
         _nativeRouteCheckAction.Click += async (_, _) => await CheckNativeRouteAsync();
         actions.Controls.Add(_nativeRouteCheckAction);
+        _nativeRouteLabAction.Name = "open-own-native-audio-session";
+        _nativeRouteLabAction.Text = "Native audio route · controlled test";
+        _nativeRouteLabAction.AutoSize = true;
+        _nativeRouteLabAction.ForeColor = Gold;
+        _nativeRouteLabAction.BackColor = Surface;
+        _nativeRouteLabAction.FlatStyle = FlatStyle.Flat;
+        _nativeRouteLabAction.FlatAppearance.BorderColor = Line;
+        _nativeRouteLabAction.Padding = new Padding(8, 5, 8, 5);
+        _nativeRouteLabAction.Visible = storePackage;
+        _nativeRouteLabAction.Click += (_, _) =>
+        {
+            // Separate, explicitly consented lab panel with its own
+            // selected devices, native process and always-available Stop.
+            using var form = new NativeRouteLabForm();
+            form.ShowDialog(this);
+        };
+        actions.Controls.Add(_nativeRouteLabAction);
 
         _audioPathTestAction.AutoSize = true;
         _audioPathTestAction.Text = "Test audio path (-18 dB temporarily)";

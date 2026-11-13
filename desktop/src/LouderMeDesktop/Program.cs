@@ -12,6 +12,12 @@ internal static class Program
     [STAThread]
     private static int Main(string[] args)
     {
+        var nativeLab = args.Any(arg => arg.Equals("--native-lab", StringComparison.OrdinalIgnoreCase));
+        // The only supported standalone lab invocation is an explicit flag.
+        // Never turn the normal GitHub EXE into an automatically running route.
+        if (nativeLab && (args.Length != 1 || !string.Equals(args[0], "--native-lab",
+                StringComparison.OrdinalIgnoreCase)))
+            return 2;
         var developerEdition = args.Any(arg => arg.Equals("--developer", StringComparison.OrdinalIgnoreCase));
         DeveloperMode.Configure(developerEdition);
         var developerContractTest = args.Any(arg => arg.Equals("--check-developer-contract", StringComparison.OrdinalIgnoreCase));
@@ -80,12 +86,15 @@ internal static class Program
             {
                 StorePackageContext.RunContractSelfTests();
                 NativeRouteReadiness.RunContractSelfTests();
+                NativeRouteSession.RunContractSelfTests();
                 return 0;
             }
 
-            using var mutex = new Mutex(true, DeveloperMode.Enabled
-                ? @"Local\MichelsLab.LouderMeDesktop.Developer"
-                : @"Local\MichelsLab.LouderMeDesktop", out var firstInstance);
+            using var mutex = new Mutex(true, nativeLab
+                ? @"Local\MichelsLab.LouderMeDesktop.NativeLab"
+                : DeveloperMode.Enabled
+                    ? @"Local\MichelsLab.LouderMeDesktop.Developer"
+                    : @"Local\MichelsLab.LouderMeDesktop", out var firstInstance);
             if (!firstInstance)
             {
                 if (!smokeTest)
@@ -100,6 +109,15 @@ internal static class Program
             }
 
             ApplicationConfiguration.Initialize();
+            if (nativeLab)
+            {
+                // This GUI works from an extracted unsigned QA ZIP, without
+                // installing MSIX, writing APO or requiring Store identity.
+                // A virtual Windows endpoint still must exist separately.
+                using var lab = new NativeRouteLabForm();
+                Application.Run(lab);
+                return 0;
+            }
 
             using var splash = new SplashForm();
             splash.Show();

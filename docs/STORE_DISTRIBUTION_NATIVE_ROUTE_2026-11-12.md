@@ -1,3 +1,14 @@
+## 2026-11-12 — Granada: sesión funcional de laboratorio con DSP propio
+
+- **Puente Windows real:** el bridge `native/windows-bridge/Program.cs` ahora emite `NATIVE_PCM_ROUTE_STARTED` únicamente **después de iniciar los streams WASAPI**. Para sesiones `--interactive-controls`, recibe `stop` por stdin y cierra limpiamente las capturas y el render; un cierre forzoso es solo una última protección por tiempo de espera. Su parser de comandos distingue `stop` exacto de otras acciones, y la señal de inicio **no demuestra audio de aplicaciones externas ni sonoridad**.
+- **GUI Microsoft Store:** nueva ventana `NativeRouteLabForm` detrás de `Native audio route · controlled test`. Enumera solo dispositivos de reproducción activos, exige una **fuente cuyo nombre sea LouderMe Virtual** y una **salida física distinta**, seleccionadas explícitamente. Abre una prevalidación `--diagnose-route --source-id ... --output-id ...` y rechaza metadatos inconsistentes o declaraciones falsas de audio/driver firmado.
+- Si la prevalidación de metadatos resulta compatible, la sesión lanza el bridge real `LouderMeAudioBridge.exe` **a 100%**, sin autoreconnect, sin asignar dispositivo predeterminado y con confirmación de inicio visible. Controla el DSP mediante `boost 100..300`, `eq off` y siete bandas EQ; por encima de 150% requiere confirmación adicional. En caso de desconexión, el bridge sigue usando sus guardas de identidad de dispositivo, formato de PCM y roles predeterminados.
+- El botón **Stop and release audio**, el cierre del panel y un timeout controlado intentan primero `stop` limpio y después terminan únicamente el proceso hijo propiedad del panel si el puente no responde; no usan comandos de kernel/driver ni modificaciones de registro/APO.
+- Las barras Boost/EQ de la pantalla **principal** del MSIX siguen bloqueadas hasta validar de verdad un dispositivo instalado, el motor completo y salida a equipo real; **el panel independiente de laboratorio NO es prueba para publicar en Microsoft Store**. La versión de Windows GitHub sin empaquetar conserva compatibilidad APO y no se modifica.
+- CI de Windows/MSIX prueba serialización de controles, selección fraudulenta/duplicada de endpoints, lectura JSON fail-closed y la orden `stop` del bridge. Se sigue requiriendo driver virtual Microsoft firmado, instalación/rollback y prueba completa con otra aplicación Windows antes de promover la ruta nativa a producto.
+
+---
+
 # LouderMe — preparación de tiendas sin dependencia futura de Equalizer APO
 
 **Fecha:** 2026-11-12  

@@ -1,3 +1,13 @@
+## 2026-11-12 — Granada: ruta experimental Windows con sesión GUI nativa y Boost/EQ en vivo
+
+- **Desarrollo funcional:** nueva clase `NativeRouteSession` para enumerar endpoints de reproducción, imponer selección exacta LouderMe Virtual → físico, ejecutar preflight `--diagnose-route`, lanzar `LouderMeAudioBridge.exe` con motor C++ (comienza al **100%**) y enviar controles reales `boost`/`eq` al callback PCM mediante stdin. Incluye drenaje de streams, espera del sentinel de WASAPI y parada con `stop`/timeout/fallback sobre el hijo **propio**. No toca la salida default ni instala driver.
+- **Interfaz:** panel WinForms `NativeRouteLabForm` en MSIX, con lista virtual/física, inicio y parada explícitos, 9 niveles de Boost 100–300 con segunda autorización si supera 150%, siete bandas de EQ y diagnóstico de transporte PCM sin llamarlo audio/acústica verificada. Bloquea inicio si no hay dispositivo virtual; el producto MSIX principal continúa sin habilitar efectos que no haya confirmado.
+- **Puente experimental:** `NATIVE_PCM_ROUTE_STARTED` después de iniciar el render/capture WASAPI y `stop` en stdin para salir por limpieza normal. Pruebas del contrato del parser en `--check-controls` y checks de selección en `--check-store-contract`.
+- **Límite:** hasta disponer de un **driver virtual firmado e instalado** y pruebas en una Windows real con otra aplicación ruteada, se trata de funcionalidad de laboratorio para uso supervisado, **no un lanzamiento Microsoft Store**. Android/Play y releases GitHub permanecen intactos. No RC.
+- **Registro técnico:** [guía y fronteras de Store nativo](docs/STORE_DISTRIBUTION_NATIVE_ROUTE_2026-11-12.md).
+
+---
+
 ## 2026-11-12 — Continuación Granada: diagnóstico puente nativo real dentro de MSIX
 
 - Nueva superficie Windows Store: **Check native engine (read-only)** ejecuta el puente `LouderMeAudioBridge.exe --diagnose-route` empaquetado, con validación de respuesta JSON, timeout de 8 segundos y protección contra presentar `STATIC_PREFLIGHT_READY` como reproducción audible. El puente no instala drivers ni modifica predeterminados.

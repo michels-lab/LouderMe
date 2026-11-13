@@ -572,6 +572,15 @@ internal static class Program
                             string? command;
                             while ((command = Console.ReadLine()) is not null)
                             {
+                                // "stop" is a graceful, session-scoped shutdown
+                                // request from the GUI. It never modifies an OS
+                                // default endpoint or installs a driver.
+                                if (DspLiveConsoleControls.IsStopCommand(command))
+                                {
+                                    Console.WriteLine("NATIVE_ROUTE_STOP_REQUESTED");
+                                    shutdown.Set();
+                                    break;
+                                }
                                 consoleControls.TryHandle(command, out var status);
                                 Console.WriteLine(status);
                             }
@@ -597,6 +606,14 @@ internal static class Program
                 capture.StartRecording();
                 monitor?.StartRecording();
                 sourceToneOutput?.Play();
+                // Stream activation ONLY. Does not claim third-party audio
+                // entered the virtual endpoint, native gain reached speakers,
+                // signed-driver readiness or acoustically measured output.
+                if (!provePhysicalRoute)
+                {
+                    Console.WriteLine("NATIVE_PCM_ROUTE_STARTED");
+                    Console.Out.Flush();
+                }
                 // Flush readiness only AFTER both WASAPI captures are active.
                 // The disposable VM runner starts the separate process only
                 // after seeing this line; bridge NEVER synthesizes its tone.

@@ -43,7 +43,7 @@ class VmKitTests(unittest.TestCase):
         self.tmp.cleanup()
 
     def build(self):
-        vm.build(self.stage, self.kit, "a" * 40, "43342673254")
+        vm.build(self.stage, self.kit, "0" * 40, "43342673254")
 
     def alter(self, name, payload):
         with zipfile.ZipFile(self.kit) as z:

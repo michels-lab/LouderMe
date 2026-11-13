@@ -9,13 +9,7 @@ The signed driver installation test (`run_disposable_lab.ps1`) and its manual, s
 **Example use only after provisioning a trusted test certificate and safe VM snapshot** (no personal laptop, no private keys in GitHub Actions):
 
 ```powershell
-pwsh -NoProfile -File native/virtual-driver/prepare_signed_vm_lab.ps1 \
-  -UnsignedLabZip 'C:\\VM-LAB\\LouderMe-VirtualRender-LAB-UNSIGNED.zip' \
-  -UnsignedLabSha256 'C:\\VM-LAB\\LouderMe-VirtualRender-LAB-UNSIGNED.zip.sha256' \
-  -SignToolExe 'C:\\Path\\To\\WindowsSDK\\signtool.exe' \
-  -SigningThumbprint '<40-hex-thumbprint-of-existing-LouderMe-LAB-test-cert>' \
-  -OutputDir 'C:\\VM-LAB\\signed-catalog-driver' \
-  -LabConsent I_ACCEPT_DISPOSABLE_WINDOWS_VM_DRIVER_TEST
+pwsh -NoProfile -File native/virtual-driver/prepare_signed_vm_lab.ps1 -UnsignedLabZip 'C:\VM-LAB\LouderMe-VirtualRender-LAB-UNSIGNED.zip' -UnsignedLabSha256 'C:\VM-LAB\LouderMe-VirtualRender-LAB-UNSIGNED.zip.sha256' -SignToolExe 'C:\WindowsSDK\bin\x64\signtool.exe' -SigningThumbprint '40_HEX_CHARS_OF_VM_LAB_TEST_CERT' -OutputDir 'C:\VM-LAB\signed-catalog-driver' -LabConsent I_ACCEPT_DISPOSABLE_WINDOWS_VM_DRIVER_TEST
 ```
 
 After successful local catalog test signing, only the already protected, consented manual workflow may install and remove the lab driver in the VM, using the ZIP, SHA sidecar and same thumbprint. `native-vm-catalog-trust-ci.yml` executes syntax + adversarial verification without driver installation or code signing.

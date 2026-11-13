@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 349,
-  "classified_files_total": 345,
+  "tracked_files_total": 352,
+  "classified_files_total": 348,
   "docs_content_inspected": 114,
   "large_docs_skipped": 1,
   "excluded_reports": 4,
@@ -16,16 +16,16 @@
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
-    "source": 119,
-    "test": 47,
+    "source": 120,
+    "test": 48,
     "text_metadata": 2,
-    "workflow": 14
+    "workflow": 15
   },
   "finding_counts": {
     "BROKEN_RELATIVE_LINK": 2
   },
   "finding_total": 2,
-  "inventory_fingerprint": "cc00b81a0ab4c81a738b1a6450df8720b387f1642309eff7119132d6fc4b6cfa",
+  "inventory_fingerprint": "18c86d40157f4406937b4449b7ae541e16c40c81115da58ac713ce74aaa5bdbf",
   "evidence_fingerprint": "728b2eac1e90c8e5522fb81612c631a8a4888caabe724aca9a00027178e0f153",
   "files": [
     {
@@ -131,7 +131,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "d3b589eac288460d5823ee34db75bd2ad8940d49"
+      "blob": "3d428f1fb0c5fc585ec5083310c285e1400c72d7"
     },
     {
       "path": ".github/workflows/native-vm-catalog-trust-ci.yml",
@@ -139,6 +139,13 @@
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
       "blob": "42ae873a21f2a6da7e710cd05971a805df910bf5"
+    },
+    {
+      "path": ".github/workflows/native-vm-testkit-ci.yml",
+      "role": "workflow",
+      "purpose": "GitHub Actions automation",
+      "certainty": "rule",
+      "blob": "8ce4f26523af9eeb0543f46ee119b8cca0ecdba5"
     },
     {
       "path": ".github/workflows/play-store-aab-preflight.yml",
@@ -257,7 +264,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "96747e9c69190bdafc821fd574201ae32cab930d"
+      "blob": "d2870f540e603bb2f64c6e7a8ea15cac33855db2"
     },
     {
       "path": "README.md",
@@ -1916,7 +1923,7 @@
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "c805a93b96fdfd9cbe427b4717df4b2b2749e58e"
+      "blob": "9e2f2924e3c23a62c97f167dedf30344a447e17e"
     },
     {
       "path": "native/virtual-driver/SignedLabCatalogGuard.ps1",
@@ -1945,6 +1952,13 @@
       "purpose": "code/test implementation",
       "certainty": "rule",
       "blob": "5e6fc1ce978eaf4a225294cbd11014bdaf033977"
+    },
+    {
+      "path": "native/virtual-driver/build_vm_testkit.py",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "f8995d6802fc6348ff038840206907d65c07f57d"
     },
     {
       "path": "native/virtual-driver/package_wdk_lab.py",
@@ -2106,6 +2120,13 @@
       "purpose": "code/test implementation",
       "certainty": "rule",
       "blob": "34cade4acf809b87373828f860b7b3f75ec2ad93"
+    },
+    {
+      "path": "native/virtual-driver/tests/test_vm_testkit.py",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "0abb33dd17cb5e47ce552dcc2af66a6155e42e47"
     },
     {
       "path": "native/virtual-driver/validate_lab_package.ps1",

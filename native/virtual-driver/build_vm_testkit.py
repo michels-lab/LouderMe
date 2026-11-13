@@ -130,9 +130,16 @@ def validate_contents(files: dict[str, bytes], *, complete: bool) -> None:
                 proof.get("real_audio_verified") is not False or
                 proof.get("microsoft_store_approved") is not False):
             raise ValueError("Nested driver falsely claims installation/signing")
-        for n in ("LouderMeVirtualRenderLab.inf", "TabletAudioSample.sys"):
-            if proof.get("source_checksums_sha256", {}).get(n) != digest(inner[n]):
-                raise ValueError("WDK inner hash/provenance failed")
+        checksums = proof.get("source_checksums_sha256", {})
+        for n in ("LouderMeVirtualRenderLab.inf", "LouderMeVirtualRenderLab.cat",
+                  "TabletAudioSample.sys", "LOUDERME_LAB_MANIFEST.json",
+                  "LICENSE-MS-PL.txt"):
+            if checksums.get(n) != digest(inner[n]):
+                raise ValueError("WDK inner source/provenance SHA256 failed")
+        checksum_names = sorted(x for x in ZIP_FILES if x != "SHA256SUMS.txt")
+        expected_inner_sums = [f"{digest(inner[x])}  {x}" for x in checksum_names]
+        if inner["SHA256SUMS.txt"].decode("ascii").splitlines() != expected_inner_sums:
+            raise ValueError("WDK inner SHA256SUMS was altered")
     if complete:
         try:
             manifest = json.loads(files[MANIFEST])
@@ -146,6 +153,9 @@ def validate_contents(files: dict[str, bytes], *, complete: bool) -> None:
             raise ValueError("Missing concrete source commit")
         if not re.fullmatch(r"[0-9]{5,20}", manifest.get("actions_run_id", "")):
             raise ValueError("Missing GitHub Actions run")
+        if (manifest["source_sha"] != proof.get("louderme_source_sha") or
+                manifest["actions_run_id"] != proof.get("github_actions_run_id")):
+            raise ValueError("WDK kernel source/run and own native DSP build differ")
         hashes = {x: sha(v) for x, v in files.items() if x not in (MANIFEST, SUMS)}
         if manifest.get("payload_sha256") != hashes:
             raise ValueError("VM kit manifest payload checksum mismatch")

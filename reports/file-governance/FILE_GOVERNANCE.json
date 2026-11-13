@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 345,
-  "classified_files_total": 341,
+  "tracked_files_total": 349,
+  "classified_files_total": 345,
   "docs_content_inspected": 114,
   "large_docs_skipped": 1,
   "excluded_reports": 4,
@@ -16,16 +16,16 @@
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
-    "source": 117,
-    "test": 46,
+    "source": 119,
+    "test": 47,
     "text_metadata": 2,
-    "workflow": 13
+    "workflow": 14
   },
   "finding_counts": {
     "BROKEN_RELATIVE_LINK": 2
   },
   "finding_total": 2,
-  "inventory_fingerprint": "1170ede9cf079cd531bbe16b5c2db849d2627f1ad2b98bd87078d05dca0adf0f",
+  "inventory_fingerprint": "cc00b81a0ab4c81a738b1a6450df8720b387f1642309eff7119132d6fc4b6cfa",
   "evidence_fingerprint": "728b2eac1e90c8e5522fb81612c631a8a4888caabe724aca9a00027178e0f153",
   "files": [
     {
@@ -124,7 +124,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "6d0bd81f43ed15841f0214ddac7a7da2f0e0520a"
+      "blob": "5358f7e9f88f00d43e8b6cc29e11798bb0833507"
     },
     {
       "path": ".github/workflows/native-virtual-device-ci.yml",
@@ -132,6 +132,13 @@
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
       "blob": "d3b589eac288460d5823ee34db75bd2ad8940d49"
+    },
+    {
+      "path": ".github/workflows/native-vm-catalog-trust-ci.yml",
+      "role": "workflow",
+      "purpose": "GitHub Actions automation",
+      "certainty": "rule",
+      "blob": "42ae873a21f2a6da7e710cd05971a805df910bf5"
     },
     {
       "path": ".github/workflows/play-store-aab-preflight.yml",
@@ -250,7 +257,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "cadf660b0b8834b823bf02a26b37202376c1c7e8"
+      "blob": "96747e9c69190bdafc821fd574201ae32cab930d"
     },
     {
       "path": "README.md",
@@ -1342,7 +1349,7 @@
       "role": "document",
       "purpose": "manual/decision/report/historical note",
       "certainty": "inferred",
-      "blob": "4a51315f9918f970ea418ea77481fa07fe9214e4"
+      "blob": "43fd2911341d930890f98f25c2c10d00337f8f93"
     },
     {
       "path": "docs/WINDOWS_DEVELOPER_AUDIO_READINESS_2026-10-20.md",
@@ -1912,6 +1919,13 @@
       "blob": "c805a93b96fdfd9cbe427b4717df4b2b2749e58e"
     },
     {
+      "path": "native/virtual-driver/SignedLabCatalogGuard.ps1",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "c9de132005420a6f4e3041713862e5d4730eb738"
+    },
+    {
       "path": "native/virtual-driver/VirtualSourceCompletionCheck.ps1",
       "role": "source",
       "purpose": "code/test implementation",
@@ -1940,6 +1954,13 @@
       "blob": "78c9b4759103f9bd787cf5c869f5d5f4bff6eb7f"
     },
     {
+      "path": "native/virtual-driver/prepare_signed_vm_lab.ps1",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "b9a7728b1937be192325ba2b81bcefc897cb01f2"
+    },
+    {
       "path": "native/virtual-driver/prepare_sysvad.py",
       "role": "source",
       "purpose": "code/test implementation",
@@ -1965,7 +1986,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "a32d7ffdabdea3da249c533513e2c0455494d629"
+      "blob": "88ecb175bc4c2265a8f4422357072da7ee9795ed"
     },
     {
       "path": "native/virtual-driver/test_DefaultRenderGuard.ps1",
@@ -2015,6 +2036,13 @@
       "purpose": "code/test implementation",
       "certainty": "rule",
       "blob": "2e13e360e6c93b5b2ce707756c815a6192aea7c5"
+    },
+    {
+      "path": "native/virtual-driver/test_SignedLabCatalogGuard.ps1",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "ba7ce1d5c1ca9e703e1b53ae1c9e4b8d14514ffd"
     },
     {
       "path": "native/virtual-driver/test_VirtualSourceCompletionCheck.ps1",

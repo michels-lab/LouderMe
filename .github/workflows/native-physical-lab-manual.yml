@@ -11,6 +11,22 @@ on:
         description: "ABSOLUTE path to already locally trusted LAB-signed INF/CAT/SYS on VM"
         required: true
         type: string
+      unsigned_lab_zip:
+        description: "ABSOLUTE path to original UNSIGNED WDK Actions ZIP in VM (NOT signed package)"
+        required: true
+        type: string
+      unsigned_lab_sha256:
+        description: "ABSOLUTE path to WDK Actions ZIP.sha256 sidecar in VM"
+        required: true
+        type: string
+      signtool_exe:
+        description: "ABSOLUTE path to Microsoft SDK SignTool.exe in VM"
+        required: true
+        type: string
+      signer_thumbprint:
+        description: "Exact 40-hex SHA1 thumbprint of previously trusted local VM LAB catalog signer"
+        required: true
+        type: string
       devcon_exe:
         description: "ABSOLUTE path to Microsoft WDK devcon.exe on VM"
         required: true
@@ -53,13 +69,31 @@ jobs:
         env:
           LAB_CONSENT: ${{ inputs.vm_consent }}
           LAB_PACKAGE: ${{ inputs.signed_driver_package_dir }}
+          LAB_ORIGINAL_WDK_ZIP: ${{ inputs.unsigned_lab_zip }}
+          LAB_ORIGINAL_WDK_SHA256: ${{ inputs.unsigned_lab_sha256 }}
+          LAB_SIGNTOOL: ${{ inputs.signtool_exe }}
+          LAB_SIGNER_THUMBPRINT: ${{ inputs.signer_thumbprint }}
           LAB_DEVCON: ${{ inputs.devcon_exe }}
           LAB_BRIDGE: ${{ inputs.bridge_dll }}
           LAB_APP_TONE: ${{ inputs.independent_tone_dll }}
           LAB_PHYSICAL: ${{ inputs.physical_endpoint_id }}
         run: |
           $ErrorActionPreference = 'Stop'
-          pwsh -NoProfile -File native/virtual-driver/run_disposable_lab.ps1 -PackageDir $env:LAB_PACKAGE -DevconExe $env:LAB_DEVCON -BridgeDll $env:LAB_BRIDGE -IndependentToneDll $env:LAB_APP_TONE -PhysicalEndpointId $env:LAB_PHYSICAL -LabConsent $env:LAB_CONSENT -EvidenceDir "$env:RUNNER_TEMP/louderme-lab-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+          $arguments = @(
+            '-NoProfile', '-File', 'native/virtual-driver/run_disposable_lab.ps1',
+            '-PackageDir', $env:LAB_PACKAGE,
+            '-DevconExe', $env:LAB_DEVCON,
+            '-BridgeDll', $env:LAB_BRIDGE,
+            '-IndependentToneDll', $env:LAB_APP_TONE,
+            '-PhysicalEndpointId', $env:LAB_PHYSICAL,
+            '-UnsignedLabZip', $env:LAB_ORIGINAL_WDK_ZIP,
+            '-UnsignedLabSha256', $env:LAB_ORIGINAL_WDK_SHA256,
+            '-SignToolExe', $env:LAB_SIGNTOOL,
+            '-SignerThumbprint', $env:LAB_SIGNER_THUMBPRINT,
+            '-LabConsent', $env:LAB_CONSENT,
+            '-EvidenceDir', "$env:RUNNER_TEMP/louderme-lab-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+          )
+          & pwsh @arguments
           if ($LASTEXITCODE -ne 0) { throw "Lab physical audio proof FAILED; revert VM snapshot." }
       - name: Archive metadata-only lab evidence even on failure
         if: always()

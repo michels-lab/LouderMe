@@ -1,3 +1,11 @@
+## 2026-11-12 — Real explicit native bridge session from the MSIX lab UI
+
+The packaged Windows preview now exposes **Native audio route · controlled test**, a separate explicitly consented modal that enumerates active audio render devices. It accepts **only** a LouderMe Virtual render source and a different physical sink, confirms the exact IDs in the bridge's read-only preflight and then starts the **real** separately packaged .NET WASAPI bridge and C++ DSP at **100% unity**. The UI sends real live commands (`boost 100..300`, seven-band `eq`) and can request a graceful `stop` with a bounded child-only termination fallback. It never installs a driver or silently modifies default Windows audio devices. High gain requires an additional confirmation.
+
+**This is a controlled lab session, not enabled production system-wide audio.** No virtual endpoint means no session. A started WASAPI stream or synthetic PCM ABI test does not prove third-party audio routed, speakers affected, acoustic gain or Microsoft Store certification. Driver signing/installation and physical Windows tests are still required. The **main** MSIX Boost/EQ surface stays disabled and APO-free. GitHub EXE v0.1.19 retains its legacy APO path. See [Store strategy](../docs/STORE_DISTRIBUTION_NATIVE_ROUTE_2026-11-12.md).
+
+---
+
 ## 2026-11-12 — Microsoft Store: native route only, disabled until verified
 
 The **MSIX** preflight builds a full-trust LouderMe GUI and packages **both** the own managed `native/LouderMeAudioBridge.exe` and C++ DSP library `native/louderme_audio_c.dll` in a subdirectory. The native pair runs real self-tests for the DSP ABI and an in-memory PCM pipeline on Windows CI. Its read-only **Check native engine** button executes `--diagnose-route` with no selected endpoint IDs, no audio capture, driver install or output changes. A missing native virtual endpoint is reported as unavailable. Metadata readiness never claims an active DSP or acoustic output.

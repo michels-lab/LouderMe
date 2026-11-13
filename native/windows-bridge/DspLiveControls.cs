@@ -177,6 +177,9 @@ internal sealed class DspLiveConsoleControls
         _bands = (float[])bands.Clone();
     }
 
+    internal static bool IsStopCommand(string? text) =>
+        string.Equals(text?.Trim(), "stop", StringComparison.OrdinalIgnoreCase);
+
     public bool TryHandle(string text, out string message)
     {
         var command = text.Trim();
@@ -225,6 +228,10 @@ internal sealed class DspLiveConsoleControls
 
     public static void RunSelfTests()
     {
+        if (!IsStopCommand("stop") || !IsStopCommand(" STOP ") ||
+            IsStopCommand("stop everything") || IsStopCommand("boost 100") ||
+            IsStopCommand(null))
+            throw new InvalidOperationException("Native bridge stop session command contract changed.");
         var mailbox = new DspControlMailbox();
         var controls = new DspLiveConsoleControls(mailbox, 100, false, new float[7]);
         if (!controls.TryHandle("boost 150", out _) ||

@@ -331,6 +331,116 @@ jobs:
             artifacts/virtual-driver-lab/LouderMe-VirtualRender-LAB-UNSIGNED.zip.sha256
           if-no-files-found: error
           retention-days: 7
+      - name: Set up .NET 10 for standalone native route VM test kit
+        if: steps.inf_package.outputs.package_validated == 'true'
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Compile and assemble own complete native audio VM test kit (never install)
+        if: steps.inf_package.outputs.package_validated == 'true'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $base = Join-Path $PWD 'artifacts/virtual-driver-vm-kit'
+          $stage = Join-Path $base 'stage'
+          foreach ($name in @('driver','bridge','source','lab')) {
+            New-Item -ItemType Directory -Path (Join-Path $stage $name) -Force | Out-Null
+          }
+          $wdk = Join-Path $PWD 'artifacts/virtual-driver-lab'
+          foreach ($name in @(
+            'LouderMe-VirtualRender-LAB-UNSIGNED.zip',
+            'LouderMe-VirtualRender-LAB-UNSIGNED.zip.sha256'
+          )) {
+            Copy-Item -LiteralPath (Join-Path $wdk $name) -Destination (Join-Path $stage 'driver') -ErrorAction Stop
+          }
+          # Build real C++ DSP from this same checkout, not a mock library.
+          $dspBuild = Join-Path $base 'dsp-build'
+          cmake -S louderme/native/audio-engine -B $dspBuild -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Release
+          if ($LASTEXITCODE -ne 0) { throw 'VM kit native C++ DSP configure failed.' }
+          cmake --build $dspBuild --config Release --parallel
+          if ($LASTEXITCODE -ne 0) { throw 'VM kit native C++ DSP build failed.' }
+          ctest --test-dir $dspBuild -C Release --output-on-failure
+          if ($LASTEXITCODE -ne 0) { throw 'VM kit real DSP numerical regressions failed.' }
+          $native = Get-ChildItem -LiteralPath $dspBuild -Filter 'louderme_audio_c.dll' -Recurse |
+            Select-Object -First 1
+          if (-not $native) { throw 'No actual compiled native DSP ABI DLL available.' }
+          # Use managed DLLs plus their NAudio dependencies and runtimeconfig.
+          # No installer/driver is built or signed by either dotnet publish.
+          dotnet publish louderme/native/windows-bridge/LouderMeAudioBridge.csproj -c Release -r win-x64 --self-contained false -p:UseAppHost=false -o (Join-Path $stage 'bridge')
+          if ($LASTEXITCODE -ne 0) { throw 'LouderMe native bridge publish failed.' }
+          dotnet publish louderme/native/independent-tone/LouderMeIndependentTone.csproj -c Release -r win-x64 --self-contained false -p:UseAppHost=false -o (Join-Path $stage 'source')
+          if ($LASTEXITCODE -ne 0) { throw 'LouderMe independent Windows PCM source publish failed.' }
+          Copy-Item -LiteralPath $native.FullName -Destination (Join-Path $stage 'bridge/louderme_audio_c.dll')
+          $bridge = Join-Path $stage 'bridge/LouderMeAudioBridge.dll'
+          $tone = Join-Path $stage 'source/LouderMeIndependentTone.dll'
+          foreach ($args in @(
+            @('--check-native'), @('--check-pipeline'), @('--check-controls')
+          )) {
+            & dotnet $bridge @args
+            if ($LASTEXITCODE -ne 0) { throw "Packaged own bridge DSP check failed: $($args -join ' ')" }
+          }
+          & dotnet $tone --check-tone
+          if ($LASTEXITCODE -ne 0) { throw 'Packaged independent Windows PCM source test failed.' }
+
+          # Scripts are shipped from the *same* source checkout, not from
+          # another GitHub release. No certificates, installer or devcon.exe.
+          Copy-Item -Path 'louderme/native/virtual-driver/*.ps1' -Destination (Join-Path $stage 'lab') -Force
+          @(
+            'LOUDERME WINDOWS VIRTUAL AUDIO TEST KIT — EXPERIMENTAL/UNSIGNED',
+            'NOT A RELEASE / NOT APPROVED FOR MICROSOFT STORE.',
+            'Do NOT install on a personal computer or change Secure Boot,',
+            'Test Mode, Windows trusted roots or the default playback device.',
+            'This kit has NO signed/installed driver and proves NO real sound.',
+            '',
+            'Content:',
+            ' driver/ original INF/CAT/SYS WDK ZIP + GitHub SHA256 sidecar',
+            ' bridge/ LouderMeAudioBridge.dll + real C++ DSP + dependencies',
+            ' source/ independent Windows PCM source .NET DLL + dependencies',
+            ' lab/ source-locked PowerShell signing/probe/cleanup procedures',
+            '',
+            'PREREQUISITES (NOT AUTOMATED): disposable Windows VM, snapshot,',
+            'pre-existing trusted LAB Code Signing certificate, Windows SDK',
+            'SignTool.exe + WDK Devcon.exe, .NET 10 runtime, real physical',
+            'audio output visible inside the VM and owner authorization.',
+            '',
+            '1. Verify both kit and inner driver SHA256 hashes and manifest.',
+            '2. In VM, run lab/prepare_signed_vm_lab.ps1 with original ZIP,',
+            '   ZIP sidecar, exact VM LAB thumbprint and SignTool path.',
+            '3. After local signing succeeds, run the consented',
+            '   lab/run_disposable_lab.ps1 with original ZIP/sidecar, the',
+            '   signed package, SignTool/thumbprint, Devcon, paths to the',
+            '   bridge/source DLLs and explicitly chosen physical output.',
+            '   The runner re-verifies INF/CAT/SYS, tests PCM before setup,',
+            '   tests separate Windows app at 100% and 150%, and removes',
+            '   only the device created in this VM session.',
+            '4. If ANY check or cleanup fails, restore the VM snapshot.',
+            'No audio physics/driver signing success is claimed by this ZIP.'
+          ) | Set-Content -Encoding utf8 (Join-Path $stage 'LAB-VM-README.txt')
+
+          $out = Join-Path $base 'LouderMe-Windows-VM-TEST-LAB.zip'
+          python louderme/native/virtual-driver/build_vm_testkit.py --stage $stage --output $out --source-sha $env:GITHUB_SHA --run-id $env:GITHUB_RUN_ID
+          if ($LASTEXITCODE -ne 0) { throw 'Complete VM test kit did not satisfy independent WDK+DSP contract.' }
+          python louderme/native/virtual-driver/build_vm_testkit.py --verify $out
+          if ($LASTEXITCODE -ne 0) { throw 'Complete offline VM test kit SHA256 validation failed.' }
+          $expected = (Get-FileHash -LiteralPath $out -Algorithm SHA256).Hash.ToLowerInvariant()
+          if (-not (Get-Content "$out.sha256" -Raw).StartsWith("$expected  ")) {
+            throw 'VM kit outer ZIP SHA256 sidecar does not match.'
+          }
+          Write-Host 'PASS: unsigned driver + own .NET WASAPI bridge + C++ DSP + separate PCM app all in one verified offline VM kit.'
+          Write-Warning 'NO DRIVER INSTALLED, SIGNED OR PUBLISHED; real Windows audio remains unverified.'
+
+      - name: Retain complete isolated-VM native engine kit for 7 days (NO RELEASE)
+        if: steps.inf_package.outputs.package_validated == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: LouderMe-Windows-VM-TEST-LAB-UNSIGNED-${{ github.sha }}-${{ github.run_id }}
+          path: |
+            artifacts/virtual-driver-vm-kit/LouderMe-Windows-VM-TEST-LAB.zip
+            artifacts/virtual-driver-vm-kit/LouderMe-Windows-VM-TEST-LAB.zip.sha256
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Report distinct build and deployability states
         if: always()
         shell: pwsh

@@ -148,11 +148,19 @@ def check_payload(files: dict[str, bytes]) -> dict:
 def staged_input(package: Path, manifest: Path, license_path: Path) -> dict[str, bytes]:
     if not package.is_dir() or package.is_symlink():
         raise ValueError("WDK package directory must be a real directory")
-    found = {x.name for x in package.iterdir()}
-    if found != set(PACKAGE_FILES):
-        raise ValueError(f"Unexpected WDK package files: {sorted(found)}")
-    result = {name: read_regular(package / name, 400 if name.endswith(".inf")
-                                  else 100 if name.endswith(".cat") else 10000)
+    # Real Inf2Cat writes the catalog as lowercase on Windows, even when
+    # StampInf's INF CatalogFile uses mixed case. Windows resolves either,
+    # but Python on a host filesystem may not: normalize ONLY exact known
+    # names, refusing aliases or extra files. Keep byte identity unchanged.
+    paths = list(package.iterdir())
+    found = {p.name.casefold(): p for p in paths}
+    expected = {name.casefold() for name in PACKAGE_FILES}
+    if len(found) != len(paths) or set(found) != expected:
+        raise ValueError(f"Unexpected or case-aliased WDK package files: "
+                         f"{sorted(p.name for p in paths)}")
+    result = {name: read_regular(found[name.casefold()],
+                                 400 if name.endswith(".inf")
+                                 else 100 if name.endswith(".cat") else 10000)
               for name in PACKAGE_FILES}
     result["LOUDERME_LAB_MANIFEST.json"] = read_regular(manifest, 300)
     result["LICENSE-MS-PL.txt"] = read_regular(license_path, 200)

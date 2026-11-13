@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 341,
-  "classified_files_total": 337,
+  "tracked_files_total": 343,
+  "classified_files_total": 339,
   "docs_content_inspected": 115,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
@@ -16,7 +16,7 @@
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
-    "source": 114,
+    "source": 116,
     "test": 45,
     "text_metadata": 2,
     "workflow": 13
@@ -25,7 +25,7 @@
     "BROKEN_RELATIVE_LINK": 2
   },
   "finding_total": 2,
-  "inventory_fingerprint": "5c2409afab042953982f9645835d2f614f542ed771469fb6159416a058d2c3a8",
+  "inventory_fingerprint": "18c36a6ddb0d762adbe9404cf65cac74b713e5969cdeb14469e5498f76bc416f",
   "evidence_fingerprint": "728b2eac1e90c8e5522fb81612c631a8a4888caabe724aca9a00027178e0f153",
   "files": [
     {
@@ -110,7 +110,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "ddfe8eb53bed2705efbf2ef4afd32d1074aa5f2e"
+      "blob": "1144d3d12813de5dfd3533fd051f3a517ed1195c"
     },
     {
       "path": ".github/workflows/native-audio-engine-ci.yml",
@@ -250,7 +250,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "41616670801fa157abb606a667be7a834591ed3f"
+      "blob": "996305a153515901beaa25c2a14ef04c944f08b0"
     },
     {
       "path": "README.md",
@@ -768,7 +768,7 @@
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "e3cae2cfd28b2d9c74e12714a457fdec36b0acba"
+      "blob": "5f3d9d9e60c2098e57e26a5c6e9933ed400d2745"
     },
     {
       "path": "desktop/docs/GRANADA_RELEASE_READINESS_2026-10-20.md",
@@ -1055,21 +1055,35 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "a23171b3b65b7d3a1dd2e9e7d34a933f745b7951"
+      "blob": "5258b37007147f3b7172e4924ff0ff32b40a5645"
+    },
+    {
+      "path": "desktop/src/LouderMeDesktop/NativeRouteLabForm.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "2e903836a5523f9a1be4156477492d1fea66d9d1"
     },
     {
       "path": "desktop/src/LouderMeDesktop/NativeRouteReadiness.cs",
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "053892f58b2d543514d9bc05739cc69d8d73e449"
+      "blob": "5b0211a7c67d1f13beffb48ca9ead1bf3bfeab87"
+    },
+    {
+      "path": "desktop/src/LouderMeDesktop/NativeRouteSession.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "3b4dabbc917cfdba1c76090cfda5900026be680d"
     },
     {
       "path": "desktop/src/LouderMeDesktop/Program.cs",
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "9554c8b29dc7a0ae4d43609fcbdacf7be2b652c8"
+      "blob": "56963eda7941008b4f3a3846d494361268f99c08"
     },
     {
       "path": "desktop/src/LouderMeDesktop/SplashForm.cs",
@@ -1328,7 +1342,7 @@
       "role": "document",
       "purpose": "manual/decision/report/historical note",
       "certainty": "inferred",
-      "blob": "be1089cf7f12dd48227cea44e14ff166f15e5798"
+      "blob": "4a51315f9918f970ea418ea77481fa07fe9214e4"
     },
     {
       "path": "docs/WINDOWS_DEVELOPER_AUDIO_READINESS_2026-10-20.md",
@@ -2105,7 +2119,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "955c00507f260f48b0f31d8a33c3165514fe6de4"
+      "blob": "11f86e638a5b74e33b5f035660169a2eb9c8589c"
     },
     {
       "path": "native/windows-bridge/LoopbackToneVerifier.cs",
@@ -2154,7 +2168,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "cd1edd5069aaa1f427a5d9b77912c67b87d312c2"
+      "blob": "b388fd21c01e8a70e5d05466d6cae7ebb356e8af"
     },
     {
       "path": "native/windows-bridge/README.md",

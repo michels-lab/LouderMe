@@ -42,11 +42,13 @@ internal static class NativeRouteReadiness
         // --diagnose-route without device IDs enumerates metadata only.
         // It explicitly cannot return a ready/active audio route.
         process.StartInfo.ArgumentList.Add("--diagnose-route");
+        var started = false;
         try
         {
             if (!process.Start())
                 return new("NATIVE_DIAGNOSTIC_FAILED", false,
                     "Windows could not launch the read-only native diagnostic.");
+            started = true;
             var output = process.StandardOutput.ReadToEndAsync(timeout.Token);
             var error = process.StandardError.ReadToEndAsync(timeout.Token);
             await process.WaitForExitAsync(timeout.Token);
@@ -60,20 +62,29 @@ internal static class NativeRouteReadiness
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            if (!process.HasExited)
-                process.Kill(entireProcessTree: true);
+            TryStopProbe(process, started);
             return new("NATIVE_DIAGNOSTIC_TIMEOUT", false,
                 "The native audio check timed out; Boost/EQ remains disabled.");
         }
         catch (Exception ex) when (ex is IOException or InvalidOperationException or
                                    System.ComponentModel.Win32Exception or JsonException)
         {
-            if (process.StartInfo.RedirectStandardOutput &&
-                process.Id > 0 && !process.HasExited)
-                process.Kill(entireProcessTree: true);
+            TryStopProbe(process, started);
             return new("NATIVE_DIAGNOSTIC_FAILED", false,
                 "The native audio check could not be completed safely.");
         }
+    }
+
+    private static void TryStopProbe(Process process, bool started)
+    {
+        if (!started) return;
+        try
+        {
+            if (!process.HasExited)
+                process.Kill(entireProcessTree: true);
+        }
+        catch (InvalidOperationException) { /* Process exited concurrently. */ }
+        catch (System.ComponentModel.Win32Exception) { /* No new unsafe action. */ }
     }
 
     internal static NativeRouteStatus ParseDiagnostic(string json)

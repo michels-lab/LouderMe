@@ -19,6 +19,9 @@ class StoreManifestTests(unittest.TestCase):
         self.stage = Path(self.tmp.name)
         (self.stage / "Assets").mkdir()
         (self.stage / "LouderMe.exe").write_bytes(b"realexe-fixture")
+        (self.stage / "native").mkdir()
+        (self.stage / "native" / "LouderMeAudioBridge.exe").write_bytes(b"realbridge-fixture")
+        (self.stage / "native" / "louderme_audio_c.dll").write_bytes(b"realdsp-fixture")
         for name in ASSETS:
             (self.stage / "Assets" / name).write_bytes(b"P" * 200)
         self.manifest = self.stage / "AppxManifest.xml"
@@ -47,6 +50,14 @@ class StoreManifestTests(unittest.TestCase):
             check_manifest(self.manifest, self.stage, ID, PUBLISHER, VERSION)
         (self.stage / "Assets" / "StoreLogo.png").write_bytes(b"Q" * 200)
         (self.stage / "LouderMe.exe").unlink()
+        with self.assertRaises(AssertionError):
+            check_manifest(self.manifest, self.stage, ID, PUBLISHER, VERSION)
+        (self.stage / "LouderMe.exe").write_bytes(b"realexe-fixture")
+        (self.stage / "native" / "LouderMeAudioBridge.exe").unlink()
+        with self.assertRaises(AssertionError):
+            check_manifest(self.manifest, self.stage, ID, PUBLISHER, VERSION)
+        (self.stage / "native" / "LouderMeAudioBridge.exe").write_bytes(b"realbridge-fixture")
+        (self.stage / "native" / "louderme_audio_c.dll").unlink()
         with self.assertRaises(AssertionError):
             check_manifest(self.manifest, self.stage, ID, PUBLISHER, VERSION)
 

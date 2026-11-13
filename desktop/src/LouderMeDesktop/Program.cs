@@ -79,6 +79,7 @@ internal static class Program
             if (storeContractTest)
             {
                 StorePackageContext.RunContractSelfTests();
+                NativeRouteReadiness.RunContractSelfTests();
                 return 0;
             }
 

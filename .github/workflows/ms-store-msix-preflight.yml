@@ -76,6 +76,44 @@ jobs:
           if ($LASTEXITCODE -ne 0 -or -not (Test-Path "$stage/LouderMe.exe")) {
             throw 'Missing real published WinForms runtime.'
           }
+      - name: Build and package LouderMe's own read-only native route diagnostic
+        shell: pwsh
+        run: |
+          $native = Join-Path $PWD 'artifacts/msix/stage/native'
+          New-Item -ItemType Directory -Force $native | Out-Null
+          dotnet restore native/windows-bridge/LouderMeAudioBridge.csproj
+          if ($LASTEXITCODE -ne 0) { throw 'Native route diagnostic restore failed.' }
+          dotnet run --project native/windows-bridge/LouderMeAudioBridge.csproj -c Release -- --check-route-preflight
+          if ($LASTEXITCODE -ne 0) { throw 'Native route metadata contract failed.' }
+          dotnet publish native/windows-bridge/LouderMeAudioBridge.csproj `
+            -c Release -r win-x64 --self-contained true `
+            -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true `
+            -o $native
+          if ($LASTEXITCODE -ne 0 -or -not (Test-Path "$native/LouderMeAudioBridge.exe")) {
+            throw 'Native route diagnostic binary absent from MSIX payload.'
+          }
+          # Compile and package the C++ engine actually used by the bridge.
+          # This does not make an audio device exist; the driver is a separate
+          # signed/installed component not included in this MSIX.
+          cmake -S native/audio-engine -B artifacts/msix/dsp-build `
+            -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON `
+            -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
+          if ($LASTEXITCODE -ne 0) { throw 'Native C++ DSP configuration failed.' }
+          cmake --build artifacts/msix/dsp-build --config Release --parallel
+          if ($LASTEXITCODE -ne 0) { throw 'Native C++ DSP compilation failed.' }
+          ctest --test-dir artifacts/msix/dsp-build -C Release --output-on-failure
+          if ($LASTEXITCODE -ne 0) { throw 'Native C++ DSP PCM and ABI tests failed.' }
+          $dll = Get-ChildItem artifacts/msix/dsp-build -Filter louderme_audio_c.dll -Recurse |
+            Select-Object -First 1
+          if (-not $dll) { throw 'Compiled native C ABI DLL missing.' }
+          Copy-Item $dll.FullName (Join-Path $native 'louderme_audio_c.dll')
+          # Execute the genuine published self-contained bridge and C++ ABI.
+          & (Join-Path $native 'LouderMeAudioBridge.exe') --check-native
+          if ($LASTEXITCODE -ne 0) { throw 'Packaged native DSP interop failed.' }
+          & (Join-Path $native 'LouderMeAudioBridge.exe') --check-pipeline
+          if ($LASTEXITCODE -ne 0) { throw 'Packaged own-DSP PCM pipeline failed.' }
+          # No virtual driver, APO installer, raw user endpoint IDs or
+          # physical audio evidence is created by this packaging step.
       - name: Generate MSIX official product tile assets
         shell: pwsh
         run: |

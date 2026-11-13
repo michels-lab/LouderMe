@@ -367,10 +367,15 @@ jobs:
           if (-not $native) { throw 'No actual compiled native DSP ABI DLL available.' }
           # Use managed DLLs plus their NAudio dependencies and runtimeconfig.
           # No installer/driver is built or signed by either dotnet publish.
-          dotnet publish louderme/native/windows-bridge/LouderMeAudioBridge.csproj -c Release -r win-x64 --self-contained false -p:UseAppHost=false -o (Join-Path $stage 'bridge')
+          dotnet publish louderme/native/windows-bridge/LouderMeAudioBridge.csproj -c Release -r win-x64 --self-contained false -p:UseAppHost=false -p:DebugSymbols=false -p:DebugType=None -o (Join-Path $stage 'bridge')
           if ($LASTEXITCODE -ne 0) { throw 'LouderMe native bridge publish failed.' }
-          dotnet publish louderme/native/independent-tone/LouderMeIndependentTone.csproj -c Release -r win-x64 --self-contained false -p:UseAppHost=false -o (Join-Path $stage 'source')
+          dotnet publish louderme/native/independent-tone/LouderMeIndependentTone.csproj -c Release -r win-x64 --self-contained false -p:UseAppHost=false -p:DebugSymbols=false -p:DebugType=None -o (Join-Path $stage 'source')
           if ($LASTEXITCODE -ne 0) { throw 'LouderMe independent Windows PCM source publish failed.' }
+          # Published PDBs contain local build paths but are NOT needed by
+          # .NET to run the bridge/source in an isolated VM. Exclude them,
+          # rather than relaxing the strict ZIP file allowlist.
+          Get-ChildItem -Path (Join-Path $stage 'bridge'),(Join-Path $stage 'source') -Filter '*.pdb' -Recurse -File |
+            Remove-Item -Force
           Copy-Item -LiteralPath $native.FullName -Destination (Join-Path $stage 'bridge/louderme_audio_c.dll')
           $bridge = Join-Path $stage 'bridge/LouderMeAudioBridge.dll'
           $tone = Join-Path $stage 'source/LouderMeIndependentTone.dll'

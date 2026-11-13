@@ -318,7 +318,9 @@ internal sealed class AboutForm : Form
         layout.Controls.Add(new Label
         {
             AutoSize = true,
-            Text = $"v{_updates.CurrentVersionText} · Windows x64 · Stable channel",
+            Text = StorePackageContext.IsPackaged
+                ? $"v{_updates.CurrentVersionText} · MSIX native-engine preview (Boost/EQ inactive)"
+                : $"v{_updates.CurrentVersionText} · Windows x64 · Stable channel",
             ForeColor = Cyan,
             Font = new Font("Consolas", 9f, FontStyle.Bold),
             Anchor = AnchorStyles.None,
@@ -330,7 +332,9 @@ internal sealed class AboutForm : Form
             AutoSize = true,
             MaximumSize = new Size(700, 0),
             TextAlign = ContentAlignment.MiddleCenter,
-            Text = "System-wide gain, equalization and transparent diagnostics in a focused Michel's Lab audio workspace.",
+            Text = StorePackageContext.IsPackaged
+                ? "Native Windows audio route under integration. System output volume works; Boost and EQ remain disabled until our own driver, C++ DSP and physical playback path are verified."
+                : "System-wide gain, equalization and transparent diagnostics in a focused Michel's Lab audio workspace.",
             ForeColor = Muted,
             Anchor = AnchorStyles.None,
         });
@@ -485,7 +489,9 @@ internal sealed class AboutForm : Form
             AutoSize = true,
             MaximumSize = new Size(720, 0),
             ForeColor = Muted,
-            Text = "LouderMe checks the public Michel's Lab stable Windows feed. Downloads are SHA-256 verified before Windows is asked to launch the installer.",
+            Text = StorePackageContext.IsPackaged
+                ? "Microsoft Store will manage MSIX updates after an approved public submission. The GitHub EXE updater is disabled for Store packages."
+                : "LouderMe checks the public Michel's Lab stable Windows feed. Downloads are SHA-256 verified before Windows is asked to launch the installer.",
             Margin = new Padding(0, 9, 0, 0),
         };
         layout.SetColumnSpan(channel, 2);
@@ -507,14 +513,30 @@ internal sealed class AboutForm : Form
         };
 
         stack.Controls.Add(Eyebrow("PRIVACY · LEGAL · THIRD-PARTY", Gold));
-        stack.Controls.Add(Body(
-            "LouderMe processes its settings locally. The Desktop app does not record or upload your audio. " +
-            "Global Boost and EQ are written to the local Windows audio-effects configuration."));
-        stack.Controls.Add(Body(
-            "System-wide boost above the native Windows endpoint maximum uses user-installed Equalizer APO 1.4.2. " +
-            "Equalizer APO is not bundled or redistributed by LouderMe. ASIO and WASAPI exclusive streams can bypass Windows system effects."));
-        stack.Controls.Add(Body(
-            "This build publishes SHA-256 integrity data. Authenticode publisher signing is not configured yet, so Windows SmartScreen may still show a reputation warning."));
+        if (StorePackageContext.IsPackaged)
+        {
+            stack.Controls.Add(Body(
+                "LouderMe stores settings locally and does not record or upload your audio. " +
+                "The Microsoft Store MSIX preflight contains the own C++ DSP and read-only native route diagnostic; " +
+                "neither installs a driver nor starts global Boost/EQ. They remain disabled."));
+            stack.Controls.Add(Body(
+                "This preview does not use Equalizer APO. A signed and installed native virtual endpoint " +
+                "and independently verified physical audio route are required before store publication."));
+            stack.Controls.Add(Body(
+                "This preflight package is not approved, signed or published by Microsoft Store. " +
+                "Do not install it as a substitute for the working GitHub release."));
+        }
+        else
+        {
+            stack.Controls.Add(Body(
+                "LouderMe processes its settings locally. The Desktop app does not record or upload your audio. " +
+                "Global Boost and EQ are written to the local Windows audio-effects configuration."));
+            stack.Controls.Add(Body(
+                "System-wide boost above the native Windows endpoint maximum uses user-installed Equalizer APO 1.4.2. " +
+                "Equalizer APO is not bundled or redistributed by LouderMe. ASIO and WASAPI exclusive streams can bypass Windows system effects."));
+            stack.Controls.Add(Body(
+                "This build publishes SHA-256 integrity data. Authenticode publisher signing is not configured yet, so Windows SmartScreen may still show a reputation warning."));
+        }
         stack.Controls.Add(new Label
         {
             AutoSize = true,

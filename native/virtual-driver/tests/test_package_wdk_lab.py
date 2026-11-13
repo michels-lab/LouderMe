@@ -100,6 +100,25 @@ class PinnedWdkArtifactTests(unittest.TestCase):
         with self.assertRaises(FileExistsError):
             self.build()
 
+    def test_real_windows_inf2cat_lowercases_catalog_without_changing_bytes(self):
+        # GitHub Windows WDK actually generated lowercase
+        # loudermevirtualrenderlab.cat, while the INF stores CamelCase.
+        mixed = self.cat.read_bytes()
+        renamed = self.package / "loudermevirtualrenderlab.cat"
+        self.cat.rename(renamed)
+        self.build()
+        with zipfile.ZipFile(self.output) as z:
+            self.assertEqual(
+                z.read(pkg.ZIP_PREFIX + "LouderMeVirtualRenderLab.cat"), mixed)
+        pkg.verify_zip(self.output)
+
+    def test_case_aliased_catalog_files_are_rejected(self):
+        # Never choose an ambiguous first-match catalog from a directory.
+        (self.package / "loudermevirtualrenderlab.cat").write_bytes(
+            self.cat.read_bytes())
+        with self.assertRaises(ValueError):
+            self.build()
+
     def test_missing_extra_or_symlinked_kernel_files_refused(self):
         self.sys.unlink()
         with self.assertRaises(ValueError):

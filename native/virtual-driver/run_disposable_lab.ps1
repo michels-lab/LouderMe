@@ -18,6 +18,10 @@ param(
   [Parameter(Mandatory)][string]$BridgeDll,
   [Parameter(Mandatory)][string]$IndependentToneDll,
   [Parameter(Mandatory)][string]$PhysicalEndpointId,
+  [Parameter(Mandatory)][string]$UnsignedLabZip,
+  [Parameter(Mandatory)][string]$UnsignedLabSha256,
+  [Parameter(Mandatory)][string]$SignToolExe,
+  [Parameter(Mandatory)][ValidatePattern('^[A-Fa-f0-9]{40}$')][string]$SignerThumbprint,
   [Parameter(Mandatory)][ValidateSet('I_ACCEPT_DISPOSABLE_WINDOWS_VM_DRIVER_TEST')]
   [string]$LabConsent,
   [string]$EvidenceDir = (Join-Path $PWD 'louderme-physical-lab-evidence')
@@ -97,10 +101,12 @@ if ([string]::IsNullOrWhiteSpace($PhysicalEndpointId)) {
 if ((Get-LabDevices).Count -ne 0) {
   throw 'LouderME LAB root device already exists; refuse to modify an unowned instance.'
 }
-$signature = Get-AuthenticodeSignature -FilePath $cat
-if ($signature.Status -ne 'Valid') {
-  throw "CAT signature must be trusted inside this isolated VM (status: $($signature.Status))."
-}
+# The signed catalog alone is insufficient. Prove that it signs the exact
+# INF and SYS bytes from the WDK-validated unsigned Actions artifact.
+. (Join-Path $PSScriptRoot 'SignedLabCatalogGuard.ps1')
+$unsignedSource = Get-LouderMeUnsignedLabSource -ZipPath $UnsignedLabZip -Sha256Sidecar $UnsignedLabSha256
+$signatureEvidence = Assert-LouderMeSignedLabCatalog -PackageDir $package -UnsignedSource $unsignedSource -SignToolExe $SignToolExe -SignerThumbprint $SignerThumbprint
+Write-Host 'LAB package signature and original WDK INF/SYS provenance verified in this VM. No install yet.'
 if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
   throw 'dotnet runtime/SDK is missing; cannot execute native bridge.'
 }
@@ -134,6 +140,8 @@ $metadata = @(
   "VM=$modelText",
   "LAB_SESSION_ID=$sessionId",
   'DRIVER_PACKAGE_SIGNATURE=VALID_LOCAL_VM',
+  "DRIVER_ORIGINAL_ACTIONS_ZIP_SHA256=$($signatureEvidence.OriginalArchiveSha256)",
+  "DRIVER_LAB_SIGNED_CATALOG_SHA256=$($signatureEvidence.CatalogSha256)",
   "CAT_SHA256=$((Get-FileHash -LiteralPath $cat -Algorithm SHA256).Hash.ToLowerInvariant())",
   "SYS_SHA256=$((Get-FileHash -LiteralPath $sys -Algorithm SHA256).Hash.ToLowerInvariant())",
   'SPEAKER_AUDIO_MEASUREMENT=NOT_PERFORMED',
@@ -161,6 +169,9 @@ try {
   Assert-LouderMeDefaultRenderUnchanged -Expected $defaultBefore -Actual $defaultAfterDirectGain -Phase 'preinstall physical gain A/B'
   Write-Host 'Preinstall DSP+physical WASAPI gain A/B passed. Does NOT prove virtual-driver PCM or acoustic SPL.'
   Assert-LouderMeLabInputsUnchanged -Snapshot $inputSnapshot -Phase 'immediately before driver install'
+  # Recheck the catalog membership and selected certificate at the
+  # privileged boundary, not only before independent audio preflight.
+  [void](Assert-LouderMeSignedLabCatalog -PackageDir $package -UnsignedSource $unsignedSource -SignToolExe $SignToolExe -SignerThumbprint $SignerThumbprint)
   Write-Host "Installing LAB root device '$hardwareId' in disposable VM only."
   # WDK tools can echo private generated PnP instance IDs in stdout/stderr.
   # Keep only exit status; never upload their raw text to shared Actions logs.

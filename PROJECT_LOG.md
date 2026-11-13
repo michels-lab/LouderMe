@@ -2,7 +2,7 @@
 
 - Nueva superficie Windows Store: **Check native engine (read-only)** ejecuta el puente `LouderMeAudioBridge.exe --diagnose-route` empaquetado, con validación de respuesta JSON, timeout de 8 segundos y protección contra presentar `STATIC_PREFLIGHT_READY` como reproducción audible. El puente no instala drivers ni modifica predeterminados.
 - La GUI empaquetada **oculta las acciones Equalizer APO**, no realiza recuperación ni escrituras de configuración APO y bloquea controles Boost/EQ hasta integrar la propia ruta virtual → DSP → físico. El producto GitHub v0.1.19 mantiene su funcionamiento previo sin cambios de versión.
-- CI MSIX ahora construye el puente NAudio self-contained, exige su archivo real en el paquete, prueba contrato de diagnóstico de ruta y empaquetado MakeAppx. **Sigue sin driver independiente firmado ni prueba de audio de otras apps**. [Estrategia y frontera](docs/STORE_DISTRIBUTION_NATIVE_ROUTE_2026-11-12.md).
+- CI MSIX ahora construye el puente NAudio self-contained y la **biblioteca C++ real** `louderme_audio_c.dll`, exige ambos archivos reales en el paquete, ejecuta regresiones C++ PCM/ABI + `--check-native` y `--check-pipeline` con el ejecutable distribuible, y comprueba empaquetado MakeAppx. **Sigue sin driver independiente firmado ni prueba de audio de otras apps**. [Estrategia y frontera](docs/STORE_DISTRIBUTION_NATIVE_ROUTE_2026-11-12.md).
 - Estado de publicación: **ninguna Store autorizada**, ningún driver kernel simulado, ningún release nuevo. Revisión PR + CI aún por verificar antes de integrar este bloque.
 
 ---

@@ -1,3 +1,12 @@
+## 2026-11-12 — Continuación Granada: diagnóstico puente nativo real dentro de MSIX
+
+- Nueva superficie Windows Store: **Check native engine (read-only)** ejecuta el puente `LouderMeAudioBridge.exe --diagnose-route` empaquetado, con validación de respuesta JSON, timeout de 8 segundos y protección contra presentar `STATIC_PREFLIGHT_READY` como reproducción audible. El puente no instala drivers ni modifica predeterminados.
+- La GUI empaquetada **oculta las acciones Equalizer APO**, no realiza recuperación ni escrituras de configuración APO y bloquea controles Boost/EQ hasta integrar la propia ruta virtual → DSP → físico. El producto GitHub v0.1.19 mantiene su funcionamiento previo sin cambios de versión.
+- CI MSIX ahora construye el puente NAudio self-contained, exige su archivo real en el paquete, prueba contrato de diagnóstico de ruta y empaquetado MakeAppx. **Sigue sin driver independiente firmado ni prueba de audio de otras apps**. [Estrategia y frontera](docs/STORE_DISTRIBUTION_NATIVE_ROUTE_2026-11-12.md).
+- Estado de publicación: **ninguna Store autorizada**, ningún driver kernel simulado, ningún release nuevo. Revisión PR + CI aún por verificar antes de integrar este bloque.
+
+---
+
 ## 2026-11-12 — Preparación técnica Google Play + Microsoft Store, SIN nueva dependencia APO
 
 - **Dirección del propietario:** **no** avanzar la futura ruta de audio Windows a través de Equalizer APO. El producto Desktop público v0.1.19 conserva APO únicamente como backend anterior de compatibilidad mientras se integra la ruta **nativa propia** del [issue #48](https://github.com/michels-lab/LouderMe/issues/48), relacionada con [#46](https://github.com/michels-lab/LouderMe/issues/46). No afirmar que nuestro driver virtual esté firmado, integrado ni instalado.

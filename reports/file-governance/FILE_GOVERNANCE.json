@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 340,
-  "classified_files_total": 336,
+  "tracked_files_total": 341,
+  "classified_files_total": 337,
   "docs_content_inspected": 115,
   "large_docs_skipped": 0,
   "excluded_reports": 4,
@@ -16,7 +16,7 @@
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
-    "source": 113,
+    "source": 114,
     "test": 45,
     "text_metadata": 2,
     "workflow": 13
@@ -25,7 +25,7 @@
     "BROKEN_RELATIVE_LINK": 2
   },
   "finding_total": 2,
-  "inventory_fingerprint": "cb571ecd4abee3d0f69f6122e576372dc6bf85622ff6c3776910b42c7653f4b9",
+  "inventory_fingerprint": "5c2409afab042953982f9645835d2f614f542ed771469fb6159416a058d2c3a8",
   "evidence_fingerprint": "728b2eac1e90c8e5522fb81612c631a8a4888caabe724aca9a00027178e0f153",
   "files": [
     {
@@ -110,7 +110,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "50fd424b7bd1ec4ce79e88cc903565569e6d87ec"
+      "blob": "ddfe8eb53bed2705efbf2ef4afd32d1074aa5f2e"
     },
     {
       "path": ".github/workflows/native-audio-engine-ci.yml",
@@ -250,7 +250,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "e3576b48bfdba3afe90375aebdf0874c8a32ad40"
+      "blob": "41616670801fa157abb606a667be7a834591ed3f"
     },
     {
       "path": "README.md",
@@ -768,7 +768,7 @@
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "46b78ce0da2ee05dfd018a146d334108a304aeef"
+      "blob": "e3cae2cfd28b2d9c74e12714a457fdec36b0acba"
     },
     {
       "path": "desktop/docs/GRANADA_RELEASE_READINESS_2026-10-20.md",
@@ -908,7 +908,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "904b8204e476f8327214763d7907ac3771b02466"
+      "blob": "7df0b7156b0fe6a996fd22e3e91e8b7c38a60ee0"
     },
     {
       "path": "desktop/src/LouderMeDesktop/Assets/MichelDuarte.jpg",
@@ -1055,14 +1055,21 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "456f420f85becc3613776ecf59e231ade2764a6b"
+      "blob": "a23171b3b65b7d3a1dd2e9e7d34a933f745b7951"
+    },
+    {
+      "path": "desktop/src/LouderMeDesktop/NativeRouteReadiness.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "053892f58b2d543514d9bc05739cc69d8d73e449"
     },
     {
       "path": "desktop/src/LouderMeDesktop/Program.cs",
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "4e8d52f8e262a20258d918eaa3aa936b0a4e7e74"
+      "blob": "9554c8b29dc7a0ae4d43609fcbdacf7be2b652c8"
     },
     {
       "path": "desktop/src/LouderMeDesktop/SplashForm.cs",
@@ -1104,7 +1111,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "2e0b6ae36937c81d8d8bcbd055193d6ec183fce1"
+      "blob": "17659c0ff871daedce60079c12bd2baf797a32de"
     },
     {
       "path": "desktop/tools/verify_release_identity.ps1",
@@ -1321,7 +1328,7 @@
       "role": "document",
       "purpose": "manual/decision/report/historical note",
       "certainty": "inferred",
-      "blob": "094c872c70dac1687d559306909f9f729f77ca95"
+      "blob": "be1089cf7f12dd48227cea44e14ff166f15e5798"
     },
     {
       "path": "docs/WINDOWS_DEVELOPER_AUDIO_READINESS_2026-10-20.md",
@@ -2350,7 +2357,7 @@
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "5395ed4757ec54389f5397019ddf5f34c6500b28"
+      "blob": "b978c76d113f64e67bd52b029b4be3b62ccbe85a"
     },
     {
       "path": "tools/verify_play_bundle.py",

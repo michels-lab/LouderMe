@@ -1,10 +1,10 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 343,
-  "classified_files_total": 339,
-  "docs_content_inspected": 115,
-  "large_docs_skipped": 0,
+  "tracked_files_total": 345,
+  "classified_files_total": 341,
+  "docs_content_inspected": 114,
+  "large_docs_skipped": 1,
   "excluded_reports": 4,
   "roles": {
     "agent": 9,
@@ -16,8 +16,8 @@
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
-    "source": 116,
-    "test": 45,
+    "source": 117,
+    "test": 46,
     "text_metadata": 2,
     "workflow": 13
   },
@@ -25,7 +25,7 @@
     "BROKEN_RELATIVE_LINK": 2
   },
   "finding_total": 2,
-  "inventory_fingerprint": "18c36a6ddb0d762adbe9404cf65cac74b713e5969cdeb14469e5498f76bc416f",
+  "inventory_fingerprint": "8aa4e8bf38b89ed2d53034328694c21d2ecf3b54af37e19ce26b09efe037c0ec",
   "evidence_fingerprint": "728b2eac1e90c8e5522fb81612c631a8a4888caabe724aca9a00027178e0f153",
   "files": [
     {
@@ -131,7 +131,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "31389274562cbf4e22bd2ba2dc7d5dde1ebbbc07"
+      "blob": "d3b589eac288460d5823ee34db75bd2ad8940d49"
     },
     {
       "path": ".github/workflows/play-store-aab-preflight.yml",
@@ -250,7 +250,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "996305a153515901beaa25c2a14ef04c944f08b0"
+      "blob": "c772b796bcc2a7800f4395cf5117d16b9144770d"
     },
     {
       "path": "README.md",
@@ -1909,7 +1909,7 @@
       "role": "index",
       "purpose": "navigation/onboarding",
       "certainty": "rule",
-      "blob": "c54847a0a3169ccfffb41a95d55363f40c5afca3"
+      "blob": "c805a93b96fdfd9cbe427b4717df4b2b2749e58e"
     },
     {
       "path": "native/virtual-driver/VirtualSourceCompletionCheck.ps1",
@@ -1931,6 +1931,13 @@
       "purpose": "code/test implementation",
       "certainty": "rule",
       "blob": "5e6fc1ce978eaf4a225294cbd11014bdaf033977"
+    },
+    {
+      "path": "native/virtual-driver/package_wdk_lab.py",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "78c9b4759103f9bd787cf5c869f5d5f4bff6eb7f"
     },
     {
       "path": "native/virtual-driver/prepare_sysvad.py",
@@ -2043,6 +2050,13 @@
       "purpose": "code/test implementation",
       "certainty": "rule",
       "blob": "5d164a5c933027b29cd1e0a33c9d33b305f34203"
+    },
+    {
+      "path": "native/virtual-driver/tests/test_package_wdk_lab.py",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "029ab28479dde178baa51a8ed503b7aa64cdcdb1"
     },
     {
       "path": "native/virtual-driver/tests/test_pcm_frame_clock_host.cpp",

@@ -21,7 +21,7 @@ param(
   [Parameter(Mandatory)][string]$UnsignedLabZip,
   [Parameter(Mandatory)][string]$UnsignedLabSha256,
   [Parameter(Mandatory)][string]$SignToolExe,
-  [Parameter(Mandatory)][ValidatePattern('^[A-Fa-f0-9]{40}
+  [Parameter(Mandatory)][ValidatePattern('^[A-Fa-f0-9]{40}$')][string]$SignerThumbprint,
   [Parameter(Mandatory)][ValidateSet('I_ACCEPT_DISPOSABLE_WINDOWS_VM_DRIVER_TEST')]
   [string]$LabConsent,
   [string]$EvidenceDir = (Join-Path $PWD 'louderme-physical-lab-evidence')

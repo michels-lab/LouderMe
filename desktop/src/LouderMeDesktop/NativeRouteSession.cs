@@ -168,6 +168,7 @@ internal sealed class NativeRouteSession : IAsyncDisposable
         CancellationToken cancellationToken = default)
     {
         if (IsRunning) throw new InvalidOperationException("Native audio route is already running.");
+        if (_process is not null) await StopAsync(); // Discard exited owned child before a fresh explicit start.
         // Always begin at unity. Higher boost requires an explicit later action.
         var inspection = await InspectPairAsync(snapshot, sourceId, outputId, cancellationToken);
         if (!inspection.StaticLabPreflightReady)
@@ -223,6 +224,7 @@ internal sealed class NativeRouteSession : IAsyncDisposable
             StatusChanged?.Invoke("Native bridge stopped. No automatic device reassignment or restart.");
         }
         catch (InvalidOperationException) { }
+        catch (ObjectDisposedException) { }
     }
 
     private static async Task DrainAsync(

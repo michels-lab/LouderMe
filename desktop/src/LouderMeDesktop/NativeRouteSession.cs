@@ -224,7 +224,6 @@ internal sealed class NativeRouteSession : IAsyncDisposable
             StatusChanged?.Invoke("Native bridge stopped. No automatic device reassignment or restart.");
         }
         catch (InvalidOperationException) { }
-        catch (ObjectDisposedException) { }
     }
 
     private static async Task DrainAsync(

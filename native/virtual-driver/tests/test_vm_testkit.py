@@ -29,7 +29,8 @@ class VmKitTests(unittest.TestCase):
             if n == vm.INNER:
                 f.write_bytes(self.wdk.output.read_bytes())
             elif n == vm.SIDECAR:
-                f.write_bytes(self.wdk.output.with_suffix(".zip.sha256").read_bytes())
+                f.write_bytes(vm.expected_sidecar(
+                    self.wdk.output.read_bytes(), "LouderMe-VirtualRender-LAB-UNSIGNED.zip"))
             elif n.endswith(".json"):
                 f.write_text('{"runtimeOptions": {"tfm": "net10.0"}}')
             elif n.endswith(".dll"):
@@ -85,7 +86,8 @@ class VmKitTests(unittest.TestCase):
         sidecar.write_text("0" * 64 + "  LouderMe-VirtualRender-LAB-UNSIGNED.zip")
         with self.assertRaises(ValueError):
             self.build()
-        sidecar.write_bytes(self.wdk.output.with_suffix(".zip.sha256").read_bytes())
+        sidecar.write_bytes(vm.expected_sidecar(
+            self.wdk.output.read_bytes(), "LouderMe-VirtualRender-LAB-UNSIGNED.zip"))
         nested = self.stage / vm.INNER
         nested.write_bytes(b"not a genuine unsigned WDK ZIP")
         with self.assertRaises((ValueError, zipfile.BadZipFile)):

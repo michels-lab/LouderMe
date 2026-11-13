@@ -80,6 +80,7 @@ internal static class Program
             {
                 StorePackageContext.RunContractSelfTests();
                 NativeRouteReadiness.RunContractSelfTests();
+                NativeRouteSession.RunContractSelfTests();
                 return 0;
             }
 

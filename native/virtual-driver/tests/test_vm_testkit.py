@@ -43,7 +43,7 @@ class VmKitTests(unittest.TestCase):
         self.tmp.cleanup()
 
     def build(self):
-        vm.build(self.stage, self.kit, "0" * 40, "43342673254")
+        vm.build(self.stage, self.kit, "0" * 40, "43329002049")
 
     def alter(self, name, payload):
         with zipfile.ZipFile(self.kit) as z:
@@ -61,7 +61,7 @@ class VmKitTests(unittest.TestCase):
             manifest = json.loads(z.read(vm.PREFIX + vm.MANIFEST))
         self.assertFalse(manifest["real_audio_verified"])
         self.assertFalse(manifest["driver_signed_for_production"])
-        self.assertEqual(manifest["actions_run_id"], "43342673254")
+        self.assertEqual(manifest["actions_run_id"], "43329002049")
         self.assertTrue(self.kit.with_suffix(".zip.sha256").is_file())
         with self.assertRaises(FileExistsError):
             self.build()

@@ -196,6 +196,42 @@ jobs:
           (Get-FileHash $out -Algorithm SHA256).Hash.ToLowerInvariant() |
             Set-Content (Join-Path $PWD 'artifacts/msix/LouderMe-Store-PREFLIGHT.msix.sha256')
           Write-Host 'PASS: real Windows SDK MSIX produced and unpacked; payload hashes preserved.'
+      - name: Assemble non-Store native audio QA ZIP (no MSIX signature needed)
+        shell: pwsh
+        run: |
+          $stage = Join-Path $PWD 'artifacts/msix/stage'
+          $qa = Join-Path $PWD 'artifacts/msix/native-qa'
+          New-Item -ItemType Directory -Force $qa | Out-Null
+          Copy-Item (Join-Path $stage 'LouderMe.exe') (Join-Path $qa 'LouderMe.exe')
+          Copy-Item (Join-Path $stage 'native') (Join-Path $qa 'native') -Recurse -Force
+          @(
+            'LouderMe own Windows audio LAB QA (UNSIGNED, NOT STORE-APPROVED)',
+            'Unzip into an ordinary user-writable folder on a Windows test PC.',
+            'Launch only with: .\\LouderMe.exe --native-lab',
+            'The panel does not install a driver or change the default audio device.',
+            'A separately signed/installed LouderMe Virtual render endpoint is still required.',
+            'Choose explicitly the virtual source and a different physical output.',
+            'Start at 100% and use Stop to release both streams.',
+            '300% is a digital DSP setting, NOT a measured acoustic gain.',
+            'This QA ZIP does not replace the official GitHub Windows release.'
+          ) | Set-Content -Encoding UTF8 (Join-Path $qa 'NATIVE-LAB-README.txt')
+          $zip = Join-Path $PWD 'artifacts/msix/LouderMe-Native-Lab-UNSIGNED.zip'
+          Compress-Archive -Path (Join-Path $qa '*') -DestinationPath $zip -Force
+          $check = Join-Path $PWD 'artifacts/msix/native-qa-unpacked'
+          Expand-Archive -Path $zip -DestinationPath $check -Force
+          foreach ($file in @(
+            'LouderMe.exe',
+            'native/LouderMeAudioBridge.exe',
+            'native/louderme_audio_c.dll',
+            'NATIVE-LAB-README.txt'
+          )) {
+            if (-not (Test-Path (Join-Path $check $file))) {
+              throw "Native independent QA ZIP missing: $file"
+            }
+          }
+          (Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant() |
+            Set-Content (Join-Path $PWD 'artifacts/msix/LouderMe-Native-Lab-UNSIGNED.zip.sha256')
+          Write-Host 'PASS: standalone native bridge QA ZIP includes own UI, .NET bridge and C++ DSP.'
       - name: Upload unsigned MSIX preflight, never an approved Store release
         uses: actions/upload-artifact@v4
         with:
@@ -203,5 +239,7 @@ jobs:
           path: |
             artifacts/msix/LouderMe-Store-PREFLIGHT.msix
             artifacts/msix/LouderMe-Store-PREFLIGHT.msix.sha256
+            artifacts/msix/LouderMe-Native-Lab-UNSIGNED.zip
+            artifacts/msix/LouderMe-Native-Lab-UNSIGNED.zip.sha256
           if-no-files-found: error
           retention-days: 7

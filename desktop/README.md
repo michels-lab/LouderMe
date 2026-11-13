@@ -1,3 +1,9 @@
+## 2026-11-12 — Microsoft Store: native route only, disabled until verified
+
+The **MSIX** preflight builds a full-trust LouderMe GUI and packages the **own** `native/LouderMeAudioBridge.exe` in a subdirectory. Its read-only **Check native engine** button executes `--diagnose-route` with no selected endpoint IDs, no audio capture, driver install or output changes. A missing native virtual endpoint is reported as unavailable. Metadata readiness never claims an active DSP or acoustic output.
+
+The Store UI **hides Equalizer APO installation/configuration** and **disables all Boost/EQ effect controls** until an independent native virtual driver + WASAPI bridge + C++ DSP processing path is implemented and validated on real hardware. Store `ApplyProcessing` does **not** write APO config. Windows volume 0–100% still uses the normal OS endpoint control. Microsoft Store is **not ready to publish** this package as a global sound booster. The existing GitHub EXE stable retains APO compatibility unchanged. See [no-APO Store strategy](../docs/STORE_DISTRIBUTION_NATIVE_ROUTE_2026-11-12.md) and issue #48.
+
 ## 2026-11-12 — Owner-verified stable Windows 0.1.19 (Boost 300%)
 
 The owner reports having tested the final LouderMe release and confirms its functionality. For the supported Windows Desktop **v0.1.19**, this records **manual user acceptance** of the shipped product/300% feature. The [unified stable download](https://github.com/michels-lab/LouderME-Releases/releases/tag/louderme-android-v0.1.14-desktop-v0.1.19) and the Windows Setup/Portable automated release tests are complete. The normal Global Boost path still relies on Equalizer APO installed and attached to the playback output. The statement is not a measured +9.54 dB SPL result or evidence of the experimental signed virtual driver. Full [acceptance log](../docs/audits/GRANADA_2026-11-12_OWNER_ACCEPTANCE_LOUDERME_300PCT.md).

@@ -1,0 +1,162 @@
+using System.Diagnostics;
+using System.Text.Json;
+using System.Text.RegularExpressions;
+
+namespace LouderMeDesktop;
+
+/// <summary>
+/// Read-only diagnostic bridge for the own Windows virtual endpoint.
+/// This MUST NOT install a driver, start playback, write APO configuration,
+/// select the OS default device or claim a working native audio route.
+/// </summary>
+internal sealed record NativeRouteStatus(
+    string Code, bool StaticLabPreflightReady, string Message);
+
+internal static class NativeRouteReadiness
+{
+    internal static string BridgePath =>
+        Path.Combine(AppContext.BaseDirectory, "native", "LouderMeAudioBridge.exe");
+
+    internal static async Task<NativeRouteStatus> CheckAsync(
+        CancellationToken cancellationToken = default)
+    {
+        if (!File.Exists(BridgePath))
+            return new("NATIVE_BRIDGE_NOT_PACKAGED", false,
+                "The LouderMe native audio bridge is not installed. Boost/EQ is not active.");
+
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(TimeSpan.FromSeconds(8));
+        using var process = new Process
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = BridgePath,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                WorkingDirectory = Path.GetDirectoryName(BridgePath)
+                    ?? AppContext.BaseDirectory,
+            }
+        };
+        // --diagnose-route without device IDs enumerates metadata only.
+        // It explicitly cannot return a ready/active audio route.
+        process.StartInfo.ArgumentList.Add("--diagnose-route");
+        try
+        {
+            if (!process.Start())
+                return new("NATIVE_DIAGNOSTIC_FAILED", false,
+                    "Windows could not launch the read-only native diagnostic.");
+            var output = process.StandardOutput.ReadToEndAsync(timeout.Token);
+            var error = process.StandardError.ReadToEndAsync(timeout.Token);
+            await process.WaitForExitAsync(timeout.Token);
+            string json = await output;
+            _ = await error; // Never expose endpoint names, IDs, command paths or exceptions.
+            // Exit 3 is expected for an unselected route; an error is NOT ready.
+            if (process.ExitCode != 0 && process.ExitCode != 3)
+                return new("NATIVE_DIAGNOSTIC_FAILED", false,
+                    "The native audio check failed. No audio routing was changed.");
+            return ParseDiagnostic(json);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            if (!process.HasExited)
+                process.Kill(entireProcessTree: true);
+            return new("NATIVE_DIAGNOSTIC_TIMEOUT", false,
+                "The native audio check timed out; Boost/EQ remains disabled.");
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or
+                                   System.ComponentModel.Win32Exception or JsonException)
+        {
+            if (process.StartInfo.RedirectStandardOutput &&
+                process.Id > 0 && !process.HasExited)
+                process.Kill(entireProcessTree: true);
+            return new("NATIVE_DIAGNOSTIC_FAILED", false,
+                "The native audio check could not be completed safely.");
+        }
+    }
+
+    internal static NativeRouteStatus ParseDiagnostic(string json)
+    {
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+        if (root.ValueKind != JsonValueKind.Object ||
+            !root.TryGetProperty("code", out var codeProperty) ||
+            codeProperty.ValueKind != JsonValueKind.String ||
+            !root.TryGetProperty("ready_for_controlled_lab_only", out var readyProperty) ||
+            (readyProperty.ValueKind != JsonValueKind.True &&
+             readyProperty.ValueKind != JsonValueKind.False))
+            throw new JsonException("Invalid native route diagnostic schema.");
+
+        var code = codeProperty.GetString() ?? string.Empty;
+        if (!Regex.IsMatch(code, @"^[A-Z][A-Z0-9_]{2,79}$"))
+            throw new JsonException("Unsafe native route diagnostic code.");
+
+        // Fail closed: the bridge's metadata preflight is not a driver or
+        // hardware proof. A future bridge cannot silently promote READY to
+        // audio verified merely by adding a JSON flag.
+        foreach (var claim in new[] {
+            "real_audio_verified", "driver_signing_verified",
+            "windows_system_audio_routing_verified", "acoustic_output_verified"
+        })
+        {
+            if (!root.TryGetProperty(claim, out var field) ||
+                field.ValueKind != JsonValueKind.False)
+                throw new JsonException("Unverified native audio evidence claim.");
+        }
+
+        var ready = readyProperty.GetBoolean();
+        if (ready && code != "STATIC_PREFLIGHT_READY")
+            throw new JsonException("Native readiness/code contradiction.");
+        if (!ready && code == "STATIC_PREFLIGHT_READY")
+            throw new JsonException("Native readiness/code contradiction.");
+
+        // Explicit empty route selection is the ONLY diagnostic mode the
+        // GUI invokes: ready=true must never arrive without user-selected IDs.
+        if (ready)
+            throw new JsonException("Read-only GUI probe unexpectedly selected an audio route.");
+
+        return new NativeRouteStatus(code, false, code switch
+        {
+            "VIRTUAL_ENDPOINT_NOT_FOUND" =>
+                "LouderMe's own Windows virtual endpoint is not installed. No native Boost/EQ is active.",
+            "SELECTION_REQUIRED" =>
+                "A LouderMe virtual endpoint was detected. Native audio is NOT active; source/output selection and hardware verification are still required.",
+            _ =>
+                "Native route preflight: " + code + ". No audio processing was started."
+        });
+    }
+
+    internal static void RunContractSelfTests()
+    {
+        const string claims =
+            ",\"real_audio_verified\":false,\"driver_signing_verified\":false" +
+            ",\"windows_system_audio_routing_verified\":false,\"acoustic_output_verified\":false";
+        var missing = ParseDiagnostic(
+            "{\"code\":\"VIRTUAL_ENDPOINT_NOT_FOUND\",\"ready_for_controlled_lab_only\":false" + claims + "}");
+        if (missing.StaticLabPreflightReady || missing.Code != "VIRTUAL_ENDPOINT_NOT_FOUND")
+            throw new InvalidOperationException("Absent virtual endpoint was called ready.");
+
+        var unselected = ParseDiagnostic(
+            "{\"code\":\"SELECTION_REQUIRED\",\"ready_for_controlled_lab_only\":false" + claims + "}");
+        if (unselected.StaticLabPreflightReady || !unselected.Message.Contains("NOT active", StringComparison.Ordinal))
+            throw new InvalidOperationException("Unselected source was called active.");
+
+        foreach (var forged in new[] {
+            "{\"code\":\"STATIC_PREFLIGHT_READY\",\"ready_for_controlled_lab_only\":true" + claims + "}",
+            "{\"code\":\"STATIC_PREFLIGHT_READY\",\"ready_for_controlled_lab_only\":false" + claims + "}",
+            "{\"code\":\"VIRTUAL_ENDPOINT_NOT_FOUND\",\"ready_for_controlled_lab_only\":false" +
+                claims.Replace("\"driver_signing_verified\":false", "\"driver_signing_verified\":true") + "}",
+            "{\"code\":\"VIRTUAL_ENDPOINT_NOT_FOUND\",\"ready_for_controlled_lab_only\":false}",
+            "{\"code\":\"bad\\nraw-id\",\"ready_for_controlled_lab_only\":false" + claims + "}"
+        })
+        {
+            try
+            {
+                ParseDiagnostic(forged);
+                throw new InvalidOperationException("Unsafe native readiness proof accepted.");
+            }
+            catch (JsonException) { /* expected fail-closed */ }
+        }
+    }
+}

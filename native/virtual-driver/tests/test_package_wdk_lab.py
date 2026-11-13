@@ -178,6 +178,7 @@ class PinnedWdkArtifactTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             pkg.verify_zip(self.output)
         self.output.unlink()
+        self.output.with_suffix(".zip.sha256").unlink()
         self.build()
         with zipfile.ZipFile(self.output) as z:
             old = z.read(pkg.ZIP_PREFIX + "TabletAudioSample.sys")
@@ -192,6 +193,7 @@ class PinnedWdkArtifactTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             pkg.verify_zip(self.output)
         self.output.unlink()
+        self.output.with_suffix(".zip.sha256").unlink()
         self.build()
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)

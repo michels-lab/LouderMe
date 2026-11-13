@@ -1,0 +1,28 @@
+name: LouderMe Complete Windows VM Test Kit contract
+
+on:
+  push:
+    paths:
+      - 'native/virtual-driver/build_vm_testkit.py'
+      - 'native/virtual-driver/tests/test_vm_testkit.py'
+      - '.github/workflows/native-vm-testkit-ci.yml'
+  pull_request:
+    paths:
+      - 'native/virtual-driver/build_vm_testkit.py'
+      - 'native/virtual-driver/tests/test_vm_testkit.py'
+      - '.github/workflows/native-vm-testkit-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify VM kit boundaries against actual-shape unsigned WDK fixtures
+        run: python3 -m unittest discover -s native/virtual-driver/tests -p test_vm_testkit.py -v
+      - name: Check test kit source syntax without kernel access
+        run: python3 -m py_compile native/virtual-driver/build_vm_testkit.py

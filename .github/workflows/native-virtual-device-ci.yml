@@ -285,6 +285,52 @@ jobs:
             throw "LouderME Desktop package FAILED official StampInf / InfVerif / Inf2Cat qualification."
           }
           "package_validated=true" >> $env:GITHUB_OUTPUT
+      - name: Assemble WDK-validated UNSIGNED-CATALOG isolated VM handoff
+        if: steps.inf_package.outputs.package_validated == 'true'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $package = 'upstream/louderme-lab-package'
+          $catalog = Join-Path $package 'LouderMeVirtualRenderLab.cat'
+          # Inf2Cat creates an unsigned catalog. A trusted lab signing
+          # certificate belongs ONLY inside a disposable Windows VM.
+          # Never upload signed catalogs or private keys from hosted CI.
+          $signature = Get-AuthenticodeSignature -LiteralPath $catalog
+          if ($signature.SignerCertificate -or $signature.Status -ne 'NotSigned') {
+            throw "Unsigned-CAT gate failed: $($signature.Status)."
+          }
+          $outdir = Join-Path $PWD 'artifacts/virtual-driver-lab'
+          New-Item -ItemType Directory -Path $outdir -Force | Out-Null
+          $zip = Join-Path $outdir 'LouderMe-VirtualRender-LAB-UNSIGNED.zip'
+          $args = @(
+            '--package-dir', $package,
+            '--manifest', 'upstream/audio/sysvad/LOUDERME_LAB_MANIFEST.json',
+            '--license', 'upstream/audio/sysvad/LICENSE-MS-PL.txt',
+            '--output-zip', $zip,
+            '--source-sha', $env:GITHUB_SHA,
+            '--run-id', $env:GITHUB_RUN_ID
+          )
+          python louderme/native/virtual-driver/package_wdk_lab.py @args
+          if ($LASTEXITCODE -ne 0) { throw 'Kernel lab artifact provenance packaging failed.' }
+          python louderme/native/virtual-driver/package_wdk_lab.py --verify-zip $zip
+          if ($LASTEXITCODE -ne 0) { throw 'Kernel lab artifact SHA256 self-verification failed.' }
+          $hash = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          if (-not (Get-Content "$zip.sha256" -Raw).StartsWith("$hash  ")) {
+            throw 'The VM lab ZIP SHA-256 sidecar does not match.'
+          }
+          Write-Host 'PASS: WDK-validated three-file kernel LAB package; UNSIGNED catalog, no installation.'
+          Write-Warning 'Test-sign ONLY inside a snapshot-backed disposable VM; never deploy to primary workstation.'
+
+      - name: Retain disposable-VM-only unsigned driver candidate (NOT release)
+        if: steps.inf_package.outputs.package_validated == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: LouderMe-UNSIGNED-VirtualDriver-LAB-${{ github.sha }}-${{ github.run_id }}
+          path: |
+            artifacts/virtual-driver-lab/LouderMe-VirtualRender-LAB-UNSIGNED.zip
+            artifacts/virtual-driver-lab/LouderMe-VirtualRender-LAB-UNSIGNED.zip.sha256
+          if-no-files-found: error
+          retention-days: 7
       - name: Report distinct build and deployability states
         if: always()
         shell: pwsh

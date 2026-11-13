@@ -96,6 +96,8 @@ def check_manifest(output: Path, stage: Path,
         raise AssertionError("Missing compiled LouderMe.exe payload")
     if not (stage / "native" / "LouderMeAudioBridge.exe").is_file():
         raise AssertionError("Missing independent LouderMe native bridge diagnostic")
+    if not (stage / "native" / "louderme_audio_c.dll").is_file():
+        raise AssertionError("Missing real LouderMe C++ DSP library in MSIX")
     for asset in ASSETS:
         p = stage / "Assets" / asset
         if not p.is_file() or p.stat().st_size < 100:

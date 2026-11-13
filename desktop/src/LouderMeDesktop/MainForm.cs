@@ -23,6 +23,7 @@ internal sealed class MainForm : Form
     private readonly Label _boostDb = new();
     private readonly Label _engineStatus = new();
     private readonly Button _connectEngineAction = new();
+    private readonly Button _nativeRouteCheckAction = new();
     private readonly Button _audioPathTestAction = new();
     private FlowLayoutPanel? _boostQuickActions;
     private bool _diagnosticRunning;
@@ -78,6 +79,7 @@ internal sealed class MainForm : Form
         // The four-second listening probe can outlive the process after a
         // crash or forced shutdown. Only an EXACT generated LouderMe test
         // is eligible for automatic restoration; never discard external edits.
+        if (!StorePackageContext.IsPackaged)
         try
         {
             if (_apo.RecoverInterruptedDiagnostic(_settings))
@@ -626,6 +628,24 @@ internal sealed class MainForm : Form
         actions.Controls.Add(getEngine);
         actions.Controls.Add(configure);
         actions.Controls.Add(refresh);
+        // Store has its own engine. Never offer an APO installer or
+        // privileged APO configuration from a packaged build.
+        var storePackage = StorePackageContext.IsPackaged;
+        _connectEngineAction.Visible = !storePackage;
+        getEngine.Visible = !storePackage;
+        configure.Visible = !storePackage;
+        refresh.Visible = !storePackage;
+        _nativeRouteCheckAction.Name = "check-own-native-engine";
+        _nativeRouteCheckAction.Text = "Check native engine (read-only)";
+        _nativeRouteCheckAction.AutoSize = true;
+        _nativeRouteCheckAction.ForeColor = Cyan;
+        _nativeRouteCheckAction.BackColor = Surface;
+        _nativeRouteCheckAction.FlatStyle = FlatStyle.Flat;
+        _nativeRouteCheckAction.FlatAppearance.BorderColor = Line;
+        _nativeRouteCheckAction.Padding = new Padding(8, 5, 8, 5);
+        _nativeRouteCheckAction.Visible = storePackage;
+        _nativeRouteCheckAction.Click += async (_, _) => await CheckNativeRouteAsync();
+        actions.Controls.Add(_nativeRouteCheckAction);
 
         _audioPathTestAction.AutoSize = true;
         _audioPathTestAction.Text = "Test audio path (-18 dB temporarily)";
@@ -635,11 +655,22 @@ internal sealed class MainForm : Form
         _audioPathTestAction.Padding = new Padding(8, 5, 8, 5);
         _audioPathTestAction.FlatAppearance.BorderColor = Line;
         _audioPathTestAction.Click += async (_, _) => await TestAudioPathAsync();
+        _audioPathTestAction.Visible = !storePackage;
         actions.Controls.Add(_audioPathTestAction);
 
         var copyDiagnostics = Button("Copy audio diagnostics", Cyan);
         copyDiagnostics.Click += (_, _) =>
         {
+            if (StorePackageContext.IsPackaged)
+            {
+                Clipboard.SetText(
+                    $"LouderMe MSIX v{_updates.CurrentVersionText}{Environment.NewLine}" +
+                    "Native route active: False (not implemented in shipping UI)" + Environment.NewLine +
+                    "Boost/EQ: disabled until independent native output is verified" + Environment.NewLine +
+                    "Equalizer APO: not used by the Store package" + Environment.NewLine +
+                    "No driver installation, physical audio or acoustic measurement claimed.");
+                return;
+            }
             var status = _apo.GetStatus(_settings);
             var report =
                 $"LouderMe Desktop v{_updates.CurrentVersionText}\\n" +
@@ -666,11 +697,14 @@ internal sealed class MainForm : Form
             ForeColor = Muted,
             MaximumSize = new Size(800, 0),
             Margin = new Padding(0, 8, 0, 0),
-            Text =
-                "100–300% is mapped to real post-mix digital gain: 20·log10(percent/100). " +
-                "300% = +9.54 dB. The engine must be attached to the active playback device in Equalizer APO's Configurator. " +
-                "High positive gain can trigger Windows' final output limiting/compression on loud material. " +
-                "ASIO and WASAPI exclusive streams can bypass Windows APO effects.",
+            Text = storePackage
+                ? "Native engine development build: Boost/EQ remains DISABLED until LouderMe's independent " +
+                  "Windows virtual endpoint, native DSP and physical output route are installed and validated. " +
+                  "Read-only checks never install a driver or change the Windows audio default."
+                : "100–300% is mapped to real post-mix digital gain: 20·log10(percent/100). " +
+                  "300% = +9.54 dB. The engine must be attached to the active playback device in Equalizer APO's Configurator. " +
+                  "High positive gain can trigger Windows' final output limiting/compression on loud material. " +
+                  "ASIO and WASAPI exclusive streams can bypass Windows APO effects.",
         };
         layout.SetColumnSpan(note, 2);
         layout.Controls.Add(note, 0, 7);
@@ -1039,6 +1073,14 @@ internal sealed class MainForm : Form
     private void ApplyProcessing()
     {
         if (_loading) return;
+        if (StorePackageContext.IsPackaged)
+        {
+            // Never write an APO configuration or pretend a disabled Store
+            // Boost control processed system audio. Native engine integration
+            // must explicitly replace this fail-closed gate when completed.
+            RefreshEngineStatus();
+            return;
+        }
 
         // A preset/Boost toggle commits immediately and supersedes any
         // previously queued custom-band edit.
@@ -1074,6 +1116,7 @@ internal sealed class MainForm : Form
 
     private async Task TestAudioPathAsync()
     {
+        if (StorePackageContext.IsPackaged) return;
         if (_diagnosticRunning) return;
         var status = _apo.GetStatus(_settings);
         if (!status.Configured || !status.MatchesSettings)
@@ -1203,6 +1246,7 @@ internal sealed class MainForm : Form
 
     private async Task ConnectEngineAsync()
     {
+        if (StorePackageContext.IsPackaged) return;
         if (!_apo.GetStatus().Installed)
         {
             MessageBox.Show(
@@ -1264,8 +1308,51 @@ internal sealed class MainForm : Form
         }
     }
 
+    private async Task CheckNativeRouteAsync()
+    {
+        if (!StorePackageContext.IsPackaged) return;
+        _nativeRouteCheckAction.Enabled = false;
+        _engineStatus.ForeColor = Muted;
+        _engineStatus.Text = "Inspecting native endpoint (read-only)…";
+        try
+        {
+            var status = await NativeRouteReadiness.CheckAsync();
+            _engineStatus.ForeColor = Gold;
+            _engineStatus.Text = status.Message;
+        }
+        catch (Exception)
+        {
+            // Never reveal raw endpoint IDs or turn diagnostic exceptions
+            // into a success claim. The UI cannot start audio.
+            _engineStatus.ForeColor = Red;
+            _engineStatus.Text = "Native read-only check failed. Boost/EQ stays disabled.";
+        }
+        finally
+        {
+            _nativeRouteCheckAction.Enabled = true;
+        }
+    }
+
     private void RefreshEngineStatus()
     {
+        if (StorePackageContext.IsPackaged)
+        {
+            _connectEngineAction.Enabled = false;
+            _audioPathTestAction.Enabled = false;
+            _boostEnabled.Enabled = false;
+            _boost.Enabled = false;
+            if (_boostQuickActions is not null) _boostQuickActions.Enabled = false;
+            _eqEnabled.Enabled = false;
+            _preset.Enabled = false;
+            foreach (var band in _eqBands)
+                if (band is not null) band.Enabled = false;
+            _engineStatus.ForeColor = Gold;
+            _engineStatus.Text =
+                "NATIVE ROUTE NOT CONNECTED · Boost/EQ is disabled in this Store MSIX " +
+                "until the independent LouderMe virtual audio endpoint and C++ DSP " +
+                "are installed and confirmed working. Equalizer APO is not the Store backend.";
+            return;
+        }
         var status = _apo.GetStatus(_settings);
         _connectEngineAction.Enabled = status.Installed;
         _audioPathTestAction.Enabled = status.Configured && status.MatchesSettings

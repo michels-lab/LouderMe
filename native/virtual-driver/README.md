@@ -1,12 +1,3 @@
-## 2026-11-12 — Confirmación final Granada: INF/CAT/SYS reales en artefacto Actions
-
-- **Producto PR [#172 fusionada](https://github.com/michels-lab/LouderMe/pull/172)**, merge `315ea9cb9059ee953d1f91775b977d5cc83eab72`. Verificación exhaustiva aprobada en [WDK CI #43342673254](https://github.com/michels-lab/LouderMe/actions/runs/43342673254): derivación de la fuente fijada, compilación real `.sys`, `StampInf`, `InfVerif /h`, `Inf2Cat`, comprobación de catálogo **no firmado**, creación y verificación del ZIP con SHA-256, y carga de artefacto **7 días**.
-- **Artefacto verificado de GitHub Actions:** `LouderMe-UNSIGNED-VirtualDriver-LAB-c885a988eca74a6503034e65e61e313258506255-43342673254` (artifact ID `13999644741`, aprox. 89 KB comprimido). Se descarga desde el run, **no** está en la página de releases. Contiene `LouderMe-VirtualRender-LAB-UNSIGNED.zip` y su `.zip.sha256`; el ZIP incluye INF/CAT/SYS reales, licencia MS-PL, bitácora de procedencia, checksums y aviso **DO-NOT-INSTALL**.
-- **Error real corregido:** Microsoft `Inf2Cat` escribe `loudermevirtualrenderlab.cat` en minúsculas. La derivación admite únicamente ese nombre o la capitalización canónica y rechaza colisiones, archivos inesperados y dobles alias; nuevas pruebas con fixture de Windows pasaron.
-- **Siguiente evidencia pendiente:** firma local de prueba dentro de una VM desechable con snapshot (sin modificar seguridad de la PC principal), instalación/rollback real del dispositivo virtual, y comprobación externa de audio → render virtual → DSP C++ → salida física. Firmar un MSIX de Microsoft Store **no firma automáticamente** el controlador de kernel. **Issue #48 sigue abierto; no se hizo release, Store submission ni RC.**
-
----
-
 ## 2026-11-12 — Granada: WDK validated virtual-driver LAB artifact for disposable VM
 
 - **Functional blocker addressed:** existing [Windows WDK driver lab CI #43329002049](https://github.com/michels-lab/LouderMe/actions/runs/43329002049) had already compiled `TabletAudioSample.sys` and passed real Desktop `StampInf`, `InfVerif /h` and `Inf2Cat`, but left the resulting files only inside the ephemeral GitHub runner. It was impossible to carry forward the exact built package as a verifiable lab handoff.

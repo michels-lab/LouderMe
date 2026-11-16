@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 354,
-  "classified_files_total": 350,
+  "tracked_files_total": 355,
+  "classified_files_total": 351,
   "docs_content_inspected": 114,
   "large_docs_skipped": 1,
   "excluded_reports": 4,
@@ -16,7 +16,7 @@
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
-    "source": 122,
+    "source": 123,
     "test": 48,
     "text_metadata": 2,
     "workflow": 15
@@ -25,7 +25,7 @@
     "BROKEN_RELATIVE_LINK": 2
   },
   "finding_total": 2,
-  "inventory_fingerprint": "626380036624b32dfa81d03f01b01cbb3971e260742f632fccc01d699e412944",
+  "inventory_fingerprint": "bd959e98da6cad6dff024d8e5b5a2fcce2df1dd184b84442f350b91538b88801",
   "evidence_fingerprint": "728b2eac1e90c8e5522fb81612c631a8a4888caabe724aca9a00027178e0f153",
   "files": [
     {
@@ -264,7 +264,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "8ec0537f7f54af7276f47e7acb2ee823242fec2e"
+      "blob": "b40eb5876aa3585b31b25c3191ed97d0a88b0b42"
     },
     {
       "path": "README.md",
@@ -957,7 +957,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "d64f77e99ba72432374e9131482fd7c314b2c891"
+      "blob": "3926a774584ca0cafc386610d4c810dedaac4689"
     },
     {
       "path": "desktop/src/LouderMeDesktop/BoostMath.cs",
@@ -985,7 +985,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "5baa0764d37ab0a3e6c92a39e142fea6a5588659"
+      "blob": "1fc78ce58a0feaab733ad52a4f718ce109548732"
     },
     {
       "path": "desktop/src/LouderMeDesktop/DesktopUpdateService.cs",
@@ -1069,7 +1069,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "5258b37007147f3b7172e4924ff0ff32b40a5645"
+      "blob": "1ea8759f43244ffaa5db8ce05751a4799d86690a"
     },
     {
       "path": "desktop/src/LouderMeDesktop/NativeRouteControlProtocol.cs",
@@ -1107,11 +1107,18 @@
       "blob": "fefebbc2976bfa59e09bb9724d393ddec3b85216"
     },
     {
+      "path": "desktop/src/LouderMeDesktop/PlaybackOutputSelectionPolicy.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "346403f94a34ce2dcafefacf7d9d9f949c8d2ffd"
+    },
+    {
       "path": "desktop/src/LouderMeDesktop/Program.cs",
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "30e057d7830836a9c85051d9c090a3f2095edff9"
+      "blob": "e98a04b5f1a96ce9f3785fe4292bec5ee4c69e55"
     },
     {
       "path": "desktop/src/LouderMeDesktop/SplashForm.cs",

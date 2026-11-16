@@ -21,6 +21,7 @@ import androidx.compose.runtime.mutableStateOf
 import com.michelslab.louderme.audio.AudioBoostContract
 import com.michelslab.louderme.audio.AudioBoostService
 import com.michelslab.louderme.audio.AudioBoostStateStore
+import com.michelslab.louderme.audio.BoostLevelPolicy
 import com.michelslab.louderme.audio.AudioEngineStatus
 import com.michelslab.louderme.audio.AudioEngineUiState
 import com.michelslab.louderme.audio.EqualizerPreset
@@ -333,7 +334,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun requestBoost(percent: Int) {
-        val safePercent = percent.coerceIn(100, 300)
+        val safePercent = BoostLevelPolicy.clamp(percent)
 
         if (
             Build.VERSION.SDK_INT >= 33 &&

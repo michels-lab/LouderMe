@@ -14,15 +14,15 @@ object AudioBoostStateStore {
             )
         }.getOrDefault(AudioEngineStatus.OFF)
 
-        val percent = prefs.getInt("percent", 150).coerceIn(100, 250)
+        val percent = BoostLevelPolicy.clamp(prefs.getInt("percent", 150))
 
         return AudioEngineUiState(
             status = status,
             percent = percent,
-            gainDb = prefs.getFloat(
-                "gain_db",
-                BoostMath.percentToDb(percent).toFloat()
-            ).toDouble(),
+            // Always derive the requested gain from the recovered level:
+            // older versions could persist 300% then read back 250%, leaving
+            // percent and gain dB inconsistent on the same screen.
+            gainDb = BoostLevelPolicy.targetGainDb(percent),
             outputRoute = prefs.getString("route", "System output") ?: "System output",
             implementation = prefs.getString("implementation", "Not attached") ?: "Not attached",
             message = prefs.getString("message", "Boost is off") ?: "Boost is off",
@@ -30,11 +30,12 @@ object AudioBoostStateStore {
     }
 
     fun write(context: Context, state: AudioEngineUiState) {
+        val safePercent = BoostLevelPolicy.clamp(state.percent)
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit()
             .putString("status", state.status.name)
-            .putInt("percent", state.percent)
-            .putFloat("gain_db", state.gainDb.toFloat())
+            .putInt("percent", safePercent)
+            .putFloat("gain_db", BoostLevelPolicy.targetGainDb(safePercent).toFloat())
             .putString("route", state.outputRoute)
             .putString("implementation", state.implementation)
             .putString("message", state.message)

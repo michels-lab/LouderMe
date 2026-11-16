@@ -17,9 +17,11 @@ internal sealed class NativeRouteSession : IAsyncDisposable
     private Task? _stdoutDrain;
     private Task? _stderrDrain;
     private readonly SemaphoreSlim _stdinGate = new(1, 1);
+    private long _sessionEpoch;
 
     internal event Action<string>? StatusChanged;
-    internal event Action<NativeRouteTelemetry>? TransportChanged;
+    internal event Action<NativeRouteTelemetry, long>? TransportChanged;
+    internal long SessionEpoch => Interlocked.Read(ref _sessionEpoch);
 
     internal bool IsRunning
     {
@@ -215,6 +217,9 @@ internal sealed class NativeRouteSession : IAsyncDisposable
         }) child.StartInfo.ArgumentList.Add(arg);
         var started = new TaskCompletionSource<bool>(
             TaskCreationOptions.RunContinuationsAsynchronously);
+        // Every child starts with a fresh epoch; queued UI dispatches from a
+        // previous session must not appear as this session's live counters.
+        long epoch = Interlocked.Increment(ref _sessionEpoch);
         try
         {
             if (!child.Start()) throw new InvalidOperationException("Own DSP bridge could not launch.");
@@ -229,12 +234,13 @@ internal sealed class NativeRouteSession : IAsyncDisposable
                         "WASAPI streams started at 100%. Real external-app audio and acoustic gain are not yet verified.");
                 }
                 else if (ReferenceEquals(_process, child) &&
+                    SessionEpoch == epoch &&
                     NativeRouteTelemetry.TryParse(line, out var sample) && sample is not null)
                 {
                     // Publish only strictly parsed counters from the current
                     // child. A stale exited session cannot update the UI.
                     // A PCM frame may be silent; never claim acoustic proof.
-                    TransportChanged?.Invoke(sample);
+                    TransportChanged?.Invoke(sample, epoch);
                 }
             }, started);
             _stderrDrain = DrainAsync(child.StandardError, _ => { }, null);
@@ -256,7 +262,8 @@ internal sealed class NativeRouteSession : IAsyncDisposable
         try
         {
             await child.WaitForExitAsync();
-            StatusChanged?.Invoke("Native bridge stopped. No automatic device reassignment or restart.");
+            if (ReferenceEquals(_process, child))
+                StatusChanged?.Invoke("Native bridge stopped. No automatic device reassignment or restart.");
         }
         catch (InvalidOperationException) { }
     }
@@ -310,6 +317,7 @@ internal sealed class NativeRouteSession : IAsyncDisposable
             var child = _process;
             if (child is null) return;
             _process = null;
+            Interlocked.Increment(ref _sessionEpoch); // Invalidate outstanding UI samples.
             try
             {
                 if (!child.HasExited)

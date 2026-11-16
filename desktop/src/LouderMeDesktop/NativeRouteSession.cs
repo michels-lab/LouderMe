@@ -41,6 +41,28 @@ internal sealed class NativeRouteSession : IAsyncDisposable
             .ToArray();
     }
 
+    // Preserve an explicitly chosen endpoint only if the exact ID still exists
+    // once. Never replace an unplugged Bluetooth/USB/HDMI speaker with some
+    // other endpoint just because it became the only available device.
+    internal static int PreferredIndex(
+        IReadOnlyList<NativeRouteEndpoint> options, string? previousId)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        if (previousId is not null)
+        {
+            var selectedIndex = -1;
+            for (int i = 0; i < options.Count; ++i)
+            {
+                if (!string.Equals(options[i].Id, previousId, StringComparison.Ordinal))
+                    continue;
+                if (selectedIndex != -1) return -1; // ambiguous snapshot
+                selectedIndex = i;
+            }
+            return selectedIndex; // absent previous device -> explicit reselection
+        }
+        return options.Count == 1 ? 0 : -1;
+    }
+
     internal static void ValidatePair(
         IReadOnlyCollection<NativeRouteEndpoint> endpoints, string sourceId, string outputId)
     {
@@ -65,6 +87,16 @@ internal sealed class NativeRouteSession : IAsyncDisposable
             new("other-id", "USB Headset", false)
         ];
         ValidatePair(endpoints, "virtual-id", "physical-id");
+        if (PreferredIndex(endpoints, null) != -1 ||
+            PreferredIndex([endpoints[1]], null) != 0 ||
+            PreferredIndex([], null) != -1 ||
+            PreferredIndex(endpoints, "physical-id") != 1 ||
+            PreferredIndex([endpoints[0], endpoints[1]], "other-id") != -1 ||
+            PreferredIndex([endpoints[1]], "other-id") != -1 ||
+            PreferredIndex([endpoints[1], endpoints[1]], "physical-id") != -1)
+            throw new InvalidOperationException(
+                "Native endpoint refresh silently changed or ambiguously selected a device.");
+
         foreach (var (src, sink) in new[]
         {
             ("physical-id", "virtual-id"), ("virtual-id", "virtual-id"),

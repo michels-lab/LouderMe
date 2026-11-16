@@ -53,7 +53,9 @@ internal sealed class MainForm : Form
     private bool _loading;
     private readonly System.Windows.Forms.Timer _deviceVolumeSyncTimer = new() { Interval = 1500 };
     private readonly System.Windows.Forms.Timer _eqApplyTimer = new() { Interval = 180 };
+    private readonly System.Windows.Forms.Timer _boostApplyTimer = new() { Interval = 220 };
     private bool _eqApplyPending;
+    private bool _boostApplyPending;
 
     private static readonly Color Bg = Color.FromArgb(6, 9, 16);
     private static readonly Color Surface = Color.FromArgb(12, 20, 34);
@@ -110,7 +112,14 @@ internal sealed class MainForm : Form
         _deviceVolumeSyncTimer.Start();
 
         _eqApplyTimer.Tick += (_, _) => FlushPendingEqualizerApply();
-        FormClosing += (_, _) => FlushPendingEqualizerApply(force: true);
+        _boostApplyTimer.Tick += (_, _) => FlushPendingBoostApply();
+        FormClosing += (_, _) =>
+        {
+            // User can close with a 300% keyboard edit or slider still
+            // captured. Persist the final selection before disposing.
+            FlushPendingBoostApply(force: true);
+            FlushPendingEqualizerApply(force: true);
+        };
 
         if (!DeveloperMode.Enabled && !StorePackageContext.IsPackaged)
             Shown += async (_, _) => await CheckForUpdatesAsync(silent: true);
@@ -124,6 +133,8 @@ internal sealed class MainForm : Form
             _deviceVolumeSyncTimer.Dispose();
             _eqApplyTimer.Stop();
             _eqApplyTimer.Dispose();
+            _boostApplyTimer.Stop();
+            _boostApplyTimer.Dispose();
             if (_wheelFilter is not null)
                 Application.RemoveMessageFilter(_wheelFilter);
             _audio.Dispose();
@@ -572,9 +583,11 @@ internal sealed class MainForm : Form
                 finally { _loading = false; }
                 _settings.BoostEnabled = true;
             }
+            ScheduleBoostApply();
         };
-        _boost.MouseUp += (_, _) => ApplyProcessing();
-        _boost.KeyUp += (_, _) => ApplyProcessing();
+        _boost.MouseUp += (_, _) => FlushPendingBoostApply();
+        _boost.KeyUp += (_, _) => FlushPendingBoostApply();
+        _boost.Leave += (_, _) => FlushPendingBoostApply();
         layout.SetColumnSpan(_boost, 2);
         layout.Controls.Add(_boost, 0, 2);
 
@@ -1174,6 +1187,34 @@ internal sealed class MainForm : Form
         RefreshEngineStatus();
     }
 
+    private void ScheduleBoostApply()
+    {
+        if (_loading || _diagnosticRunning || StorePackageContext.IsPackaged) return;
+        _boostApplyPending = true;
+        _boostApplyTimer.Stop();
+        _boostApplyTimer.Start();
+        _engineStatus.ForeColor = Gold;
+        _engineStatus.Text =
+            $"Boost {_boost.Value}% selected. Waiting for slider release or edit to settle; " +
+            "audio has NOT been confirmed at this new level.";
+    }
+
+    private void FlushPendingBoostApply(bool force = false)
+    {
+        if (!BoostCommitPolicy.ShouldCommit(_boostApplyPending, _boost.Capture, force))
+            return;
+        _boostApplyTimer.Stop();
+        _boostApplyPending = false;
+        try
+        {
+            ApplyProcessing();
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            ShowEngineError(ex);
+        }
+    }
+
     private void ScheduleEqualizerApply()
     {
         if (_loading || _diagnosticRunning) return;
@@ -1205,8 +1246,10 @@ internal sealed class MainForm : Form
             return;
         }
 
-        // A preset/Boost toggle commits immediately and supersedes any
-        // previously queued custom-band edit.
+        // A preset, quick Boost action or toggle commits immediately and
+        // supersedes both delayed slider/band edits (single APO snapshot).
+        _boostApplyTimer.Stop();
+        _boostApplyPending = false;
         _eqApplyTimer.Stop();
         _eqApplyPending = false;
         DesktopSettingsStore.Save(_settings);

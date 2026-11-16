@@ -1,3 +1,13 @@
+## 2026-11-15 — Granada: selector explícito de salida Windows para volumen/mute
+
+- **Funcionalidad de escritorio real:** nueva lista en la tarjeta **DEVICE VOLUME** con `Follow Windows default output` y salidas render activas (bocinas, Bluetooth, USB, HDMI). El usuario puede controlar volumen/mute 0–100 % de un endpoint específico sin cambiar el dispositivo predeterminado de Windows, sin instalar drivers ni modificar el archivo de Equalizer APO. Boost global 100–300 % y siete bandas no cambian de backend.
+- **Sin cambio silencioso en desconexión:** el ID elegido se valida contra los endpoints de salida activos antes de leer/escribir. Si el endpoint se desconecta, se conserva el selector en estado **unavailable**, se deshabilita volumen/mute y NO se selecciona automáticamente otro dispositivo. Si el mismo ID reaparece, recupera los controles; el usuario puede optar por volver al predeterminado. Un drag anterior y el test de escucha quedan invalidados si cambia el dispositivo controlado.
+- **Preferencia local y UI:** `OutputDeviceId` se guarda atómicamente en el JSON local (conservando compatibilidad con perfiles previos), validando longitud máxima y no exponiendo el ID en el texto de estado. Lista actualizada mediante sincronización de dispositivos, sin repintarse mientras el desplegable está abierto. El selector se deshabilita mientras se ejecuta el diagnóstico auditivo de -18 dB. Captura Home/ventanas compactas incluye el control.
+- **Pruebas:** `--check-apo-contract` incluye casos de salida predeterminada, selección por ID, desconexión, regreso del mismo dispositivo y IDs ambiguos; `--check-settings-contract` prueba persistencia, recuperación ante escritura interrumpida y sanitización. Windows Desktop CI compila WinForms y comprueba instalador y arranque visual. **No se afirma prueba de hardware físico ni nueva versión publicada.**
+- **Límites:** cambia el destino del volumen/mute de Windows **únicamente**. No implica que Equalizer APO esté conectado a ese dispositivo; el test de escucha sigue siendo específico de la salida. Microsoft Store y el motor nativo continúan bloqueados por #48 y su validación física/firma. Sin RC ni Developer Editions nuevas.
+
+---
+
 ## 2026-11-15/16 — Granada #48: receipt real de aplicación Boost/EQ en callback Windows
 
 - **Defecto funcional:** en la interfaz de laboratorio Windows, `WriteLineAsync/FlushAsync` terminaba y se anunciaba Boost/EQ como correcto aunque el proceso sólo hubiera recibido texto; una captura virtual silenciosa, un callback que no avanzara o un puente muerto podían dejar el DSP intacto mientras el selector parecía actualizado.

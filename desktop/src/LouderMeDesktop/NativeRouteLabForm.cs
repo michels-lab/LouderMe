@@ -379,12 +379,12 @@ internal sealed class NativeRouteLabForm : Form
         {
             await _session.SetBoostAsync(percent);
             _lastAcceptedBoost = percent;
-            _status.Text = $"Queued {percent}% for the own C++ DSP callback. Audible gain not independently verified.";
+            _status.Text = $"Native PCM callback applied Boost {percent}%. Audible gain still not independently verified.";
         }
         catch (Exception)
         {
             RestoreBoostSelection();
-            _status.Text = "DSP command failed; previous control selection restored. Stop and check the route.";
+            _status.Text = "DSP application NOT confirmed. Route stopped; restart explicitly at 100%.";
         }
         finally
         {
@@ -405,11 +405,11 @@ internal sealed class NativeRouteLabForm : Form
             RestoreBoostSelection();
             _eqOn.Checked = false;
             foreach (var band in _bands) band.Value = 0;
-            _status.Text = "Queued atomic native DSP reset: Boost 100%, EQ off, all bands flat.";
+            _status.Text = "Native PCM callback applied reset: Boost 100%, EQ off, all bands flat.";
         }
         catch (Exception)
         {
-            _status.Text = "Native DSP reset could not be queued. Stop and check the audio route.";
+            _status.Text = "Native DSP reset NOT confirmed. Route stopped; restart explicitly.";
         }
         finally
         {
@@ -428,12 +428,12 @@ internal sealed class NativeRouteLabForm : Form
             var bands = _bands.Select(x => (float)x.Value).ToArray();
             await _session.SetEqualizerAsync(_eqOn.Checked, bands);
             _status.Text = _eqOn.Checked
-                ? "Queued seven equalizer bands for own C++ audio callback."
-                : "Own C++ equalizer bypass requested.";
+                ? "Native PCM callback applied seven-band equalizer controls."
+                : "Native PCM callback applied equalizer bypass.";
         }
         catch (Exception)
         {
-            _status.Text = "Native EQ command could not be sent. Check route state.";
+            _status.Text = "Native EQ application NOT confirmed. Route stopped; restart explicitly.";
         }
         finally
         {

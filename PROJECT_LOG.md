@@ -1,3 +1,14 @@
+## 2026-11-15/16 — Granada #48: receipt real de aplicación Boost/EQ en callback Windows
+
+- **Defecto funcional:** en la interfaz de laboratorio Windows, `WriteLineAsync/FlushAsync` terminaba y se anunciaba Boost/EQ como correcto aunque el proceso sólo hubiera recibido texto; una captura virtual silenciosa, un callback que no avanzara o un puente muerto podían dejar el DSP intacto mientras el selector parecía actualizado.
+- **Protocolo nuevo con ID:** el cliente envía `control <ID> boost/eq/reset`; el lector del puente valida el ID y responde `NATIVE_CONTROL_QUEUED` o `NATIVE_CONTROL_REJECTED`. El ID viaja en el comando inmutable de `DspControlMailbox`. Sólo el callback WASAPI que **realmente ejecuta `ConfigureBoost/ConfigureEqualizer`** publica `LastAppliedRequestId`. Un hilo ajeno al callback informa `NATIVE_CONTROL_APPLIED id=<ID>`, sin I/O ni logs dentro del callback.
+- **Fin de falsos positivos:** el cliente acepta únicamente `APPLIED` del ID exacto, proceso y época de sesión actuales. `QUEUED` nunca confirma éxito; rechazo, muerte del proceso o más de 5 segundos sin callback **detienen la ruta** en vez de mostrar como aplicado el volumen anterior. Operaciones serializadas y Stop sigue disponible; se mantienen comandos de laboratorio antiguos sin recibos falsos.
+- **Interfaz:** los textos ahora diferencian `callback applied` de volumen audible; un error cancela la sesión y exige reiniciar a 100%. No modifica la amplificación física ni la selección del endpoint. El mayor Boost continúa requiriendo consentimiento.
+- **Pruebas de contrato:** el puente `--check-controls` cubre recibos auténticos versus comandos sobrescritos, 0 para legacy, IDs y comandos malformados; Windows `--check-store-contract` comprueba parseo estricto de `QUEUED/APPLIED/REJECTED`, rangos y comandos peligrosos. CI y compilación reales se verifican en PR antes de integrar.
+- **Alcance:** source-only para #48. No equivale a prueba acústica, certificación de kernel, aprobación Store ni release. Las versiones estables Android Direct `0.1.14` y Windows `0.1.19` no cambian. Nada de RC ni Developer Edition.
+
+---
+
 ## 2026-11-15 — Granada: live native Windows PCM transport + DSP command counters (source only, #48)
 
 - **Functional GUI addition:** the Windows native-route lab window now shows **live counters from the real bridge**, rather than replacing every button message with the generic `bridge running` status. Display includes captured PCM frames (which may be silence), queued render frames, consumed render frames, dropped source frames, queue overflows/resets, underfilled render reads, and published/applied/superseded DSP control commands.

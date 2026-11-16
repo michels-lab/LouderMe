@@ -88,6 +88,7 @@ internal static class Program
                 NativeRouteReadiness.RunContractSelfTests();
                 NativeRouteSession.RunContractSelfTests();
                 NativeRouteTelemetry.RunContractSelfTests();
+                NativeRouteControlProtocol.RunContractSelfTests();
                 return 0;
             }
 

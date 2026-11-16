@@ -14,11 +14,13 @@ internal sealed class DspControlMailbox
         public readonly int Boost;
         public readonly bool EqEnabled;
         public readonly float[] EqDb; // private clone; never exposed to publisher
-        public Command(int boost, bool enabled, float[] eqDb)
+        public readonly long RequestId;
+        public Command(int boost, bool enabled, float[] eqDb, long requestId)
         {
             Boost = boost;
             EqEnabled = enabled;
             EqDb = (float[])eqDb.Clone();
+            RequestId = requestId;
         }
     }
 
@@ -26,20 +28,23 @@ internal sealed class DspControlMailbox
     private long _published;
     private long _applied;
     private long _superseded;
+    private long _lastAppliedRequestId; // 0 = legacy untracked command
 
+    public long LastAppliedRequestId => Interlocked.Read(ref _lastAppliedRequestId);
     public long Published => Interlocked.Read(ref _published);
     public long Applied => Interlocked.Read(ref _applied);
     public long Superseded => Interlocked.Read(ref _superseded);
 
-    public void Publish(int boost, bool eqEnabled, float[] eqDb)
+    public void Publish(int boost, bool eqEnabled, float[] eqDb, long requestId = 0)
     {
+        if (requestId < 0) throw new ArgumentOutOfRangeException(nameof(requestId));
         if (boost is < 100 or > 300 || eqDb is null || eqDb.Length != 7)
             throw new ArgumentException("DSP command needs boost 100–300 and exactly seven EQ values.");
         foreach (var value in eqDb)
             if (!float.IsFinite(value) || value is < -10f or > 10f)
                 throw new ArgumentException("DSP EQ must be finite in [-10,+10] dB.");
 
-        if (Interlocked.Exchange(ref _pending, new Command(boost, eqEnabled, eqDb)) is not null)
+        if (Interlocked.Exchange(ref _pending, new Command(boost, eqEnabled, eqDb, requestId)) is not null)
             Interlocked.Increment(ref _superseded);
         Interlocked.Increment(ref _published);
     }
@@ -53,6 +58,9 @@ internal sealed class DspControlMailbox
         if (command is null) return false;
         engine.ConfigureBoost(command.Boost);
         engine.ConfigureEqualizer(command.EqEnabled, command.EqDb);
+        // Only the real WASAPI PCM callback reaches this point. A receipt is
+        // a native-engine setter acknowledgement, NOT audible sound proof.
+        Interlocked.Exchange(ref _lastAppliedRequestId, command.RequestId);
         Interlocked.Increment(ref _applied);
         return true;
     }
@@ -154,6 +162,21 @@ internal sealed class DspControlMailbox
             concurrentQueue.Applied == 0)
             throw new InvalidOperationException("Concurrent live DSP command accounting broken.");
 
+        // Receipt IDs travel with the EXACT immutable command that survived
+        // the mailbox; never acknowledge an earlier superseded command.
+        var receiptQueue = new DspControlMailbox();
+        receiptQueue.Publish(120, false, new float[7], 41);
+        receiptQueue.Publish(150, false, new float[7], 42);
+        if (receiptQueue.LastAppliedRequestId != 0 ||
+            !receiptQueue.ApplyPending(engine) ||
+            receiptQueue.LastAppliedRequestId != 42 ||
+            receiptQueue.Superseded != 1 || receiptQueue.Applied != 1)
+            throw new InvalidOperationException("Tagged DSP receipt was not tied to the applied callback.");
+        receiptQueue.Publish(100, false, new float[7]); // legacy command has no ID
+        receiptQueue.ApplyPending(engine);
+        if (receiptQueue.LastAppliedRequestId != 0)
+            throw new InvalidOperationException("Legacy DSP command retained a prior receipt.");
+
         Console.WriteLine(
             "PASS: native DSP live controls, bounded valid parameter snapshots, " +
             "coalescing, concurrent producer/PCM consumer, finite output, no Windows endpoints.");
@@ -180,7 +203,27 @@ internal sealed class DspLiveConsoleControls
     internal static bool IsStopCommand(string? text) =>
         string.Equals(text?.Trim(), "stop", StringComparison.OrdinalIgnoreCase);
 
-    public bool TryHandle(string text, out string message)
+    // GUI sends an explicit positive ID. Legacy hand-written lab commands
+    // remain compatible, but cannot generate a false applied receipt.
+    internal static bool TryParseTaggedCommand(
+        string? line, out long requestId, out string command)
+    {
+        requestId = 0;
+        command = string.Empty;
+        if (line is null || line.Length > 256 ||
+            !line.StartsWith("control ", StringComparison.Ordinal))
+            return false;
+        int delimiter = line.IndexOf(' ', "control ".Length);
+        if (delimiter <= "control ".Length ||
+            !long.TryParse(line["control ".Length..delimiter],
+                NumberStyles.None, CultureInfo.InvariantCulture, out requestId) ||
+            requestId <= 0)
+            return false;
+        command = line[(delimiter + 1)..];
+        return command.Length is > 0 and <= 180 && command == command.Trim();
+    }
+
+    public bool TryHandle(string text, out string message, long requestId = 0)
     {
         var command = text.Trim();
         if (command.StartsWith("boost ", StringComparison.OrdinalIgnoreCase) &&
@@ -228,7 +271,7 @@ internal sealed class DspLiveConsoleControls
             return false;
         }
 
-        _mailbox.Publish(_boost, _eqOn, _bands);
+        _mailbox.Publish(_boost, _eqOn, _bands, requestId);
         message = $"QUEUED for audio callback: Boost {_boost}% / EQ {(_eqOn ? "on" : "off")}.";
         return true;
     }
@@ -254,6 +297,24 @@ internal sealed class DspLiveConsoleControls
             controls._bands.Any(x => x != 0) ||
             mailbox.Published != 5)
             throw new InvalidOperationException("Live console parser rejected valid commands or published invalid ones.");
-        Console.WriteLine("PASS: opt-in LAB console parser validates all seven EQ bands, boost bounds, no invalid publication.");
+        if (!TryParseTaggedCommand("control 17 boost 200", out var id, out var body) ||
+            id != 17 || body != "boost 200" ||
+            !controls.TryHandle(body, out _, id) ||
+            mailbox.Published != 6)
+            throw new InvalidOperationException("Tagged GUI DSP command was not accepted.");
+        foreach (var malformed in new[] {
+            "control 0 reset", "control -1 boost 100", "control +2 reset",
+            "control 999999999999999999999999 reset", "control 1",
+            "control 1 ", "control 1  reset", "control x eq off",
+            "control 1 reset now", new string('a', 260)
+        })
+        {
+            // Either reject the envelope or reject the underlying action.
+            // Never strip invalid whitespace and accept it implicitly.
+            if (TryParseTaggedCommand(malformed, out var n, out var cmd) &&
+                controls.TryHandle(cmd, out _, n))
+                throw new InvalidOperationException("Malformed tagged DSP request accepted.");
+        }
+        Console.WriteLine("PASS: tagged native controls, legacy parser compatibility, receipt identity and rejection boundaries.");
     }
 }

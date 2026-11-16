@@ -5,6 +5,8 @@ namespace LouderMeDesktop;
 
 internal sealed class DesktopAudioSettings
 {
+    // null means follow Windows default; explicit IDs remain local to the profile.
+    public string? OutputDeviceId { get; set; }
     public bool BoostEnabled { get; set; }
     public int BoostPercent { get; set; } = 100;
     public bool EqualizerEnabled { get; set; } = true;
@@ -29,6 +31,8 @@ internal static class DesktopSettingsStore
         }
         return new DesktopAudioSettings
         {
+            OutputDeviceId = settings.OutputDeviceId is { Length: > 0 and <= 2048 } id &&
+                !string.IsNullOrWhiteSpace(id) ? id : null,
             BoostEnabled = settings.BoostEnabled,
             BoostPercent = Math.Clamp(settings.BoostPercent, 100, 300),
             EqualizerEnabled = settings.EqualizerEnabled,
@@ -102,19 +106,22 @@ internal static class DesktopSettingsStore
                 throw new InvalidOperationException("Missing preferences defaults failed.");
             var old = new DesktopAudioSettings
             {
-                BoostEnabled = true, BoostPercent = 200, Preset = "Rock",
+                OutputDeviceId = "speaker-id", BoostEnabled = true,
+                BoostPercent = 200, Preset = "Rock",
                 EqualizerGainsDb = [1, 2, 3, 4, 5, 6, 7]
             };
             SaveToPath(stable, old);
             byte[] preserved = File.ReadAllBytes(stable);
             var loaded = LoadFromPath(stable);
             if (!loaded.BoostEnabled || loaded.BoostPercent != 200 ||
-                loaded.Preset != "Rock" || loaded.EqualizerGainsDb[6] != 7)
+                loaded.Preset != "Rock" || loaded.EqualizerGainsDb[6] != 7 ||
+                loaded.OutputDeviceId != "speaker-id")
                 throw new InvalidOperationException("Boost/EQ roundtrip failed.");
 
             var next = new DesktopAudioSettings
             {
-                BoostEnabled = true, BoostPercent = 300, Preset = "Custom",
+                OutputDeviceId = "bluetooth-id", BoostEnabled = true,
+                BoostPercent = 300, Preset = "Custom",
                 EqualizerGainsDb = [-9, -7, -4, 0, 4, 7, 9]
             };
             bool interrupted = false;
@@ -131,16 +138,19 @@ internal static class DesktopSettingsStore
 
             SaveToPath(developer, next);
             if (LoadFromPath(developer).BoostPercent != 300 ||
+                LoadFromPath(developer).OutputDeviceId != "bluetooth-id" ||
                 !File.ReadAllBytes(stable).AsSpan().SequenceEqual(preserved))
                 throw new InvalidOperationException("Developer preferences overwrote stable settings.");
 
             SaveToPath(stable, new DesktopAudioSettings
             {
+                OutputDeviceId = new string('X', 2500),
                 BoostPercent = 999, Preset = "",
                 EqualizerGainsDb = [float.NaN, float.PositiveInfinity, -20, 0, 3, 9, 20]
             });
             var safe = LoadFromPath(stable);
-            if (safe.BoostPercent != 300 || safe.Preset != "Flat" ||
+            if (safe.OutputDeviceId is not null ||
+                safe.BoostPercent != 300 || safe.Preset != "Flat" ||
                 safe.EqualizerGainsDb[0] != 0 || safe.EqualizerGainsDb[1] != 0 ||
                 safe.EqualizerGainsDb[2] != -10 || safe.EqualizerGainsDb[6] != 10)
                 throw new InvalidOperationException("Nonfinite/invalid EQ values reached persistence.");

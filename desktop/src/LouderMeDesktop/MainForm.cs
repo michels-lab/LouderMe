@@ -12,6 +12,8 @@ internal sealed class MainForm : Form
     private readonly DesktopUpdateService _updates = new();
 
     private readonly Label _deviceValue = new();
+    private readonly ComboBox _outputPicker = new();
+    private bool _refreshingOutputChoices;
     private readonly Label _volumeValue = new();
     private readonly TrackBar _volume = new();
     private readonly CheckBox _mute = new();
@@ -134,6 +136,7 @@ internal sealed class MainForm : Form
         Name = "main-window";
         _aboutAction.Name = "about";
         _volume.Name = "media-volume";
+        _outputPicker.Name = "media-output-picker";
         _mute.Name = "media-mute";
         _boostEnabled.Name = "boost-toggle";
         _boost.Name = "boost-level";
@@ -343,6 +346,11 @@ internal sealed class MainForm : Form
                 throw new InvalidOperationException("Official LouderMe window icon is missing.");
         }
 
+        if (!_outputPicker.IsHandleCreated ||
+            _outputPicker.DropDownStyle != ComboBoxStyle.DropDownList ||
+            _outputPicker.Parent is null)
+            throw new InvalidOperationException("Windows output picker is not mounted in the real GUI.");
+
         var viewport = _contentViewport
             ?? throw new InvalidOperationException("Scrollable workspace not initialized.");
         if (!viewport.AutoScroll || viewport.ClientSize.Height < 100)
@@ -396,18 +404,37 @@ internal sealed class MainForm : Form
         var card = Card("DEVICE VOLUME · WINDOWS OUTPUT 0–100%");
         card.Name = "output-card";
         var layout = (TableLayoutPanel)card.Controls[0];
+        layout.RowCount = 7;
+
+        var chooseOutput = new Label
+        {
+            Text = "CONTROL THIS OUTPUT · VOLUME/MUTE ONLY",
+            AutoSize = true,
+            ForeColor = Muted,
+            Font = new Font("Consolas", 9f, FontStyle.Bold)
+        };
+        layout.SetColumnSpan(chooseOutput, 2);
+        layout.Controls.Add(chooseOutput, 0, 1);
+        _outputPicker.DropDownStyle = ComboBoxStyle.DropDownList;
+        _outputPicker.BackColor = Surface;
+        _outputPicker.ForeColor = TextPrimary;
+        _outputPicker.Dock = DockStyle.Fill;
+        _outputPicker.DropDownWidth = 450;
+        _outputPicker.SelectedIndexChanged += (_, _) => SelectVolumeOutput();
+        layout.SetColumnSpan(_outputPicker, 2);
+        layout.Controls.Add(_outputPicker, 0, 2);
 
         _deviceValue.AutoSize = true;
         _deviceValue.ForeColor = TextPrimary;
         _deviceValue.Font = new Font("Segoe UI Semibold", 13f, FontStyle.Bold);
         _deviceValue.Text = "Detecting…";
-        layout.Controls.Add(_deviceValue, 0, 1);
+        layout.Controls.Add(_deviceValue, 0, 3);
 
         _volumeValue.AutoSize = true;
         _volumeValue.ForeColor = Cyan;
         _volumeValue.Font = new Font("Consolas", 11f, FontStyle.Bold);
         _volumeValue.Text = "0%";
-        layout.Controls.Add(_volumeValue, 1, 1);
+        layout.Controls.Add(_volumeValue, 1, 3);
 
         _volume.Minimum = 0;
         _volume.Maximum = 100;
@@ -451,9 +478,9 @@ internal sealed class MainForm : Form
             }
         };
         layout.SetColumnSpan(_volume, 2);
-        layout.Controls.Add(_volume, 0, 2);
+        layout.Controls.Add(_volume, 0, 4);
 
-        _mute.Text = "Mute system output";
+        _mute.Text = "Mute selected output";
         _mute.AutoSize = true;
         _mute.ForeColor = Muted;
         _mute.CheckedChanged += (_, _) =>
@@ -471,7 +498,18 @@ internal sealed class MainForm : Form
             }
         };
         layout.SetColumnSpan(_mute, 2);
-        layout.Controls.Add(_mute, 0, 3);
+        layout.Controls.Add(_mute, 0, 5);
+        var outputNote = new Label
+        {
+            Text = "Changing this selection never changes the Windows default " +
+                "sound output or attaches Equalizer APO. If the chosen device " +
+                "disconnects, its volume controls are disabled until it returns " +
+                "or you explicitly choose another output.",
+            AutoSize = true, MaximumSize = new Size(540, 0), ForeColor = Muted,
+            Margin = new Padding(0, 8, 0, 4)
+        };
+        layout.SetColumnSpan(outputNote, 2);
+        layout.Controls.Add(outputNote, 0, 6);
         root.Controls.Add(card);
     }
 
@@ -971,6 +1009,70 @@ internal sealed class MainForm : Form
         root.Controls.Add(footer);
     }
 
+    private void RefreshOutputChoices()
+    {
+        // Do not rearrange the list while a user is choosing an endpoint.
+        if (_outputPicker.DroppedDown) return;
+        var choices = PlaybackOutputSelectionPolicy.Build(
+            _audio.DiscoverOutputs(), _audio.SelectedOutputId);
+        var shown = _outputPicker.Items.Cast<PlaybackOutputChoice>().ToArray();
+        int selected = PlaybackOutputSelectionPolicy.SelectedIndex(
+            choices, _audio.SelectedOutputId);
+        if (selected < 0)
+            throw new InvalidOperationException(
+                "Windows reported an ambiguous playback endpoint identity.");
+        if (PlaybackOutputSelectionPolicy.SameChoices(shown, choices) &&
+            _outputPicker.SelectedIndex == selected)
+            return;
+
+        _refreshingOutputChoices = true;
+        _outputPicker.BeginUpdate();
+        try
+        {
+            _outputPicker.Items.Clear();
+            foreach (var choice in choices) _outputPicker.Items.Add(choice);
+            _outputPicker.SelectedIndex = selected;
+        }
+        finally
+        {
+            _outputPicker.EndUpdate();
+            _refreshingOutputChoices = false;
+        }
+    }
+
+    private void SelectVolumeOutput()
+    {
+        if (_loading || _refreshingOutputChoices ||
+            _outputPicker.SelectedItem is not PlaybackOutputChoice selected ||
+            !selected.Available ||
+            string.Equals(_audio.SelectedOutputId, selected.Id, StringComparison.Ordinal))
+            return;
+
+        var previous = _audio.SelectedOutputId;
+        _audio.SelectedOutputId = selected.Id;
+        _settings.OutputDeviceId = selected.Id;
+        try
+        {
+            // Persist locally before changing the live volume target.
+            DesktopSettingsStore.Save(_settings);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _audio.SelectedOutputId = previous;
+            _settings.OutputDeviceId = previous;
+            RefreshOutputChoices();
+            _deviceValue.Text = "Output selection not saved: " + ex.Message;
+            return;
+        }
+
+        // Invalidate any in-progress mouse drag and physical listening test.
+        // The old output's gesture must not control the newly chosen device.
+        _volumeGestureRejected = _volume.Capture;
+        _volumeGestureOutputId = null;
+        ObserveOutputIdentity(null);
+        SyncDeviceVolume(force: true);
+    }
+
     private void ObserveOutputIdentity(string? id)
     {
         if (OutputRouteEvidencePolicy.Changed(_lastObservedOutputId, id))
@@ -979,7 +1081,7 @@ internal sealed class MainForm : Form
             _lastAudioTestHeard = null;
             _engineStatus.ForeColor = Gold;
             _engineStatus.Text =
-                "WINDOWS OUTPUT CHANGED. The previous listening result does not " +
+                "PLAYBACK OUTPUT CHANGED. The previous listening result does not " +
                 "apply to this device. Check Equalizer APO Configurator and repeat " +
                 "the four-second audio-path test.";
         }
@@ -999,6 +1101,7 @@ internal sealed class MainForm : Form
         if (_loading || (!force && (_volume.Capture || _mute.Focused))) return;
         try
         {
+            RefreshOutputChoices();
             _audio.Refresh();
             ObserveOutputIdentity(_audio.DeviceId);
             _loading = true;
@@ -1029,6 +1132,8 @@ internal sealed class MainForm : Form
         _loading = true;
         try
         {
+            _audio.SelectedOutputId = _settings.OutputDeviceId;
+            RefreshOutputChoices();
             _audio.Refresh();
             ObserveOutputIdentity(_audio.DeviceId);
             _deviceValue.Text = _audio.DeviceName;
@@ -1353,6 +1458,7 @@ internal sealed class MainForm : Form
 
     private void RefreshEngineStatus()
     {
+        _outputPicker.Enabled = !_diagnosticRunning;
         if (StorePackageContext.IsPackaged)
         {
             _connectEngineAction.Enabled = false;

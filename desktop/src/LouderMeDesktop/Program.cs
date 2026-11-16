@@ -74,6 +74,7 @@ internal static class Program
             {
                 EqualizerApoEngine.RunContractSelfTests();
                 OutputRouteEvidencePolicy.RunSelfTests();
+                PlaybackOutputSelectionPolicy.RunSelfTests();
                 EqualizerCommitPolicy.RunSelfTests();
                 return 0;
             }

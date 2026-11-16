@@ -12,6 +12,8 @@ internal sealed class MainForm : Form
     private readonly DesktopUpdateService _updates = new();
 
     private readonly Label _deviceValue = new();
+    private readonly ComboBox _outputPicker = new();
+    private bool _refreshingOutputChoices;
     private readonly Label _volumeValue = new();
     private readonly TrackBar _volume = new();
     private readonly CheckBox _mute = new();
@@ -134,6 +136,7 @@ internal sealed class MainForm : Form
         Name = "main-window";
         _aboutAction.Name = "about";
         _volume.Name = "media-volume";
+        _outputPicker.Name = "media-output-picker";
         _mute.Name = "media-mute";
         _boostEnabled.Name = "boost-toggle";
         _boost.Name = "boost-level";
@@ -396,18 +399,37 @@ internal sealed class MainForm : Form
         var card = Card("DEVICE VOLUME · WINDOWS OUTPUT 0–100%");
         card.Name = "output-card";
         var layout = (TableLayoutPanel)card.Controls[0];
+        layout.RowCount = 7;
+
+        var chooseOutput = new Label
+        {
+            Text = "CONTROL THIS OUTPUT · VOLUME/MUTE ONLY",
+            AutoSize = true,
+            ForeColor = Muted,
+            Font = new Font("Consolas", 9f, FontStyle.Bold)
+        };
+        layout.SetColumnSpan(chooseOutput, 2);
+        layout.Controls.Add(chooseOutput, 0, 1);
+        _outputPicker.DropDownStyle = ComboBoxStyle.DropDownList;
+        _outputPicker.BackColor = Surface;
+        _outputPicker.ForeColor = TextPrimary;
+        _outputPicker.Dock = DockStyle.Fill;
+        _outputPicker.DropDownWidth = 450;
+        _outputPicker.SelectedIndexChanged += (_, _) => SelectVolumeOutput();
+        layout.SetColumnSpan(_outputPicker, 2);
+        layout.Controls.Add(_outputPicker, 0, 2);
 
         _deviceValue.AutoSize = true;
         _deviceValue.ForeColor = TextPrimary;
         _deviceValue.Font = new Font("Segoe UI Semibold", 13f, FontStyle.Bold);
         _deviceValue.Text = "Detecting…";
-        layout.Controls.Add(_deviceValue, 0, 1);
+        layout.Controls.Add(_deviceValue, 0, 3);
 
         _volumeValue.AutoSize = true;
         _volumeValue.ForeColor = Cyan;
         _volumeValue.Font = new Font("Consolas", 11f, FontStyle.Bold);
         _volumeValue.Text = "0%";
-        layout.Controls.Add(_volumeValue, 1, 1);
+        layout.Controls.Add(_volumeValue, 1, 3);
 
         _volume.Minimum = 0;
         _volume.Maximum = 100;
@@ -451,7 +473,7 @@ internal sealed class MainForm : Form
             }
         };
         layout.SetColumnSpan(_volume, 2);
-        layout.Controls.Add(_volume, 0, 2);
+        layout.Controls.Add(_volume, 0, 4);
 
         _mute.Text = "Mute system output";
         _mute.AutoSize = true;
@@ -471,7 +493,18 @@ internal sealed class MainForm : Form
             }
         };
         layout.SetColumnSpan(_mute, 2);
-        layout.Controls.Add(_mute, 0, 3);
+        layout.Controls.Add(_mute, 0, 5);
+        var outputNote = new Label
+        {
+            Text = "Changing this selection never changes the Windows default " +
+                "sound output or attaches Equalizer APO. If the chosen device " +
+                "disconnects, its volume controls are disabled until it returns " +
+                "or you explicitly choose another output.",
+            AutoSize = true, MaximumSize = new Size(540, 0), ForeColor = Muted,
+            Margin = new Padding(0, 8, 0, 4)
+        };
+        layout.SetColumnSpan(outputNote, 2);
+        layout.Controls.Add(outputNote, 0, 6);
         root.Controls.Add(card);
     }
 

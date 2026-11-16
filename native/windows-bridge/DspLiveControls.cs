@@ -190,6 +190,13 @@ internal sealed class DspLiveConsoleControls
         {
             _boost = newBoost;
         }
+        else if (string.Equals(command, "reset", StringComparison.OrdinalIgnoreCase))
+        {
+            // One immutable DSP mailbox update, not two partial Boost/EQ writes.
+            _boost = 100;
+            _eqOn = false;
+            _bands = new float[7];
+        }
         else if (string.Equals(command, "eq off", StringComparison.OrdinalIgnoreCase))
         {
             _eqOn = false;
@@ -217,7 +224,7 @@ internal sealed class DspLiveConsoleControls
         }
         else
         {
-            message = "Rejected. Use: boost 100..300 | eq off | eq b1,b2,b3,b4,b5,b6,b7";
+            message = "Rejected. Use: boost 100..300 | eq off | eq b1,b2,b3,b4,b5,b6,b7 | reset";
             return false;
         }
 
@@ -241,7 +248,11 @@ internal sealed class DspLiveConsoleControls
             controls.TryHandle("boost 301", out _) ||
             controls.TryHandle("eq 0,0", out _) ||
             !controls.TryHandle("eq off", out _) ||
-            mailbox.Published != 4)
+            !controls.TryHandle("reset", out _) ||
+            controls.TryHandle("reset now", out _) ||
+            controls._boost != 100 || controls._eqOn ||
+            controls._bands.Any(x => x != 0) ||
+            mailbox.Published != 5)
             throw new InvalidOperationException("Live console parser rejected valid commands or published invalid ones.");
         Console.WriteLine("PASS: opt-in LAB console parser validates all seven EQ bands, boost bounds, no invalid publication.");
     }

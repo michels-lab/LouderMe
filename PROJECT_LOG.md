@@ -1,3 +1,13 @@
+## 2026-11-15 — Operación Granada: Windows native-route UX/controls (pre-release, #48)
+
+- **Real functional fix:** the native lab GUI previously enabled Start only during device enumeration; selecting the virtual source and physical output afterwards did not recalculate button state, leaving Start disabled on computers with multiple devices. Both endpoint selectors now recompute controls immediately, and Refresh retains only the exact selected endpoint IDs, never silently choosing a replacement after hot-plug.
+- **Read-only route diagnosis:** `Check selected route` runs the existing native metadata preflight on exactly the user's source/output without changing Windows defaults, installing a driver or starting playback; clearly reports the result. Start/Stop/diagnostic/control buttons are guarded against overlapping async operations.
+- **Atomic DSP escape hatch:** new `reset` command resets Boost to 100%, disables EQ and zeros all seven bands in **one** immutable mailbox publication to the capture callback. The GUI exposes `Reset Boost + EQ (100%)` and synchronizes its displayed values only after accepting the command. When higher Boost is declined or writing fails, it restores the last accepted selection rather than silently changing the DSP to a different level.
+- **Regression contracts:** Desktop `--check-store-contract` now covers device identity persistence, disappeared endpoints, ambiguous duplicates and 0/1/many device selections. Native bridge `--check-controls` covers reset command, nonreset variants and invalid-command rejection.
+- **Distribution unchanged:** this is source functionality pending CI/merge; no VM installation, signed kernel driver, third-party acoustic proof, MS Store release, Play Store release, new stable binaries or RC. #48 still requires isolated VM hardware/signed-catalog and measured real audio. Developer Edition is not a development priority.
+
+---
+
 ## 2026-11-13 — Granada #48: kit de VM integrado (WDK virtual driver + .NET WASAPI + DSP C++ + segunda app)
 
 - **Problema funcional resuelto en la cadena de pruebas:** los únicos artefactos anteriores eran el **controlador virtual WDK sin firma** y, por separado, una interfaz/bridge de audio; la VM no recibía un paquete coincidente y completo con el **mismo código fuente** del kernel, el DSP y la **aplicación independiente**. El flujo WDK ahora, después de validar realmente `StampInf/InfVerif/Inf2Cat`, compila **el C++ DSP de LouderMe**, publica `LouderMeAudioBridge.dll` y `LouderMeIndependentTone.dll` con dependencias .NET 10, ejecuta sus verificaciones PCM/ABI/controles y copia los scripts completos de instalación/medición/rollback.

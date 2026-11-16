@@ -17,6 +17,12 @@ internal sealed class NativeRouteSession : IAsyncDisposable
     private Task? _stdoutDrain;
     private Task? _stderrDrain;
     private readonly SemaphoreSlim _stdinGate = new(1, 1);
+    private readonly SemaphoreSlim _commandGate = new(1, 1);
+    private readonly object _receiptLock = new();
+    private TaskCompletionSource<bool>? _pendingReceipt;
+    private long _pendingReceiptId;
+    private long _pendingReceiptEpoch;
+    private long _nextReceiptId;
     private long _sessionEpoch;
 
     internal event Action<string>? StatusChanged;
@@ -233,6 +239,11 @@ internal sealed class NativeRouteSession : IAsyncDisposable
                     StatusChanged?.Invoke(
                         "WASAPI streams started at 100%. Real external-app audio and acoustic gain are not yet verified.");
                 }
+                else if (NativeRouteControlProtocol.TryParseReceipt(
+                    line, out var receipt))
+                {
+                    AcceptReceipt(child, epoch, receipt);
+                }
                 else if (ReferenceEquals(_process, child) &&
                     SessionEpoch == epoch &&
                     NativeRouteTelemetry.TryParse(line, out var sample) && sample is not null)
@@ -263,9 +274,44 @@ internal sealed class NativeRouteSession : IAsyncDisposable
         {
             await child.WaitForExitAsync();
             if (ReferenceEquals(_process, child))
+            {
+                FailPendingReceipt(new IOException(
+                    "Native bridge exited before the DSP callback confirmed the command."));
                 StatusChanged?.Invoke("Native bridge stopped. No automatic device reassignment or restart.");
+            }
         }
         catch (InvalidOperationException) { }
+    }
+
+    private void AcceptReceipt(Process child, long epoch, NativeControlReceipt receipt)
+    {
+        lock (_receiptLock)
+        {
+            if (!ReferenceEquals(_process, child) || SessionEpoch != epoch ||
+                _pendingReceipt is null || _pendingReceiptEpoch != epoch ||
+                _pendingReceiptId != receipt.Id)
+                return;
+            // QUEUED means stdin was parsed. Only APPLIED proves the actual
+            // capture callback configured the native DSP.
+            if (receipt.Kind == NativeControlReceiptKind.Queued) return;
+            var pending = _pendingReceipt;
+            _pendingReceipt = null;
+            if (receipt.Kind == NativeControlReceiptKind.Applied)
+                pending.TrySetResult(true);
+            else
+                pending.TrySetException(new IOException(
+                    "Native bridge rejected the tagged DSP command."));
+        }
+    }
+
+    private void FailPendingReceipt(Exception reason)
+    {
+        lock (_receiptLock)
+        {
+            var pending = _pendingReceipt;
+            _pendingReceipt = null;
+            pending?.TrySetException(reason);
+        }
     }
 
     private static async Task DrainAsync(
@@ -297,16 +343,57 @@ internal sealed class NativeRouteSession : IAsyncDisposable
 
     private async Task WriteCommandAsync(string command)
     {
-        await _stdinGate.WaitAsync();
+        // Serialize whole round trips, but never hold the stdin lock while
+        // waiting for callback confirmation: Stop must remain possible.
+        await _commandGate.WaitAsync();
+        TaskCompletionSource<bool>? receiptSource = null;
         try
         {
-            var child = _process;
-            if (child is null || child.HasExited)
-                throw new InvalidOperationException("Start an explicitly selected native route first.");
-            await child.StandardInput.WriteLineAsync(command);
-            await child.StandardInput.FlushAsync();
+            await _stdinGate.WaitAsync();
+            try
+            {
+                var child = _process;
+                if (child is null || child.HasExited)
+                    throw new InvalidOperationException("Start an explicitly selected native route first.");
+                long id = Interlocked.Increment(ref _nextReceiptId);
+                long epoch = SessionEpoch;
+                receiptSource = new TaskCompletionSource<bool>(
+                    TaskCreationOptions.RunContinuationsAsynchronously);
+                lock (_receiptLock)
+                {
+                    _pendingReceipt = receiptSource;
+                    _pendingReceiptId = id;
+                    _pendingReceiptEpoch = epoch;
+                }
+                await child.StandardInput.WriteLineAsync(
+                    NativeRouteControlProtocol.Tag(id, command));
+                await child.StandardInput.FlushAsync();
+            }
+            finally { _stdinGate.Release(); }
+
+            // No WASAPI capture callback during silence? Then the change is
+            // NOT confirmed. Stop rather than showing an incorrect Boost/EQ.
+            await receiptSource.Task.WaitAsync(TimeSpan.FromSeconds(5));
         }
-        finally { _stdinGate.Release(); }
+        catch (Exception ex) when (ex is TimeoutException or IOException or
+                                   InvalidOperationException or ObjectDisposedException or
+                                   System.ComponentModel.Win32Exception)
+        {
+            try { await StopAsync(); }
+            catch (Exception) { /* Keep original missing-receipt failure. */ }
+            throw new IOException(
+                "Native DSP did not confirm application on the PCM callback; route stopped.",
+                ex);
+        }
+        finally
+        {
+            lock (_receiptLock)
+            {
+                if (ReferenceEquals(_pendingReceipt, receiptSource))
+                    _pendingReceipt = null;
+            }
+            _commandGate.Release();
+        }
     }
 
     internal async Task StopAsync()
@@ -318,6 +405,7 @@ internal sealed class NativeRouteSession : IAsyncDisposable
             if (child is null) return;
             _process = null;
             Interlocked.Increment(ref _sessionEpoch); // Invalidate outstanding UI samples.
+            FailPendingReceipt(new IOException("Native route stopped before DSP command confirmation."));
             try
             {
                 if (!child.HasExited)
@@ -370,5 +458,6 @@ internal sealed class NativeRouteSession : IAsyncDisposable
     {
         await StopAsync();
         _stdinGate.Dispose();
+        _commandGate.Dispose();
     }
 }

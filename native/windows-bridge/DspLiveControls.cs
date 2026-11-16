@@ -309,15 +309,10 @@ internal sealed class DspLiveConsoleControls
             "control 1 reset now", new string('a', 260)
         })
         {
-            if (!TryParseTaggedCommand(malformed, out var n, out var cmd))
-            {
-                // Command framing can be valid but its underlying action
-                // must still be rejected by the actual DSP parser.
-                if (n > 0 && controls.TryHandle(cmd, out _, n))
-                    throw new InvalidOperationException("Bad tagged DSP action accepted.");
-                continue;
-            }
-            if (controls.TryHandle(cmd, out _, n))
+            // Either reject the envelope or reject the underlying action.
+            // Never strip invalid whitespace and accept it implicitly.
+            if (TryParseTaggedCommand(malformed, out var n, out var cmd) &&
+                controls.TryHandle(cmd, out _, n))
                 throw new InvalidOperationException("Malformed tagged DSP request accepted.");
         }
         Console.WriteLine("PASS: tagged native controls, legacy parser compatibility, receipt identity and rejection boundaries.");

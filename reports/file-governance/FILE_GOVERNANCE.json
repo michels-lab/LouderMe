@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 355,
-  "classified_files_total": 351,
+  "tracked_files_total": 358,
+  "classified_files_total": 354,
   "docs_content_inspected": 114,
   "large_docs_skipped": 1,
   "excluded_reports": 4,
@@ -16,8 +16,8 @@
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
-    "source": 123,
-    "test": 48,
+    "source": 125,
+    "test": 49,
     "text_metadata": 2,
     "workflow": 15
   },
@@ -25,7 +25,7 @@
     "BROKEN_RELATIVE_LINK": 2
   },
   "finding_total": 2,
-  "inventory_fingerprint": "bd959e98da6cad6dff024d8e5b5a2fcce2df1dd184b84442f350b91538b88801",
+  "inventory_fingerprint": "0c651090dea1f520756a14319afcdbffcb78d4c370db97d3a7bf4e4d68f51c90",
   "evidence_fingerprint": "728b2eac1e90c8e5522fb81612c631a8a4888caabe724aca9a00027178e0f153",
   "files": [
     {
@@ -264,7 +264,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "b40eb5876aa3585b31b25c3191ed97d0a88b0b42"
+      "blob": "e32192f8678357b758e79ea8b10a40a28e7a0abc"
     },
     {
       "path": "README.md",
@@ -341,7 +341,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "5a87852d8ca5c669408795c7f352ba405ae50d7e"
+      "blob": "94de8f4e35bf8b2325d1bde9ed2a6d015f210619"
     },
     {
       "path": "app/src/main/java/com/michelslab/louderme/audio/AudioBoostContract.kt",
@@ -355,14 +355,14 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "1470d651196ad1b7781a02a8c7fb91e6d23c6a93"
+      "blob": "ff4c277061c9dd12fff93ff76d5226081dfc27ef"
     },
     {
       "path": "app/src/main/java/com/michelslab/louderme/audio/AudioBoostStateStore.kt",
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "e9a10f3d85282428f63c478af4eae4abd2f0d2bf"
+      "blob": "25321f877ebcbab584e9bf545622fa9b2c36f533"
     },
     {
       "path": "app/src/main/java/com/michelslab/louderme/audio/AudioEngine.kt",
@@ -386,6 +386,13 @@
       "blob": "85660419e226c1f4fe800e5e6065b96c582b1bc6"
     },
     {
+      "path": "app/src/main/java/com/michelslab/louderme/audio/BoostLevelPolicy.kt",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "34264b6a6a7fedcdcfe0a7306e2870ee45cb526c"
+    },
+    {
       "path": "app/src/main/java/com/michelslab/louderme/audio/BoostMath.kt",
       "role": "source",
       "purpose": "code/test implementation",
@@ -397,7 +404,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "a44fbfc7bf85ac7b6b3ad7c75958340d842c0a6a"
+      "blob": "b6c781e7e1ab441bdd9793a459c76bca71275765"
     },
     {
       "path": "app/src/main/java/com/michelslab/louderme/audio/EqualizerModels.kt",
@@ -439,7 +446,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "4054fb202d21b6be7c7512fab26b1c32ddbc182a"
+      "blob": "b854f516cfa99e9068a29c64df9da29410fd3b8e"
     },
     {
       "path": "app/src/main/java/com/michelslab/louderme/audio/SessionZeroEqualizer.kt",
@@ -460,7 +467,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "bf0990cd77f0b21d9cc7d0cb8422f5b823c64dc4"
+      "blob": "54cbca1f22ec3b09afb304bbaa99446e6e1a1c3d"
     },
     {
       "path": "app/src/main/java/com/michelslab/louderme/startup/StartupPreferences.kt",
@@ -673,6 +680,13 @@
       "blob": "4f3384bbb2cc4692f356d3cab77b675744d5ad08"
     },
     {
+      "path": "app/src/test/java/com/michelslab/louderme/audio/BoostLevelPolicyTest.kt",
+      "role": "test",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "cd57b2ca240c23385ad5ea53ffd84f1f296f9119"
+    },
+    {
       "path": "app/src/test/java/com/michelslab/louderme/audio/BoostMathTest.kt",
       "role": "test",
       "purpose": "code/test implementation",
@@ -726,7 +740,7 @@
       "role": "test",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "5898ce1a525486a1b7f79c1e9e7f98512bdd5fc7"
+      "blob": "aa4ae988cc5e1abff942c795ceb33fa32d1e878d"
     },
     {
       "path": "app/src/test/java/com/michelslab/louderme/ui/DeveloperNavigationEvidenceTest.kt",
@@ -960,6 +974,13 @@
       "blob": "3926a774584ca0cafc386610d4c810dedaac4689"
     },
     {
+      "path": "desktop/src/LouderMeDesktop/BoostCommitPolicy.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "a91db707eb7b0050457eb9ec085303a20fc65b4f"
+    },
+    {
       "path": "desktop/src/LouderMeDesktop/BoostMath.cs",
       "role": "source",
       "purpose": "code/test implementation",
@@ -1069,7 +1090,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "1ea8759f43244ffaa5db8ce05751a4799d86690a"
+      "blob": "0883ee73f5b722cc25b2ccaeb563a4b8d0ff7001"
     },
     {
       "path": "desktop/src/LouderMeDesktop/NativeRouteControlProtocol.cs",
@@ -1118,7 +1139,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "e98a04b5f1a96ce9f3785fe4292bec5ee4c69e55"
+      "blob": "a03ca7ab4c87d60a9adc6549e8dc51452a54b800"
     },
     {
       "path": "desktop/src/LouderMeDesktop/SplashForm.cs",

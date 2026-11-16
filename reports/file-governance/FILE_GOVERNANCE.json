@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 352,
-  "classified_files_total": 348,
+  "tracked_files_total": 353,
+  "classified_files_total": 349,
   "docs_content_inspected": 114,
   "large_docs_skipped": 1,
   "excluded_reports": 4,
@@ -16,7 +16,7 @@
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
-    "source": 120,
+    "source": 121,
     "test": 48,
     "text_metadata": 2,
     "workflow": 15
@@ -25,7 +25,7 @@
     "BROKEN_RELATIVE_LINK": 2
   },
   "finding_total": 2,
-  "inventory_fingerprint": "d68c96e561b27af6088bf14254bb1a9852ef05a241c6bb86da685811062c76d1",
+  "inventory_fingerprint": "3dc5adcc88fb929f1b9b024344abcc2c5536d0780737ab40cce31d7039533bf3",
   "evidence_fingerprint": "728b2eac1e90c8e5522fb81612c631a8a4888caabe724aca9a00027178e0f153",
   "files": [
     {
@@ -264,7 +264,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "e8ff7d90221a4cb12f6bf495958eaeaad3e5d1b8"
+      "blob": "11a56864d9a676687641e4ad9b88578c0eeba40a"
     },
     {
       "path": "README.md",
@@ -1076,7 +1076,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "02ed05b05fbfede945b6b7d4977da8132bafc3c5"
+      "blob": "89372c38c75c0198349c39668b6c45522ba55cf5"
     },
     {
       "path": "desktop/src/LouderMeDesktop/NativeRouteReadiness.cs",
@@ -1090,14 +1090,21 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "055441f105357f85711293b0e52093671b457a4c"
+      "blob": "c6812fe2a59bff7dc7e205978a7b15f8d94757d4"
+    },
+    {
+      "path": "desktop/src/LouderMeDesktop/NativeRouteTelemetry.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "fefebbc2976bfa59e09bb9724d393ddec3b85216"
     },
     {
       "path": "desktop/src/LouderMeDesktop/Program.cs",
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "56963eda7941008b4f3a3846d494361268f99c08"
+      "blob": "61a8395b74f9287de7703dc54685cfee3f0c9a33"
     },
     {
       "path": "desktop/src/LouderMeDesktop/SplashForm.cs",

@@ -50,11 +50,20 @@ class BootResumePolicyTest {
             ),
         )
         assertEquals(
-            250,
+            300,
             BootResumePolicy.percentToRestore(
                 true,
                 AudioEngineUiState(status = AudioEngineStatus.DEGRADED, percent = 999),
             ),
         )
+        for (level in listOf(250, 275, 300)) {
+            assertEquals(
+                level,
+                BootResumePolicy.percentToRestore(
+                    true,
+                    AudioEngineUiState(status = AudioEngineStatus.ATTACHED, percent = level),
+                ),
+            )
+        }
     }
 }

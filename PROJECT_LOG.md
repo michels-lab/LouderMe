@@ -1,3 +1,14 @@
+## 2026-11-15/16 — Granada: Android 300% sobrevive reinicio + Windows slider Boost confiable
+
+- **Fallo funcional Android corregido:** la aplicación permite 100–300%, pero `AudioBoostStateStore.read` todavía truncaba el nivel guardado a 250%, y `BootResumePolicy.percentToRestore` también truncaba 275–300% al reactivar Boost tras un reinicio del teléfono. Esto afectaba un nivel elegido explícitamente por el usuario y la coherencia entre el porcentaje y los dB en la pantalla. **Ahora ambos caminos preservan hasta 300%.**
+- **Política única y persistencia:** nuevo `BoostLevelPolicy` define 100–300% para lectura/escritura de SharedPreferences, arranque voluntario al boot, controles de servicio, Activity, presets de notificación y motor de compatibilidad `SessionZeroAudioEngine`. `AudioBoostStateStore.read` deriva dB del porcentaje recuperado (evita reportar 250% junto con ganancia de 300%) y `write` guarda percent+dB normalizados. **No** inicia Boost en el boot sin la preferencia explícita habilitada; no implica que otras apps hayan sido audiblemente amplificadas en el dispositivo.
+- **Regresiones Android:** `BoostLevelPolicyTest` cubre niveles 100,125,150,175,200,225,250,275,300, límites aberrantes y dB, además de reactivación opt-in 275/300%; `BootResumePolicyTest` actualiza el límite real 300% y conserva OFF/ERROR/UNSUPPORTED sin autoarranque.
+- **Interacción Windows mejorada:** el slider de Boost (100–300%) ahora programa un commit corto después de un cambio de valor y **no requiere** exclusivamente `MouseUp/KeyUp`. El último nivel se aplica al soltar el thumb, terminar con teclado, cambiar de foco o cerrar la ventana; el timer no escribe el archivo APO mientras el usuario mantiene una captura de ratón. Accesos rápidos/checkboxes siguen aplicando de inmediato y cancelan el commit diferido para evitar escrituras duplicadas.
+- **Pruebas Windows:** `BoostCommitPolicy.RunSelfTests` se incluye en `--check-apo-contract`, verificando ausencia de escritura durante drag y commit del último valor al finalizar/cerrar. Pruebas Android y Windows deben aprobar en CI antes de integrar.
+- **No confundir código con distribución:** no hay nueva APK pública, instalador Windows, certificación de audio físico ni Microsoft Store/Play Store. Estables: Android Direct v0.1.14, Windows Desktop v0.1.19; sin RC ni nuevas Developer Editions. Issue #48 continúa abierto por prueba driver virtual/firma y acústica real.
+
+---
+
 ## 2026-11-15 — Granada: selector explícito de salida Windows para volumen/mute
 
 - **Funcionalidad de escritorio real:** nueva lista en la tarjeta **DEVICE VOLUME** con `Follow Windows default output` y salidas render activas (bocinas, Bluetooth, USB, HDMI). El usuario puede controlar volumen/mute 0–100 % de un endpoint específico sin cambiar el dispositivo predeterminado de Windows, sin instalar drivers ni modificar el archivo de Equalizer APO. Boost global 100–300 % y siete bandas no cambian de backend.

@@ -581,14 +581,27 @@ internal static class Program
                                     shutdown.Set();
                                     break;
                                 }
-                                consoleControls.TryHandle(command, out var status);
-                                Console.WriteLine(status);
+                                if (DspLiveConsoleControls.TryParseTaggedCommand(
+                                    command, out long requestId, out var action))
+                                {
+                                    if (consoleControls.TryHandle(action, out _, requestId))
+                                        Console.WriteLine($"NATIVE_CONTROL_QUEUED id={requestId}");
+                                    else
+                                        Console.WriteLine($"NATIVE_CONTROL_REJECTED id={requestId}");
+                                }
+                                else
+                                {
+                                    // Legacy lab CLI: unchanged, no receipt.
+                                    consoleControls.TryHandle(command, out var status);
+                                    Console.WriteLine(status);
+                                }
                             }
                         }
                         catch (IOException) { /* unavailable stdin: lab controls disabled */ }
                     }) { IsBackground = true, Name = "LouderMe-Lab-Controls" };
                     controlReader.Start();
-                    Console.WriteLine("LAB live controls: boost 100..300 | eq off | eq seven comma-separated dB values");
+                    Console.WriteLine("LAB live controls: boost 100..300 | eq off | eq seven comma-separated dB values | reset");
+                    Console.WriteLine("Tagged GUI controls report applied only after the native PCM callback has used their command.");
                     Console.WriteLine("Changes are applied on the next capture callback; no UI/console thread touches DSP.");
                 }
                 if (provePhysicalRoute)
@@ -621,10 +634,20 @@ internal static class Program
                     Console.WriteLine("EXTERNAL_SOURCE_READY");
                 var routeStarted = Stopwatch.GetTimestamp();
                 long lastStats = routeStarted;
+                long lastNotifiedControlId = 0;
                 long lastObservedQueueResets = 0;
                 long lastFormatCheck = routeStarted;
                 while (!shutdown.Wait(250))
                 {
+                    // Only the audio callback publishes LastAppliedRequestId.
+                    // The console thread performs all stdout writes; no I/O
+                    // or managed allocations are added to the PCM callback.
+                    long appliedId = liveControlQueue.LastAppliedRequestId;
+                    if (appliedId > lastNotifiedControlId)
+                    {
+                        Console.WriteLine($"NATIVE_CONTROL_APPLIED id={appliedId}");
+                        lastNotifiedControlId = appliedId;
+                    }
                     if (monitorError is not null)
                         throw new IOException("Physical PCM loopback observer failed.", monitorError);
                     if (provePhysicalRoute &&

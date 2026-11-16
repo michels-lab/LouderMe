@@ -20,6 +20,7 @@ internal sealed class NativeRouteLabForm : Form
     private readonly Button _applyEq = new() { Text = "Apply 7-band EQ", AutoSize = true };
     private readonly Button _resetDsp = new() { Text = "Reset Boost + EQ (100%)", AutoSize = true };
     private readonly Label _status = new() { AutoSize = true, MaximumSize = new Size(540, 0) };
+    private readonly Label _transport = new() { AutoSize = true, MaximumSize = new Size(570, 0) };
     private bool _closing;
     private bool _changingBoost;
     private bool _busy;
@@ -111,6 +112,10 @@ internal sealed class NativeRouteLabForm : Form
         _status.ForeColor = BrandColors.Gold;
         _status.Text = "No active native PCM route. Select an installed virtual source and physical output.";
         root.Controls.Add(_status);
+        root.Controls.Add(Title("4 · Live native PCM transport"));
+        _transport.ForeColor = BrandColors.Muted;
+        _transport.Text = "Not running. Transport counters appear only from a started bridge.";
+        root.Controls.Add(_transport);
         root.Controls.Add(Note(
             "No automatic reconnect. If Bluetooth, HDMI or USB changes endpoints, " +
             "the bridge exits instead of silently switching output. High gain can " +
@@ -126,7 +131,30 @@ internal sealed class NativeRouteLabForm : Form
                 {
                     if (IsDisposed) return;
                     _status.Text = message;
+                    if (!_session.IsRunning)
+                    {
+                        _transport.Text = "Bridge stopped; previous PCM counts are historical, not live.";
+                        _transport.ForeColor = BrandColors.Muted;
+                    }
                     UpdateControls();
+                }));
+            }
+            catch (InvalidOperationException) { /* Window closing. */ }
+        };
+
+        _session.TransportChanged += (sample, epoch) =>
+        {
+            if (IsDisposed || !IsHandleCreated) return;
+            try
+            {
+                BeginInvoke((Action)(() =>
+                {
+                    if (IsDisposed || !_session.IsRunning ||
+                        _session.SessionEpoch != epoch) return;
+                    // Counters are observed at the bridge's one-second
+                    // cadence; they are NOT a visualizer of acoustic sound.
+                    _transport.Text = sample.DisplayText;
+                    _transport.ForeColor = sample.HasLoss ? BrandColors.Gold : BrandColors.Muted;
                 }));
             }
             catch (InvalidOperationException) { /* Window closing. */ }
@@ -268,6 +296,8 @@ internal sealed class NativeRouteLabForm : Form
         _busy = true;
         UpdateControls();
         _status.Text = "Checking selected native source/output IDs…";
+        _transport.Text = "Waiting for bridge start; no transport data or audio verification yet.";
+        _transport.ForeColor = BrandColors.Muted;
         try
         {
             await _session.StartAsync(_snapshot, source.Id, sink.Id);
@@ -285,6 +315,8 @@ internal sealed class NativeRouteLabForm : Form
         {
             _status.Text = "Native session could not start safely. " +
                            "Check installed virtual driver, selected endpoints and signed-driver requirements.";
+            _transport.Text = "No active PCM counters: route startup failed.";
+            _transport.ForeColor = BrandColors.Muted;
         }
         finally
         {
@@ -302,10 +334,14 @@ internal sealed class NativeRouteLabForm : Form
         {
             await _session.StopAsync();
             _status.Text = "Stopped the native route. No default-device reassignment.";
+            _transport.Text = "Stopped. Old PCM counters do not describe a new session.";
+            _transport.ForeColor = BrandColors.Muted;
         }
         catch (Exception)
         {
             _status.Text = "Native route shutdown encountered an error; verify the process is stopped.";
+            _transport.Text = "Route status uncertain: previous transport counters are no longer current.";
+            _transport.ForeColor = BrandColors.Gold;
         }
         finally
         {

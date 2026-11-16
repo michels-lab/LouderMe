@@ -1,3 +1,13 @@
+## 2026-11-15 — Granada: live native Windows PCM transport + DSP command counters (source only, #48)
+
+- **Functional GUI addition:** the Windows native-route lab window now shows **live counters from the real bridge**, rather than replacing every button message with the generic `bridge running` status. Display includes captured PCM frames (which may be silence), queued render frames, consumed render frames, dropped source frames, queue overflows/resets, underfilled render reads, and published/applied/superseded DSP control commands.
+- **Visible audio-quality warnings:** dropped PCM, queue overflow or reset trigger a separate warning; no capture frames displays `Waiting for virtual capture`. Underfilled render reads are labeled as possibly normal during silence, and PCM transport is explicitly **not proof of audible output**, third-party support or an approved/signed driver. Status controls remain independent of the live counters.
+- **Safe state and lifecycle:** a strict bounded parser accepts only complete, nonnegative, decimal counter snapshots from the bridge stdout, not arbitrary logs or malformed numbers. A monotonically increasing process-session epoch prevents stale queued UI telemetry from leaking into a new route after Stop/restart; no audio PCM, endpoint IDs, private stream data or new network/reporting service are recorded.
+- **Testing:** desktop `--check-store-contract` now exercises valid/silent/lossy transport examples, missing/duplicate/malformed/oversized counters and safe presentation. CI Windows Desktop and Store MSIX preflight are required for integration. This change does not modify the C++ DSP calculation, physical sound levels, the existing stable APO-based EXE or Android.
+- **Remaining:** #48 requires an installed signed virtual driver, controlled physical-device signal A/B with a separate app, production driver signing and Store admission. No RC, no new stable release and no Developer Edition work.
+
+---
+
 ## 2026-11-15 — Operación Granada: Windows native-route UX/controls (pre-release, #48)
 
 - **Real functional fix:** the native lab GUI previously enabled Start only during device enumeration; selecting the virtual source and physical output afterwards did not recalculate button state, leaving Start disabled on computers with multiple devices. Both endpoint selectors now recompute controls immediately, and Refresh retains only the exact selected endpoint IDs, never silently choosing a replacement after hot-plug.

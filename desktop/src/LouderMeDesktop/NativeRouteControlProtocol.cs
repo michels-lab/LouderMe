@@ -53,6 +53,14 @@ internal static class NativeRouteControlProtocol
         return true;
     }
 
+    // The process and epoch are checked by the session before this pure
+    // matching rule; QUEUED alone must never complete the UI operation.
+    internal static bool IsCompletionForPending(
+        NativeControlReceipt receipt, long pendingId, long receiptEpoch,
+        long currentEpoch, bool sameProcess) =>
+        sameProcess && receiptEpoch == currentEpoch && receipt.Id == pendingId &&
+        receipt.Kind is NativeControlReceiptKind.Applied or NativeControlReceiptKind.Rejected;
+
     internal static void RunContractSelfTests()
     {
         if (Tag(17, "boost 300") != "control 17 boost 300" ||
@@ -63,6 +71,14 @@ internal static class NativeRouteControlProtocol
             !TryParseReceipt("NATIVE_CONTROL_REJECTED id=17", out var rejected) ||
             rejected.Kind != NativeControlReceiptKind.Rejected || rejected.Id != 17)
             throw new InvalidOperationException("Tagged native command handshake protocol regressed.");
+
+        if (!IsCompletionForPending(applied, 17, 22, 22, true) ||
+            !IsCompletionForPending(rejected, 17, 22, 22, true) ||
+            IsCompletionForPending(queued, 17, 22, 22, true) ||
+            IsCompletionForPending(applied, 18, 22, 22, true) ||
+            IsCompletionForPending(applied, 17, 21, 22, true) ||
+            IsCompletionForPending(applied, 17, 22, 22, false))
+            throw new InvalidOperationException("Queued, mismatched or stale DSP receipt completed the UI.");
 
         foreach (var invalid in new[] {
             "", "QUEUED for audio callback: Boost 300%",

@@ -131,6 +131,11 @@ internal sealed class NativeRouteLabForm : Form
                 {
                     if (IsDisposed) return;
                     _status.Text = message;
+                    if (!_session.IsRunning)
+                    {
+                        _transport.Text = "Bridge stopped; previous PCM counts are historical, not live.";
+                        _transport.ForeColor = BrandColors.Muted;
+                    }
                     UpdateControls();
                 }));
             }
@@ -310,6 +315,8 @@ internal sealed class NativeRouteLabForm : Form
         {
             _status.Text = "Native session could not start safely. " +
                            "Check installed virtual driver, selected endpoints and signed-driver requirements.";
+            _transport.Text = "No active PCM counters: route startup failed.";
+            _transport.ForeColor = BrandColors.Muted;
         }
         finally
         {

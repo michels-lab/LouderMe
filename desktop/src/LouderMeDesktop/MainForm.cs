@@ -346,6 +346,11 @@ internal sealed class MainForm : Form
                 throw new InvalidOperationException("Official LouderMe window icon is missing.");
         }
 
+        if (!_outputPicker.IsHandleCreated ||
+            _outputPicker.DropDownStyle != ComboBoxStyle.DropDownList ||
+            _outputPicker.Parent is null)
+            throw new InvalidOperationException("Windows output picker is not mounted in the real GUI.");
+
         var viewport = _contentViewport
             ?? throw new InvalidOperationException("Scrollable workspace not initialized.");
         if (!viewport.AutoScroll || viewport.ClientSize.Height < 100)
@@ -475,7 +480,7 @@ internal sealed class MainForm : Form
         layout.SetColumnSpan(_volume, 2);
         layout.Controls.Add(_volume, 0, 4);
 
-        _mute.Text = "Mute system output";
+        _mute.Text = "Mute selected output";
         _mute.AutoSize = true;
         _mute.ForeColor = Muted;
         _mute.CheckedChanged += (_, _) =>
@@ -1062,7 +1067,7 @@ internal sealed class MainForm : Form
 
         // Invalidate any in-progress mouse drag and physical listening test.
         // The old output's gesture must not control the newly chosen device.
-        _volumeGestureRejected = true;
+        _volumeGestureRejected = _volume.Capture;
         _volumeGestureOutputId = null;
         ObserveOutputIdentity(null);
         SyncDeviceVolume(force: true);
@@ -1076,7 +1081,7 @@ internal sealed class MainForm : Form
             _lastAudioTestHeard = null;
             _engineStatus.ForeColor = Gold;
             _engineStatus.Text =
-                "WINDOWS OUTPUT CHANGED. The previous listening result does not " +
+                "PLAYBACK OUTPUT CHANGED. The previous listening result does not " +
                 "apply to this device. Check Equalizer APO Configurator and repeat " +
                 "the four-second audio-path test.";
         }
@@ -1453,6 +1458,7 @@ internal sealed class MainForm : Form
 
     private void RefreshEngineStatus()
     {
+        _outputPicker.Enabled = !_diagnosticRunning;
         if (StorePackageContext.IsPackaged)
         {
             _connectEngineAction.Enabled = false;

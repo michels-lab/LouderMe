@@ -19,6 +19,7 @@ internal sealed class NativeRouteSession : IAsyncDisposable
     private readonly SemaphoreSlim _stdinGate = new(1, 1);
 
     internal event Action<string>? StatusChanged;
+    internal event Action<NativeRouteTelemetry>? TransportChanged;
 
     internal bool IsRunning
     {
@@ -227,11 +228,13 @@ internal sealed class NativeRouteSession : IAsyncDisposable
                     StatusChanged?.Invoke(
                         "WASAPI streams started at 100%. Real external-app audio and acoustic gain are not yet verified.");
                 }
-                else if (line.StartsWith("sourceFrames=", StringComparison.Ordinal))
+                else if (ReferenceEquals(_process, child) &&
+                    NativeRouteTelemetry.TryParse(line, out var sample) && sample is not null)
                 {
-                    // This is live transport telemetry from the own PCM bridge,
-                    // NOT proof that a third-party application was heard.
-                    StatusChanged?.Invoke("Own bridge running (PCM transport telemetry received).");
+                    // Publish only strictly parsed counters from the current
+                    // child. A stale exited session cannot update the UI.
+                    // A PCM frame may be silent; never claim acoustic proof.
+                    TransportChanged?.Invoke(sample);
                 }
             }, started);
             _stderrDrain = DrainAsync(child.StandardError, _ => { }, null);

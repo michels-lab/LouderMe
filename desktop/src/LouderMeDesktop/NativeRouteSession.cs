@@ -282,6 +282,9 @@ internal sealed class NativeRouteSession : IAsyncDisposable
     internal Task SetEqualizerAsync(bool enabled, IReadOnlyList<float> bands) =>
         WriteCommandAsync(enabled ? BuildEqCommand(bands) : "eq off");
 
+    // One native mailbox snapshot resets both DSP functions to unity/bypass.
+    internal Task ResetDspAsync() => WriteCommandAsync("reset");
+
     private async Task WriteCommandAsync(string command)
     {
         await _stdinGate.WaitAsync();

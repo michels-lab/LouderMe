@@ -7,6 +7,24 @@ internal sealed class AudioDeviceController : IDisposable
     private readonly MMDeviceEnumerator _enumerator = new();
     private MMDevice? _device;
 
+    // null: follow the Windows default render output. Non-null: control this
+    // EXACT physical output, without changing the system's default device.
+    // An unplugged explicit output must never silently fall back to speakers.
+    public string? SelectedOutputId { get; set; }
+
+    internal IReadOnlyList<PlaybackOutputChoice> DiscoverOutputs()
+    {
+        var result = new List<PlaybackOutputChoice>();
+        foreach (var endpoint in _enumerator.EnumerateAudioEndPoints(
+            DataFlow.Render, DeviceState.Active))
+        {
+            try { result.Add(new PlaybackOutputChoice(endpoint.ID, endpoint.FriendlyName)); }
+            finally { endpoint.Dispose(); }
+        }
+        return result.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(x => x.Id, StringComparer.Ordinal).ToArray();
+    }
+
     public string DeviceName => Device.FriendlyName;
     public string DeviceId => Device.ID;
 
@@ -29,7 +47,27 @@ internal sealed class AudioDeviceController : IDisposable
         MMDevice next;
         try
         {
-            next = _enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+            if (SelectedOutputId is null)
+            {
+                next = _enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+            }
+            else
+            {
+                // GetDevice() can resolve disconnected or non-render endpoints.
+                // Require an active PLAYBACK identity before touching volume.
+                bool found = DiscoverOutputs().Any(x =>
+                    string.Equals(x.Id, SelectedOutputId, StringComparison.Ordinal));
+                if (!found)
+                    throw new InvalidOperationException(
+                        "Selected Windows playback output is unavailable. " +
+                        "Select another output or follow the Windows default.");
+                next = _enumerator.GetDevice(SelectedOutputId);
+                if (next.State != DeviceState.Active)
+                {
+                    next.Dispose();
+                    throw new InvalidOperationException("Selected playback endpoint disconnected.");
+                }
+            }
         }
         catch
         {
@@ -65,7 +103,8 @@ internal sealed class AudioDeviceController : IDisposable
         return true;
     }
 
-    private MMDevice Device => _device ??= _enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia);
+    private MMDevice Device => _device ?? throw new InvalidOperationException(
+        "No active playback output has been refreshed.");
 
     public void Dispose()
     {

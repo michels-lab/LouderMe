@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 353,
-  "classified_files_total": 349,
+  "tracked_files_total": 354,
+  "classified_files_total": 350,
   "docs_content_inspected": 114,
   "large_docs_skipped": 1,
   "excluded_reports": 4,
@@ -16,7 +16,7 @@
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
-    "source": 121,
+    "source": 122,
     "test": 48,
     "text_metadata": 2,
     "workflow": 15
@@ -25,7 +25,7 @@
     "BROKEN_RELATIVE_LINK": 2
   },
   "finding_total": 2,
-  "inventory_fingerprint": "3dc5adcc88fb929f1b9b024344abcc2c5536d0780737ab40cce31d7039533bf3",
+  "inventory_fingerprint": "626380036624b32dfa81d03f01b01cbb3971e260742f632fccc01d699e412944",
   "evidence_fingerprint": "728b2eac1e90c8e5522fb81612c631a8a4888caabe724aca9a00027178e0f153",
   "files": [
     {
@@ -264,7 +264,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "11a56864d9a676687641e4ad9b88578c0eeba40a"
+      "blob": "8ec0537f7f54af7276f47e7acb2ee823242fec2e"
     },
     {
       "path": "README.md",
@@ -1072,11 +1072,18 @@
       "blob": "5258b37007147f3b7172e4924ff0ff32b40a5645"
     },
     {
+      "path": "desktop/src/LouderMeDesktop/NativeRouteControlProtocol.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "5336c4dbb84c108419a4ee8de6f2146acebff97d"
+    },
+    {
       "path": "desktop/src/LouderMeDesktop/NativeRouteLabForm.cs",
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "89372c38c75c0198349c39668b6c45522ba55cf5"
+      "blob": "6d728a4c8a901eab38ee1125e42d1698ca94bb50"
     },
     {
       "path": "desktop/src/LouderMeDesktop/NativeRouteReadiness.cs",
@@ -1090,7 +1097,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "c6812fe2a59bff7dc7e205978a7b15f8d94757d4"
+      "blob": "54d63c5ebd67c2e0236605e747b7856dc68b3ba1"
     },
     {
       "path": "desktop/src/LouderMeDesktop/NativeRouteTelemetry.cs",
@@ -1104,7 +1111,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "61a8395b74f9287de7703dc54685cfee3f0c9a33"
+      "blob": "30e057d7830836a9c85051d9c090a3f2095edff9"
     },
     {
       "path": "desktop/src/LouderMeDesktop/SplashForm.cs",
@@ -2189,7 +2196,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "ddf71b16a9264a973cff7df0554afeaa67a9e11c"
+      "blob": "11c4a9073a26dfe0d428a095c26f420e7f81bb11"
     },
     {
       "path": "native/windows-bridge/LoopbackToneVerifier.cs",
@@ -2238,7 +2245,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "b388fd21c01e8a70e5d05466d6cae7ebb356e8af"
+      "blob": "ffb23f115bdf2aa11310e4627bed823f86faf975"
     },
     {
       "path": "native/windows-bridge/README.md",

@@ -287,13 +287,13 @@ internal sealed class NativeRouteSession : IAsyncDisposable
     {
         lock (_receiptLock)
         {
-            if (!ReferenceEquals(_process, child) || SessionEpoch != epoch ||
-                _pendingReceipt is null || _pendingReceiptEpoch != epoch ||
-                _pendingReceiptId != receipt.Id)
+            if (_pendingReceipt is null ||
+                _pendingReceiptEpoch != epoch ||
+                !NativeRouteControlProtocol.IsCompletionForPending(
+                    receipt, _pendingReceiptId, epoch, SessionEpoch,
+                    ReferenceEquals(_process, child)))
                 return;
-            // QUEUED means stdin was parsed. Only APPLIED proves the actual
-            // capture callback configured the native DSP.
-            if (receipt.Kind == NativeControlReceiptKind.Queued) return;
+            // QUEUED means stdin was parsed, not native callback application.
             var pending = _pendingReceipt;
             _pendingReceipt = null;
             if (receipt.Kind == NativeControlReceiptKind.Applied)

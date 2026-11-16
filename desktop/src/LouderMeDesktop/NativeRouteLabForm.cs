@@ -14,12 +14,16 @@ internal sealed class NativeRouteLabForm : Form
     private readonly CheckBox _eqOn = new() { Text = "Enable own 7-band EQ", AutoSize = true };
     private readonly NumericUpDown[] _bands = new NumericUpDown[7];
     private readonly Button _refresh = new() { Text = "Refresh devices", AutoSize = true };
+    private readonly Button _diagnose = new() { Text = "Check selected route", AutoSize = true };
     private readonly Button _start = new() { Text = "Start native route (lab)", AutoSize = true };
     private readonly Button _stop = new() { Text = "Stop and release audio", AutoSize = true };
     private readonly Button _applyEq = new() { Text = "Apply 7-band EQ", AutoSize = true };
     private readonly Label _status = new() { AutoSize = true, MaximumSize = new Size(540, 0) };
     private bool _closing;
     private bool _changingBoost;
+    private bool _busy;
+    private bool _commandBusy;
+    private int _lastAcceptedBoost = 100;
 
     internal NativeRouteLabForm()
     {
@@ -59,6 +63,7 @@ internal sealed class NativeRouteLabForm : Form
         root.Controls.Add(Title("2 · Physical output"));
         root.Controls.Add(_physical);
         root.Controls.Add(_refresh);
+        root.Controls.Add(_diagnose);
         root.Controls.Add(Title("3 · Own C++ DSP live controls"));
         foreach (var percent in new[] { 100, 125, 150, 175, 200, 225, 250, 275, 300 })
             _boost.Items.Add(percent);
@@ -126,6 +131,9 @@ internal sealed class NativeRouteLabForm : Form
         };
 
         _refresh.Click += (_, _) => RefreshDevices();
+        _virtual.SelectedIndexChanged += (_, _) => UpdateControls();
+        _physical.SelectedIndexChanged += (_, _) => UpdateControls();
+        _diagnose.Click += async (_, _) => await DiagnoseSelectedRouteAsync();
         _start.Click += async (_, _) => await StartRouteAsync();
         _stop.Click += async (_, _) => await StopRouteAsync();
         _applyEq.Click += async (_, _) => await ApplyEqAsync();
@@ -162,7 +170,11 @@ internal sealed class NativeRouteLabForm : Form
 
     private void RefreshDevices()
     {
-        if (_session.IsRunning) return;
+        if (_busy || _session.IsRunning) return;
+        // Retain only EXACT previously selected device IDs. Never silently
+        // re-route to a different speaker after a USB/Bluetooth hot-swap.
+        var previousVirtual = (_virtual.SelectedItem as NativeRouteEndpoint)?.Id;
+        var previousPhysical = (_physical.SelectedItem as NativeRouteEndpoint)?.Id;
         _virtual.Items.Clear();
         _physical.Items.Clear();
         try
@@ -173,8 +185,10 @@ internal sealed class NativeRouteLabForm : Form
                 if (item.IsVirtual) _virtual.Items.Add(item);
                 else _physical.Items.Add(item);
             }
-            if (_virtual.Items.Count == 1) _virtual.SelectedIndex = 0;
-            if (_physical.Items.Count == 1) _physical.SelectedIndex = 0;
+            _virtual.SelectedIndex = NativeRouteSession.PreferredIndex(
+                _virtual.Items.Cast<NativeRouteEndpoint>().ToArray(), previousVirtual);
+            _physical.SelectedIndex = NativeRouteSession.PreferredIndex(
+                _physical.Items.Cast<NativeRouteEndpoint>().ToArray(), previousPhysical);
             _status.Text = _virtual.Items.Count == 0
                 ? "Own LouderMe Virtual render device not installed. No native bridge session can start."
                 : "Select the exact virtual source and a distinct physical output.";
@@ -192,21 +206,50 @@ internal sealed class NativeRouteLabForm : Form
     {
         if (IsDisposed) return;
         var running = _session.IsRunning;
-        _refresh.Enabled = !running;
-        _virtual.Enabled = !running;
-        _physical.Enabled = !running;
-        _start.Enabled = !running && _virtual.SelectedItem is NativeRouteEndpoint &&
+        var idle = !_busy && !_closing;
+        var pairSelected = _virtual.SelectedItem is NativeRouteEndpoint &&
             _physical.SelectedItem is NativeRouteEndpoint;
-        _stop.Enabled = running;
-        _boost.Enabled = running;
-        _eqOn.Enabled = running;
-        _applyEq.Enabled = running;
-        foreach (var b in _bands) b.Enabled = running;
+        _refresh.Enabled = idle && !running;
+        _virtual.Enabled = idle && !running;
+        _physical.Enabled = idle && !running;
+        _diagnose.Enabled = idle && !running && pairSelected;
+        _start.Enabled = idle && !running && pairSelected;
+        _stop.Enabled = idle && running;
+        _boost.Enabled = idle && running && !_commandBusy;
+        _eqOn.Enabled = idle && running && !_commandBusy;
+        _applyEq.Enabled = idle && running && !_commandBusy;
+        foreach (var b in _bands) b.Enabled = idle && running && !_commandBusy;
+    }
+
+    private async Task DiagnoseSelectedRouteAsync()
+    {
+        if (_busy || _session.IsRunning ||
+            _virtual.SelectedItem is not NativeRouteEndpoint source ||
+            _physical.SelectedItem is not NativeRouteEndpoint sink)
+            return;
+        _busy = true;
+        UpdateControls();
+        _status.Text = "Checking selected endpoints (read-only; no audio started)…";
+        try
+        {
+            var result = await _session.InspectPairAsync(_snapshot, source.Id, sink.Id);
+            _status.Text = result.Code + ": " + result.Message;
+        }
+        catch (Exception)
+        {
+            _status.Text = "Native route diagnostic failed. No driver, default output or audio stream was changed.";
+        }
+        finally
+        {
+            _busy = false;
+            UpdateControls();
+        }
     }
 
     private async Task StartRouteAsync()
     {
-        if (_session.IsRunning || _virtual.SelectedItem is not NativeRouteEndpoint source ||
+        if (_busy || _session.IsRunning ||
+            _virtual.SelectedItem is not NativeRouteEndpoint source ||
             _physical.SelectedItem is not NativeRouteEndpoint sink)
             return;
         var consent = MessageBox.Show(
@@ -218,7 +261,8 @@ internal sealed class NativeRouteLabForm : Form
             "LouderMe native DSP lab",
             MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
         if (consent != DialogResult.Yes) return;
-        _start.Enabled = false;
+        _busy = true;
+        UpdateControls();
         _status.Text = "Checking selected native source/output IDs…";
         try
         {
@@ -228,6 +272,7 @@ internal sealed class NativeRouteLabForm : Form
             try { _boost.SelectedItem = 100; }
             finally { _changingBoost = false; }
             _eqOn.Checked = false;
+            _lastAcceptedBoost = 100;
             _status.Text =
                 "Own virtual→physical WASAPI streams started at 100%. " +
                 "Real audio from another app and acoustic gain are NOT verified.";
@@ -237,12 +282,18 @@ internal sealed class NativeRouteLabForm : Form
             _status.Text = "Native session could not start safely. " +
                            "Check installed virtual driver, selected endpoints and signed-driver requirements.";
         }
-        UpdateControls();
+        finally
+        {
+            _busy = false;
+            UpdateControls();
+        }
     }
 
     private async Task StopRouteAsync()
     {
-        _stop.Enabled = false;
+        if (_busy || !_session.IsRunning) return;
+        _busy = true;
+        UpdateControls();
         try
         {
             await _session.StopAsync();
@@ -252,12 +303,24 @@ internal sealed class NativeRouteLabForm : Form
         {
             _status.Text = "Native route shutdown encountered an error; verify the process is stopped.";
         }
-        UpdateControls();
+        finally
+        {
+            _busy = false;
+            UpdateControls();
+        }
+    }
+
+    private void RestoreBoostSelection()
+    {
+        _changingBoost = true;
+        try { _boost.SelectedItem = _lastAcceptedBoost; }
+        finally { _changingBoost = false; }
     }
 
     private async Task ApplyBoostAsync()
     {
-        if (_changingBoost || !_session.IsRunning || _boost.SelectedItem is not int percent)
+        if (_changingBoost || _busy || _commandBusy || !_session.IsRunning ||
+            _boost.SelectedItem is not int percent)
             return;
         if (percent > 150 &&
             MessageBox.Show(
@@ -266,26 +329,35 @@ internal sealed class NativeRouteLabForm : Form
                 "Confirm high native gain", MessageBoxButtons.YesNo,
                 MessageBoxIcon.Warning) != DialogResult.Yes)
         {
-            _changingBoost = true;
-            try { _boost.SelectedItem = 100; }
-            finally { _changingBoost = false; }
-            percent = 100;
+            RestoreBoostSelection();
+            _status.Text = "Higher Boost cancelled. Previous accepted setting retained.";
+            return;
         }
+        _commandBusy = true;
+        UpdateControls();
         try
         {
             await _session.SetBoostAsync(percent);
-            _status.Text = $"Sent {percent}% to the own C++ DSP callback. Audible gain not independently verified.";
+            _lastAcceptedBoost = percent;
+            _status.Text = $"Queued {percent}% for the own C++ DSP callback. Audible gain not independently verified.";
         }
         catch (Exception)
         {
-            _status.Text = "DSP control failed. Stop the native route and recheck devices.";
+            RestoreBoostSelection();
+            _status.Text = "DSP command failed; previous control selection restored. Stop and check the route.";
         }
-        UpdateControls();
+        finally
+        {
+            _commandBusy = false;
+            UpdateControls();
+        }
     }
 
     private async Task ApplyEqAsync()
     {
-        if (!_session.IsRunning) return;
+        if (_busy || _commandBusy || !_session.IsRunning) return;
+        _commandBusy = true;
+        UpdateControls();
         try
         {
             var bands = _bands.Select(x => (float)x.Value).ToArray();
@@ -298,6 +370,10 @@ internal sealed class NativeRouteLabForm : Form
         {
             _status.Text = "Native EQ command could not be sent. Check route state.";
         }
-        UpdateControls();
+        finally
+        {
+            _commandBusy = false;
+            UpdateControls();
+        }
     }
 }

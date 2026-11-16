@@ -76,6 +76,7 @@ internal static class Program
                 OutputRouteEvidencePolicy.RunSelfTests();
                 PlaybackOutputSelectionPolicy.RunSelfTests();
                 EqualizerCommitPolicy.RunSelfTests();
+                BoostCommitPolicy.RunSelfTests();
                 return 0;
             }
             if (settingsContractTest)

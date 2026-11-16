@@ -18,6 +18,7 @@ internal sealed class NativeRouteLabForm : Form
     private readonly Button _start = new() { Text = "Start native route (lab)", AutoSize = true };
     private readonly Button _stop = new() { Text = "Stop and release audio", AutoSize = true };
     private readonly Button _applyEq = new() { Text = "Apply 7-band EQ", AutoSize = true };
+    private readonly Button _resetDsp = new() { Text = "Reset Boost + EQ (100%)", AutoSize = true };
     private readonly Label _status = new() { AutoSize = true, MaximumSize = new Size(540, 0) };
     private bool _closing;
     private bool _changingBoost;
@@ -98,6 +99,7 @@ internal sealed class NativeRouteLabForm : Form
         }
         root.Controls.Add(bandsRow);
         root.Controls.Add(_applyEq);
+        root.Controls.Add(_resetDsp);
         var operations = new FlowLayoutPanel
         {
             Width = 590, Height = 50, WrapContents = true
@@ -137,6 +139,7 @@ internal sealed class NativeRouteLabForm : Form
         _start.Click += async (_, _) => await StartRouteAsync();
         _stop.Click += async (_, _) => await StopRouteAsync();
         _applyEq.Click += async (_, _) => await ApplyEqAsync();
+        _resetDsp.Click += async (_, _) => await ResetDspAsync();
         _boost.SelectedIndexChanged += async (_, _) => await ApplyBoostAsync();
 
         FormClosing += async (_, e) =>
@@ -218,6 +221,7 @@ internal sealed class NativeRouteLabForm : Form
         _boost.Enabled = idle && running && !_commandBusy;
         _eqOn.Enabled = idle && running && !_commandBusy;
         _applyEq.Enabled = idle && running && !_commandBusy;
+        _resetDsp.Enabled = idle && running && !_commandBusy;
         foreach (var b in _bands) b.Enabled = idle && running && !_commandBusy;
     }
 
@@ -345,6 +349,31 @@ internal sealed class NativeRouteLabForm : Form
         {
             RestoreBoostSelection();
             _status.Text = "DSP command failed; previous control selection restored. Stop and check the route.";
+        }
+        finally
+        {
+            _commandBusy = false;
+            UpdateControls();
+        }
+    }
+
+    private async Task ResetDspAsync()
+    {
+        if (_busy || _commandBusy || !_session.IsRunning) return;
+        _commandBusy = true;
+        UpdateControls();
+        try
+        {
+            await _session.ResetDspAsync();
+            _lastAcceptedBoost = 100;
+            RestoreBoostSelection();
+            _eqOn.Checked = false;
+            foreach (var band in _bands) band.Value = 0;
+            _status.Text = "Queued atomic native DSP reset: Boost 100%, EQ off, all bands flat.";
+        }
+        catch (Exception)
+        {
+            _status.Text = "Native DSP reset could not be queued. Stop and check the audio route.";
         }
         finally
         {

@@ -1004,6 +1004,70 @@ internal sealed class MainForm : Form
         root.Controls.Add(footer);
     }
 
+    private void RefreshOutputChoices()
+    {
+        // Do not rearrange the list while a user is choosing an endpoint.
+        if (_outputPicker.DroppedDown) return;
+        var choices = PlaybackOutputSelectionPolicy.Build(
+            _audio.DiscoverOutputs(), _audio.SelectedOutputId);
+        var shown = _outputPicker.Items.Cast<PlaybackOutputChoice>().ToArray();
+        int selected = PlaybackOutputSelectionPolicy.SelectedIndex(
+            choices, _audio.SelectedOutputId);
+        if (selected < 0)
+            throw new InvalidOperationException(
+                "Windows reported an ambiguous playback endpoint identity.");
+        if (PlaybackOutputSelectionPolicy.SameChoices(shown, choices) &&
+            _outputPicker.SelectedIndex == selected)
+            return;
+
+        _refreshingOutputChoices = true;
+        _outputPicker.BeginUpdate();
+        try
+        {
+            _outputPicker.Items.Clear();
+            foreach (var choice in choices) _outputPicker.Items.Add(choice);
+            _outputPicker.SelectedIndex = selected;
+        }
+        finally
+        {
+            _outputPicker.EndUpdate();
+            _refreshingOutputChoices = false;
+        }
+    }
+
+    private void SelectVolumeOutput()
+    {
+        if (_loading || _refreshingOutputChoices ||
+            _outputPicker.SelectedItem is not PlaybackOutputChoice selected ||
+            !selected.Available ||
+            string.Equals(_audio.SelectedOutputId, selected.Id, StringComparison.Ordinal))
+            return;
+
+        var previous = _audio.SelectedOutputId;
+        _audio.SelectedOutputId = selected.Id;
+        _settings.OutputDeviceId = selected.Id;
+        try
+        {
+            // Persist locally before changing the live volume target.
+            DesktopSettingsStore.Save(_settings);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _audio.SelectedOutputId = previous;
+            _settings.OutputDeviceId = previous;
+            RefreshOutputChoices();
+            _deviceValue.Text = "Output selection not saved: " + ex.Message;
+            return;
+        }
+
+        // Invalidate any in-progress mouse drag and physical listening test.
+        // The old output's gesture must not control the newly chosen device.
+        _volumeGestureRejected = true;
+        _volumeGestureOutputId = null;
+        ObserveOutputIdentity(null);
+        SyncDeviceVolume(force: true);
+    }
+
     private void ObserveOutputIdentity(string? id)
     {
         if (OutputRouteEvidencePolicy.Changed(_lastObservedOutputId, id))
@@ -1032,6 +1096,7 @@ internal sealed class MainForm : Form
         if (_loading || (!force && (_volume.Capture || _mute.Focused))) return;
         try
         {
+            RefreshOutputChoices();
             _audio.Refresh();
             ObserveOutputIdentity(_audio.DeviceId);
             _loading = true;
@@ -1062,6 +1127,8 @@ internal sealed class MainForm : Form
         _loading = true;
         try
         {
+            _audio.SelectedOutputId = _settings.OutputDeviceId;
+            RefreshOutputChoices();
             _audio.Refresh();
             ObserveOutputIdentity(_audio.DeviceId);
             _deviceValue.Text = _audio.DeviceName;

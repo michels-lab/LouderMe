@@ -137,14 +137,15 @@ internal sealed class NativeRouteLabForm : Form
             catch (InvalidOperationException) { /* Window closing. */ }
         };
 
-        _session.TransportChanged += sample =>
+        _session.TransportChanged += (sample, epoch) =>
         {
             if (IsDisposed || !IsHandleCreated) return;
             try
             {
                 BeginInvoke((Action)(() =>
                 {
-                    if (IsDisposed || !_session.IsRunning) return;
+                    if (IsDisposed || !_session.IsRunning ||
+                        _session.SessionEpoch != epoch) return;
                     // Counters are observed at the bridge's one-second
                     // cadence; they are NOT a visualizer of acoustic sound.
                     _transport.Text = sample.DisplayText;

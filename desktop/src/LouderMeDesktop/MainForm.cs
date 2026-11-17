@@ -1039,62 +1039,126 @@ internal sealed class MainForm : Form
 
     private void RefreshOutputChoices()
     {
-        // Do not rearrange the list while a user is choosing an endpoint.
-        if (_outputPicker.DroppedDown) return;
+        // A live hotplug timer must not replace menu entries mid-selection.
+        // MMDevice.Refresh still validates the exact output independently.
+        if (_outputPicker.MenuOpen) return;
         var choices = PlaybackOutputSelectionPolicy.Build(
             _audio.DiscoverOutputs(), _audio.SelectedOutputId);
-        var shown = _outputPicker.Items.Cast<PlaybackOutputChoice>().ToArray();
         int selected = PlaybackOutputSelectionPolicy.SelectedIndex(
             choices, _audio.SelectedOutputId);
         if (selected < 0)
             throw new InvalidOperationException(
                 "Windows reported an ambiguous playback endpoint identity.");
-        if (PlaybackOutputSelectionPolicy.SameChoices(shown, choices) &&
-            _outputPicker.SelectedIndex == selected)
-            return;
 
+        var pinned = choices[selected];
         _refreshingOutputChoices = true;
-        _outputPicker.BeginUpdate();
         try
         {
-            _outputPicker.Items.Clear();
-            foreach (var choice in choices) _outputPicker.Items.Add(choice);
-            _outputPicker.SelectedIndex = selected;
+            _followDefaultOutput.Checked = _audio.SelectedOutputId is null;
+            _outputPicker.SetState(
+                choices.Where(x => x.Id is not null).ToArray(),
+                _audio.SelectedOutputId,
+                _audio.SelectedOutputId is null
+                    ? "Windows default output" : pinned.Name,
+                pinned.Available);
         }
-        finally
+        finally { _refreshingOutputChoices = false; }
+    }
+
+    private void ChangeFollowDefaultOutput(bool enabled)
+    {
+        if (_loading || _refreshingOutputChoices || _diagnosticRunning)
+            return;
+        if (enabled)
         {
-            _outputPicker.EndUpdate();
-            _refreshingOutputChoices = false;
+            ChangeVolumeTarget(null);
+            return;
+        }
+
+        try
+        {
+            // Turning off "Follow Windows default" pins a *real*, active
+            // endpoint. Prefer the last manual output if it still exists;
+            // otherwise prefer the device currently audible to the user.
+            var outputs = _audio.DiscoverOutputs();
+            string? target = outputs.FirstOrDefault(x =>
+                string.Equals(x.Id, _lastManualOutputId, StringComparison.Ordinal))?.Id
+                ?? outputs.FirstOrDefault(x =>
+                    string.Equals(x.Id, _lastObservedOutputId, StringComparison.Ordinal))?.Id
+                ?? outputs.FirstOrDefault()?.Id;
+            if (target is null)
+            {
+                _refreshingOutputChoices = true;
+                try { _followDefaultOutput.Checked = true; }
+                finally { _refreshingOutputChoices = false; }
+                SyncDeviceVolume(force: true);
+                return;
+            }
+            ChangeVolumeTarget(target);
+        }
+        catch (Exception ex)
+        {
+            ShowEngineError(ex);
+            SyncDeviceVolume(force: true);
         }
     }
 
-    private void SelectVolumeOutput()
+    private void SelectVolumeOutput(PlaybackOutputChoice selected)
     {
-        if (_loading || _refreshingOutputChoices ||
-            _outputPicker.SelectedItem is not PlaybackOutputChoice selected ||
-            !selected.Available ||
-            string.Equals(_audio.SelectedOutputId, selected.Id, StringComparison.Ordinal))
+        if (_loading || _refreshingOutputChoices || _diagnosticRunning ||
+            !selected.Available || string.IsNullOrWhiteSpace(selected.Id))
             return;
 
-        var previous = _audio.SelectedOutputId;
-        _audio.SelectedOutputId = selected.Id;
-        _settings.OutputDeviceId = selected.Id;
         try
         {
-            // Persist locally before changing the live volume target.
+            // Menu contents may predate a Bluetooth/USB disconnect. NEVER
+            // pin an outdated entry or forward its next gesture to speakers.
+            if (!_audio.DiscoverOutputs().Any(x =>
+                string.Equals(x.Id, selected.Id, StringComparison.Ordinal)))
+            {
+                SyncDeviceVolume(force: true);
+                return;
+            }
+            ChangeVolumeTarget(selected.Id);
+        }
+        catch (Exception ex)
+        {
+            ShowEngineError(ex);
+            SyncDeviceVolume(force: true);
+        }
+    }
+
+    private void ChangeVolumeTarget(string? targetId)
+    {
+        if (_loading || _refreshingOutputChoices || _diagnosticRunning ||
+            string.Equals(_audio.SelectedOutputId, targetId, StringComparison.Ordinal))
+            return;
+        var previousId = _audio.SelectedOutputId;
+        _audio.SelectedOutputId = targetId;
+        _settings.OutputDeviceId = targetId;
+        try
+        {
             DesktopSettingsStore.Save(_settings);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            _audio.SelectedOutputId = previous;
-            _settings.OutputDeviceId = previous;
+            _audio.SelectedOutputId = previousId;
+            _settings.OutputDeviceId = previousId;
             RefreshOutputChoices();
-            _deviceValue.Text = "Output selection not saved: " + ex.Message;
+            ShowEngineError(ex);
             return;
         }
 
-        // Invalidate any in-progress mouse drag and physical listening test.
-        // The old output's gesture must not control the newly chosen device.
+        if (targetId is not null) _lastManualOutputId = targetId;
+        // CheckBox.CheckedChanged is suspended here; manually chosen output
+        // must immediately turn off "Follow Windows default" and vice versa.
+        _refreshingOutputChoices = true;
+        try { _followDefaultOutput.Checked = targetId is null; }
+        finally { _refreshingOutputChoices = false; }
+        _outputPicker.SetTargetId(targetId);
+
+        // A drag/listening test from device A is never proof or a command
+        // for newly pinned device B, even when an endpoint reconnects.
         _volumeGestureRejected = _volume.Capture;
         _volumeGestureOutputId = null;
         ObserveOutputIdentity(null);

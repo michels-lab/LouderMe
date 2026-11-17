@@ -14,6 +14,7 @@ internal sealed class MainForm : Form
     private readonly Label _deviceValue = new();
     private readonly DarkOutputPicker _outputPicker = new();
     private readonly CheckBox _followDefaultOutput = new();
+    private readonly ToolTip _outputHelpTip = new();
     private bool _refreshingOutputChoices;
     private string? _lastManualOutputId;
     private readonly Label _volumeValue = new();
@@ -137,6 +138,7 @@ internal sealed class MainForm : Form
             _eqApplyTimer.Dispose();
             _boostApplyTimer.Stop();
             _boostApplyTimer.Dispose();
+            _outputHelpTip.Dispose();
             if (_wheelFilter is not null)
                 Application.RemoveMessageFilter(_wheelFilter);
             _audio.Dispose();
@@ -431,6 +433,8 @@ internal sealed class MainForm : Form
         _followDefaultOutput.AutoSize = true;
         _followDefaultOutput.Checked = true;
         _followDefaultOutput.ForeColor = TextPrimary;
+        _followDefaultOutput.BackColor = Surface;
+        _followDefaultOutput.FlatStyle = FlatStyle.Flat;
         _followDefaultOutput.Font = new Font("Segoe UI", 10f);
         _followDefaultOutput.Margin = new Padding(0, 2, 0, 8);
         _followDefaultOutput.AccessibleDescription =
@@ -534,8 +538,7 @@ internal sealed class MainForm : Form
             Font = new Font("Segoe UI", 9f),
             Margin = new Padding(1, 8, 0, 0)
         };
-        var outputTip = new ToolTip();
-        outputTip.SetToolTip(outputNote,
+        _outputHelpTip.SetToolTip(outputNote,
             "Choosing an output here does not change Windows' default " +
             "or attach Equalizer APO. Disconnected pinned outputs stay " +
             "selected but cannot receive volume or mute commands.");

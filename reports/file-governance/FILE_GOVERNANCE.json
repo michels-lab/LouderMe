@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "audit_kind": "deterministic_full_tracked_tree",
-  "tracked_files_total": 360,
-  "classified_files_total": 356,
+  "tracked_files_total": 361,
+  "classified_files_total": 357,
   "docs_content_inspected": 116,
   "large_docs_skipped": 1,
   "excluded_reports": 4,
@@ -16,7 +16,7 @@
     "index": 6,
     "installer_metadata": 1,
     "license": 1,
-    "source": 125,
+    "source": 126,
     "test": 49,
     "text_metadata": 2,
     "workflow": 15
@@ -25,7 +25,7 @@
     "BROKEN_RELATIVE_LINK": 2
   },
   "finding_total": 2,
-  "inventory_fingerprint": "9973c8707a3c5bc3413956cb8e4650a6b57e1001dce77d2ee4f3245150d41ec7",
+  "inventory_fingerprint": "5b2a28bf09d9957db348c726c8f08afee8752b90f063b6d1ee70b90dee8e6799",
   "evidence_fingerprint": "728b2eac1e90c8e5522fb81612c631a8a4888caabe724aca9a00027178e0f153",
   "files": [
     {
@@ -89,7 +89,7 @@
       "role": "workflow",
       "purpose": "GitHub Actions automation",
       "certainty": "rule",
-      "blob": "96840f608e014a4f5b161d281e14d825eb31d7f3"
+      "blob": "0fce8f197903672f11b935aecc0b2a71c8cb2e68"
     },
     {
       "path": ".github/workflows/file-governance-audit.yml",
@@ -264,7 +264,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "e28fb92ce02299d5175cad27e8d9dd82b8a8343b"
+      "blob": "86f04c23296f1ee6637c00f6b324075767726eec"
     },
     {
       "path": "README.md",
@@ -1009,6 +1009,13 @@
       "blob": "f91dc1f6fbc9ee769163091fa0e87a21774321ef"
     },
     {
+      "path": "desktop/src/LouderMeDesktop/DarkOutputPicker.cs",
+      "role": "source",
+      "purpose": "code/test implementation",
+      "certainty": "rule",
+      "blob": "89d306c5ab232a1357178ed313e55685824aa7e9"
+    },
+    {
       "path": "desktop/src/LouderMeDesktop/DesktopAudioSettings.cs",
       "role": "source",
       "purpose": "code/test implementation",
@@ -1097,7 +1104,7 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "0883ee73f5b722cc25b2ccaeb563a4b8d0ff7001"
+      "blob": "d89351d30f255c21f7b1771d239a55e07a76e264"
     },
     {
       "path": "desktop/src/LouderMeDesktop/NativeRouteControlProtocol.cs",
@@ -1139,14 +1146,14 @@
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "346403f94a34ce2dcafefacf7d9d9f949c8d2ffd"
+      "blob": "2e4633ee56d83ef141f9913897dee2a6be91d989"
     },
     {
       "path": "desktop/src/LouderMeDesktop/Program.cs",
       "role": "source",
       "purpose": "code/test implementation",
       "certainty": "rule",
-      "blob": "a03ca7ab4c87d60a9adc6549e8dc51452a54b800"
+      "blob": "ac9b8ecf742981d16fc259d275dcd517285d5d65"
     },
     {
       "path": "desktop/src/LouderMeDesktop/SplashForm.cs",

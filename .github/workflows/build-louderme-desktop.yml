@@ -29,6 +29,13 @@ on:
 permissions:
   contents: read
 
+# Each UI edit used to queue another complete Windows build, delaying the
+# final visual verdict. Only the newest commit on each branch/PR ref matters;
+# stable publication is a separate non-cancellable workflow.
+concurrency:
+  group: louderme-desktop-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: windows-latest

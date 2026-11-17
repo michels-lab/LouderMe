@@ -12,8 +12,11 @@ internal sealed class MainForm : Form
     private readonly DesktopUpdateService _updates = new();
 
     private readonly Label _deviceValue = new();
-    private readonly ComboBox _outputPicker = new();
+    private readonly DarkOutputPicker _outputPicker = new();
+    private readonly CheckBox _followDefaultOutput = new();
+    private readonly ToolTip _outputHelpTip = new();
     private bool _refreshingOutputChoices;
+    private string? _lastManualOutputId;
     private readonly Label _volumeValue = new();
     private readonly TrackBar _volume = new();
     private readonly CheckBox _mute = new();
@@ -135,6 +138,7 @@ internal sealed class MainForm : Form
             _eqApplyTimer.Dispose();
             _boostApplyTimer.Stop();
             _boostApplyTimer.Dispose();
+            _outputHelpTip.Dispose();
             if (_wheelFilter is not null)
                 Application.RemoveMessageFilter(_wheelFilter);
             _audio.Dispose();
@@ -148,6 +152,7 @@ internal sealed class MainForm : Form
         _aboutAction.Name = "about";
         _volume.Name = "media-volume";
         _outputPicker.Name = "media-output-picker";
+        _followDefaultOutput.Name = "media-follow-windows-default";
         _mute.Name = "media-mute";
         _boostEnabled.Name = "boost-toggle";
         _boost.Name = "boost-level";
@@ -358,9 +363,14 @@ internal sealed class MainForm : Form
         }
 
         if (!_outputPicker.IsHandleCreated ||
-            _outputPicker.DropDownStyle != ComboBoxStyle.DropDownList ||
-            _outputPicker.Parent is null)
-            throw new InvalidOperationException("Windows output picker is not mounted in the real GUI.");
+            _outputPicker.Parent is null ||
+            _outputPicker.Height < 60 ||
+            _outputPicker.BackColor != BrandColors.Surface2 ||
+            !_outputPicker.TabStop ||
+            !_followDefaultOutput.IsHandleCreated ||
+            _followDefaultOutput.Parent is null)
+            throw new InvalidOperationException(
+                "Dark Windows output picker / independent follow-default switch is not mounted.");
 
         var viewport = _contentViewport
             ?? throw new InvalidOperationException("Scrollable workspace not initialized.");
@@ -417,44 +427,53 @@ internal sealed class MainForm : Form
         var layout = (TableLayoutPanel)card.Controls[0];
         layout.RowCount = 7;
 
-        var chooseOutput = new Label
-        {
-            Text = "CONTROL THIS OUTPUT · VOLUME/MUTE ONLY",
-            AutoSize = true,
-            ForeColor = Muted,
-            Font = new Font("Consolas", 9f, FontStyle.Bold)
-        };
-        layout.SetColumnSpan(chooseOutput, 2);
-        layout.Controls.Add(chooseOutput, 0, 1);
-        _outputPicker.DropDownStyle = ComboBoxStyle.DropDownList;
-        _outputPicker.BackColor = Surface;
-        _outputPicker.ForeColor = TextPrimary;
+        // Mode is independent of choosing a physical output. This is NOT a
+        // fake entry in the dropdown and never changes Windows' default.
+        _followDefaultOutput.Text = "Follow Windows default output";
+        _followDefaultOutput.AutoSize = true;
+        _followDefaultOutput.Checked = true;
+        _followDefaultOutput.ForeColor = TextPrimary;
+        _followDefaultOutput.BackColor = Surface;
+        _followDefaultOutput.FlatStyle = FlatStyle.Flat;
+        _followDefaultOutput.Font = new Font("Segoe UI", 10f);
+        _followDefaultOutput.Margin = new Padding(0, 2, 0, 8);
+        _followDefaultOutput.AccessibleDescription =
+            "On: follow the current Windows output. Off: pin a specific device.";
+        _followDefaultOutput.CheckedChanged += (_, _) =>
+            ChangeFollowDefaultOutput(_followDefaultOutput.Checked);
+        layout.SetColumnSpan(_followDefaultOutput, 2);
+        layout.Controls.Add(_followDefaultOutput, 0, 1);
+
+        // A real owner-painted control avoids the stock white WinForms combo
+        // and shows the current output only ONCE, with a small mode/status line.
         _outputPicker.Dock = DockStyle.Fill;
-        _outputPicker.DropDownWidth = 450;
-        _outputPicker.SelectedIndexChanged += (_, _) => SelectVolumeOutput();
+        _outputPicker.Height = 62;
+        _outputPicker.Margin = new Padding(0, 0, 0, 12);
+        _outputPicker.OutputChosen += SelectVolumeOutput;
         layout.SetColumnSpan(_outputPicker, 2);
         layout.Controls.Add(_outputPicker, 0, 2);
 
         _deviceValue.AutoSize = true;
-        _deviceValue.ForeColor = TextPrimary;
-        _deviceValue.Font = new Font("Segoe UI Semibold", 13f, FontStyle.Bold);
-        _deviceValue.Text = "Detecting…";
+        _deviceValue.ForeColor = Muted;
+        _deviceValue.Font = new Font("Consolas", 9f, FontStyle.Bold);
+        _deviceValue.Text = "MEDIA VOLUME";
+        _deviceValue.Margin = new Padding(2, 5, 0, 0);
         layout.Controls.Add(_deviceValue, 0, 3);
 
         _volumeValue.AutoSize = true;
         _volumeValue.ForeColor = Cyan;
-        _volumeValue.Font = new Font("Consolas", 11f, FontStyle.Bold);
-        _volumeValue.Text = "0%";
+        _volumeValue.Font = new Font("Consolas", 12f, FontStyle.Bold);
+        _volumeValue.Text = "—%";
+        _volumeValue.Margin = new Padding(0, 3, 0, 0);
         layout.Controls.Add(_volumeValue, 1, 3);
 
         _volume.Minimum = 0;
         _volume.Maximum = 100;
         _volume.TickFrequency = 10;
         _volume.Dock = DockStyle.Fill;
-        _volume.Margin = new Padding(0, 14, 0, 8);
-        // Bind a complete mouse drag to the endpoint present at MouseDown.
-        // Otherwise, after the first rejected event on an A->B hot-swap,
-        // later mouse-move events in that SAME drag would control B.
+        _volume.Margin = new Padding(0, 10, 0, 9);
+        // An A→B switch (including Windows default hotplug) must not
+        // transfer an in-flight drag from the old physical output.
         _volume.MouseDown += (_, _) =>
         {
             _volumeGestureOutputId = _lastObservedOutputId;
@@ -474,8 +493,6 @@ internal sealed class MainForm : Form
                 if (!_audio.TrySetVolumeForOutput(target, _volume.Value))
                 {
                     _volumeGestureRejected = _volumeGestureOutputId is not null;
-                    // A new Windows default output must not receive a drag
-                    // event intended for the previous physical device.
                     SyncDeviceVolume(force: true);
                     return;
                 }
@@ -510,15 +527,21 @@ internal sealed class MainForm : Form
         };
         layout.SetColumnSpan(_mute, 2);
         layout.Controls.Add(_mute, 0, 5);
+
         var outputNote = new Label
         {
-            Text = "Changing this selection never changes the Windows default " +
-                "sound output or attaches Equalizer APO. If the chosen device " +
-                "disconnects, its volume controls are disabled until it returns " +
-                "or you explicitly choose another output.",
-            AutoSize = true, MaximumSize = new Size(540, 0), ForeColor = Muted,
-            Margin = new Padding(0, 8, 0, 4)
+            Text = "Volume/mute affect this output only. Boost/EQ remain " +
+                "on the separate Equalizer APO path.",
+            AutoSize = true,
+            MaximumSize = new Size(540, 0),
+            ForeColor = Muted,
+            Font = new Font("Segoe UI", 9f),
+            Margin = new Padding(1, 8, 0, 0)
         };
+        _outputHelpTip.SetToolTip(outputNote,
+            "Choosing an output here does not change Windows' default " +
+            "or attach Equalizer APO. Disconnected pinned outputs stay " +
+            "selected but cannot receive volume or mute commands.");
         layout.SetColumnSpan(outputNote, 2);
         layout.Controls.Add(outputNote, 0, 6);
         root.Controls.Add(card);
@@ -1024,62 +1047,123 @@ internal sealed class MainForm : Form
 
     private void RefreshOutputChoices()
     {
-        // Do not rearrange the list while a user is choosing an endpoint.
-        if (_outputPicker.DroppedDown) return;
+        // A live hotplug timer must not replace menu entries mid-selection.
+        // MMDevice.Refresh still validates the exact output independently.
+        if (_outputPicker.MenuOpen) return;
         var choices = PlaybackOutputSelectionPolicy.Build(
             _audio.DiscoverOutputs(), _audio.SelectedOutputId);
-        var shown = _outputPicker.Items.Cast<PlaybackOutputChoice>().ToArray();
         int selected = PlaybackOutputSelectionPolicy.SelectedIndex(
             choices, _audio.SelectedOutputId);
         if (selected < 0)
             throw new InvalidOperationException(
                 "Windows reported an ambiguous playback endpoint identity.");
-        if (PlaybackOutputSelectionPolicy.SameChoices(shown, choices) &&
-            _outputPicker.SelectedIndex == selected)
-            return;
 
+        var pinned = choices[selected];
         _refreshingOutputChoices = true;
-        _outputPicker.BeginUpdate();
         try
         {
-            _outputPicker.Items.Clear();
-            foreach (var choice in choices) _outputPicker.Items.Add(choice);
-            _outputPicker.SelectedIndex = selected;
+            _followDefaultOutput.Checked = _audio.SelectedOutputId is null;
+            _outputPicker.SetState(
+                choices.Where(x => x.Id is not null).ToArray(),
+                _audio.SelectedOutputId,
+                _audio.SelectedOutputId is null
+                    ? "Windows default output" : pinned.Name,
+                pinned.Available);
         }
-        finally
+        finally { _refreshingOutputChoices = false; }
+    }
+
+    private void ChangeFollowDefaultOutput(bool enabled)
+    {
+        if (_loading || _refreshingOutputChoices || _diagnosticRunning)
+            return;
+        if (enabled)
         {
-            _outputPicker.EndUpdate();
-            _refreshingOutputChoices = false;
+            ChangeVolumeTarget(null);
+            return;
+        }
+
+        try
+        {
+            // Turning off "Follow Windows default" pins a *real*, active
+            // endpoint. Prefer the last manual output if it still exists;
+            // otherwise prefer the device currently audible to the user.
+            var outputs = _audio.DiscoverOutputs();
+            string? target = PlaybackOutputSelectionPolicy.ResolveManualTarget(
+                outputs, _lastManualOutputId, _lastObservedOutputId);
+            if (target is null)
+            {
+                _refreshingOutputChoices = true;
+                try { _followDefaultOutput.Checked = true; }
+                finally { _refreshingOutputChoices = false; }
+                SyncDeviceVolume(force: true);
+                return;
+            }
+            ChangeVolumeTarget(target);
+        }
+        catch (Exception ex)
+        {
+            ShowEngineError(ex);
+            SyncDeviceVolume(force: true);
         }
     }
 
-    private void SelectVolumeOutput()
+    private void SelectVolumeOutput(PlaybackOutputChoice selected)
     {
-        if (_loading || _refreshingOutputChoices ||
-            _outputPicker.SelectedItem is not PlaybackOutputChoice selected ||
-            !selected.Available ||
-            string.Equals(_audio.SelectedOutputId, selected.Id, StringComparison.Ordinal))
+        if (_loading || _refreshingOutputChoices || _diagnosticRunning ||
+            !selected.Available || string.IsNullOrWhiteSpace(selected.Id))
             return;
 
-        var previous = _audio.SelectedOutputId;
-        _audio.SelectedOutputId = selected.Id;
-        _settings.OutputDeviceId = selected.Id;
         try
         {
-            // Persist locally before changing the live volume target.
+            // Menu contents may predate a Bluetooth/USB disconnect. NEVER
+            // pin an outdated entry or forward its next gesture to speakers.
+            if (!_audio.DiscoverOutputs().Any(x =>
+                string.Equals(x.Id, selected.Id, StringComparison.Ordinal)))
+            {
+                SyncDeviceVolume(force: true);
+                return;
+            }
+            ChangeVolumeTarget(selected.Id);
+        }
+        catch (Exception ex)
+        {
+            ShowEngineError(ex);
+            SyncDeviceVolume(force: true);
+        }
+    }
+
+    private void ChangeVolumeTarget(string? targetId)
+    {
+        if (_loading || _refreshingOutputChoices || _diagnosticRunning ||
+            string.Equals(_audio.SelectedOutputId, targetId, StringComparison.Ordinal))
+            return;
+        var previousId = _audio.SelectedOutputId;
+        _audio.SelectedOutputId = targetId;
+        _settings.OutputDeviceId = targetId;
+        try
+        {
             DesktopSettingsStore.Save(_settings);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            _audio.SelectedOutputId = previous;
-            _settings.OutputDeviceId = previous;
+            _audio.SelectedOutputId = previousId;
+            _settings.OutputDeviceId = previousId;
             RefreshOutputChoices();
-            _deviceValue.Text = "Output selection not saved: " + ex.Message;
+            ShowEngineError(ex);
             return;
         }
 
-        // Invalidate any in-progress mouse drag and physical listening test.
-        // The old output's gesture must not control the newly chosen device.
+        if (targetId is not null) _lastManualOutputId = targetId;
+        // CheckBox.CheckedChanged is suspended here; manually chosen output
+        // must immediately turn off "Follow Windows default" and vice versa.
+        _refreshingOutputChoices = true;
+        try { _followDefaultOutput.Checked = targetId is null; }
+        finally { _refreshingOutputChoices = false; }
+        _outputPicker.SetTargetId(targetId);
+
+        // A drag/listening test from device A is never proof or a command
+        // for newly pinned device B, even when an endpoint reconnects.
         _volumeGestureRejected = _volume.Capture;
         _volumeGestureOutputId = null;
         ObserveOutputIdentity(null);
@@ -1118,7 +1202,8 @@ internal sealed class MainForm : Form
             _audio.Refresh();
             ObserveOutputIdentity(_audio.DeviceId);
             _loading = true;
-            _deviceValue.Text = _audio.DeviceName;
+            _outputPicker.SetDisplay(_audio.DeviceName, available: true);
+            _deviceValue.Text = "MEDIA VOLUME";
             _volume.Value = Math.Clamp(_audio.VolumePercent, 0, 100);
             _volumeValue.Text = $"{_volume.Value}%";
             _mute.Checked = _audio.Muted;
@@ -1131,7 +1216,8 @@ internal sealed class MainForm : Form
             // The timer retries and re-enables controls when a render device
             // returns; never preserve a stale enabled volume slider.
             _loading = true;
-            _deviceValue.Text = $"Device unavailable: {ex.Message}";
+            _outputPicker.SetDisplay("", available: false);
+            _deviceValue.Text = "MEDIA VOLUME";
             _volumeValue.Text = "—%";
             _volume.Enabled = false;
             _mute.Enabled = false;
@@ -1146,13 +1232,31 @@ internal sealed class MainForm : Form
         try
         {
             _audio.SelectedOutputId = _settings.OutputDeviceId;
-            RefreshOutputChoices();
-            _audio.Refresh();
-            ObserveOutputIdentity(_audio.DeviceId);
-            _deviceValue.Text = _audio.DeviceName;
-            _volume.Value = Math.Clamp(_audio.VolumePercent, _volume.Minimum, _volume.Maximum);
-            _volumeValue.Text = $"{_volume.Value}%";
-            _mute.Checked = _audio.Muted;
+            _lastManualOutputId = _settings.OutputDeviceId;
+            // Missing Bluetooth/USB hardware must not abort loading saved
+            // 300% Boost or seven-band EQ. Keep just the output sliders off.
+            try
+            {
+                RefreshOutputChoices();
+                _audio.Refresh();
+                ObserveOutputIdentity(_audio.DeviceId);
+                _outputPicker.SetDisplay(_audio.DeviceName, available: true);
+                _volume.Value = Math.Clamp(
+                    _audio.VolumePercent, _volume.Minimum, _volume.Maximum);
+                _volumeValue.Text = $"{_volume.Value}%";
+                _mute.Checked = _audio.Muted;
+                _volume.Enabled = true;
+                _mute.Enabled = true;
+            }
+            catch (Exception)
+            {
+                ObserveOutputIdentity(null);
+                _outputPicker.SetDisplay("", available: false);
+                _volumeValue.Text = "—%";
+                _volume.Enabled = false;
+                _mute.Enabled = false;
+            }
+            _deviceValue.Text = "MEDIA VOLUME";
             _startWithWindows.Checked = StartupManager.IsEnabled();
 
             _boostEnabled.Checked = _settings.BoostEnabled;
@@ -1502,6 +1606,7 @@ internal sealed class MainForm : Form
     private void RefreshEngineStatus()
     {
         _outputPicker.Enabled = !_diagnosticRunning;
+        _followDefaultOutput.Enabled = !_diagnosticRunning;
         if (StorePackageContext.IsPackaged)
         {
             _connectEngineAction.Enabled = false;

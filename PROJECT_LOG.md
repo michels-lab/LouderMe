@@ -1,3 +1,15 @@
+## 2026-11-17 — Granada: selector Windows oscuro y modo predeterminado independiente (#182)
+
+- **Motivación física/visual:** el propietario confirmó que LouderMe Desktop 0.1.20 funciona, pero el selector de bocinas se mostraba como `ComboBox DropDownList` **blanco** dentro de un panel oscuro y repetía el nombre de la salida en dos filas. Se mantiene el motor/volumen funcionando; este bloque se concentra en interfaz y consistencia.
+- **Rediseño en WinForms:** nueva superficie `DarkOutputPicker` completamente pintada con la paleta oficial (Surface2/Line/Cyan), esquinas suaves, nombre del dispositivo con elipsis, estado explícito (DEFAULT/MANUAL/OFFLINE), icono simple de bocina/audífono/Bluetooth/HDMI/USB y menú emergente con renderer oscuro. Mouse, teclado (Enter/Space/↓), tooltip/accesibilidad y menú sin elementos de "seguir el predeterminado" mezclados con dispositivos reales.
+- **Separación clara del modo:** checkbox `Follow Windows default output` independiente del menú. El menú muestra únicamente salidas físicas activas; seleccionarlas pone automáticamente modo manual. Si se desactiva seguir Windows, el sistema prefiere el último ID manual disponible, luego la salida actual visible y luego una activa. Si no existe salida segura, permanece en predeterminado sin inventar dispositivos.
+- **Jerarquía y densidad:** nombre de salida en una única tarjeta oscura; etiqueta **MEDIA VOLUME** al lado del porcentaje y slider debajo; se elimina el texto largo de cuatro renglones sobre cambio de salida y se sustituye por nota corta más tooltip. Estado de bocina desconectada aparece en la misma tarjeta y deshabilita slider/mute.
+- **Integridad de la lógica anterior:** la validación exacta de ID en `AudioDeviceController.TrySetVolumeForOutput/TrySetMuteForOutput` se conserva; no se cambia el dispositivo predeterminado de Windows, no se conecta Equalizer APO, no se redirige una orden a otro dispositivo tras hotplug. Guardado atómico y revocación de drag/resultado de prueba física al cambiar. **Corrección adicional:** dispositivo manual desconectado al abrir ya no impide restaurar el Boost 300% y EQ guardados.
+- **Regresiones:** `PlaybackOutputSelectionPolicy` verifica dejar modo default con dispositivo anterior desconectado, duplicados de ID, ausencia total de outputs; `OutputDeviceVisualPolicy` verifica categorías. Los contratos existentes de ID, APO, preferencias y Build/Layout/Visual Windows siguen como gates. No afirmar inspección humana ni validación física sin evidencia del workflow.
+- **Estado:** cambios en código. **No se ha creado otra versión instalable ni release**; el último estable público sigue siendo Android Direct 0.1.15 + Windows Desktop 0.1.20, aceptado visual/funcionalmente por el usuario salvo observación estética del selector.
+
+---
+
 ## 2026-11-17 — Publicación estable solicitada: Android Direct 0.1.15 + Windows 0.1.20
 
 - **Objetivo:** publicar una versión nueva instalable de ambas plataformas para que el propietario valide el comportamiento en hardware real, sin RC ni Developer Editions nuevas.

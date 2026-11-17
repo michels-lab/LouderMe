@@ -78,6 +78,15 @@ internal sealed class DarkOutputPicker : Control
         Invalidate();
     }
 
+    internal void SetTargetId(string? selectedId)
+    {
+        // A menu click can fire before ContextMenuStrip closes. Reflect the
+        // committed mode immediately; the 1.5s hotplug sync later refreshes
+        // its actual option list safely.
+        _selectedId = selectedId;
+        SetDisplay(_displayName, _available);
+    }
+
     internal void SetDisplay(string displayName, bool available)
     {
         // Refresh this visible state after a *real* MMDevice.Refresh() result,

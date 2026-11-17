@@ -1086,11 +1086,8 @@ internal sealed class MainForm : Form
             // endpoint. Prefer the last manual output if it still exists;
             // otherwise prefer the device currently audible to the user.
             var outputs = _audio.DiscoverOutputs();
-            string? target = outputs.FirstOrDefault(x =>
-                string.Equals(x.Id, _lastManualOutputId, StringComparison.Ordinal))?.Id
-                ?? outputs.FirstOrDefault(x =>
-                    string.Equals(x.Id, _lastObservedOutputId, StringComparison.Ordinal))?.Id
-                ?? outputs.FirstOrDefault()?.Id;
+            string? target = PlaybackOutputSelectionPolicy.ResolveManualTarget(
+                outputs, _lastManualOutputId, _lastObservedOutputId);
             if (target is null)
             {
                 _refreshingOutputChoices = true;

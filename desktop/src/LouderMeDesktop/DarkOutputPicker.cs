@@ -209,9 +209,8 @@ internal sealed class DarkOutputPicker : Control
             g.DrawPath(edge, path);
         }
 
-        using var foreground = new SolidBrush(Enabled
-            ? BrandColors.Cyan : BrandColors.Muted);
-        using var muted = new SolidBrush(BrandColors.Muted);
+        // TextRenderer applies the theme colors; no Windows-native
+        // white edit field or implicit stock ComboBox colors remain.
         var iconRect = new Rectangle(15, 16, 28, 28);
         DrawOutputIcon(g, iconRect,
             OutputDeviceVisualPolicy.Category(_displayName), Enabled);
@@ -276,6 +275,20 @@ internal sealed class DarkOutputPicker : Control
             g.DrawRectangle(p, x + 1, y + 1, 16, 12);
             g.DrawLine(p, x + 9, y + 13, x + 9, y + 17);
             g.DrawLine(p, x + 5, y + 17, x + 13, y + 17);
+        }
+        else if (kind == "USB")
+        {
+            // USB trident: distinct from speaker, Bluetooth and monitor.
+            g.DrawLine(p, x + 9, y + 2, x + 9, y + 16);
+            g.DrawLine(p, x + 9, y + 4, x + 5, y + 8);
+            g.DrawLine(p, x + 5, y + 8, x + 3, y + 8);
+            g.DrawLine(p, x + 9, y + 9, x + 14, y + 6);
+            g.DrawLine(p, x + 14, y + 6, x + 16, y + 6);
+            g.DrawRectangle(p, x + 14, y + 4, 3, 3);
+            g.DrawEllipse(p, x + 1, y + 7, 3, 3);
+            g.DrawLines(p, [new Point(x + 6, y + 3),
+                new Point(x + 9, y), new Point(x + 12, y + 3)]);
+            g.FillEllipse(new SolidBrush(color), x + 7, y + 15, 4, 4);
         }
         else
         {

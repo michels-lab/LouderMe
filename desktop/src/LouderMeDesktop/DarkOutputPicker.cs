@@ -78,6 +78,23 @@ internal sealed class DarkOutputPicker : Control
         Invalidate();
     }
 
+    internal void SetDisplay(string displayName, bool available)
+    {
+        // Refresh this visible state after a *real* MMDevice.Refresh() result,
+        // without rebuilding the menu or changing the pinned endpoint.
+        _available = available;
+        _displayName = !available
+            ? _selectedId is null ? "No default output available" : "Selected device unavailable"
+            : string.IsNullOrWhiteSpace(displayName)
+                ? "Windows playback output" : displayName;
+        _status = !available
+            ? "DISCONNECTED · volume and mute paused"
+            : FollowingDefault ? "Following Windows default" :
+                "Pinned device · default unchanged";
+        _tooltip.SetToolTip(this, _displayName + Environment.NewLine + _status);
+        Invalidate();
+    }
+
     private void OpenDeviceMenu()
     {
         if (!Enabled || _menu.Visible) return;

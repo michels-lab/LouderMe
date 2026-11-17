@@ -22,12 +22,11 @@
     "workflow": 15
   },
   "finding_counts": {
-    "BROKEN_RELATIVE_LINK": 2,
-    "POTENTIAL_UNLOGGED_CHANGES": 1
+    "BROKEN_RELATIVE_LINK": 2
   },
-  "finding_total": 3,
-  "inventory_fingerprint": "7d3e79beab1af085f8cbae562acf7faaaf80d83fc485385238c1027704396ab8",
-  "evidence_fingerprint": "5d84fbb8f1c795bd66ca2ed7a70fa894153523130cc467159f3a9a11cdcaba9f",
+  "finding_total": 2,
+  "inventory_fingerprint": "94f6516b24329a52cb53d950f14078a01fbce9411ba455818748c3ce9a634586",
+  "evidence_fingerprint": "728b2eac1e90c8e5522fb81612c631a8a4888caabe724aca9a00027178e0f153",
   "files": [
     {
       "path": ".github/ISSUE_TEMPLATE/chatgpt-task.yml",
@@ -265,7 +264,7 @@
       "role": "bitacora",
       "purpose": "technical/audit change history",
       "certainty": "rule",
-      "blob": "86f04c23296f1ee6637c00f6b324075767726eec"
+      "blob": "d524cf95ecf2adf6ad3401f3d4c79b0ca47a0d39"
     },
     {
       "path": "README.md",
@@ -2553,15 +2552,6 @@
       "path": "docs/RELEASE_NOTES_v0.1.14.md",
       "observation": "Missing: docs/docs/audits/GRANADA_2026-11-12_OWNER_ACCEPTANCE_LOUDERME_300PCT.md",
       "recommendation": "Fix link or restore target",
-      "state": "REVIEW_REQUIRED"
-    },
-    {
-      "id": "f1f32b4c36aba4ee",
-      "code": "POTENTIAL_UNLOGGED_CHANGES",
-      "severity": "review",
-      "path": "PROJECT_LOG.md",
-      "observation": "1 implementation/config paths changed since this log's last commit; examples: desktop/src/LouderMeDesktop/LouderMeDesktop.csproj",
-      "recommendation": "Inspect diffs and reconcile only meaningful decisions/results in the canonical log",
       "state": "REVIEW_REQUIRED"
     }
   ],

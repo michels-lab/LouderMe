@@ -1,3 +1,13 @@
+## 2026-11-17 — Release estable Windows Desktop v0.1.21 publicado y unificado
+
+- **Solicitud explícita del propietario:** publicar el selector oscuro de audio probado en código. [PR fuente #183](https://github.com/michels-lab/LouderMe/pull/183) fusionada en commit `636cabe68b4840ff88836decb3fa01fedf5f8075`; versión Windows/Assembly/File `0.1.21`, notas `desktop/releases/v0.1.21.md`. Android Direct permanece **0.1.15, versionCode 16**, sin nueva compilación ni APK alterada.
+- **Release Windows verificado:** [`desktop-v0.1.21`](https://github.com/michels-lab/LouderMe/releases/tag/desktop-v0.1.21) estable, no borrador ni RC. Workflow de [release #44202331212](https://github.com/michels-lab/LouderMe/actions/runs/44202331212) **SUCCESS** con compilación .NET 10, contratos APO, Smoke real de Setup instalado, capturas Home/About/EQ, proveniencia, desinstalador y dos EXE+sha256. Setup SHA-256 `636010b73b8a3fbcd89978ed8a3162b20e8b3307a6965dcf6459ce6c889d5789`; Portable `dfec5625c71e77b32f936be6a2445113950f67440d0f30854167fd711df6ee3a`.
+- **Canal oficial conjunto:** [PR distribución #18](https://github.com/michels-lab/LouderME-Releases/pull/18) fusionada; [publisher #44202720915](https://github.com/michels-lab/LouderME-Releases/actions/runs/44202720915) **SUCCESS**; [release unificado](https://github.com/michels-lab/LouderME-Releases/releases/tag/louderme-android-v0.1.15-desktop-v0.1.21) con seis assets de hashes verificados y feeds `louderme/latest.json` Android 0.1.15 y `louderme-desktop/latest.json` Windows 0.1.21. Source tags validados por separado (Android `56d9340b`, Desktop `636cabe6`) para reutilizar la APK ya firmada sin modificarla.
+- **Qué cambia:** selector custom oscuro, modo predeterminado separado del listado, etiquetas DEFAULT/MANUAL/OFFLINE, iconos bocinas/Bluetooth/USB/HDMI/audífonos, volumen/mute ligado al endpoint seguro y Boost/EQ persistentes incluso si un dispositivo manual se desconecta durante arranque. Función 100–300% Equalizer APO sigue como antes, sin controlador virtual nativo ni publicación Microsoft Store.
+- **Pendiente real:** instalación de Windows v0.1.21 por propietario y evaluación visual del menú abierto, tamaño/DPI, hotplug y control volumen/mute al alternar dispositivos; CI de WinForms no sustituye esta aceptación personal.
+
+---
+
 ## 2026-11-17 — Granada: selector Windows oscuro y modo predeterminado independiente (#182)
 
 - **Motivación física/visual:** el propietario confirmó que LouderMe Desktop 0.1.20 funciona, pero el selector de bocinas se mostraba como `ComboBox DropDownList` **blanco** dentro de un panel oscuro y repetía el nombre de la salida en dos filas. Se mantiene el motor/volumen funcionando; este bloque se concentra en interfaz y consistencia.

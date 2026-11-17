@@ -420,44 +420,51 @@ internal sealed class MainForm : Form
         var layout = (TableLayoutPanel)card.Controls[0];
         layout.RowCount = 7;
 
-        var chooseOutput = new Label
-        {
-            Text = "CONTROL THIS OUTPUT · VOLUME/MUTE ONLY",
-            AutoSize = true,
-            ForeColor = Muted,
-            Font = new Font("Consolas", 9f, FontStyle.Bold)
-        };
-        layout.SetColumnSpan(chooseOutput, 2);
-        layout.Controls.Add(chooseOutput, 0, 1);
-        _outputPicker.DropDownStyle = ComboBoxStyle.DropDownList;
-        _outputPicker.BackColor = Surface;
-        _outputPicker.ForeColor = TextPrimary;
+        // Mode is independent of choosing a physical output. This is NOT a
+        // fake entry in the dropdown and never changes Windows' default.
+        _followDefaultOutput.Text = "Follow Windows default output";
+        _followDefaultOutput.AutoSize = true;
+        _followDefaultOutput.Checked = true;
+        _followDefaultOutput.ForeColor = TextPrimary;
+        _followDefaultOutput.Font = new Font("Segoe UI", 10f);
+        _followDefaultOutput.Margin = new Padding(0, 2, 0, 8);
+        _followDefaultOutput.AccessibleDescription =
+            "On: follow the current Windows output. Off: pin a specific device.";
+        _followDefaultOutput.CheckedChanged += (_, _) =>
+            ChangeFollowDefaultOutput(_followDefaultOutput.Checked);
+        layout.SetColumnSpan(_followDefaultOutput, 2);
+        layout.Controls.Add(_followDefaultOutput, 0, 1);
+
+        // A real owner-painted control avoids the stock white WinForms combo
+        // and shows the current output only ONCE, with a small mode/status line.
         _outputPicker.Dock = DockStyle.Fill;
-        _outputPicker.DropDownWidth = 450;
-        _outputPicker.SelectedIndexChanged += (_, _) => SelectVolumeOutput();
+        _outputPicker.Height = 62;
+        _outputPicker.Margin = new Padding(0, 0, 0, 12);
+        _outputPicker.OutputChosen += SelectVolumeOutput;
         layout.SetColumnSpan(_outputPicker, 2);
         layout.Controls.Add(_outputPicker, 0, 2);
 
         _deviceValue.AutoSize = true;
-        _deviceValue.ForeColor = TextPrimary;
-        _deviceValue.Font = new Font("Segoe UI Semibold", 13f, FontStyle.Bold);
-        _deviceValue.Text = "Detecting…";
+        _deviceValue.ForeColor = Muted;
+        _deviceValue.Font = new Font("Consolas", 9f, FontStyle.Bold);
+        _deviceValue.Text = "MEDIA VOLUME";
+        _deviceValue.Margin = new Padding(2, 5, 0, 0);
         layout.Controls.Add(_deviceValue, 0, 3);
 
         _volumeValue.AutoSize = true;
         _volumeValue.ForeColor = Cyan;
-        _volumeValue.Font = new Font("Consolas", 11f, FontStyle.Bold);
-        _volumeValue.Text = "0%";
+        _volumeValue.Font = new Font("Consolas", 12f, FontStyle.Bold);
+        _volumeValue.Text = "—%";
+        _volumeValue.Margin = new Padding(0, 3, 0, 0);
         layout.Controls.Add(_volumeValue, 1, 3);
 
         _volume.Minimum = 0;
         _volume.Maximum = 100;
         _volume.TickFrequency = 10;
         _volume.Dock = DockStyle.Fill;
-        _volume.Margin = new Padding(0, 14, 0, 8);
-        // Bind a complete mouse drag to the endpoint present at MouseDown.
-        // Otherwise, after the first rejected event on an A->B hot-swap,
-        // later mouse-move events in that SAME drag would control B.
+        _volume.Margin = new Padding(0, 10, 0, 9);
+        // An A→B switch (including Windows default hotplug) must not
+        // transfer an in-flight drag from the old physical output.
         _volume.MouseDown += (_, _) =>
         {
             _volumeGestureOutputId = _lastObservedOutputId;
@@ -477,8 +484,6 @@ internal sealed class MainForm : Form
                 if (!_audio.TrySetVolumeForOutput(target, _volume.Value))
                 {
                     _volumeGestureRejected = _volumeGestureOutputId is not null;
-                    // A new Windows default output must not receive a drag
-                    // event intended for the previous physical device.
                     SyncDeviceVolume(force: true);
                     return;
                 }
@@ -513,15 +518,22 @@ internal sealed class MainForm : Form
         };
         layout.SetColumnSpan(_mute, 2);
         layout.Controls.Add(_mute, 0, 5);
+
         var outputNote = new Label
         {
-            Text = "Changing this selection never changes the Windows default " +
-                "sound output or attaches Equalizer APO. If the chosen device " +
-                "disconnects, its volume controls are disabled until it returns " +
-                "or you explicitly choose another output.",
-            AutoSize = true, MaximumSize = new Size(540, 0), ForeColor = Muted,
-            Margin = new Padding(0, 8, 0, 4)
+            Text = "Volume/mute affect this output only. Boost/EQ remain " +
+                "on the separate Equalizer APO path.",
+            AutoSize = true,
+            MaximumSize = new Size(540, 0),
+            ForeColor = Muted,
+            Font = new Font("Segoe UI", 9f),
+            Margin = new Padding(1, 8, 0, 0)
         };
+        var outputTip = new ToolTip();
+        outputTip.SetToolTip(outputNote,
+            "Choosing an output here does not change Windows' default " +
+            "or attach Equalizer APO. Disconnected pinned outputs stay " +
+            "selected but cannot receive volume or mute commands.");
         layout.SetColumnSpan(outputNote, 2);
         layout.Controls.Add(outputNote, 0, 6);
         root.Controls.Add(card);

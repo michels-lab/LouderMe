@@ -1,3 +1,13 @@
+## 2026-11-17 — Publicación estable solicitada: Android Direct 0.1.15 + Windows 0.1.20
+
+- **Objetivo:** publicar una versión nueva instalable de ambas plataformas para que el propietario valide el comportamiento en hardware real, sin RC ni Developer Editions nuevas.
+- **Versiones fuente:** `app/build.gradle.kts` ahora `versionName=0.1.15`, `versionCode=16` (actualización sobre Android Direct 0.1.14 con su certificado permanente); `desktop/.../LouderMeDesktop.csproj` ahora versión y assemblies 0.1.20 (actualización de Windows 0.1.19).
+- **Cambios incluidos:** corrección de persistencia del Boost Android 275/300% al reiniciar (#180); selector Windows de salida exacta para volumen/mute y hotplug seguro (#179); último valor Boost Windows confirmado por teclado, ratón, foco y cierre (#180). No hay driver virtual firmado en las builds tradicionales.
+- **Disparadores existentes:** Android Direct firmado mediante flujo `android-ci-release.yml` en push a `main`; Windows Setup/Portable desde `release-louderme-desktop.yml` por `desktop/releases/v0.1.20.md`. Ambas rutas incluyen compilar, pruebas, checksum e instalación/capturas; **el release debe considerarse realizado solo cuando los tags y seis assets existen**. Para publicación unificada, actualizar `LouderME-Releases/louderme/unified-source-request.json` **solo después** de las dos releases fuente, respetando source SHA de cada una y el chequeo de seis hashes.
+- **Pendiente postpublicación:** comprobar uso físico Android 300% después de reinicio y Windows volumen por endpoint + Equalizer APO; no afirmar certificación acústica sin ese ensayo. Google Play y Microsoft Store siguen independientes.
+
+---
+
 ## 2026-11-15/16 — Granada: Android 300% sobrevive reinicio + Windows slider Boost confiable
 
 - **Fallo funcional Android corregido:** la aplicación permite 100–300%, pero `AudioBoostStateStore.read` todavía truncaba el nivel guardado a 250%, y `BootResumePolicy.percentToRestore` también truncaba 275–300% al reactivar Boost tras un reinicio del teléfono. Esto afectaba un nivel elegido explícitamente por el usuario y la coherencia entre el porcentaje y los dB en la pantalla. **Ahora ambos caminos preservan hasta 300%.**

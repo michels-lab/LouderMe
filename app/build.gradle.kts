@@ -23,8 +23,8 @@ android {
         applicationId = "com.michelslab.louderme"
         minSdk = 29
         targetSdk = 36
-        versionCode = 15
-        versionName = "0.1.14"
+        versionCode = 16
+        versionName = "0.1.15"
         buildConfigField("boolean", "DEVELOPER_EDITION", "false")
     }
 

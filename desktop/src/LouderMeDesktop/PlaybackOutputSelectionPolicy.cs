@@ -48,6 +48,25 @@ internal static class PlaybackOutputSelectionPolicy
         return result;
     }
 
+    internal static string? ResolveManualTarget(
+        IReadOnlyList<PlaybackOutputChoice> active,
+        string? previousManualId, string? currentPhysicalId)
+    {
+        // Do not restore an unplugged manual endpoint when leaving the
+        // "follow Windows default" mode. Pin only a currently active ID.
+        // Duplicate endpoint IDs are ambiguous; refuse to use them.
+        var valid = active.Where(x => x.Available && !string.IsNullOrWhiteSpace(x.Id))
+            .GroupBy(x => x.Id!, StringComparer.Ordinal)
+            .Where(g => g.Count() == 1)
+            .Select(g => g.Single())
+            .ToArray();
+        return valid.FirstOrDefault(x =>
+                string.Equals(x.Id, previousManualId, StringComparison.Ordinal))?.Id
+            ?? valid.FirstOrDefault(x =>
+                string.Equals(x.Id, currentPhysicalId, StringComparison.Ordinal))?.Id
+            ?? valid.FirstOrDefault()?.Id;
+    }
+
     internal static bool SameChoices(
         IReadOnlyList<PlaybackOutputChoice> a, IReadOnlyList<PlaybackOutputChoice> b) =>
         a.Count == b.Count && a.Zip(b).All(pair => pair.First == pair.Second);
@@ -76,6 +95,14 @@ internal static class PlaybackOutputSelectionPolicy
             SelectedIndex(missing, null) != 0 ||
             SameChoices(available, missing))
             throw new InvalidOperationException("Unplugged endpoint silently fell back to a different speaker.");
+
+        if (ResolveManualTarget(active, "headset", "speaker") != "headset" ||
+            ResolveManualTarget([active[0], active[2]], "headset", "speaker") != "speaker" ||
+            ResolveManualTarget([active[2]], null, null) != "hdmi" ||
+            ResolveManualTarget([], "headset", "speaker") is not null ||
+            ResolveManualTarget([active[0], active[0]], "speaker", "speaker") is not null)
+            throw new InvalidOperationException(
+                "Leaving default mode pinned an absent or ambiguous physical device.");
 
         var returned = Build(active, "headset");
         if (SelectedIndex(returned, "headset") != 1 ||

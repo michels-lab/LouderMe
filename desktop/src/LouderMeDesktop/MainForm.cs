@@ -12,8 +12,10 @@ internal sealed class MainForm : Form
     private readonly DesktopUpdateService _updates = new();
 
     private readonly Label _deviceValue = new();
-    private readonly ComboBox _outputPicker = new();
+    private readonly DarkOutputPicker _outputPicker = new();
+    private readonly CheckBox _followDefaultOutput = new();
     private bool _refreshingOutputChoices;
+    private string? _lastManualOutputId;
     private readonly Label _volumeValue = new();
     private readonly TrackBar _volume = new();
     private readonly CheckBox _mute = new();
@@ -148,6 +150,7 @@ internal sealed class MainForm : Form
         _aboutAction.Name = "about";
         _volume.Name = "media-volume";
         _outputPicker.Name = "media-output-picker";
+        _followDefaultOutput.Name = "media-follow-windows-default";
         _mute.Name = "media-mute";
         _boostEnabled.Name = "boost-toggle";
         _boost.Name = "boost-level";

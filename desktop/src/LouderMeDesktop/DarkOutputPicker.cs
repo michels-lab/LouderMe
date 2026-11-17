@@ -288,7 +288,8 @@ internal sealed class DarkOutputPicker : Control
             g.DrawEllipse(p, x + 1, y + 7, 3, 3);
             g.DrawLines(p, [new Point(x + 6, y + 3),
                 new Point(x + 9, y), new Point(x + 12, y + 3)]);
-            g.FillEllipse(new SolidBrush(color), x + 7, y + 15, 4, 4);
+            using var tip = new SolidBrush(color);
+            g.FillEllipse(tip, x + 7, y + 15, 4, 4);
         }
         else
         {

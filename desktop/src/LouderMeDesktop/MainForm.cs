@@ -361,9 +361,14 @@ internal sealed class MainForm : Form
         }
 
         if (!_outputPicker.IsHandleCreated ||
-            _outputPicker.DropDownStyle != ComboBoxStyle.DropDownList ||
-            _outputPicker.Parent is null)
-            throw new InvalidOperationException("Windows output picker is not mounted in the real GUI.");
+            _outputPicker.Parent is null ||
+            _outputPicker.Height < 60 ||
+            _outputPicker.BackColor != BrandColors.Surface2 ||
+            !_outputPicker.TabStop ||
+            !_followDefaultOutput.IsHandleCreated ||
+            _followDefaultOutput.Parent is null)
+            throw new InvalidOperationException(
+                "Dark Windows output picker / independent follow-default switch is not mounted.");
 
         var viewport = _contentViewport
             ?? throw new InvalidOperationException("Scrollable workspace not initialized.");
@@ -1197,7 +1202,8 @@ internal sealed class MainForm : Form
             _audio.Refresh();
             ObserveOutputIdentity(_audio.DeviceId);
             _loading = true;
-            _deviceValue.Text = _audio.DeviceName;
+            _outputPicker.SetDisplay(_audio.DeviceName, available: true);
+            _deviceValue.Text = "MEDIA VOLUME";
             _volume.Value = Math.Clamp(_audio.VolumePercent, 0, 100);
             _volumeValue.Text = $"{_volume.Value}%";
             _mute.Checked = _audio.Muted;
@@ -1210,7 +1216,8 @@ internal sealed class MainForm : Form
             // The timer retries and re-enables controls when a render device
             // returns; never preserve a stale enabled volume slider.
             _loading = true;
-            _deviceValue.Text = $"Device unavailable: {ex.Message}";
+            _outputPicker.SetDisplay("", available: false);
+            _deviceValue.Text = "MEDIA VOLUME";
             _volumeValue.Text = "—%";
             _volume.Enabled = false;
             _mute.Enabled = false;
@@ -1225,13 +1232,31 @@ internal sealed class MainForm : Form
         try
         {
             _audio.SelectedOutputId = _settings.OutputDeviceId;
-            RefreshOutputChoices();
-            _audio.Refresh();
-            ObserveOutputIdentity(_audio.DeviceId);
-            _deviceValue.Text = _audio.DeviceName;
-            _volume.Value = Math.Clamp(_audio.VolumePercent, _volume.Minimum, _volume.Maximum);
-            _volumeValue.Text = $"{_volume.Value}%";
-            _mute.Checked = _audio.Muted;
+            _lastManualOutputId = _settings.OutputDeviceId;
+            // Missing Bluetooth/USB hardware must not abort loading saved
+            // 300% Boost or seven-band EQ. Keep just the output sliders off.
+            try
+            {
+                RefreshOutputChoices();
+                _audio.Refresh();
+                ObserveOutputIdentity(_audio.DeviceId);
+                _outputPicker.SetDisplay(_audio.DeviceName, available: true);
+                _volume.Value = Math.Clamp(
+                    _audio.VolumePercent, _volume.Minimum, _volume.Maximum);
+                _volumeValue.Text = $"{_volume.Value}%";
+                _mute.Checked = _audio.Muted;
+                _volume.Enabled = true;
+                _mute.Enabled = true;
+            }
+            catch (Exception)
+            {
+                ObserveOutputIdentity(null);
+                _outputPicker.SetDisplay("", available: false);
+                _volumeValue.Text = "—%";
+                _volume.Enabled = false;
+                _mute.Enabled = false;
+            }
+            _deviceValue.Text = "MEDIA VOLUME";
             _startWithWindows.Checked = StartupManager.IsEnabled();
 
             _boostEnabled.Checked = _settings.BoostEnabled;
@@ -1581,6 +1606,7 @@ internal sealed class MainForm : Form
     private void RefreshEngineStatus()
     {
         _outputPicker.Enabled = !_diagnosticRunning;
+        _followDefaultOutput.Enabled = !_diagnosticRunning;
         if (StorePackageContext.IsPackaged)
         {
             _connectEngineAction.Enabled = false;
